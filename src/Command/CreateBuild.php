@@ -7,6 +7,8 @@
 
 namespace QL\Hal\Agent\Command;
 
+use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
+use QL\Hal\Core\Entity\Repository\RepositoryRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,11 +21,26 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CreateBuild extends Command
 {
     /**
-     * @param string $name
+     * @var EnvironmentRepository
      */
-    public function __construct($name)
+    private $envRepo;
+
+    /**
+     * @var RepositoryRepository
+     */
+    private $repoRepo;
+
+    /**
+     * @param string $name
+     * @param EnvironmentRepository $envRepo
+     * @param RepositoryRepository $repoRepo
+     */
+    public function __construct($name, EnvironmentRepository $envRepo, RepositoryRepository $repoRepo)
     {
         parent::__construct($name);
+
+        $this->envRepo = $envRepo;
+        $this->repoRepo = $repoRepo;
     }
 
     /**
@@ -53,11 +70,11 @@ class CreateBuild extends Command
     /**
      *  Run the command
      *
-     *  @param InputInterface $in
-     *  @param OutputInterface $out
-     *  @return void
+     *  @param InputInterface $input
+     *  @param OutputInterface $output
+     *  @return null
      */
-    protected function execute(InputInterface $in, OutputInterface $out)
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
         $environmentId = $input->getArgument('ENV_ID');
         $repositoryId = $input->getArgument('REPO_ID');
@@ -66,6 +83,6 @@ class CreateBuild extends Command
 
 
 
-        $out->writeln('NYI1');
+        $output->writeln('NYI1');
     }
 }

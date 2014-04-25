@@ -16,6 +16,8 @@ services:
         class: 'QL\Hal\Agent\Command\CreateBuild'
         arguments:
             - 'build:create'
+            - '@environment.repo'
+            - '@repository.repo'
     command.build.deploy:
         class: 'QL\Hal\Agent\Command\DeployBuild'
         arguments:

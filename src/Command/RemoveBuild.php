@@ -43,12 +43,12 @@ class RemoveBuild extends Command
     /**
      *  Run the command
      *
-     *  @param InputInterface $in
-     *  @param OutputInterface $out
-     *  @return void
+     *  @param InputInterface $input
+     *  @param OutputInterface $output
+     *  @return null
      */
-    protected function execute(InputInterface $in, OutputInterface $out)
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $out->writeln('NYI5');
+        $output->writeln('NYI5');
     }
 }
