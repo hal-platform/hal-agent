@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<phpunit
+        backupGlobals="false"
+        backupStaticAttributes="false"
+        bootstrap="../vendor/autoload.php"
+        cacheTokens="true"
+        colors="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        forceCoversAnnotation="true"
+        mapTestClassNameToCoveredClassName="true"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        strict="true"
+        timeoutForSmallTests="2"
+        verbose="true">
+
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory>../src/</directory>
+        </whitelist>
+    </filter>
+
+    <logging>
+    <!--
+        <log type="coverage-html" target="../phpunit/coverage" charset="UTF-8" highlight="true" lowUpperBound="98" highLowerBound="99"/>
+        <log type="coverage-clover" target="../phpunit/clover.xml"/>
+        <log type="testdox-html" target="../phpunit/testdox.html"/>
+        <log type="testdox-text" target="../phpunit/testdox.txt"/>
+    -->
+        <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
+    </logging>
+
+    <testsuites>
+        <testsuite name="HAL 9000 Agent">
+            <directory>../tests/</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

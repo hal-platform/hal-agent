@@ -1,0 +1,8 @@
+imports:
+    -
+        resource: di.yml
+
+parameters:
+    debug: true
+    application.name: 'HAL 9000 Agent'
+    application.version: '2.0-alpha'

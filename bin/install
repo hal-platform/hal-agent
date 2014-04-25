@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+DIR=$( cd "$( dirname "$0" )" && pwd )
+BIN="$DIR/composer install --prefer-dist --no-interaction"
+
+if [[ "$1" = '--dev' ]] ; then
+    BIN="$BIN --dev"
+else
+    BIN="$BIN --no-dev"
+fi
+
+$BIN

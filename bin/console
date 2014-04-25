@@ -1,0 +1,28 @@
+#!/usr/bin/env php
+<?php
+
+# autoloader
+(@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
+
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+
+$config = __DIR__ . '/../configuration';
+
+$container = new ContainerBuilder;
+$builder = new YamlFileLoader($container, new FileLocator($config));
+$builder->load('config.yml');
+$container->set('service_container', null);
+$container->compile();
+
+$app = $container->get('application');
+
+// Tell commands to output as JSON instead of text. Commands must look for this option.
+$app->getDefinition()->addOption(
+    new InputOption('--json', null, InputOption::VALUE_REQUIRED, 'Format command output as JSON. Yay!', false)
+);
+
+$app->run();

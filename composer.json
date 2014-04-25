@@ -1,0 +1,62 @@
+{
+    "name": "ql/hal-agent",
+    "description": "HAL9000 Console Application",
+    "license": "proprietary",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Matt Colf",
+            "email": "matthewcolf@quickenloans.com",
+            "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cMColf",
+            "role": "Developer"
+        },
+        {
+            "name": "Matt Nagi",
+            "email": "mattnagi@quickenloans.com",
+            "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cMNagi",
+            "role": "Developer"
+        },
+        {
+            "name": "Bridget Schiefer",
+            "email": "bridgetschiefer@quickenloans.com",
+            "homepage": "http://quniverse/profiles/Person.aspx?accountname=mi%5CBSchiefer",
+            "role": "Developer"
+        }
+    ],
+
+    "autoload": {
+        "psr-4": {
+            "QL\\Hal\\Agent\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/console"
+    ],
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@git:web-core/hal-core.git"
+        },
+        {
+            "type": "composer",
+            "url": "http://composer/"
+        }
+    ],
+    "require": {
+        "php-64bit":                    ">=5.4.0",
+        "ql/hal-core":                  "2.*@dev",
+        "symfony/config":               "~2.4",
+        "symfony/console":              "~2.4",
+        "symfony/dependency-injection": "~2.4"
+    },
+    "require-dev": {
+        "phpmd/phpmd":                  "*",
+        "phpunit/phpunit":              "3.7.*",
+        "squizlabs/php_codesniffer":    "*"
+    }
+}

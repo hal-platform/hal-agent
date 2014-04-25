@@ -1,0 +1,36 @@
+services:
+
+    application:
+        class: 'Symfony\Component\Console\Application'
+        arguments:
+            - '%application.name%'
+            - '%application.version%'
+        calls:
+            - ['add', ['@command.build.create']]
+            - ['add', ['@command.build.deploy']]
+            - ['add', ['@command.build.list']]
+            - ['add', ['@command.build.package']]
+            - ['add', ['@command.build.remove']]
+
+    command.build.create:
+        class: 'QL\Hal\Agent\Command\CreateBuild'
+        arguments:
+            - 'build:create'
+    command.build.deploy:
+        class: 'QL\Hal\Agent\Command\DeployBuild'
+        arguments:
+            - 'build:deploy'
+
+    command.build.list:
+        class: 'QL\Hal\Agent\Command\ListBuilds'
+        arguments:
+            - 'build:list'
+
+    command.build.package:
+        class: 'QL\Hal\Agent\Command\PackageBuild'
+        arguments:
+            - 'build:package'
+    command.build.remove:
+        class: 'QL\Hal\Agent\Command\RemoveBuild'
+        arguments:
+            - 'build:remove'
