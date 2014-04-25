@@ -1,6 +1,8 @@
 imports:
     -
         resource: di.yml
+    -
+        resource: config.env.yml
 
 parameters:
     debug: true

@@ -1,4 +1,5 @@
 /.idea/
 
+/configuration/config.env.yml
 /tests/phpunit.xml
 /vendor/

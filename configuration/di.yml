@@ -18,6 +18,7 @@ services:
             - 'build:create'
             - '@environment.repo'
             - '@repository.repo'
+            - '@github.client'
     command.build.deploy:
         class: 'QL\Hal\Agent\Command\DeployBuild'
         arguments:
@@ -78,5 +79,15 @@ services:
             - @doctrine.config
         configurator: ['@doctrine.em.config', 'configure']
 
+### imported from hal
 
+    github.client:
+        class: 'Github\Client'
+        arguments: ['@github.httpClient']
 
+    github.httpClient:
+        class: 'QL\Hal\Agent\Github\HackCachedHttpClient'
+        arguments:
+            - {base_url: 'http://git/api/v3/'}
+        calls:
+            - ['authenticate', ['%github.token%', null, 'http_token']]
