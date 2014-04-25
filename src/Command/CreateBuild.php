@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Command;
 
+use Github\Client as GithubService;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
 use QL\Hal\Core\Entity\Repository\RepositoryRepository;
 use Symfony\Component\Console\Command\Command;
@@ -31,16 +32,27 @@ class CreateBuild extends Command
     private $repoRepo;
 
     /**
+     * @var GithubService
+     */
+    private $github;
+
+    /**
      * @param string $name
      * @param EnvironmentRepository $envRepo
      * @param RepositoryRepository $repoRepo
+     * @param GithubService $github
      */
-    public function __construct($name, EnvironmentRepository $envRepo, RepositoryRepository $repoRepo)
-    {
+    public function __construct(
+        $name,
+        EnvironmentRepository $envRepo,
+        RepositoryRepository $repoRepo,
+        GithubService $github
+    ) {
         parent::__construct($name);
 
         $this->envRepo = $envRepo;
         $this->repoRepo = $repoRepo;
+        $this->github = $github;
     }
 
     /**
@@ -79,10 +91,36 @@ class CreateBuild extends Command
         $environmentId = $input->getArgument('ENV_ID');
         $repositoryId = $input->getArgument('REPO_ID');
         $commitSha = $input->getArgument('COMMIT');
+        $formatter = $this->getHelperSet()->get('formatter');
+
+        $output->writeln([
+            $formatter->formatSection('Environment ID', $environmentId),
+            $formatter->formatSection('Repository ID', $repositoryId),
+            $formatter->formatSection('Commit', $commitSha)
+        ]);
+
+        if (!$environment = $this->envRepo->find($environmentId)) {
+            $output->writeln('<error>Environment not found!</error>');
+            return 1;
+        }
+        $output->writeln('<comment>Environment Found!</comment>');
+
+        if (!$repository = $this->repoRepo->find($repositoryId)) {
+            $output->writeln('<error>Repository not found!</error>');
+            return 2;
+        }
+        $output->writeln('<comment>Repository Found!</comment>');
 
 
+        $resolved = sprintf('%s/%s', $repository->getGithubUser(), $repository->getGithubRepo());
+        $output->writeln($formatter->formatSection('Environment', $environment->getKey()));
+        $output->writeln($formatter->formatSection('Repository', $repository->getKey()));
+        $output->writeln($formatter->formatSection('Github Repository', $resolved));
 
 
-        $output->writeln('NYI1');
+        // download through api
+        // /repos/:owner/:repo/:archive_format/:ref
+
+        $output->writeln("\n<question>it seemed to work?</question>");
     }
 }
