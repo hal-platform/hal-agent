@@ -59,6 +59,13 @@ class CreateBuild extends Command
      */
     protected function execute(InputInterface $in, OutputInterface $out)
     {
+        $environmentId = $input->getArgument('ENV_ID');
+        $repositoryId = $input->getArgument('REPO_ID');
+        $commitSha = $input->getArgument('COMMIT');
+
+
+
+
         $out->writeln('NYI1');
     }
 }

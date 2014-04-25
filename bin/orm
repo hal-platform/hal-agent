@@ -1,9 +1,9 @@
 #!/usr/bin/env php
 <?php
-
 # autoloader
 (@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
 
+use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
@@ -21,9 +21,7 @@ $container->compile();
 
 $app = $container->get('application');
 
-// Tell commands to output as JSON instead of text. Commands must look for this option.
-$app->getDefinition()->addOption(
-    new InputOption('--json', null, InputOption::VALUE_REQUIRED, 'Format command output as JSON. Yay!', false)
-);
+$helperSet = ConsoleRunner::createHelperSet($container->get('doctrine.em'));
 
-$app->run();
+// gfy doctrine.php
+ConsoleRunner::run($helperSet, []);
