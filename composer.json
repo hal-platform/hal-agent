@@ -48,7 +48,9 @@
         }
     ],
     "require": {
+        "knplabs/github-api":           "*",
         "php-64bit":                    ">=5.4.0",
+        "psr/log":                      "*",
         "ql/hal-core":                  "2.*@dev",
         "symfony/config":               "~2.4",
         "symfony/console":              "~2.4",
