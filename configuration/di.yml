@@ -12,44 +12,43 @@ services:
             - ['add', ['@command.build.package']]
             - ['add', ['@command.build.remove']]
 
+    logger:
+        class: 'QL\Hal\Agent\DebugLogger'
+    clock:
+        class: 'MCP\DataType\Time\Clock'
+        arguments: ['now', 'UTC']
+
     command.build.create:
         class: 'QL\Hal\Agent\Command\CreateBuild'
         arguments:
             - 'build:create'
-            - '@environment.repo'
-            - '@repository.repo'
-            - '@github.client'
+            - '@logger'
+            - '@doctrine.em'
+            - '@clock'
+            - '@repo.build'
+            - '@github'
     command.build.deploy:
         class: 'QL\Hal\Agent\Command\DeployBuild'
         arguments:
             - 'build:deploy'
 
-    command.build.list:
-        class: 'QL\Hal\Agent\Command\ListBuilds'
-        arguments:
-            - 'build:list'
-
-    command.build.package:
-        class: 'QL\Hal\Agent\Command\PackageBuild'
-        arguments:
-            - 'build:package'
-    command.build.remove:
-        class: 'QL\Hal\Agent\Command\RemoveBuild'
-        arguments:
-            - 'build:remove'
-
-
 ### imported from hal-core
 
 
-    # Environment Repository
-    environment.repo:
+    # Repositories
+    repo.build:
+        class: 'QL\Hal\Core\Entity\Repository\BuildRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Build'
+    repo.environment:
         class: 'QL\Hal\Core\Entity\Repository\EnvironmentRepository'
         factory_service:  doctrine.em
         factory_method:   getRepository
         arguments:
             - 'QL\Hal\Core\Entity\Environment'
-    repository.repo:
+    repo.repository:
         class: 'QL\Hal\Core\Entity\Repository\RepositoryRepository'
         factory_service:  doctrine.em
         factory_method:   getRepository
@@ -81,13 +80,19 @@ services:
 
 ### imported from hal
 
+    github:
+        class: 'QL\Hal\Agent\Github\GithubService'
+        arguments:
+            - '@github.service.repository-contents'
     github.client:
         class: 'Github\Client'
         arguments: ['@github.httpClient']
-
     github.httpClient:
         class: 'QL\Hal\Agent\Github\HackCachedHttpClient'
         arguments:
             - {base_url: 'http://git/api/v3/'}
         calls:
             - ['authenticate', ['%github.token%', null, 'http_token']]
+    github.service.repository-contents:
+        class: 'Github\Api\Repository\Contents'
+        arguments: ['@github.client']

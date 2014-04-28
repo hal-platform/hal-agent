@@ -7,13 +7,14 @@
 
 namespace QL\Hal\Agent\Command;
 
-use Github\Client as GithubService;
-use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
-use QL\Hal\Core\Entity\Repository\RepositoryRepository;
+use Doctrine\ORM\EntityManager;
+use MCP\DataType\Time\Clock;
+use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Github\GithubService;
+use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -22,14 +23,33 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CreateBuild extends Command
 {
     /**
-     * @var EnvironmentRepository
+     * @var string
      */
-    private $envRepo;
+    const FS_DIRECTORY_PREFIX = 'hal9000-build-';
+
+    const ERR_NOT_FOUND = 'Build "%s" could not be found!';
+    const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt. Or can it?';
+    const ERR_DOWNLOAD = 'Github reference "%s" from repository "%s" could not be downloaded!';
 
     /**
-     * @var RepositoryRepository
+     * @var LoggerInterface
      */
-    private $repoRepo;
+    private $logger;
+
+    /**
+     * @var EntityManager
+     */
+    private $entityManager;
+
+    /**
+     * @var Clock
+     */
+    private $clock;
+
+    /**
+     * @var BuildRepository
+     */
+    private $buildRepo;
 
     /**
      * @var GithubService
@@ -37,22 +57,43 @@ class CreateBuild extends Command
     private $github;
 
     /**
+     * @var string
+     */
+    private $buildDirectory;
+
+    /**
      * @param string $name
-     * @param EnvironmentRepository $envRepo
-     * @param RepositoryRepository $repoRepo
+     * @param LoggerInterface $logger
+     * @param EntityManager $entityManager
+     * @param Clock $clock
+     * @param BuildRepository $buildRepo
      * @param GithubService $github
      */
     public function __construct(
         $name,
-        EnvironmentRepository $envRepo,
-        RepositoryRepository $repoRepo,
+        LoggerInterface $logger,
+        EntityManager $entityManager,
+        Clock $clock,
+        BuildRepository $buildRepo,
         GithubService $github
     ) {
         parent::__construct($name);
 
-        $this->envRepo = $envRepo;
-        $this->repoRepo = $repoRepo;
+        $this->logger = $logger;
+        $this->entityManager = $entityManager;
+        $this->clock = $clock;
+
+        $this->buildRepo = $buildRepo;
         $this->github = $github;
+    }
+
+    /**
+     * @param string $directory
+     *  @return null
+     */
+    public function setBaseBuildDirectory($directory)
+    {
+        $this->buildDirectory = $directory;
     }
 
     /**
@@ -61,21 +102,11 @@ class CreateBuild extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Build an application and return the build ID.')
+            ->setDescription('Build an application build.')
             ->addArgument(
-                'ENV_ID',
+                'BUILD_ID',
                 InputArgument::REQUIRED,
-                'The environment ID to build for.'
-            )
-            ->addArgument(
-                'REPO_ID',
-                InputArgument::REQUIRED,
-                'The repository ID to build.'
-            )
-            ->addArgument(
-                'COMMIT',
-                InputArgument::REQUIRED,
-                'The commit hash to build.'
+                'The Build ID to build.'
             );
     }
 
@@ -88,39 +119,89 @@ class CreateBuild extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $environmentId = $input->getArgument('ENV_ID');
-        $repositoryId = $input->getArgument('REPO_ID');
-        $commitSha = $input->getArgument('COMMIT');
-        $formatter = $this->getHelperSet()->get('formatter');
+        $buildId = $input->getArgument('BUILD_ID');
 
-        $output->writeln([
-            $formatter->formatSection('Environment ID', $environmentId),
-            $formatter->formatSection('Repository ID', $repositoryId),
-            $formatter->formatSection('Commit', $commitSha)
-        ]);
-
-        if (!$environment = $this->envRepo->find($environmentId)) {
-            $output->writeln('<error>Environment not found!</error>');
+        $build = $this->buildRepo->find($buildId);
+        if (!$build = $this->buildRepo->find($buildId)) {
+            $this->logger->critical(sprintf(self::ERR_NOT_FOUND, $buildId));
+            $this->finish($output, '<error>FAIL 1</error>');
             return 1;
         }
-        $output->writeln('<comment>Environment Found!</comment>');
 
-        if (!$repository = $this->repoRepo->find($repositoryId)) {
-            $output->writeln('<error>Repository not found!</error>');
+        if ($build->getStatus() !== 'Waiting') {
+            $this->logger->critical(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
+            $this->finish($output, '<error>FAIL 2</error>');
             return 2;
         }
-        $output->writeln('<comment>Repository Found!</comment>');
+
+        // Update the build status asap so no other worker can pick it up
+        $build->setStatus('Downloading');
+        $this->entityManager->merge($build);
+        $this->entityManager->flush();
+
+        // build properties
+        $buildPath = $this->generateBuildDirectory($buildId);
+
+        $ghUser = $build->getRepository()->getGithubUser();
+        $ghRepo = $build->getRepository()->getGithubRepo();
+        $commitSha = $build->getCommit();
+        $resolvedRepo = sprintf('%s/%s', $ghUser, $ghRepo);
+
+        $this->logger->info('Downloading archive', [
+            'build' => [
+                'id' => $buildId,
+                'path' => $buildPath
+            ],
+            'github' => $resolvedRepo,
+            'commitSha' => $commitSha
+        ]);
 
 
-        $resolved = sprintf('%s/%s', $repository->getGithubUser(), $repository->getGithubRepo());
-        $output->writeln($formatter->formatSection('Environment', $environment->getKey()));
-        $output->writeln($formatter->formatSection('Repository', $repository->getKey()));
-        $output->writeln($formatter->formatSection('Github Repository', $resolved));
+        $this->logger->debug('Starting Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
+        if (!$tar = $this->github->download($ghUser, $ghRepo, $commitSha)) {
+            $this->logger->critical(sprintf(self::ERR_DOWNLOAD, $commitSha, $resolvedRepo));
+            $this->finish($output, '<error>FAIL 4</error>');
+            return 4;
+        }
 
-        // download through api
-        // /repos/:owner/:repo/:archive_format/:ref
+        $this->logger->debug('Finished Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
-        $output->writeln("\n<question>it seemed to work?</question>");
+        $this->finish($output, '<question>it seemed to work?</question>');
+    }
+
+    /**
+     *  Generate, but don't create, a random directory for later use
+     *
+     *  @param string $id
+     *  @return string
+     */
+    private function generateBuildDirectory($id)
+    {
+        return $this->getBuildDirectory() . self::FS_DIRECTORY_PREFIX . substr($id, 0, 7);
+    }
+
+    /**
+     *  @param string $id
+     *  @return string
+     */
+    private function getBuildDirectory()
+    {
+        if (!$this->buildDirectory) {
+            $this->buildDirectory = sys_get_temp_dir();
+        }
+
+        return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
+     */
+    private function finish(OutputInterface $output, $message)
+    {
+        $output->writeln($this->logger->output());
+        $output->writeln("\n". $message);
     }
 }
