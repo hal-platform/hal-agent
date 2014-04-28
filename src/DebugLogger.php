@@ -40,7 +40,7 @@ class DebugLogger extends AbstractLogger
     {
         list($level, $message, $context) = $messager;
 
-        $formatted = str_pad(sprintf('[%s]', strtoupper($level)), 10);
+        $formatted = str_pad(sprintf('[%s]', strtoupper($level)), 10) . ' ';
         $formatted .= $message . "\n";
 
         if ($context) {

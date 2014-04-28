@@ -8,21 +8,21 @@
 namespace QL\Hal\Agent\Github;
 
 use Github\Api\Repo;
-use Github\Api\User;
+use Github\Api\Repository\Contents;
 use Github\Exception\RuntimeException;
 use Github\ResultPager;
 
 class GithubService
 {
     /**
-     * @var User
-     */
-    public $userApi;
-
-    /**
      * @var Repo
      */
     public $repoApi;
+
+    /**
+     * @var Contents
+     */
+    public $contentsApi;
 
     /**
      * @var ResultPager
@@ -30,14 +30,14 @@ class GithubService
     private $pager;
 
     /**
-     * @param User $user
      * @param Repo $repo
+     * @param Contents $contents
      * @param ResultPager $pager
      */
-    public function __construct(User $user, Repo $repo, ResultPager $pager)
+    public function __construct(Repo $repo, Contents $contents, ResultPager $pager)
     {
-        $this->userApi = $user;
         $this->repoApi = $repo;
+        $this->contentsApi = $contents;
         $this->pager = $pager;
     }
 
@@ -57,5 +57,24 @@ class GithubService
         }
 
         return $repository;
+    }
+
+    /**
+     * Get the extended metadata for an archive.
+     *
+     * @param string $user
+     * @param string $repo
+     * @param string $ref
+     * @return array|null
+     */
+    public function download($user, $repo, $ref)
+    {
+        try {
+            $archive = $this->contentsApi->archive($user, $repo, 'tarball', $ref);
+        } catch (RuntimeException $e) {
+            $archive = null;
+        }
+
+        return $archive;
     }
 }
