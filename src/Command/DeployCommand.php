@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  *  Deploy a previously built application to a server.
  */
-class DeployBuild extends Command
+class DeployCommand extends Command
 {
     /**
      * @param string $name

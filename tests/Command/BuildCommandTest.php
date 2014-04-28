@@ -9,10 +9,10 @@ namespace QL\Hal\Agent\Command;
 
 use PHPUnit_Framework_TestCase;
 
-class CreateBuildTest extends PHPUnit_Framework_TestCase
+class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
     public function test()
     {
-        $command = new CreateBuild('derp');
+        $command = new BuildCommand('derp');
     }
 }

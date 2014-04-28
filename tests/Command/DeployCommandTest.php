@@ -9,10 +9,10 @@ namespace QL\Hal\Agent\Command;
 
 use PHPUnit_Framework_TestCase;
 
-class DeployBuildTest extends PHPUnit_Framework_TestCase
+class DeployCommandTest extends PHPUnit_Framework_TestCase
 {
     public function test()
     {
-        $command = new DeployBuild('bonk');
+        $command = new DeployCommand('bonk');
     }
 }

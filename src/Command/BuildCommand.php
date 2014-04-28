@@ -20,7 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  *  Build an application for a particular environment.
  */
-class CreateBuild extends Command
+class BuildCommand extends Command
 {
     /**
      * @var string

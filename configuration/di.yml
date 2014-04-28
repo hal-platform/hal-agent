@@ -6,11 +6,8 @@ services:
             - '%application.name%'
             - '%application.version%'
         calls:
-            - ['add', ['@command.build.create']]
-            - ['add', ['@command.build.deploy']]
-            - ['add', ['@command.build.list']]
-            - ['add', ['@command.build.package']]
-            - ['add', ['@command.build.remove']]
+            - ['add', ['@command.build']]
+            - ['add', ['@command.deploy']]
 
     logger:
         class: 'QL\Hal\Agent\DebugLogger'
@@ -18,17 +15,17 @@ services:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
-    command.build.create:
-        class: 'QL\Hal\Agent\Command\CreateBuild'
+    command.build:
+        class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
-            - 'build:create'
+            - 'build:build'
             - '@logger'
             - '@doctrine.em'
             - '@clock'
             - '@repo.build'
             - '@github'
-    command.build.deploy:
-        class: 'QL\Hal\Agent\Command\DeployBuild'
+    command.deploy:
+        class: 'QL\Hal\Agent\Command\DeployCommand'
         arguments:
             - 'build:deploy'
 
