@@ -123,16 +123,19 @@ class BuildCommand extends Command
 
         $build = $this->buildRepo->find($buildId);
         if (!$build = $this->buildRepo->find($buildId)) {
-            $this->logger->critical(sprintf(self::ERR_NOT_FOUND, $buildId));
-            $this->finish($output, '<error>FAIL 1</error>');
+            $this->error($output, sprintf(self::ERR_NOT_FOUND, $buildId));
             return 1;
         }
 
+        $output->writeln(sprintf('<info>Found build:</info> %s', $buildId));
+
         if ($build->getStatus() !== 'Waiting') {
-            $this->logger->critical(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
-            $this->finish($output, '<error>FAIL 2</error>');
+            $this->error($output, sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
             return 2;
         }
+
+        $output->writeln(sprintf('<info>Current status:</info> %s', $build->getStatus()));
+        $output->writeln(sprintf('<info>Setting status:</info> %s', 'Downloading'));
 
         // Update the build status asap so no other worker can pick it up
         $build->setStatus('Downloading');
@@ -147,27 +150,27 @@ class BuildCommand extends Command
         $commitSha = $build->getCommit();
         $resolvedRepo = sprintf('%s/%s', $ghUser, $ghRepo);
 
-        $this->logger->info('Downloading archive', [
+        $context = [
             'build' => [
                 'id' => $buildId,
                 'path' => $buildPath
             ],
             'github' => $resolvedRepo,
             'commitSha' => $commitSha
-        ]);
-
+        ];
+        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($context, JSON_PRETTY_PRINT)));
+        $this->logger->info('Downloading archive', $context);
 
         $this->logger->debug('Starting Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
         if (!$tar = $this->github->download($ghUser, $ghRepo, $commitSha)) {
-            $this->logger->critical(sprintf(self::ERR_DOWNLOAD, $commitSha, $resolvedRepo));
-            $this->finish($output, '<error>FAIL 4</error>');
+            $this->error($output, sprintf(self::ERR_DOWNLOAD, $commitSha, $resolvedRepo));
             return 4;
         }
 
         $this->logger->debug('Finished Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
-        $this->finish($output, '<question>it seemed to work?</question>');
+        $this->success($output, 'it seemed to work?');
     }
 
     /**
@@ -199,9 +202,28 @@ class BuildCommand extends Command
      * @param string $message
      * @return null
      */
-    private function finish(OutputInterface $output, $message)
+    private function success(OutputInterface $output, $message)
     {
-        $output->writeln($this->logger->output());
-        $output->writeln("\n". $message);
+        if ($loggerOutput = $this->logger->output()) {
+            $output->writeln($loggerOutput);
+        }
+
+        $output->writeln(sprintf("\n<question>%s</question>", $message));
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
+     */
+    private function error(OutputInterface $output, $message)
+    {
+        // $this->logger->critical($message);
+
+        if ($loggerOutput = $this->logger->output()) {
+            $output->writeln($loggerOutput);
+        }
+
+        $output->writeln(sprintf("\n<error>%s</error>", $message));
     }
 }
