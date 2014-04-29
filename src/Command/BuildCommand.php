@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Helper\DownloadProgressHelper;
 use QL\Hal\Agent\Github\GithubService;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
@@ -57,6 +58,11 @@ class BuildCommand extends Command
     private $github;
 
     /**
+     * @var DownloadProgressHelper
+     */
+    private $progress;
+
+    /**
      * @var string
      */
     private $buildDirectory;
@@ -68,6 +74,7 @@ class BuildCommand extends Command
      * @param Clock $clock
      * @param BuildRepository $buildRepo
      * @param GithubService $github
+     * @param DownloadProgressHelper $progress
      */
     public function __construct(
         $name,
@@ -75,7 +82,8 @@ class BuildCommand extends Command
         EntityManager $entityManager,
         Clock $clock,
         BuildRepository $buildRepo,
-        GithubService $github
+        GithubService $github,
+        DownloadProgressHelper $progress
     ) {
         parent::__construct($name);
 
@@ -85,6 +93,7 @@ class BuildCommand extends Command
 
         $this->buildRepo = $buildRepo;
         $this->github = $github;
+        $this->progress = $progress;
     }
 
     /**
@@ -163,10 +172,13 @@ class BuildCommand extends Command
 
         $this->logger->debug('Starting Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
+        $listener = $this->progress->enableDownloadProgress($output);
         if (!$tar = $this->github->download($ghUser, $ghRepo, $commitSha)) {
             $this->error($output, sprintf(self::ERR_DOWNLOAD, $commitSha, $resolvedRepo));
             return 4;
         }
+
+        $this->progress->disableDownloadProgress($listener);
 
         $this->logger->debug('Finished Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 

@@ -24,10 +24,16 @@ services:
             - '@clock'
             - '@repo.build'
             - '@github'
+            - '@utility.helper.download-progress'
     command.deploy:
         class: 'QL\Hal\Agent\Command\DeployCommand'
         arguments:
             - 'build:deploy'
+
+    utility.helper.download-progress:
+        class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
+        arguments:
+            - '@github.guzzleHttpClient'
 
 ### imported from hal-core
 
@@ -87,9 +93,17 @@ services:
     github.httpClient:
         class: 'QL\Hal\Agent\Github\HackCachedHttpClient'
         arguments:
-            - {base_url: 'http://git/api/v3/'}
+            - []
+            - '@github.guzzleHttpClient'
         calls:
             - ['authenticate', ['%github.token%', null, 'http_token']]
+    github.guzzleHttpClient:
+        class: 'Guzzle\Http\Client'
+        arguments:
+            - 'http://git/api/v3/'
+            -
+                curl.options:
+                    progress: true
     github.service.repository-contents:
         class: 'Github\Api\Repository\Contents'
         arguments: ['@github.client']
