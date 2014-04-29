@@ -147,9 +147,9 @@ class BuildCommand extends Command
         $output->writeln(sprintf('<info>Setting status:</info> %s', 'Downloading'));
 
         // Update the build status asap so no other worker can pick it up
-        $build->setStatus('Downloading');
-        $this->entityManager->merge($build);
-        $this->entityManager->flush();
+        // $build->setStatus('Downloading');
+        // $this->entityManager->merge($build);
+        // $this->entityManager->flush();
 
         // build properties
         $buildPath = $this->generateBuildDirectory($buildId);
@@ -173,11 +173,14 @@ class BuildCommand extends Command
         $this->logger->debug('Starting Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
         $listener = $this->progress->enableDownloadProgress($output);
+
+        // Needs to move to some external process. Shouldn't store this in memory
         if (!$tar = $this->github->download($ghUser, $ghRepo, $commitSha)) {
+            $output->writeln('');
             $this->error($output, sprintf(self::ERR_DOWNLOAD, $commitSha, $resolvedRepo));
             return 4;
         }
-
+        $output->writeln('');
         $this->progress->disableDownloadProgress($listener);
 
         $this->logger->debug('Finished Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
