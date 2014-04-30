@@ -14,8 +14,8 @@ class Packer
     /**
      * @var string
      */
-    const SUCCESS_PACKED = 'Build successfully packed';
-    const ERR_PACKED = 'Build did not pack correctly';
+    const SUCCESS_PACKED = 'Build successfully archived';
+    const ERR_PACKED = 'Build archive did not pack correctly';
 
     /**
      * @var string

@@ -14,8 +14,8 @@ class Builder
     /**
      * @var string
      */
-    const SUCCESS_BUILDING = 'Build successfully packed';
-    const ERR_BUILDING = 'Build did not pack correctly';
+    const SUCCESS_BUILDING = 'Build command successfully run';
+    const ERR_BUILDING = 'Build command executed with errors';
 
     /**
      * @var string
