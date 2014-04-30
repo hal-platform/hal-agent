@@ -817,7 +817,7 @@
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "83c875f286a716300285665f06ed1c563225cfbf"
+                "reference": "3070dc0269a366075a10b8f5dc2822b041c23417"
             },
             "require": {
                 "doctrine/orm": "~2.4",
@@ -873,7 +873,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2014-04-24 21:07:47"
+            "time": "2014-04-30 18:52:30"
         },
         {
             "name": "ql/mcp-core",
