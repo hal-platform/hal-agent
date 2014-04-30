@@ -8,6 +8,7 @@ services:
         calls:
             - ['add', ['@command.build']]
             - ['add', ['@command.deploy']]
+            - ['add', ['@command.create']]
 
     logger:
         class: 'QL\Hal\Agent\DebugLogger'
@@ -15,6 +16,14 @@ services:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
+    command.create:
+        class: 'QL\Hal\Agent\Command\CreateCommand'
+        arguments:
+            - 'build:create'
+            - '@doctrine.em'
+            - '@clock'
+            - '@repo.repository'
+            - '@repo.environment'
     command.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
@@ -25,7 +34,7 @@ services:
             - '@build.resolver'
             - '@build.downloader'
             - '@build.unpacker'
-            # - '@build.builder'
+            - '@build.builder'
             - '@build.packer'
             - '@utility.helper.download-progress'
     command.deploy:
@@ -62,8 +71,8 @@ services:
             - '@build.logger'
     build.logger:
         class: 'QL\Hal\Agent\Build\Logger'
-### imported from hal-core
 
+### imported from hal-core
 
     # Repositories
     repo.build:
