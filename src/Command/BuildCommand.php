@@ -137,6 +137,33 @@ class BuildCommand extends Command
     }
 
     /**
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
+     */
+    private function cleanup()
+    {
+        foreach ($this->artifacts as $path) {
+            exec(sprintf('rm -rf %s*', escapeshellarg($path)));
+        }
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
+     */
+    private function error(OutputInterface $output, $message)
+    {
+        if ($this->build) {
+            $this->build->setStatus('Error');
+        }
+
+        $this->finish($output);
+        $output->writeln(sprintf("<error>%s</error>", $message));
+    }
+
+    /**
      *  Run the command
      *
      *  @param InputInterface $input
@@ -220,35 +247,6 @@ class BuildCommand extends Command
 
     /**
      * @param OutputInterface $output
-     * @return null
-     */
-    private function success(OutputInterface $output)
-    {
-        if ($this->build) {
-            $this->build->setStatus('Finished');
-        }
-
-        $this->finish($output);
-        $output->writeln(sprintf("<question>%s</question>", 'Success!'));
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     * @return null
-     */
-    private function error(OutputInterface $output, $message)
-    {
-        if ($this->build) {
-            $this->build->setStatus('Error');
-        }
-
-        $this->finish($output);
-        $output->writeln(sprintf("<error>%s</error>", $message));
-    }
-
-    /**
-     * @param OutputInterface $output
      * @param string $message
      * @return null
      */
@@ -265,18 +263,6 @@ class BuildCommand extends Command
         }
 
         $this->cleanup();
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     * @return null
-     */
-    private function cleanup()
-    {
-        foreach ($this->artifacts as $path) {
-            exec(sprintf('rm -rf %s*', escapeshellarg($path)));
-        }
     }
 
     /**
@@ -297,6 +283,20 @@ class BuildCommand extends Command
 
         $this->entityManager->merge($this->build);
         $this->entityManager->flush();
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @return null
+     */
+    private function success(OutputInterface $output)
+    {
+        if ($this->build) {
+            $this->build->setStatus('Finished');
+        }
+
+        $this->finish($output);
+        $output->writeln(sprintf("<question>%s</question>", 'Success!'));
     }
 
     /**
