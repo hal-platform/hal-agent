@@ -187,7 +187,7 @@ class BuildCommand extends Command
         $this->build = $properties['build'];
 
         // Update the build status asap so no other worker can pick it up
-        $this->setEntityStatus('Downloading', true);
+        $this->setEntityStatus('Building', true);
 
         $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
 
@@ -222,8 +222,6 @@ class BuildCommand extends Command
         if (!$properties['buildCommand']) {
             goto SKIP_BUILDING;
         }
-
-        $this->setEntityStatus('Building');
 
         $this->logger->debug('Building started', $this->timer());
         $output->writeln('<comment>Building...</comment>');
@@ -292,7 +290,7 @@ class BuildCommand extends Command
     private function success(OutputInterface $output)
     {
         if ($this->build) {
-            $this->build->setStatus('Finished');
+            $this->build->setStatus('Success');
         }
 
         $this->finish($output);
