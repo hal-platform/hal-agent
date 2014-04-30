@@ -49,7 +49,6 @@ class DownloadProgressHelper
     private function onCompletion(OutputInterface $output, Closure $listener)
     {
         return function (Event $event, $name, EventDispatcherInterface $dispatcher) use ($output, $listener) {
-            $output->writeln('');
             $dispatcher->removeListener('curl.callback.progress', $listener);
         };
     }
@@ -67,18 +66,23 @@ class DownloadProgressHelper
             }
 
             $percentage = round($event['downloaded'] / $event['download_size'], 2) * 100;
-            $message = sprintf('<info>Downloading:</info> %s%%', $percentage);
+            $message = sprintf('<info>Percentage complete:</info> %s%%', $percentage);
             if ($prev === $message) {
                 return;
             }
 
             if ($prev !== null) {
-                $message = str_pad($message, strlen($prev), "\x20", STR_PAD_RIGHT);
+                $message = str_pad($message, strlen($prev), ' ', STR_PAD_RIGHT);
             }
 
             $prev = $message;
             $output->write("\x0D");
-            $output->write($message);
+
+            if ($percentage == '100') {
+                $output->writeln($message);
+            } else {
+                $output->write($message);
+            }
         };
     }
 }

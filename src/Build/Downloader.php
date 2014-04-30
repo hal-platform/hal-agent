@@ -15,7 +15,8 @@ class Downloader
     /**
      * @var string
      */
-    const ERR_DOWNLOAD = 'Github reference "%s" from repository "%s" could not be downloaded!';
+    const SUCCESS = 'Build successfully unpacked';
+    const ERR_FAILURE = 'Github archive could not be downloaded';
 
     /**
      * @var LoggerInterface
@@ -46,9 +47,17 @@ class Downloader
      */
     public function __invoke($user, $repo, $ref, $target)
     {
-        if (!$isSuccessful = $this->github->download($user, $repo, $ref, $target)) {
-            $message = sprintf(self::ERR_DOWNLOAD, $ref, sprintf('%s/%s', $user, $repo));
-            $this->logger->critical($message);
+        $context = [
+            'repository' => sprintf('%s/%s', $user, $repo),
+            'reference' => $ref,
+            'downloadTarget' => $target
+        ];
+
+        if ($isSuccessful = $this->github->download($user, $repo, $ref, $target)) {
+            $this->logger->info(self::SUCCESS, $context);
+
+        } else {
+            $this->logger->critical(self::ERR_FAILURE, $context);
         }
 
         return $isSuccessful;

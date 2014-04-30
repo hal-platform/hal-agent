@@ -10,8 +10,11 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use Psr\Log\LoggerInterface;
+// use QL\Hal\Agent\Build\Builder;
 use QL\Hal\Agent\Build\Downloader;
+use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
+use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -49,6 +52,21 @@ class BuildCommand extends Command
     private $downloader;
 
     /**
+     * @var Unpacker
+     */
+    private $unpacker;
+
+    /**
+     * @var Builder
+     */
+    // private $builder;
+
+    /**
+     * @var Packer
+     */
+    private $packer;
+
+    /**
      * @var DownloadProgressHelper
      */
     private $progress;
@@ -65,6 +83,8 @@ class BuildCommand extends Command
      * @param Clock $clock
      * @param Resolver $resolver
      * @param Downloader $downloader
+     * @param Builder $builder
+     * @param Packer $packer
      * @param DownloadProgressHelper $progress
      */
     public function __construct(
@@ -74,6 +94,9 @@ class BuildCommand extends Command
         Clock $clock,
         Resolver $resolver,
         Downloader $downloader,
+        Unpacker $unpacker,
+        // Builder $builder,
+        Packer $packer,
         DownloadProgressHelper $progress
     ) {
         parent::__construct($name);
@@ -84,6 +107,9 @@ class BuildCommand extends Command
 
         $this->resolver = $resolver;
         $this->downloader = $downloader;
+        $this->unpacker = $unpacker;
+        // $this->builder = $builder;
+        $this->packer = $packer;
 
         $this->progress = $progress;
 
@@ -116,6 +142,7 @@ class BuildCommand extends Command
         $buildId = $input->getArgument('BUILD_ID');
 
         // resolve
+        $output->writeln('<comment>Resolving...</comment>');
         if (!$properties = call_user_func($this->resolver, $buildId)) {
             $this->error($output, 'Build details could not be resolved.');
             return 1;
@@ -130,39 +157,45 @@ class BuildCommand extends Command
         // $this->entityManager->flush();
 
         $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
-        $this->logger->info('Downloading archive', $properties);
-        $output->writeln(sprintf('<info>Archive Target:</info> %s', $properties['buildArchive']));
-
-        $this->logger->debug('Starting Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
         // add artifacts for cleanup
-        $this->artifacts = array_merge($this->artifacts, [$properties['buildArchive'], $properties['buildPath']]);
+        $this->artifacts = array_merge($this->artifacts, [$properties['archiveFile'], $properties['buildPath']]);
 
         // download
         $downloadProperties = [
             $properties['githubUser'],
             $properties['githubRepo'],
             $properties['githubReference'],
-            $properties['buildArchive']
+            $properties['archiveFile']
         ];
 
+        $output->writeln('<comment>Downloading...</comment>');
         $this->progress->enableDownloadProgress($output);
-        if (!$tar = call_user_func_array($this->downloader, $downloadProperties)) {
-            $this->error('Repository archive could not be downloaded.');
+        if (!call_user_func_array($this->downloader, $downloadProperties)) {
+            $this->error($output, 'Repository archive could not be downloaded.');
             return 2;
         }
 
-        $this->logger->debug('Finished Download', [
-            'time' => $this->clock->read()->format('H:i:s', 'America/Detroit')
-        ]);
-
         // unpack
-        // $this->unpack($archiveTarget, $buildPath);
+        $output->writeln('<comment>Unpacking...</comment>');
+        if (!call_user_func($this->unpacker, $properties['archiveFile'], $properties['buildPath'])) {
+            $this->error($output, 'Repository archive could not be unpacked.');
+            return 4;
+        }
 
+        // building goes here
+        $output->writeln('<comment>Building...</comment>');
+        $output->writeln('<info>noop</info>');
+
+        // pack
+        $output->writeln('<comment>Packing...</comment>');
+        if (!call_user_func($this->packer, $properties['buildPath'], $properties['buildFile'])) {
+            $this->error($output, 'Build archive could not be packed.');
+            return 8;
+        }
 
         $this->success($output);
     }
-
 
     /**
      * @param OutputInterface $output
@@ -213,5 +246,17 @@ class BuildCommand extends Command
         foreach ($this->artifacts as $path) {
             exec(sprintf('rm -rf %s*', escapeshellarg($path)));
         }
+    }
+
+    /**
+     * @var array $context
+     * @return array
+     */
+    private function timer(array $context = [])
+    {
+        return array_merge(
+            $context,
+            ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]
+        );
     }
 }

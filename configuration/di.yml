@@ -24,6 +24,9 @@ services:
             - '@clock'
             - '@build.resolver'
             - '@build.downloader'
+            - '@build.unpacker'
+            # - '@build.builder'
+            - '@build.packer'
             - '@utility.helper.download-progress'
     command.deploy:
         class: 'QL\Hal\Agent\Command\DeployCommand'
@@ -45,6 +48,18 @@ services:
         arguments:
             - '@build.logger'
             - '@github.archive'
+    build.unpacker:
+        class: 'QL\Hal\Agent\Build\Unpacker'
+        arguments:
+            - '@build.logger'
+    build.builder:
+        class: 'QL\Hal\Agent\Build\Builder'
+        arguments:
+            - '@build.logger'
+    build.packer:
+        class: 'QL\Hal\Agent\Build\Packer'
+        arguments:
+            - '@build.logger'
     build.logger:
         class: 'QL\Hal\Agent\Build\Logger'
 ### imported from hal-core

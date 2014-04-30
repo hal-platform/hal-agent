@@ -20,11 +20,13 @@ class Resolver
      * @var string
      */
     const FS_DIRECTORY_PREFIX = 'hal9000-build-%s';
-    const FS_ARCHIVE_PREFIX = 'hal9000-archive-%s.tar.qz';
+    const FS_ARCHIVE_PREFIX = 'hal9000-build-%s.tar.gz';
+    const FS_BUILD_PREFIX = 'hal9000-%s.tar.gz';
 
     /**
      * @var string
      */
+    const FOUND = 'Found build: %s';
     const ERR_NOT_FOUND = 'Build "%s" could not be found!';
     const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt. Or can it?';
 
@@ -65,7 +67,7 @@ class Resolver
             return null;
         }
 
-        $this->logger->info(sprintf('Found build: %s', $buildId));
+        $this->logger->info(sprintf(self::FOUND, $buildId));
 
         if ($build->getStatus() !== 'Waiting') {
             $this->logger->error(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
@@ -74,8 +76,9 @@ class Resolver
 
         return [
             'build' => $build,
-            'buildArchive' => $this->generateArchiveTarget($build->getId()),
-            'buildPath' => $this->generateBuildDirectory($build->getId()),
+            'archiveFile' => $this->generateRepositoryArchive($build->getId()),
+            'buildPath' => $this->generateBuildPath($build->getId()),
+            'buildFile' => $this->generateBuildArchive($build->getId()),
             'githubUser' => $build->getRepository()->getGithubUser(),
             'githubRepo' => $build->getRepository()->getGithubRepo(),
             'githubReference' => $build->getCommit()
@@ -91,26 +94,38 @@ class Resolver
         $this->buildDirectory = $directory;
     }
 
+
     /**
-     *  Generate, but don't create, an archive target
+     *  Generate a target for the build archive.
      *
      *  @param string $id
      *  @return string
      */
-    private function generateArchiveTarget($id)
+    private function generateRepositoryArchive($id)
     {
         return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_ARCHIVE_PREFIX, substr($id, 0, 7));
     }
 
     /**
-     *  Generate, but don't create, a build directory for later use
+     *  Generate a target for the build path.
      *
      *  @param string $id
      *  @return string
      */
-    private function generateBuildDirectory($id)
+    private function generateBuildPath($id)
     {
         return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_DIRECTORY_PREFIX, substr($id, 0, 7));
+    }
+
+    /**
+     *  Generate a target for the github repository archive.
+     *
+     *  @param string $id
+     *  @return string
+     */
+    private function generateBuildArchive($id)
+    {
+        return $this->getBuildDirectory() . 'debug-archive/' . sprintf(self::FS_BUILD_PREFIX, substr($id, 0, 7));
     }
 
     /**
