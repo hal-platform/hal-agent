@@ -10,12 +10,13 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use Psr\Log\LoggerInterface;
-// use QL\Hal\Agent\Build\Builder;
+use QL\Hal\Agent\Build\Builder;
 use QL\Hal\Agent\Build\Downloader;
 use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
+use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -59,7 +60,7 @@ class BuildCommand extends Command
     /**
      * @var Builder
      */
-    // private $builder;
+    private $builder;
 
     /**
      * @var Packer
@@ -75,6 +76,11 @@ class BuildCommand extends Command
      * @var string[]
      */
     private $artifacts;
+
+    /**
+     * @var Build|null
+     */
+    private $build;
 
     /**
      * @param string $name
@@ -95,7 +101,7 @@ class BuildCommand extends Command
         Resolver $resolver,
         Downloader $downloader,
         Unpacker $unpacker,
-        // Builder $builder,
+        Builder $builder,
         Packer $packer,
         DownloadProgressHelper $progress
     ) {
@@ -108,7 +114,7 @@ class BuildCommand extends Command
         $this->resolver = $resolver;
         $this->downloader = $downloader;
         $this->unpacker = $unpacker;
-        // $this->builder = $builder;
+        $this->builder = $builder;
         $this->packer = $packer;
 
         $this->progress = $progress;
@@ -139,6 +145,9 @@ class BuildCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // expected build statuses
+        // Waiting, Downloading, Building, Finished, Error
+
         $buildId = $input->getArgument('BUILD_ID');
 
         // resolve
@@ -148,13 +157,10 @@ class BuildCommand extends Command
             return 1;
         }
 
-        $output->writeln(sprintf('<info>Setting status:</info> %s', 'Downloading'));
+        $this->build = $properties['build'];
 
         // Update the build status asap so no other worker can pick it up
-        // $build = $properties['build'];
-        // $build->setStatus('Downloading');
-        // $this->entityManager->merge($build);
-        // $this->entityManager->flush();
+        $this->setEntityStatus('Downloading', true);
 
         $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
 
@@ -169,12 +175,14 @@ class BuildCommand extends Command
             $properties['archiveFile']
         ];
 
+        $this->logger->debug('Download started', $this->timer());
         $output->writeln('<comment>Downloading...</comment>');
         $this->progress->enableDownloadProgress($output);
         if (!call_user_func_array($this->downloader, $downloadProperties)) {
             $this->error($output, 'Repository archive could not be downloaded.');
             return 2;
         }
+        $this->logger->debug('Download finished', $this->timer());
 
         // unpack
         $output->writeln('<comment>Unpacking...</comment>');
@@ -183,15 +191,28 @@ class BuildCommand extends Command
             return 4;
         }
 
-        // building goes here
+        // build
+        if (!$properties['buildCommand']) {
+            goto SKIP_BUILDING;
+        }
+
+        $this->setEntityStatus('Building');
+
+        $this->logger->debug('Building started', $this->timer());
         $output->writeln('<comment>Building...</comment>');
-        $output->writeln('<info>noop</info>');
+        if (!call_user_func($this->builder, $properties['buildPath'], $properties['buildCommand'])) {
+            $this->error($output, 'Build command failed.');
+            return 8;
+        }
+        $this->logger->debug('Building finished', $this->timer());
+
+        SKIP_BUILDING:
 
         // pack
         $output->writeln('<comment>Packing...</comment>');
         if (!call_user_func($this->packer, $properties['buildPath'], $properties['buildFile'])) {
-            $this->error($output, 'Build archive could not be packed.');
-            return 8;
+            $this->error($output, 'Build archive could not be created.');
+            return 16;
         }
 
         $this->success($output);
@@ -203,10 +224,12 @@ class BuildCommand extends Command
      */
     private function success(OutputInterface $output)
     {
-        $this->finish($output);
+        if ($this->build) {
+            $this->build->setStatus('Finished');
+        }
 
-        $message = 'it seemed to work?';
-        $output->writeln(sprintf("<question>%s</question>", $message));
+        $this->finish($output);
+        $output->writeln(sprintf("<question>%s</question>", 'Success!'));
     }
 
     /**
@@ -216,6 +239,10 @@ class BuildCommand extends Command
      */
     private function error(OutputInterface $output, $message)
     {
+        if ($this->build) {
+            $this->build->setStatus('Error');
+        }
+
         // $this->logger->critical($message);
 
         $this->finish($output);
@@ -233,6 +260,12 @@ class BuildCommand extends Command
             // $output->writeln($loggerOutput);
         }
 
+        if ($this->build) {
+            $this->build->setEnd($this->clock->read());
+            $this->entityManager->merge($this->build);
+            $this->entityManager->flush();
+        }
+
         $this->cleanup();
     }
 
@@ -246,6 +279,26 @@ class BuildCommand extends Command
         foreach ($this->artifacts as $path) {
             exec(sprintf('rm -rf %s*', escapeshellarg($path)));
         }
+    }
+
+    /**
+     * @param string $status
+     * @param boolean $start
+     * @return null
+     */
+    private function setEntityStatus($status, $start = false)
+    {
+        if (!$this->build) {
+            return;
+        }
+
+        $this->build->setStatus($status);
+        if ($start) {
+            $this->build->setStart($this->clock->read());
+        }
+
+        $this->entityManager->merge($this->build);
+        $this->entityManager->flush();
     }
 
     /**

@@ -28,7 +28,7 @@ class Resolver
      */
     const FOUND = 'Found build: %s';
     const ERR_NOT_FOUND = 'Build "%s" could not be found!';
-    const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt. Or can it?';
+    const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
 
     /**
      * @var LoggerInterface
@@ -46,8 +46,8 @@ class Resolver
     private $buildDirectory;
 
     /**
-     * @var LoggerInterface $logger
-     * @var BuildRepository $buildRepo
+     * @param LoggerInterface $logger
+     * @param BuildRepository $buildRepo
      */
     public function __construct(LoggerInterface $logger, BuildRepository $buildRepo)
     {
@@ -57,7 +57,7 @@ class Resolver
 
     /**
      * @param string $buildId
-     * @return array
+     * @return array|null
      */
     public function __invoke($buildId)
     {
@@ -76,9 +76,12 @@ class Resolver
 
         return [
             'build' => $build,
+            'buildCommand' => $build->getRepository()->getBuildCmd(),
+
             'archiveFile' => $this->generateRepositoryArchive($build->getId()),
             'buildPath' => $this->generateBuildPath($build->getId()),
             'buildFile' => $this->generateBuildArchive($build->getId()),
+
             'githubUser' => $build->getRepository()->getGithubUser(),
             'githubRepo' => $build->getRepository()->getGithubRepo(),
             'githubReference' => $build->getCommit()

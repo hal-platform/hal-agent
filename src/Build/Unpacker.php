@@ -20,6 +20,9 @@ class Unpacker
     const ERR_UNPACK_FAILURE = 'Unable to unpack repository archive';
     const ERR_SANITIZED = 'Unpacked archive could not be sanitized';
 
+    /**
+     * @var string
+     */
     const CMD_UNPACK = 'mkdir %1$s && tar -xzf %2$s --directory=%1$s';
     const CMD_MOVE = <<<'CMD'
 cd %1$s && \
@@ -34,7 +37,7 @@ CMD;
     private $logger;
 
     /**
-     * @var LoggerInterface $logger
+     * @param LoggerInterface $logger
      */
     public function __construct(LoggerInterface $logger)
     {

@@ -17,6 +17,9 @@ class Packer
     const SUCCESS_PACKED = 'Build successfully packed';
     const ERR_PACKED = 'Build did not pack correctly';
 
+    /**
+     * @var string
+     */
     const CMD_UNPACK = 'cd %s && tar -czf %s .';
 
     /**
@@ -25,7 +28,7 @@ class Packer
     private $logger;
 
     /**
-     * @var LoggerInterface $logger
+     * @param LoggerInterface $logger
      */
     public function __construct(LoggerInterface $logger)
     {

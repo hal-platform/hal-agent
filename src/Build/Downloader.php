@@ -29,8 +29,8 @@ class Downloader
     private $github;
 
     /**
-     * @var LoggerInterface $logger
-     * @var ArchiveApi $github
+     * @param LoggerInterface $logger
+     * @param ArchiveApi $github
      */
     public function __construct(LoggerInterface $logger, ArchiveApi $github)
     {
