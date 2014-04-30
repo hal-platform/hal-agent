@@ -7,9 +7,11 @@
 
 namespace QL\Hal\Agent\Helper;
 
+use Closure;
 use Guzzle\Common\Event;
 use Guzzle\Http\Client;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class DownloadProgressHelper
 {
@@ -28,30 +30,35 @@ class DownloadProgressHelper
 
     /**
      * @param OutputInterface $output
-     * @return mixed
+     * @return null
      */
     public function enableDownloadProgress(OutputInterface $output)
     {
-        $listener = $this->progress($output);
-        $this->client->getEventDispatcher()->addListener('curl.callback.progress', $this->progress($output));
+        $dispatcher = $this->client->getEventDispatcher();
+        $listener = $this->onUpdate($output);
 
-        return $listener;
+        $dispatcher->addListener('curl.callback.progress', $listener);
+        $dispatcher->addListener('request.complete', $this->onCompletion($output, $listener));
     }
 
     /**
-     * @param mixed $listener
-     * @return null
+     * @param OutputInterface $output
+     * @param Closure $listener
+     * @return Closure
      */
-    public function disableDownloadProgress($listener)
+    private function onCompletion(OutputInterface $output, Closure $listener)
     {
-        $this->client->getEventDispatcher()->removeListener('curl.callback.progress', $listener);
+        return function (Event $event, $name, EventDispatcherInterface $dispatcher) use ($output, $listener) {
+            $output->writeln('');
+            $dispatcher->removeListener('curl.callback.progress', $listener);
+        };
     }
 
     /**
      * @param OutputInterface $output
      * @return Closure
      */
-    private function progress(OutputInterface $output)
+    private function onUpdate(OutputInterface $output)
     {
         $prev = null;
         return function (Event $event) use ($output, &$prev) {

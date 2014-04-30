@@ -4,9 +4,6 @@
 # autoloader
 (@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
 
-// hack!
-ini_set('memory_limit', '1G');
-
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;

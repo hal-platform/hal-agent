@@ -10,9 +10,9 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Build\Downloader;
+use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
-use QL\Hal\Agent\Github\GithubService;
-use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,15 +23,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class BuildCommand extends Command
 {
-    /**
-     * @var string
-     */
-    const FS_DIRECTORY_PREFIX = 'hal9000-build-';
-
-    const ERR_NOT_FOUND = 'Build "%s" could not be found!';
-    const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt. Or can it?';
-    const ERR_DOWNLOAD = 'Github reference "%s" from repository "%s" could not be downloaded!';
-
     /**
      * @var LoggerInterface
      */
@@ -48,14 +39,14 @@ class BuildCommand extends Command
     private $clock;
 
     /**
-     * @var BuildRepository
+     * @var Resolver
      */
-    private $buildRepo;
+    private $resolver;
 
     /**
-     * @var GithubService
+     * @var Downloader
      */
-    private $github;
+    private $downloader;
 
     /**
      * @var DownloadProgressHelper
@@ -63,17 +54,17 @@ class BuildCommand extends Command
     private $progress;
 
     /**
-     * @var string
+     * @var string[]
      */
-    private $buildDirectory;
+    private $artifacts;
 
     /**
      * @param string $name
      * @param LoggerInterface $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
-     * @param BuildRepository $buildRepo
-     * @param GithubService $github
+     * @param Resolver $resolver
+     * @param Downloader $downloader
      * @param DownloadProgressHelper $progress
      */
     public function __construct(
@@ -81,8 +72,8 @@ class BuildCommand extends Command
         LoggerInterface $logger,
         EntityManager $entityManager,
         Clock $clock,
-        BuildRepository $buildRepo,
-        GithubService $github,
+        Resolver $resolver,
+        Downloader $downloader,
         DownloadProgressHelper $progress
     ) {
         parent::__construct($name);
@@ -91,18 +82,12 @@ class BuildCommand extends Command
         $this->entityManager = $entityManager;
         $this->clock = $clock;
 
-        $this->buildRepo = $buildRepo;
-        $this->github = $github;
-        $this->progress = $progress;
-    }
+        $this->resolver = $resolver;
+        $this->downloader = $downloader;
 
-    /**
-     * @param string $directory
-     *  @return null
-     */
-    public function setBaseBuildDirectory($directory)
-    {
-        $this->buildDirectory = $directory;
+        $this->progress = $progress;
+
+        $this->artifacts = [];
     }
 
     /**
@@ -130,100 +115,65 @@ class BuildCommand extends Command
     {
         $buildId = $input->getArgument('BUILD_ID');
 
-        $build = $this->buildRepo->find($buildId);
-        if (!$build = $this->buildRepo->find($buildId)) {
-            $this->error($output, sprintf(self::ERR_NOT_FOUND, $buildId));
+        // resolve
+        if (!$properties = call_user_func($this->resolver, $buildId)) {
+            $this->error($output, 'Build details could not be resolved.');
             return 1;
         }
 
-        $output->writeln(sprintf('<info>Found build:</info> %s', $buildId));
-
-        if ($build->getStatus() !== 'Waiting') {
-            $this->error($output, sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
-            return 2;
-        }
-
-        $output->writeln(sprintf('<info>Current status:</info> %s', $build->getStatus()));
         $output->writeln(sprintf('<info>Setting status:</info> %s', 'Downloading'));
 
         // Update the build status asap so no other worker can pick it up
+        // $build = $properties['build'];
         // $build->setStatus('Downloading');
         // $this->entityManager->merge($build);
         // $this->entityManager->flush();
 
-        // build properties
-        $buildPath = $this->generateBuildDirectory($buildId);
-
-        $ghUser = $build->getRepository()->getGithubUser();
-        $ghRepo = $build->getRepository()->getGithubRepo();
-        $commitSha = $build->getCommit();
-        $resolvedRepo = sprintf('%s/%s', $ghUser, $ghRepo);
-
-        $context = [
-            'build' => [
-                'id' => $buildId,
-                'path' => $buildPath
-            ],
-            'github' => $resolvedRepo,
-            'commitSha' => $commitSha
-        ];
-        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($context, JSON_PRETTY_PRINT)));
-        $this->logger->info('Downloading archive', $context);
+        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
+        $this->logger->info('Downloading archive', $properties);
+        $output->writeln(sprintf('<info>Archive Target:</info> %s', $properties['buildArchive']));
 
         $this->logger->debug('Starting Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
 
-        $listener = $this->progress->enableDownloadProgress($output);
+        // add artifacts for cleanup
+        $this->artifacts = array_merge($this->artifacts, [$properties['buildArchive'], $properties['buildPath']]);
 
-        // Needs to move to some external process. Shouldn't store this in memory
-        if (!$tar = $this->github->download($ghUser, $ghRepo, $commitSha)) {
-            $output->writeln('');
-            $this->error($output, sprintf(self::ERR_DOWNLOAD, $commitSha, $resolvedRepo));
-            return 4;
-        }
-        $output->writeln('');
-        $this->progress->disableDownloadProgress($listener);
+        // download
+        $downloadProperties = [
+            $properties['githubUser'],
+            $properties['githubRepo'],
+            $properties['githubReference'],
+            $properties['buildArchive']
+        ];
 
-        $this->logger->debug('Finished Download', ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]);
-
-        $this->success($output, 'it seemed to work?');
-    }
-
-    /**
-     *  Generate, but don't create, a random directory for later use
-     *
-     *  @param string $id
-     *  @return string
-     */
-    private function generateBuildDirectory($id)
-    {
-        return $this->getBuildDirectory() . self::FS_DIRECTORY_PREFIX . substr($id, 0, 7);
-    }
-
-    /**
-     *  @param string $id
-     *  @return string
-     */
-    private function getBuildDirectory()
-    {
-        if (!$this->buildDirectory) {
-            $this->buildDirectory = sys_get_temp_dir();
+        $this->progress->enableDownloadProgress($output);
+        if (!$tar = call_user_func_array($this->downloader, $downloadProperties)) {
+            $this->error('Repository archive could not be downloaded.');
+            return 2;
         }
 
-        return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $this->logger->debug('Finished Download', [
+            'time' => $this->clock->read()->format('H:i:s', 'America/Detroit')
+        ]);
+
+        // unpack
+        // $this->unpack($archiveTarget, $buildPath);
+
+
+        $this->success($output);
     }
+
 
     /**
      * @param OutputInterface $output
-     * @param string $message
      * @return null
      */
-    private function success(OutputInterface $output, $message)
+    private function success(OutputInterface $output)
     {
-        if ($loggerOutput = $this->logger->output()) {
-            $output->writeln($loggerOutput);
-        }
+        $this->finish($output);
 
-        $output->writeln(sprintf("\n<question>%s</question>", $message));
+        $message = 'it seemed to work?';
+        $output->writeln(sprintf("<question>%s</question>", $message));
     }
 
     /**
@@ -235,10 +185,33 @@ class BuildCommand extends Command
     {
         // $this->logger->critical($message);
 
+        $this->finish($output);
+        $output->writeln(sprintf("<error>%s</error>", $message));
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
+     */
+    private function finish(OutputInterface $output)
+    {
         if ($loggerOutput = $this->logger->output()) {
-            $output->writeln($loggerOutput);
+            // $output->writeln($loggerOutput);
         }
 
-        $output->writeln(sprintf("\n<error>%s</error>", $message));
+        $this->cleanup();
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
+     */
+    private function cleanup()
+    {
+        foreach ($this->artifacts as $path) {
+            exec(sprintf('rm -rf %s*', escapeshellarg($path)));
+        }
     }
 }

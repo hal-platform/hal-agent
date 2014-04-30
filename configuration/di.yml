@@ -19,11 +19,11 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - '@logger'
+            - '@build.logger'
             - '@doctrine.em'
             - '@clock'
-            - '@repo.build'
-            - '@github'
+            - '@build.resolver'
+            - '@build.downloader'
             - '@utility.helper.download-progress'
     command.deploy:
         class: 'QL\Hal\Agent\Command\DeployCommand'
@@ -35,6 +35,18 @@ services:
         arguments:
             - '@github.guzzleHttpClient'
 
+    build.resolver:
+        class: 'QL\Hal\Agent\Build\Resolver'
+        arguments:
+            - '@build.logger'
+            - '@repo.build'
+    build.downloader:
+        class: 'QL\Hal\Agent\Build\Downloader'
+        arguments:
+            - '@build.logger'
+            - '@github.archive'
+    build.logger:
+        class: 'QL\Hal\Agent\Build\Logger'
 ### imported from hal-core
 
 
@@ -83,18 +95,15 @@ services:
 
 ### imported from hal
 
-    github:
-        class: 'QL\Hal\Agent\Github\GithubService'
-        arguments:
-            - '@github.service.repository-contents'
+    github.archive:
+        class: 'QL\Hal\Agent\Github\ArchiveApi'
+        arguments: ['@github.client']
     github.client:
         class: 'Github\Client'
         arguments: ['@github.httpClient']
     github.httpClient:
-        class: 'QL\Hal\Agent\Github\HackCachedHttpClient'
-        arguments:
-            - []
-            - '@github.guzzleHttpClient'
+        class: 'Github\HttpClient\HttpClient'
+        arguments: [[], '@github.guzzleHttpClient']
         calls:
             - ['authenticate', ['%github.token%', null, 'http_token']]
     github.guzzleHttpClient:
@@ -104,6 +113,3 @@ services:
             -
                 curl.options:
                     progress: true
-    github.service.repository-contents:
-        class: 'Github\Api\Repository\Contents'
-        arguments: ['@github.client']
