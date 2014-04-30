@@ -243,8 +243,6 @@ class BuildCommand extends Command
             $this->build->setStatus('Error');
         }
 
-        // $this->logger->critical($message);
-
         $this->finish($output);
         $output->writeln(sprintf("<error>%s</error>", $message));
     }
@@ -256,8 +254,8 @@ class BuildCommand extends Command
      */
     private function finish(OutputInterface $output)
     {
-        if ($loggerOutput = $this->logger->output()) {
-            // $output->writeln($loggerOutput);
+        if ($loggerOutput = $this->logger->output(false)) {
+            $output->writeln($loggerOutput);
         }
 
         if ($this->build) {

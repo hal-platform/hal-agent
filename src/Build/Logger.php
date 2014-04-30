@@ -38,13 +38,14 @@ class Logger extends AbstractLogger
     }
 
     /**
+     * @param boolean $showContext
      * @return string
      */
-    public function output()
+    public function output($showContext = false)
     {
         $output = '';
         foreach ($this->messages as $message) {
-            $output .= $this->format($message);
+            $output .= $this->format($message, $showContext);
         }
 
         return $output;
@@ -52,16 +53,17 @@ class Logger extends AbstractLogger
 
     /**
      * @param array $message
+     * @param boolean $showContext
      * @return string
      */
-    private function format(array $message)
+    private function format(array $message, $showContext)
     {
         list($level, $subject, $context) = $message;
 
         $formatted = str_pad(sprintf('[%s]', strtoupper($level)), 10) . ' ';
         $formatted .= $subject . "\n";
 
-        if ($context) {
+        if ($context && $showContext) {
             $context = json_encode($context, JSON_PRETTY_PRINT);
             $formatted .= $context . "\n";
         }
