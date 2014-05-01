@@ -78,12 +78,18 @@ class BuildCommand extends Command
     private $artifacts;
 
     /**
+     * @var boolean
+     */
+    private $debugMode;
+
+    /**
      * @var Build|null
      */
     private $build;
 
     /**
      * @param string $name
+     * @param boolean $debugMode
      * @param LoggerInterface $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
@@ -95,6 +101,7 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
+        $debugMode,
         LoggerInterface $logger,
         EntityManager $entityManager,
         Clock $clock,
@@ -107,6 +114,7 @@ class BuildCommand extends Command
     ) {
         parent::__construct($name);
 
+        $this->debugMode = $debugMode;
         $this->logger = $logger;
         $this->entityManager = $entityManager;
         $this->clock = $clock;
@@ -250,7 +258,7 @@ class BuildCommand extends Command
      */
     private function finish(OutputInterface $output)
     {
-        if ($loggerOutput = $this->logger->output(false)) {
+        if ($this->debugMode && $loggerOutput = $this->logger->output(false)) {
             $output->writeln($loggerOutput);
         }
 

@@ -28,6 +28,7 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
+            - '%debug%'
             - '@build.logger'
             - '@doctrine.em'
             - '@clock'
