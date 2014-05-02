@@ -62,22 +62,25 @@ services:
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
             - '@build.logger'
+            - '@process.builder=' # = signifies a prototype service
     build.builder:
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
             - '@build.logger'
+            - '@process.builder=' # = signifies a prototype service
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
             - '@build.logger'
+            - '@process.builder=' # = signifies a prototype service
     build.logger:
         class: 'QL\Hal\Agent\Build\Logger'
 
     process.builder:
         class: 'Symfony\Component\Process\ProcessBuilder'
         scope: prototype
-        factory_class: 'Symfony\Component\Process\ProcessBuilder'
-        factory_method: 'create'
+        calls:
+            - ['inheritEnvironmentVariables', [false]]
 
 ### imported from hal-core
 

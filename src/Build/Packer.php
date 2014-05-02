@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
 class Packer
 {
@@ -19,21 +19,23 @@ class Packer
     const ERR_PACKED = 'Build archive did not pack correctly';
 
     /**
-     * @var string
-     */
-    const CMD_UNPACK = 'tar -czf %s .';
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
 
     /**
-     * @param LoggerInterface $logger
+     * @var ProcessBuilder
      */
-    public function __construct(LoggerInterface $logger)
+    private $processBuilder;
+
+    /**
+     * @param LoggerInterface $logger
+     * @param ProcessBuilder $processBuilder
+     */
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
     {
         $this->logger = $logger;
+        $this->processBuilder = $processBuilder;
     }
 
     /**
@@ -48,7 +50,12 @@ class Packer
             'archive' => $targetFile
         ];
 
-        $process = new Process(sprintf(self::CMD_UNPACK, $targetFile), $buildPath);
+        $cmd = ['tar', '-czf', $targetFile, '.'];
+        $process = $this->processBuilder
+            ->setWorkingDirectory($buildPath)
+            ->setArguments($cmd)
+            ->getProcess();
+
         $process->run();
 
         if ($process->isSuccessful()) {

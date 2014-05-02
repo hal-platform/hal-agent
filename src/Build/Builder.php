@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
 class Builder
 {
@@ -19,21 +19,23 @@ class Builder
     const ERR_BUILDING = 'Build command executed with errors';
 
     /**
-     * @var string
-     */
-    const CMD_BUILD = '%s 2>&1';
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
 
     /**
-     * @param LoggerInterface $logger
+     * @var ProcessBuilder
      */
-    public function __construct(LoggerInterface $logger)
+    private $processBuilder;
+
+    /**
+     * @param LoggerInterface $logger
+     * @param ProcessBuilder $processBuilder
+     */
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
     {
         $this->logger = $logger;
+        $this->processBuilder = $processBuilder;
     }
 
     /**
@@ -49,13 +51,14 @@ class Builder
             'buildCommand' => $command
         ];
 
-        $process = new Process(
-            sprintf(self::CMD_BUILD, $command),
-            $buildPath,
-            $env,
-            null,
-            600
-        );
+        $process = $this->processBuilder
+            ->setWorkingDirectory($buildPath)
+            ->setArguments([''])
+            ->addEnvironmentVariables($env)
+            ->setTimeout(600)
+            ->getProcess();
+        $process->setCommandLine($command . ' 2>&1');
+
         $process->run();
 
         // we always want the output

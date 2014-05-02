@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
 class Unpacker
 {
@@ -24,28 +24,23 @@ class Unpacker
     const ERR_SANITIZED = 'Unpacked archive could not be sanitized';
 
     /**
-     * @var string
-     */
-    const CMD_UNPACK = 'mkdir %1$s && tar -xzf %2$s --directory=%1$s';
-    const CMD_REMOVE = 'rm -r %s';
-    const CMD_MOVE = 'mv * .[^.]* ..';
-
-    // this command will fail if there is more than 1 child directory because the wildcard
-    // is expanded prior to execution. This is a good thing. We expect github archives
-    // to unpack a single directory
-    const CMD_GLOB = 'find %s -name * -type d';
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
 
     /**
-     * @param LoggerInterface $logger
+     * @var ProcessBuilder
      */
-    public function __construct(LoggerInterface $logger)
+    private $processBuilder;
+
+    /**
+     * @param LoggerInterface $logger
+     * @param ProcessBuilder $processBuilder
+     */
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
     {
         $this->logger = $logger;
+        $this->processBuilder = $processBuilder;
     }
 
     /**
@@ -82,14 +77,26 @@ class Unpacker
      */
     private function locateUnpackedArchive($buildPath, array $context)
     {
-        $command = sprintf(self::CMD_GLOB, $buildPath);
-        $process = new Process($command, $buildPath);
+        $cmd = ['find', $buildPath, '-type', 'd'];
+        $process = $this->processBuilder
+            ->setWorkingDirectory($buildPath)
+            ->setArguments($cmd)
+            ->getProcess();
+
+        $process->setCommandLine($process->getCommandLine() . ' -name * -prune');
+
         $process->run();
 
         if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_LOCATED, $context);
-            return trim($process->getOutput());
+            return strtok($process->getOutput(), "\n");
         }
+
+        $context = array_merge($context, [
+            'command' => $process->getCommandLine(),
+            'exitCode' => $process->getExitCode(),
+            'output' => $process->getOutput()
+        ]);
 
         $this->logger->critical(self::ERR_LOCATED, $context);
         return null;
@@ -102,20 +109,36 @@ class Unpacker
      */
     private function sanitizeUnpackedArchive($unpackedPath, array $context)
     {
-        $process = new Process(self::CMD_MOVE, $unpackedPath);
+        $process = $this->processBuilder
+            ->setWorkingDirectory($unpackedPath)
+            ->setArguments([''])
+            ->getProcess()
+            // processbuilder escapes input, but we need these wildcards to resolve correctly unescaped
+            ->setCommandLine('mv * .[^.]* ..');
+
         $process->run();
 
         if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_SANITIZED, $context);
 
             // remove unpacked directory
-            $removal = new Process(sprintf(self::CMD_REMOVE, $unpackedPath));
-            $removal->run();
+            $cmd = ['rm', '-r', $unpackedPath];
+            $removalProcess = $this->processBuilder
+                ->setWorkingDirectory(null)
+                ->setArguments($cmd)
+                ->getProcess();
+
+            $removalProcess->run();
 
             return true;
         }
 
-        $context = array_merge($context, ['output' => $process->getOutput()]);
+        $context = array_merge($context, [
+            'command' => $process->getCommandLine(),
+            'exitCode' => $process->getExitCode(),
+            'output' => $process->getOutput()
+        ]);
+
         $this->logger->critical(self::ERR_SANITIZED, $context);
         return false;
     }
@@ -128,17 +151,32 @@ class Unpacker
      */
     private function unpackArchive($buildPath, $archive, array $context)
     {
-        $process = new Process(
-            sprintf(self::CMD_UNPACK, $buildPath, $archive)
-        );
-        $process->run();
+        $makeCommand = ['mkdir', $buildPath];
+        $unpackCommand = ['tar', '-xzf', $archive, sprintf('--directory=%s', $buildPath)];
 
-        if ($process->isSuccessful()) {
+        $makeProcess = $this->processBuilder
+            ->setWorkingDirectory(null)
+            ->setArguments($makeCommand)
+            ->getProcess();
+
+        $unpackProcess = $this->processBuilder
+            ->setWorkingDirectory(null)
+            ->setArguments($unpackCommand)
+            ->getProcess();
+
+        // We do it like this so unpack will not be run if makeProcess is not succesful
+        if ($makeProcess->run() === 0 && $unpackProcess->run() === 0) {
             $this->logger->info(self::SUCCESS_UNPACK, $context);
             return true;
         }
 
-        $context = array_merge($context, ['output' => $process->getOutput()]);
+        $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;
+        $context = array_merge($context, [
+            'command' => $failedCommand->getCommandLine(),
+            'exitCode' => $failedCommand->getExitCode(),
+            'output' => $failedCommand->getOutput()
+        ]);
+
         $this->logger->critical(self::ERR_UNPACK_FAILURE, $context);
         return false;
     }

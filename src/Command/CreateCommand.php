@@ -71,6 +71,11 @@ class CreateCommand extends Command
                 'GIT_REF',
                 InputArgument::REQUIRED,
                 'The git reference to build.'
+            )->addOption(
+               'porcelain',
+               null,
+               InputOption::VALUE_NONE,
+               'If set, Only the build id will be returned'
             );
     }
 
@@ -111,7 +116,13 @@ class CreateCommand extends Command
         $this->entityManager->flush();
 
         $id = $build->getId();
-        $output->writeln(sprintf('<question>Build created: %s</question>', $id));
+        $text = $id;
+
+        if (!$input->getOption('porcelain')) {
+            $text = sprintf('<question>Build created: %s</question>', $id);
+        }
+
+        $output->writeln($text);
     }
 
     /**
