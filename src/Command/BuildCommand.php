@@ -231,9 +231,15 @@ class BuildCommand extends Command
             goto SKIP_BUILDING;
         }
 
+        $buildProperties = [
+            $properties['buildPath'],
+            $properties['buildCommand'],
+            $properties['environmentVariables']
+        ];
+
         $this->logger->debug('Building started', $this->timer());
         $output->writeln('<comment>Building...</comment>');
-        if (!call_user_func($this->builder, $properties['buildPath'], $properties['buildCommand'])) {
+        if (!call_user_func_array($this->builder, $buildProperties)) {
             $this->error($output, 'Build command failed.');
             return 8;
         }

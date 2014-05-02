@@ -84,7 +84,9 @@ class Resolver
 
             'githubUser' => $build->getRepository()->getGithubUser(),
             'githubRepo' => $build->getRepository()->getGithubRepo(),
-            'githubReference' => $build->getCommit()
+            'githubReference' => $build->getCommit(),
+
+            'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
         ];
     }
 
@@ -142,5 +144,37 @@ class Resolver
         }
 
         return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * @param Build $build
+     * @return array
+     */
+    private function generateBuildEnvironmentVariables(Build $build)
+    {
+        $getFromConfig = '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin';
+
+        $vars = [
+            // 'PATH' => $getFromConfig,
+            'HAL_COMMIT' => $build->getCommit(),
+            'HAL_GITREF' => $build->getBranch(),
+            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
+            'HAL_HOSTNAME' => null,
+            'HAL_PATH' => null,
+            'HAL_USER' => null,
+            'HAL_USER_DISPLAY' => null,
+            'HAL_COMMONID' => null,
+            'HAL_REPO' => $build->getRepository()->getKey(),
+        ];
+
+        if ($user = $build->getUser()) {
+            $vars = array_merge($vars, [
+                'HAL_USER' => $user->getHandle(),
+                'HAL_USER_DISPLAY' => $user->getName(),
+                'HAL_COMMONID' => $user->getId(),
+            ]);
+        }
+
+        return $vars;
     }
 }

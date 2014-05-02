@@ -38,9 +38,10 @@ class Builder
     /**
      * @param string $buildPath
      * @param string $command
+     * @param array $env
      * @return boolean
      */
-    public function __invoke($buildPath, $command)
+    public function __invoke($buildPath, $command, array $env)
     {
         $context = [
             'buildPath' => $buildPath,
@@ -51,6 +52,10 @@ class Builder
         $context['environmentVariables'] = $out;
 
         $command = sprintf(self::CMD_BUILD, $buildPath, $command);
+        $command = 'env';
+        // $commandWithVars = $this->prependEnvironment($command, $env);
+        // $context['actualBuildCommand'] = $commandWithVars;
+
         exec($command, $output, $code);
 
         // we always want the output
@@ -61,7 +66,23 @@ class Builder
             return true;
         }
 
+        $context = array_merge($context, ['buildExitCode' => $code]);
         $this->logger->critical(self::ERR_BUILDING, $context);
         return false;
+    }
+
+    /**
+     * @param string $command
+     * @param array $env
+     * @return string
+     */
+    private function prependEnvironment($command, array $env)
+    {
+        $cmdEnvs = '';
+        foreach ($env as $name => $property) {
+            $cmdEnvs .= escapeshellarg($name) . '=' . escapeshellarg($property) . '; ';
+        }
+
+        return $cmdEnvs . $command;
     }
 }
