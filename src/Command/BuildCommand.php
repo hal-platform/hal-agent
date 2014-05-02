@@ -21,6 +21,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  *  Build an application for a particular environment.
@@ -73,6 +74,11 @@ class BuildCommand extends Command
     private $progress;
 
     /**
+     * @var ProcessBuilder
+     */
+    private $processBuilder;
+
+    /**
      * @var string[]
      */
     private $artifacts;
@@ -98,6 +104,7 @@ class BuildCommand extends Command
      * @param Builder $builder
      * @param Packer $packer
      * @param DownloadProgressHelper $progress
+     * @param ProcessBuilder $processBuilder
      */
     public function __construct(
         $name,
@@ -110,7 +117,8 @@ class BuildCommand extends Command
         Unpacker $unpacker,
         Builder $builder,
         Packer $packer,
-        DownloadProgressHelper $progress
+        DownloadProgressHelper $progress,
+        ProcessBuilder $processBuilder
     ) {
         parent::__construct($name);
 
@@ -126,6 +134,7 @@ class BuildCommand extends Command
         $this->packer = $packer;
 
         $this->progress = $progress;
+        $this->processBuilder = $processBuilder;
 
         $this->artifacts = [];
     }
@@ -145,14 +154,18 @@ class BuildCommand extends Command
     }
 
     /**
-     * @param OutputInterface $output
-     * @param string $message
      * @return null
      */
     private function cleanup()
     {
+        $this->processBuilder->setPrefix(['rm', '-rf']);
+
         foreach ($this->artifacts as $path) {
-            exec(sprintf('rm -rf %s*', escapeshellarg($path)));
+            $process = $this->processBuilder
+                ->setArguments([$path])
+                ->getProcess();
+
+            $process->run();
         }
     }
 
@@ -167,12 +180,13 @@ class BuildCommand extends Command
             $this->build->setStatus('Error');
         }
 
+        $this->finish($output);
+
         if ($this->debugMode && $loggerOutput = $this->logger->output(true)) {
             $output->writeln($loggerOutput);
         }
 
-        $this->finish($output);
-        $output->writeln(sprintf("<error>%s</error>", $message));
+        $output->writeln(sprintf('<error>%s</error>', $message));
     }
 
     /**
@@ -308,7 +322,12 @@ class BuildCommand extends Command
         }
 
         $this->finish($output);
-        $output->writeln(sprintf("<question>%s</question>", 'Success!'));
+
+        if ($this->debugMode && $loggerOutput = $this->logger->output(false)) {
+            $output->writeln($loggerOutput);
+        }
+
+        $output->writeln(sprintf('<question>%s</question>', 'Success!'));
     }
 
     /**

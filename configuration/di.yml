@@ -10,8 +10,6 @@ services:
             - ['add', ['@command.deploy']]
             - ['add', ['@command.create']]
 
-    logger:
-        class: 'QL\Hal\Agent\DebugLogger'
     clock:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
@@ -38,6 +36,7 @@ services:
             - '@build.builder'
             - '@build.packer'
             - '@utility.helper.download-progress'
+            - '@process.builder=' # = signifies a prototype service
     command.deploy:
         class: 'QL\Hal\Agent\Command\DeployCommand'
         arguments:
@@ -73,6 +72,12 @@ services:
             - '@build.logger'
     build.logger:
         class: 'QL\Hal\Agent\Build\Logger'
+
+    process.builder:
+        class: 'Symfony\Component\Process\ProcessBuilder'
+        scope: prototype
+        factory_class: 'Symfony\Component\Process\ProcessBuilder'
+        factory_method: 'create'
 
 ### imported from hal-core
 
