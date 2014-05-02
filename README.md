@@ -28,18 +28,16 @@ bin/console [command] [options] --help
 
 ## Available Commands
 
--   build:create
-    Create a build job for an application based on an environment
--   build:build
-    Download, build, and archive a build
-
+Command        | Description
+-------------- | ----------
+`build:create` | Create a build job for an application based on an environment
+`build:build`  | Download, build, and archive a build
 
 ## Not Implemented
--   build:deploy
-    Deploy an application that was previously built.
--   builds:list
-    List all existing builds.
--   builds:remove
-    Remove an existing build.
--   builds:package
-    Package an existing build for use elsewhere.
+
+Command          | Description
+---------------- | ----------
+`build:deploy`   | Deploy an application that was previously built.
+`builds:list`    | List all existing builds.
+`builds:remove`  | Remove an existing build.
+`builds:package` | Package an existing build for use elsewhere.
