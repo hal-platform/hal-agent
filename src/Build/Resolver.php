@@ -68,7 +68,6 @@ class Resolver
      */
     public function __invoke($buildId)
     {
-        $build = $this->buildRepo->find($buildId);
         if (!$build = $this->buildRepo->find($buildId)) {
             $this->logger->error(sprintf(self::ERR_NOT_FOUND, $buildId));
             return null;
