@@ -15,7 +15,7 @@ class Downloader
     /**
      * @var string
      */
-    const SUCCESS = 'Build successfully downloaded';
+    const SUCCESS = 'Build downloaded';
     const ERR_FAILURE = 'Github archive could not be downloaded';
 
     /**

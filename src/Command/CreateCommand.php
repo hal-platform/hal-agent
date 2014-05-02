@@ -119,6 +119,6 @@ class CreateCommand extends Command
      */
     private function generateBuildId()
     {
-        return sha1(microtime(true) . mt_rand(10000,90000));
+        return substr(sha1(microtime(true) . mt_rand(10000, 90000)), 0, 20);
     }
 }

@@ -8,19 +8,20 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Process\Process;
 
 class Packer
 {
     /**
      * @var string
      */
-    const SUCCESS_PACKED = 'Build successfully archived';
+    const SUCCESS_PACKED = 'Build archived';
     const ERR_PACKED = 'Build archive did not pack correctly';
 
     /**
      * @var string
      */
-    const CMD_UNPACK = 'cd %s && tar -czf %s .';
+    const CMD_UNPACK = 'tar -czf %s .';
 
     /**
      * @var LoggerInterface
@@ -47,15 +48,15 @@ class Packer
             'archive' => $targetFile
         ];
 
-        $command = sprintf(self::CMD_UNPACK, $buildPath, $targetFile);
-        exec($command, $output, $code);
+        $process = new Process(sprintf(self::CMD_UNPACK, $targetFile), $buildPath);
+        $process->run();
 
-        if ($code === 0) {
+        if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_PACKED, $context);
             return true;
         }
 
-        $context = array_merge($context, ['output' => $output]);
+        $context = array_merge($context, ['output' => $process->getOutput()]);
         $this->logger->critical(self::ERR_PACKED, $context);
         return false;
     }

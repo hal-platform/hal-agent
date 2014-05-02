@@ -43,16 +43,23 @@ class Resolver
     /**
      * @var string
      */
+    private $envPath;
+
+    /**
+     * @var string
+     */
     private $buildDirectory;
 
     /**
      * @param LoggerInterface $logger
      * @param BuildRepository $buildRepo
+     * @param string $envPath
      */
-    public function __construct(LoggerInterface $logger, BuildRepository $buildRepo)
+    public function __construct(LoggerInterface $logger, BuildRepository $buildRepo, $envPath)
     {
         $this->logger = $logger;
         $this->buildRepo = $buildRepo;
+        $this->envPath = $envPath;
     }
 
     /**
@@ -78,7 +85,7 @@ class Resolver
             'build' => $build,
             'buildCommand' => $build->getRepository()->getBuildCmd(),
 
-            'archiveFile' => $this->generateRepositoryArchive($build->getId()),
+            'archiveFile' => $this->generateRepositoryDownload($build->getId()),
             'buildPath' => $this->generateBuildPath($build->getId()),
             'buildFile' => $this->generateBuildArchive($build->getId()),
 
@@ -106,9 +113,9 @@ class Resolver
      *  @param string $id
      *  @return string
      */
-    private function generateRepositoryArchive($id)
+    private function generateRepositoryDownload($id)
     {
-        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_ARCHIVE_PREFIX, substr($id, 0, 7));
+        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_ARCHIVE_PREFIX, $id);
     }
 
     /**
@@ -119,7 +126,7 @@ class Resolver
      */
     private function generateBuildPath($id)
     {
-        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_DIRECTORY_PREFIX, substr($id, 0, 7));
+        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_DIRECTORY_PREFIX, $id);
     }
 
     /**
@@ -130,7 +137,18 @@ class Resolver
      */
     private function generateBuildArchive($id)
     {
-        return $this->getBuildDirectory() . 'debug-archive/' . sprintf(self::FS_BUILD_PREFIX, substr($id, 0, 7));
+        return $this->getBuildDirectory() . 'debug-archive/' . sprintf(self::FS_BUILD_PREFIX, $id);
+    }
+
+    /**
+     *  Generate a target for $HOME and/or $TEMP
+     *
+     *  @param string $id
+     *  @return string
+     */
+    private function generateHomePath()
+    {
+        return $this->getBuildDirectory() . 'debug-home';
     }
 
     /**
@@ -152,28 +170,16 @@ class Resolver
      */
     private function generateBuildEnvironmentVariables(Build $build)
     {
-        $getFromConfig = '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin';
-
         $vars = [
-            // 'PATH' => $getFromConfig,
+            'HOME' => $this->generateHomePath(),
+            'PATH' => $this->envPath,
+
+            'HAL_BUILDID' => $build->getId(),
             'HAL_COMMIT' => $build->getCommit(),
             'HAL_GITREF' => $build->getBranch(),
             'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_HOSTNAME' => null,
-            'HAL_PATH' => null,
-            'HAL_USER' => null,
-            'HAL_USER_DISPLAY' => null,
-            'HAL_COMMONID' => null,
-            'HAL_REPO' => $build->getRepository()->getKey(),
+            'HAL_REPO' => $build->getRepository()->getKey()
         ];
-
-        if ($user = $build->getUser()) {
-            $vars = array_merge($vars, [
-                'HAL_USER' => $user->getHandle(),
-                'HAL_USER_DISPLAY' => $user->getName(),
-                'HAL_COMMONID' => $user->getId(),
-            ]);
-        }
 
         return $vars;
     }

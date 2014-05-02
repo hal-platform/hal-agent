@@ -167,6 +167,10 @@ class BuildCommand extends Command
             $this->build->setStatus('Error');
         }
 
+        if ($this->debugMode && $loggerOutput = $this->logger->output(true)) {
+            $output->writeln($loggerOutput);
+        }
+
         $this->finish($output);
         $output->writeln(sprintf("<error>%s</error>", $message));
     }
@@ -264,10 +268,6 @@ class BuildCommand extends Command
      */
     private function finish(OutputInterface $output)
     {
-        if ($this->debugMode && $loggerOutput = $this->logger->output(false)) {
-            $output->writeln($loggerOutput);
-        }
-
         if ($this->build) {
             $this->build->setEnd($this->clock->read());
             $this->entityManager->merge($this->build);

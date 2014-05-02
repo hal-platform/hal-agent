@@ -8,19 +8,20 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Process\Process;
 
 class Builder
 {
     /**
      * @var string
      */
-    const SUCCESS_BUILDING = 'Build command successfully run';
+    const SUCCESS_BUILDING = 'Build command executed';
     const ERR_BUILDING = 'Build command executed with errors';
 
     /**
      * @var string
      */
-    const CMD_BUILD = 'cd %s && %s 2>&1';
+    const CMD_BUILD = '%s 2>&1';
 
     /**
      * @var LoggerInterface
@@ -48,41 +49,25 @@ class Builder
             'buildCommand' => $command
         ];
 
-        exec('env', $out, $code);
-        $context['environmentVariables'] = $out;
-
-        $command = sprintf(self::CMD_BUILD, $buildPath, $command);
-        $command = 'env';
-        // $commandWithVars = $this->prependEnvironment($command, $env);
-        // $context['actualBuildCommand'] = $commandWithVars;
-
-        exec($command, $output, $code);
+        $process = new Process(
+            sprintf(self::CMD_BUILD, $command),
+            $buildPath,
+            $env,
+            null,
+            600
+        );
+        $process->run();
 
         // we always want the output
-        $context = array_merge($context, ['output' => $output]);
+        $context = array_merge($context, ['output' => $process->getOutput()]);
 
-        if ($code === 0) {
+        if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_BUILDING, $context);
             return true;
         }
 
-        $context = array_merge($context, ['buildExitCode' => $code]);
+        $context = array_merge($context, ['exitCode' => $process->getExitCode()]);
         $this->logger->critical(self::ERR_BUILDING, $context);
         return false;
-    }
-
-    /**
-     * @param string $command
-     * @param array $env
-     * @return string
-     */
-    private function prependEnvironment($command, array $env)
-    {
-        $cmdEnvs = '';
-        foreach ($env as $name => $property) {
-            $cmdEnvs .= escapeshellarg($name) . '=' . escapeshellarg($property) . '; ';
-        }
-
-        return $cmdEnvs . $command;
     }
 }

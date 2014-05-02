@@ -53,6 +53,7 @@ services:
         arguments:
             - '@build.logger'
             - '@repo.build'
+            - '%environment.path%'
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:

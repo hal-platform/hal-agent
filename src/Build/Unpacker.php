@@ -8,28 +8,32 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Process\Process;
 
 class Unpacker
 {
     /**
      * @var string
      */
-    const SUCCESS_UNPACK = 'Repository successfully unpacked';
-    const SUCCESS_SANITIZED = 'Unpacked archive sanitized successfully';
+    const SUCCESS_UNPACK = 'Repository unpacked';
+    const SUCCESS_LOCATED = 'Unpacked archive located';
+    const SUCCESS_SANITIZED = 'Unpacked archive sanitized';
 
     const ERR_UNPACK_FAILURE = 'Unable to unpack repository archive';
+    const ERR_LOCATED = 'Unpacked archive could not be located';
     const ERR_SANITIZED = 'Unpacked archive could not be sanitized';
 
     /**
      * @var string
      */
     const CMD_UNPACK = 'mkdir %1$s && tar -xzf %2$s --directory=%1$s';
-    const CMD_MOVE = <<<'CMD'
-cd %1$s && \
-find . -name . -o -exec sh -c 'mv "$@" "$0"' ../ {} + -type d -prune && \
-cd .. && \
-rm -r %1$s
-CMD;
+    const CMD_REMOVE = 'rm -r %s';
+    const CMD_MOVE = 'mv * .[^.]* ..';
+
+    // this command will fail if there is more than 1 child directory because the wildcard
+    // is expanded prior to execution. This is a good thing. We expect github archives
+    // to unpack a single directory
+    const CMD_GLOB = 'find %s -name * -type d';
 
     /**
      * @var LoggerInterface
@@ -78,12 +82,16 @@ CMD;
      */
     private function locateUnpackedArchive($buildPath, array $context)
     {
-        $results = glob(sprintf('%s/*', $buildPath), GLOB_ONLYDIR);
-        if (is_array($results) && count($results) == 1) {
-            return reset($results);
+        $command = sprintf(self::CMD_GLOB, $buildPath);
+        $process = new Process($command, $buildPath);
+        $process->run();
+
+        if ($process->isSuccessful()) {
+            $this->logger->info(self::SUCCESS_LOCATED, $context);
+            return trim($process->getOutput());
         }
 
-        $this->logger->critical(self::ERR_SANITIZED, $context);
+        $this->logger->critical(self::ERR_LOCATED, $context);
         return null;
     }
 
@@ -94,15 +102,20 @@ CMD;
      */
     private function sanitizeUnpackedArchive($unpackedPath, array $context)
     {
-        $command = sprintf(self::CMD_MOVE, $unpackedPath);
-        exec($command, $output, $code);
+        $process = new Process(self::CMD_MOVE, $unpackedPath);
+        $process->run();
 
-        if ($code === 0) {
+        if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_SANITIZED, $context);
+
+            // remove unpacked directory
+            $removal = new Process(sprintf(self::CMD_REMOVE, $unpackedPath));
+            $removal->run();
+
             return true;
         }
 
-        $context = array_merge($context, ['output' => $output]);
+        $context = array_merge($context, ['output' => $process->getOutput()]);
         $this->logger->critical(self::ERR_SANITIZED, $context);
         return false;
     }
@@ -115,15 +128,17 @@ CMD;
      */
     private function unpackArchive($buildPath, $archive, array $context)
     {
-        $command = sprintf(self::CMD_UNPACK, $buildPath, $archive);
-        exec($command, $output, $code);
+        $process = new Process(
+            sprintf(self::CMD_UNPACK, $buildPath, $archive)
+        );
+        $process->run();
 
-        if ($code === 0) {
+        if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_UNPACK, $context);
             return true;
         }
 
-        $context = array_merge($context, ['output' => $output]);
+        $context = array_merge($context, ['output' => $process->getOutput()]);
         $this->logger->critical(self::ERR_UNPACK_FAILURE, $context);
         return false;
     }
