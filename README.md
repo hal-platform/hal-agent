@@ -26,11 +26,16 @@ Help for any command may be viewed by adding the --help flag as follows.
 bin/console [command] [options] --help
 ```
 
-Available Commands
-------------------
--   build
-    Build an application for a particular environment.
--   deploy
+## Available Commands
+
+-   build:create
+    Create a build job for an application based on an environment
+-   build:build
+    Download, build, and archive a build
+
+
+## Not Implemented
+-   build:deploy
     Deploy an application that was previously built.
 -   builds:list
     List all existing builds.
