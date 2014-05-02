@@ -54,7 +54,9 @@
         "ql/hal-core":                  "2.*@dev",
         "symfony/config":               "~2.4",
         "symfony/console":              "~2.4",
-        "symfony/dependency-injection": "~2.4"
+        "symfony/dependency-injection": "~2.4",
+        "symfony/filesystem":           "~2.4",
+        "symfony/process":              "~2.4"
     },
     "require-dev": {
         "phpmd/phpmd":                  "*",
