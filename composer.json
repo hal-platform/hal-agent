@@ -59,6 +59,7 @@
         "symfony/process":              "~2.4"
     },
     "require-dev": {
+        "mockery/mockery":              "*",
         "phpmd/phpmd":                  "*",
         "phpunit/phpunit":              "3.7.*",
         "squizlabs/php_codesniffer":    "*"

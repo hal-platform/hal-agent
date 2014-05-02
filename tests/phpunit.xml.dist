@@ -25,6 +25,10 @@
         </whitelist>
     </filter>
 
+    <listeners>
+        <listener class="\Mockery\Adapter\Phpunit\TestListener"></listener>
+    </listeners>
+
     <logging>
     <!--
         <log type="coverage-html" target="../phpunit/coverage" charset="UTF-8" highlight="true" lowUpperBound="98" highLowerBound="99"/>
