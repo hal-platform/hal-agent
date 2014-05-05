@@ -28,17 +28,31 @@ bin/console [command] [options] --help
 
 ## Available Commands
 
-Command        | Description
--------------- | ----------
-`build:create` | Create a build job for an application based on an environment
-`build:build`  | Download, build, and archive a build
+Command          | Description
+---------------- | ----------
+`build:create`   | Create a build job for an application based on an environment
+`build:build`    | Download, build, and archive a build
+`push:create`    | Create a push job for an application based on a build and deployment
+`push:push`      | Push a built application to a server
 
 ## Not Implemented
 
 Command          | Description
 ---------------- | ----------
-`push:create`    | Create a push job for an application based on a build and deployment
-`push:push`      | Push a built application to a server
 `build:list`     | List all existing builds.
 `build:remove`   | Remove archive for a build.
 `build:package`  | Package an existing build for use elsewhere.
+
+## Testing
+
+The porcelain commands can be used to create and build entities in a single process:
+
+Build example:
+```
+bin/console build:build `bin/console build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain`
+```
+
+Push example:
+```
+bin/console push:push `bin/console push:create BUILD_ID DEPLOYMENT_ID --porcelain`
+```
