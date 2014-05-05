@@ -6,23 +6,24 @@ services:
             - '%application.name%'
             - '%application.version%'
         calls:
-            - ['add', ['@command.build']]
-            - ['add', ['@command.deploy']]
-            - ['add', ['@command.create']]
+            - ['add', ['@command.build.create']]
+            - ['add', ['@command.build.build']]
+            - ['add', ['@command.push.create']]
+            - ['add', ['@command.push.push']]
 
     clock:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
-    command.create:
-        class: 'QL\Hal\Agent\Command\CreateCommand'
+    command.build.create:
+        class: 'QL\Hal\Agent\Command\CreateBuildCommand'
         arguments:
             - 'build:create'
             - '@doctrine.em'
             - '@clock'
             - '@repo.repository'
             - '@repo.environment'
-    command.build:
+    command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
@@ -37,10 +38,21 @@ services:
             - '@build.packer'
             - '@utility.helper.download-progress'
             - '@process.builder=' # = signifies a prototype service
-    command.deploy:
-        class: 'QL\Hal\Agent\Command\DeployCommand'
+    command.push.create:
+        class: 'QL\Hal\Agent\Command\CreatePushCommand'
         arguments:
-            - 'build:deploy'
+            - 'push:create'
+            - '@doctrine.em'
+            - '@clock'
+            - '@repo.build'
+            - '@repo.deployment'
+    command.push.push:
+        class: 'QL\Hal\Agent\Command\PushCommand'
+        arguments:
+            - 'push:push'
+            - '%debug%'
+            - '@build.logger'
+            - '@push.resolver'
 
     utility.helper.download-progress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
@@ -82,6 +94,12 @@ services:
         calls:
             - ['inheritEnvironmentVariables', [false]]
 
+    push.resolver:
+        class: 'QL\Hal\Agent\Push\Resolver'
+        arguments:
+            - '@build.logger'
+            - '@repo.build'
+            - '@repo.deployment'
 ### imported from hal-core
 
     # Repositories
@@ -91,6 +109,12 @@ services:
         factory_method:   getRepository
         arguments:
             - 'QL\Hal\Core\Entity\Build'
+    repo.deployment:
+        class: 'QL\Hal\Core\Entity\Repository\DeploymentRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Deployment'
     repo.environment:
         class: 'QL\Hal\Core\Entity\Repository\EnvironmentRepository'
         factory_service:  doctrine.em

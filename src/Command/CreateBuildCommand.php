@@ -19,9 +19,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- *  Create a build
+ *  Create a build job
  */
-class CreateCommand extends Command
+class CreateBuildCommand extends Command
 {
     /**
      * @var string
@@ -43,7 +43,6 @@ class CreateCommand extends Command
      * @var RepositoryRepository
      */
     private $repoRepo;
-
 
     /**
      * @var EnvironmentRepository

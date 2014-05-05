@@ -13,7 +13,7 @@ use Mockery;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class CreateCommandTest extends PHPUnit_Framework_TestCase
+class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
 {
     public $em;
     public $envRepo;
@@ -45,7 +45,7 @@ class CreateCommandTest extends PHPUnit_Framework_TestCase
             'GIT_REF' => '3'
         ]);
 
-        $command = new CreateCommand(
+        $command = new CreateBuildCommand(
             'derp:cmd',
             $this->em,
             $this->clock,
@@ -78,7 +78,7 @@ OUTPUT;
             'GIT_REF' => '3'
         ]);
 
-        $command = new CreateCommand(
+        $command = new CreateBuildCommand(
             'derp:cmd',
             $this->em,
             $this->clock,

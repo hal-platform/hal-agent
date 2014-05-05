@@ -37,7 +37,8 @@ Command        | Description
 
 Command          | Description
 ---------------- | ----------
-`build:deploy`   | Deploy an application that was previously built.
-`builds:list`    | List all existing builds.
-`builds:remove`  | Remove an existing build.
-`builds:package` | Package an existing build for use elsewhere.
+`push:create`    | Create a push job for an application based on a build and deployment
+`push:push`      | Push a built application to a server
+`build:list`     | List all existing builds.
+`build:remove`   | Remove archive for a build.
+`build:package`  | Package an existing build for use elsewhere.
