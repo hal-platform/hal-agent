@@ -23,9 +23,31 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CreateCommand extends Command
 {
+    /**
+     * @var string
+     */
+    const ERR_REPO_NOT_FOUND = '<error>Repository ID "%s" not found.</error>';
+    const ERR_ENV_NOT_FOUND = '<error>Environment ID "%s" not found.</error>';
+
+    /**
+     * @var EntityManager
+     */
     private $entityManager;
+
+    /**
+     * @var Clock
+     */
     private $clock;
+
+    /**
+     * @var RepositoryRepository
+     */
     private $repoRepo;
+
+
+    /**
+     * @var EnvironmentRepository
+     */
     private $environmentRepo;
 
     /**
@@ -93,12 +115,12 @@ class CreateCommand extends Command
         $reference = $input->getArgument('GIT_REF');
 
         if (!$repository = $this->repoRepo->find($repositoryId)) {
-            $output->writeln(sprintf('<error>Repository ID "%s" not found.</error>', $repositoryId));
+            $output->writeln(sprintf(self::ERR_REPO_NOT_FOUND, $repositoryId));
             return 1;
         }
 
         if (!$environment = $this->environmentRepo->find($environmentId)) {
-            $output->writeln(sprintf('<error>Environment ID "%s" not found.</error>', $environmentId));
+            $output->writeln(sprintf(self::ERR_ENV_NOT_FOUND, $environmentId));
             return 2;
         }
 

@@ -13,7 +13,6 @@ class DeployCommandTest extends PHPUnit_Framework_TestCase
 {
     public function test()
     {
-        $this->markTestSkipped('This test is broken');
         $command = new DeployCommand('bonk');
     }
 }
