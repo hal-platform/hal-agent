@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
-cd "$DIR/../tests/"
+cd "$DIR/../"
 
-BIN="../vendor/bin/phpunit"
+BIN="$DIR/../vendor/bin/phpunit"
 PARAMETERS=""
 NO_SUITE="--testsuite none"
 STOP_SUITE=false
