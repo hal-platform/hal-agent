@@ -88,7 +88,8 @@ class CreatePushCommand extends Command
                 'DEPLOYMENT_ID',
                 InputArgument::REQUIRED,
                 'The ID of the deployment relationship.'
-            )->addOption(
+            )
+            ->addOption(
                'porcelain',
                null,
                InputOption::VALUE_NONE,
