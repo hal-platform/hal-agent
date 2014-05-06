@@ -23,7 +23,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null
         ]);
 
-        $action = new Resolver($logger, $repo, 'ENV_PATH');
+        $action = new Resolver($logger, $repo, 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234');
         $this->assertNull($properties);
@@ -43,7 +43,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $action = new Resolver($logger, $repo, 'ENV_PATH');
+        $action = new Resolver($logger, $repo, 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234');
         $this->assertNull($properties);
@@ -79,16 +79,16 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $expected = [
             'build' => $build,
             'buildCommand' => 'derp',
-            'archiveFile' => 'testdir/debug/hal9000-build-1234.tar.gz',
-            'buildPath' => 'testdir/debug/hal9000-build-1234',
-            'buildFile' => 'testdir/debug-archive/hal9000-1234.tar.gz',
+            'buildFile' => 'testdir/hal9000-build-1234.tar.gz',
+            'buildPath' => 'testdir/hal9000-build-1234',
+            'archiveFile' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
             'githubUser' => 'user1',
             'githubRepo' => 'repo1',
             'githubReference' => '5555'
         ];
 
         $expectedEnv = [
-            'HOME' => 'testdir/debug-home',
+            'HOME' => 'testdir/build-home/',
             'PATH' => 'ENV_PATH',
             'HAL_BUILDID' => '1234',
             'HAL_COMMIT' => '5555',
@@ -102,7 +102,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $action = new Resolver($logger, $repo, 'ENV_PATH');
+        $action = new Resolver($logger, $repo, 'ENV_PATH', 'ARCHIVE_PATH');
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234');

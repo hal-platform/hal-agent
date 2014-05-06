@@ -38,7 +38,7 @@ class BuildCommand extends Command
      *
      * @var array
      */
-    static $codes = [
+    private static $codes = [
         0 => 'Success!',
         1 => 'Build details could not be resolved.',
         2 => 'Repository archive could not be downloaded.',
@@ -310,7 +310,7 @@ class BuildCommand extends Command
         $this->setEntityStatus('Building', true);
 
         // add artifacts for cleanup
-        $this->artifacts = array_merge($this->artifacts, [$properties['archiveFile'], $properties['buildPath']]);
+        $this->artifacts = array_merge($this->artifacts, [$properties['buildFile'], $properties['buildPath']]);
     }
 
     /**
@@ -329,7 +329,7 @@ class BuildCommand extends Command
             $properties['githubUser'],
             $properties['githubRepo'],
             $properties['githubReference'],
-            $properties['archiveFile']
+            $properties['buildFile']
         ]);
 
         if (!$success) {
@@ -350,7 +350,7 @@ class BuildCommand extends Command
         $output->writeln('<comment>Unpacking...</comment>');
         return call_user_func(
             $this->unpacker,
-            $properties['archiveFile'],
+            $properties['buildFile'],
             $properties['buildPath']
         );
     }
@@ -394,7 +394,7 @@ class BuildCommand extends Command
         return call_user_func(
             $this->packer,
             $properties['buildPath'],
-            $properties['buildFile']
+            $properties['archiveFile']
         );
     }
 }

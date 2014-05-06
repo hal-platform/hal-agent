@@ -93,10 +93,10 @@ class CreateBuildCommand extends Command
                 InputArgument::REQUIRED,
                 'The git reference to build.'
             )->addOption(
-               'porcelain',
-               null,
-               InputOption::VALUE_NONE,
-               'If set, Only the build id will be returned'
+                'porcelain',
+                null,
+                InputOption::VALUE_NONE,
+                'If set, Only the build id will be returned'
             );
     }
 

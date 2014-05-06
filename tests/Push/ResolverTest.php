@@ -28,7 +28,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
 
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
@@ -49,7 +49,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $push
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
 
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
@@ -105,8 +105,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'data/'
             ],
 
-            'archiveFile' => 'testdir/debug-archive/hal9000-8956.tar.gz',
-            'buildPath' => 'testdir/debug/hal9000-push-1234',
+            'archiveFile' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
+            'buildPath' => 'testdir/hal9000-push-1234',
 
             'prePushCommand' => 'bin/pre',
             'postPushCommand' => 'bin/post'
@@ -137,7 +137,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $push
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234', 'pushmethod');

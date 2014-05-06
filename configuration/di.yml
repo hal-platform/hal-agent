@@ -75,6 +75,10 @@ services:
             - '@utility.logger'
             - '@repo.build'
             - '%environment.path%'
+            - '%environment.archive%'
+        calls:
+            - ['setBaseBuildDirectory', ['%environment.temp%']]
+            - ['setHomeDirectory', ['%environment.home%']]
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:
@@ -109,6 +113,9 @@ services:
             - '@repo.push'
             - '@clock'
             - '%ssh-user%'
+            - '%environment.archive%'
+        calls:
+            - ['setBaseBuildDirectory', ['%environment.temp%']]
     push.unpacker:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:

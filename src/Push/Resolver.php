@@ -54,6 +54,11 @@ class Resolver
     /**
      * @var string
      */
+    private $archivePath;
+
+    /**
+     * @var string
+     */
     private $buildDirectory;
 
     /**
@@ -61,13 +66,15 @@ class Resolver
      * @param PushRepository $pushRepo
      * @param Clock $clock
      * @param string $sshUser
+     * @param string $archivePath
      */
-    public function __construct(LoggerInterface $logger, PushRepository $pushRepo, Clock $clock, $sshUser)
+    public function __construct(LoggerInterface $logger, PushRepository $pushRepo, Clock $clock, $sshUser, $archivePath)
     {
         $this->logger = $logger;
         $this->pushRepo = $pushRepo;
         $this->clock = $clock;
         $this->sshUser = $sshUser;
+        $this->archivePath = $archivePath;
     }
 
     /**
@@ -152,7 +159,12 @@ class Resolver
      */
     private function generateBuildArchive($id)
     {
-        return $this->getBuildDirectory() . 'debug-archive/' . sprintf(self::FS_BUILD_PREFIX, $id);
+        return sprintf(
+            '%s%s%s',
+            rtrim($this->archivePath, '/'),
+            DIRECTORY_SEPARATOR,
+            sprintf(self::FS_BUILD_PREFIX, $id)
+        );
     }
 
     /**
@@ -184,7 +196,7 @@ class Resolver
      */
     private function generatePushPath($id)
     {
-        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_DIRECTORY_PREFIX, $id);
+        return $this->getBuildDirectory() . sprintf(self::FS_DIRECTORY_PREFIX, $id);
     }
 
     /**

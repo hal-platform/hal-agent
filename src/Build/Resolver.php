@@ -48,18 +48,30 @@ class Resolver
     /**
      * @var string
      */
+    private $archivePath;
+
+    /**
+     * @var string
+     */
     private $buildDirectory;
+
+    /**
+     * @var string
+     */
+    private $homeDirectory;
 
     /**
      * @param LoggerInterface $logger
      * @param BuildRepository $buildRepo
      * @param string $envPath
+     * @param string $archivePath
      */
-    public function __construct(LoggerInterface $logger, BuildRepository $buildRepo, $envPath)
+    public function __construct(LoggerInterface $logger, BuildRepository $buildRepo, $envPath, $archivePath)
     {
         $this->logger = $logger;
         $this->buildRepo = $buildRepo;
         $this->envPath = $envPath;
+        $this->archivePath = $archivePath;
     }
 
     /**
@@ -84,9 +96,9 @@ class Resolver
             'build' => $build,
             'buildCommand' => $build->getRepository()->getBuildCmd(),
 
-            'archiveFile' => $this->generateRepositoryDownload($build->getId()),
+            'buildFile' => $this->generateRepositoryDownload($build->getId()),
             'buildPath' => $this->generateBuildPath($build->getId()),
-            'buildFile' => $this->generateBuildArchive($build->getId()),
+            'archiveFile' => $this->generateBuildArchive($build->getId()),
 
             'githubUser' => $build->getRepository()->getGithubUser(),
             'githubRepo' => $build->getRepository()->getGithubRepo(),
@@ -97,12 +109,30 @@ class Resolver
     }
 
     /**
+     * Set the base directory in which temporary build artifacts are stored.
+     *
+     * If none is provided the system temporary directory is used.
+     *
      * @param string $directory
      *  @return null
      */
     public function setBaseBuildDirectory($directory)
     {
         $this->buildDirectory = $directory;
+    }
+
+    /**
+     * Set the home directory for all build scripts. This can easily be changed
+     * later to be unique for each build.
+     *
+     * If none is provided a common location within the shared build directory is used.
+     *
+     *  @param string $directory
+     *  @return string
+     */
+    private function setHomeDirectory($directory)
+    {
+        $this->homeDirectory = $directory;
     }
 
     /**
@@ -113,7 +143,7 @@ class Resolver
      */
     private function generateRepositoryDownload($id)
     {
-        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_ARCHIVE_PREFIX, $id);
+        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_PREFIX, $id);
     }
 
     /**
@@ -124,7 +154,7 @@ class Resolver
      */
     private function generateBuildPath($id)
     {
-        return $this->getBuildDirectory() . 'debug/' . sprintf(self::FS_DIRECTORY_PREFIX, $id);
+        return $this->getBuildDirectory() . sprintf(self::FS_DIRECTORY_PREFIX, $id);
     }
 
     /**
@@ -135,7 +165,12 @@ class Resolver
      */
     private function generateBuildArchive($id)
     {
-        return $this->getBuildDirectory() . 'debug-archive/' . sprintf(self::FS_BUILD_PREFIX, $id);
+        return sprintf(
+            '%s%s%s',
+            rtrim($this->archivePath, '/'),
+            DIRECTORY_SEPARATOR,
+            sprintf(self::FS_BUILD_PREFIX, $id)
+        );
     }
 
     /**
@@ -146,7 +181,11 @@ class Resolver
      */
     private function generateHomePath()
     {
-        return $this->getBuildDirectory() . 'debug-home';
+        if (!$this->homeDirectory) {
+            $this->homeDirectory = $this->getBuildDirectory() . 'build-home';
+        }
+
+        return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
     /**

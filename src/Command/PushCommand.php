@@ -35,7 +35,7 @@ class PushCommand extends Command
      *
      * @var array
      */
-    static $codes = [
+    private static $codes = [
         0 => 'Success!',
         1 => 'Push details could not be resolved.',
         2 => 'Build archive could not be unpacked.',

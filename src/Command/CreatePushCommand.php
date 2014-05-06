@@ -90,10 +90,10 @@ class CreatePushCommand extends Command
                 'The ID of the deployment relationship.'
             )
             ->addOption(
-               'porcelain',
-               null,
-               InputOption::VALUE_NONE,
-               'If set, Only the build id will be returned'
+                'porcelain',
+                null,
+                InputOption::VALUE_NONE,
+                'If set, Only the build id will be returned'
             );
     }
 

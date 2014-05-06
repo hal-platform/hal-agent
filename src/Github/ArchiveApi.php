@@ -25,7 +25,8 @@ class ArchiveApi extends AbstractApi
      */
     public function download($username, $repository, $reference, $target)
     {
-        $path = sprintf('repos/%s/%s/tarball',
+        $path = sprintf(
+            'repos/%s/%s/tarball',
             rawurlencode($username),
             rawurlencode($repository)
         );

@@ -5,7 +5,7 @@ imports:
         resource: config.env.yml
 
 parameters:
-    debug: true
+    debug: false
     application.name: 'HAL 9000 Agent'
     application.version: '2.0-alpha'
 

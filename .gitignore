@@ -1,5 +1,11 @@
 /.idea/
 
+# recommended location for archives
+/.archive/
+
+# recommended location for build artifacts
+/.build/
+
 /configuration/config.env.yml
 /phpunit.xml
 /vendor/
