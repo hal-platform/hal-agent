@@ -27,7 +27,7 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - '@build.logger'
+            - '@utility.logger'
             - '@doctrine.em'
             - '@clock'
             - '@build.resolver'
@@ -49,7 +49,7 @@ services:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - '@build.logger'
+            - '@utility.logger'
             - '@doctrine.em'
             - '@clock'
             - '@push.resolver'
@@ -66,35 +66,35 @@ services:
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
             - ['setIndentation', ['4']]
+    utility.logger:
+        class: 'QL\Hal\Agent\Helper\MemoryLogger'
 
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@repo.build'
             - '%environment.path%'
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@github.archive'
     build.unpacker:
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
     build.builder:
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
-    build.logger:
-        class: 'QL\Hal\Agent\Build\Logger'
 
     process.builder:
         class: 'Symfony\Component\Process\ProcessBuilder'
@@ -105,25 +105,25 @@ services:
     push.resolver:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@repo.push'
             - '@clock'
             - '%ssh-user%'
     push.unpacker:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
             - '@utility.yaml-dumper'
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
     push.server-command:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
-            - '@build.logger'
+            - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
             - '%ssh-user%'
 

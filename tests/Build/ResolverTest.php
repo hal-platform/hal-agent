@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Repository;
@@ -17,7 +18,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 {
     public function testBuildNotFound()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
             'find' => null
         ]);
@@ -37,7 +38,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $build = new Build;
         $build->setStatus('Poo');
 
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
             'find' => $build
         ]);
@@ -75,7 +76,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $build->setBranch('master');
         $build->setCommit('5555');
 
-
         $expected = [
             'build' => $build,
             'buildCommand' => 'derp',
@@ -97,7 +97,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'HAL_REPO' => 'repokey'
         ];
 
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
             'find' => $build
         ]);

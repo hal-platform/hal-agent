@@ -5,15 +5,15 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace QL\Hal\Agent\Helper;
 
 use PHPUnit_Framework_TestCase;
 
-class LoggerTest extends PHPUnit_Framework_TestCase
+class MemoryLoggerTest extends PHPUnit_Framework_TestCase
 {
     public function testGetMessages()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $logger->info('wut');
         $logger->critical('wat', ['data' => 'here']);
 
@@ -25,7 +25,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
 
     public function testGetFormattedMessages()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $logger->info('wut');
         $logger->critical('wat', ['data' => 'here']);
 
@@ -42,7 +42,7 @@ TEXT;
 
     public function testGetFormattedMessagesWithContext()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $logger->info('wut');
         $logger->critical('wat', ['data' => 'here']);
 

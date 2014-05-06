@@ -9,12 +9,13 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Helper\MemoryLogger;
 
 class DownloaderTest extends PHPUnit_Framework_TestCase
 {
     public function testSuccess()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $api = Mockery::mock('QL\Hal\Agent\Github\ArchiveApi', [
             'download' => true
         ]);
@@ -31,7 +32,7 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
 
     public function testFailure()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $api = Mockery::mock('QL\Hal\Agent\Github\ArchiveApi', [
             'download' => false
         ]);

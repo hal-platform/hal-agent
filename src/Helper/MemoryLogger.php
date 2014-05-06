@@ -5,11 +5,15 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace QL\Hal\Agent\Helper;
 
 use Psr\Log\AbstractLogger;
 
-class Logger extends AbstractLogger
+/**
+ * A custom PSR-3 logger that lets us send a shit ton of messages to the logger
+ * and collect them at the end of a command run.
+ */
+class MemoryLogger extends AbstractLogger
 {
     /**
      * @array(string, string, [])[]

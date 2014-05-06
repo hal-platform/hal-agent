@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Command;
 use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Build\Logger;
+use QL\Hal\Agent\Helper\MemoryLogger;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -32,7 +32,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = new Logger;
+        $this->logger = new MemoryLogger;
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->clock = new Clock('now', 'UTC');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Build\Resolver');

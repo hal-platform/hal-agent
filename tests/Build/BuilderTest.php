@@ -9,12 +9,13 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Helper\MemoryLogger;
 
 class BuilderTest extends PHPUnit_Framework_TestCase
 {
     public function testSuccess()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
@@ -39,7 +40,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
     public function testFail()
     {
-        $logger = new Logger;
+        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
