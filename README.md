@@ -49,10 +49,10 @@ The porcelain commands can be used to create and build entities in a single proc
 
 Build example:
 ```
-bin/console build:build `bin/console build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain`
+bin/console build:build $(bin/console build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
 ```
 
 Push example:
 ```
-bin/console push:push `bin/console push:create BUILD_ID DEPLOYMENT_ID --porcelain`
+bin/console push:push $(bin/console push:create BUILD_ID DEPLOYMENT_ID --porcelain)
 ```
