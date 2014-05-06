@@ -106,6 +106,6 @@ class Pusher
             $command[] = '--exclude=' . $excluded;
         }
 
-        return array_merge($command, [$buildPath, $syncPath]);
+        return array_merge($command, [$buildPath . '/', $syncPath]);
     }
 }
