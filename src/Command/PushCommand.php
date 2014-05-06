@@ -191,6 +191,28 @@ class PushCommand extends Command
             return 2;
         }
 
+        // pre push command
+        if (!$properties['prePushCommand']) {
+            goto SKIP_PRE_COMMAND;
+        }
+
+        $postPushArgs = [
+            $properties['hostname'],
+            $properties['remotePath'],
+            $properties['prePushCommand'],
+            $properties['environmentVariables']
+        ];
+
+        $this->logger->debug('Pre push command started', $this->timer());
+        $output->writeln('<comment>Pre push command executing...</comment>');
+        if (!call_user_func_array($this->serverCommand, $postPushArgs)) {
+            $this->error($output, 'Pre push command failed.');
+            return 4;
+        }
+        $this->logger->debug('Pre push command finished', $this->timer());
+
+        SKIP_PRE_COMMAND:
+
         // push
         $pushArgs = [
             $properties['buildPath'],
@@ -202,13 +224,13 @@ class PushCommand extends Command
         $output->writeln('<comment>Pushing...</comment>');
         if (!call_user_func_array($this->pusher, $pushArgs)) {
             $this->error($output, 'Push failed.');
-            return 4;
+            return 8;
         }
         $this->logger->debug('Pushing finished', $this->timer());
 
         // post push command
         if (!$properties['postPushCommand']) {
-            goto SKIP_POST;
+            goto SKIP_POST_COMMAND;
         }
 
         $postPushArgs = [
@@ -222,11 +244,11 @@ class PushCommand extends Command
         $output->writeln('<comment>Post push command executing...</comment>');
         if (!call_user_func_array($this->serverCommand, $postPushArgs)) {
             $this->error($output, 'Post push command failed.');
-            return 8;
+            return 16;
         }
         $this->logger->debug('Post push command finished', $this->timer());
 
-        SKIP_POST:
+        SKIP_POST_COMMAND:
 
         // finish
         $this->success($output);

@@ -15,8 +15,8 @@ class ServerCommand
     /**
      * @var string
      */
-    const SUCCESS_COMMAND = 'Post push command executed';
-    const ERR_COMMAND = 'Post push command executed with errors';
+    const SUCCESS_COMMAND = 'Server command executed';
+    const ERR_COMMAND = 'Server command executed with errors';
 
     /**
      * @var LoggerInterface
