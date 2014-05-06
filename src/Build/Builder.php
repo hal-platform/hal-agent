@@ -55,7 +55,7 @@ class Builder
             ->setWorkingDirectory($buildPath)
             ->setArguments([''])
             ->addEnvironmentVariables($env)
-            ->setTimeout(600)
+            ->setTimeout(300)
             ->getProcess();
         $process->setCommandLine($command . ' 2>&1');
 

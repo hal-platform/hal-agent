@@ -27,7 +27,6 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - '%debug%'
             - '@build.logger'
             - '@doctrine.em'
             - '@clock'
@@ -50,14 +49,22 @@ services:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - '%debug%'
             - '@build.logger'
+            - '@doctrine.em'
+            - '@clock'
             - '@push.resolver'
+            - '@push.unpacker'
+            - '@push.pusher'
+            - '@process.builder=' # = signifies a prototype service
 
     utility.helper.download-progress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
         arguments:
             - '@github.guzzleHttpClient'
+    utility.yaml-dumper:
+        class: 'Symfony\Component\Yaml\Dumper'
+        calls:
+            - ['setIndentation', ['4']]
 
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
@@ -98,8 +105,21 @@ services:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
             - '@build.logger'
-            - '@repo.build'
-            - '@repo.deployment'
+            - '@repo.push'
+            - '@clock'
+            - '%ssh-user%'
+    push.unpacker:
+        class: 'QL\Hal\Agent\Push\Unpacker'
+        arguments:
+            - '@build.logger'
+            - '@process.builder=' # = signifies a prototype service
+            - '@utility.yaml-dumper'
+    push.pusher:
+        class: 'QL\Hal\Agent\Push\Pusher'
+        arguments:
+            - '@build.logger'
+            - '@process.builder=' # = signifies a prototype service
+
 ### imported from hal-core
 
     # Repositories
@@ -121,6 +141,12 @@ services:
         factory_method:   getRepository
         arguments:
             - 'QL\Hal\Core\Entity\Environment'
+    repo.push:
+        class: 'QL\Hal\Core\Entity\Repository\PushRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Push'
     repo.repository:
         class: 'QL\Hal\Core\Entity\Repository\RepositoryRepository'
         factory_service:  doctrine.em

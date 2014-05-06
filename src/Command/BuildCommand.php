@@ -86,18 +86,12 @@ class BuildCommand extends Command
     private $artifacts;
 
     /**
-     * @var boolean
-     */
-    private $debugMode;
-
-    /**
      * @var Build|null
      */
     private $build;
 
     /**
      * @param string $name
-     * @param boolean $debugMode
      * @param LoggerInterface $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
@@ -110,7 +104,6 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
-        $debugMode,
         LoggerInterface $logger,
         EntityManager $entityManager,
         Clock $clock,
@@ -124,7 +117,6 @@ class BuildCommand extends Command
     ) {
         parent::__construct($name);
 
-        $this->debugMode = $debugMode;
         $this->logger = $logger;
         $this->entityManager = $entityManager;
         $this->clock = $clock;
@@ -164,6 +156,7 @@ class BuildCommand extends Command
 
         foreach ($this->artifacts as $path) {
             $process = $this->processBuilder
+                ->setWorkingDirectory(null)
                 ->setArguments([$path])
                 ->getProcess();
 
@@ -183,11 +176,6 @@ class BuildCommand extends Command
         }
 
         $this->finish($output);
-
-        if ($this->debugMode && $loggerOutput = $this->logger->output(true)) {
-            $output->writeln($loggerOutput);
-        }
-
         $output->writeln(sprintf('<error>%s</error>', $message));
     }
 
@@ -213,11 +201,10 @@ class BuildCommand extends Command
         }
 
         $this->build = $properties['build'];
+        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
 
         // Update the build status asap so no other worker can pick it up
         $this->setEntityStatus('Building', true);
-
-        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
 
         // add artifacts for cleanup
         $this->artifacts = array_merge($this->artifacts, [$properties['archiveFile'], $properties['buildPath']]);
@@ -290,9 +277,14 @@ class BuildCommand extends Command
             $this->entityManager->flush();
         }
 
+        // Output log messages if verbosity is set
+        // Output log context if debug verbosity
+        if ($output->isVerbose() && $loggerOutput = $this->logger->output($output->isVeryVerbose())) {
+            $output->writeln($loggerOutput);
+        }
+
         $this->cleanup();
     }
-
     /**
      * @param string $status
      * @param boolean $start
@@ -324,11 +316,6 @@ class BuildCommand extends Command
         }
 
         $this->finish($output);
-
-        if ($this->debugMode && $loggerOutput = $this->logger->output(false)) {
-            $output->writeln($loggerOutput);
-        }
-
         $output->writeln(sprintf('<question>%s</question>', 'Success!'));
     }
 

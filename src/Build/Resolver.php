@@ -105,7 +105,6 @@ class Resolver
         $this->buildDirectory = $directory;
     }
 
-
     /**
      *  Generate a target for the build archive.
      *
