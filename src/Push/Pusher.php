@@ -32,10 +32,8 @@ class Pusher
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
      */
-    public function __construct(
-        LoggerInterface $logger,
-        ProcessBuilder $processBuilder
-    ) {
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
+    {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
     }

@@ -9,6 +9,8 @@ namespace QL\Hal\Agent\Push;
 
 use MCP\DataType\Time\Clock;
 use Psr\Log\LoggerInterface;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 
 /**
@@ -60,12 +62,8 @@ class Resolver
      * @param Clock $clock
      * @param string $sshUser
      */
-    public function __construct(
-        LoggerInterface $logger,
-        PushRepository $pushRepo,
-        Clock $clock,
-        $sshUser
-    ) {
+    public function __construct(LoggerInterface $logger, PushRepository $pushRepo, Clock $clock, $sshUser)
+    {
         $this->logger = $logger;
         $this->pushRepo = $pushRepo;
         $this->clock = $clock;
@@ -91,45 +89,49 @@ class Resolver
             return null;
         }
 
-        $server = $push->getDeployment()->getServer()->getName();
+        $build = $push->getBuild();
+        $repository = $build->getRepository();
+        $deployment = $push->getDeployment();
 
         // validate remote hostname
-        if (!$hostname = $this->validateHostname($server)) {
-            $this->logger->critical(sprintf('Cannot resolve hostname "%s"', $server));
+        $serverName = $deployment->getServer()->getName();
+        if (!$hostname = $this->validateHostname($serverName)) {
+            $this->logger->critical(sprintf('Cannot resolve hostname "%s"', $serverName));
         }
-
-        $build = $push->getBuild();
 
         return [
             'push' => $push,
             'method' => $method,
             'hostname' => $hostname,
-            'syncPath' => sprintf(
-                '%s@%s:%s',
-                $this->sshUser,
-                $hostname,
-                $push->getDeployment()->getPath()
-            ),
+            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
+            'remotePath' => $deployment->getPath(),
             'excludedFiles' => [
+                // could easily make this an application-specific setting
                 'config/database.ini',
                 'data/'
             ],
 
             'archiveFile' => $this->generateBuildArchive($build->getId()),
             'buildPath' => $this->generatePushPath($push->getId()),
+
+            'prePushCommand' => $repository->getPrePushCmd(),
+            'postPushCommand' => $repository->getPostPushCmd(),
+
             'pushProperties' => [
                 'id' => $build->getId(),
                 'source' => sprintf(
                     'http://git/%s/%s',
-                    $build->getRepository()->getGithubUser(),
-                    $build->getRepository()->getGithubRepo()
+                    $repository->getGithubUser(),
+                    $repository->getGithubRepo()
                 ),
                 'env' => $build->getEnvironment()->getKey(),
                 'user' => $push->getUser() ? $push->getUser()->getHandle() : null,
                 'branch' => $build->getBranch(),
                 'commit' => $build->getCommit(),
                 'date' => $this->clock->read()->format('c', 'America/Detroit')
-            ]
+            ],
+
+            'environmentVariables' => $this->generateServerEnvironmentVariables($build, $deployment, $hostname)
         ];
     }
 
@@ -151,6 +153,27 @@ class Resolver
     private function generateBuildArchive($id)
     {
         return $this->getBuildDirectory() . 'debug-archive/' . sprintf(self::FS_BUILD_PREFIX, $id);
+    }
+
+    /**
+     * @param Build $build
+     * @param Deployment $deployment
+     * @param string $hostname
+     * @return array
+     */
+    private function generateServerEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
+    {
+        $vars = [
+            'HAL_HOSTNAME' => $hostname,
+            'HAL_PATH' => $deployment->getPath(),
+
+            'HAL_BUILDID' => $build->getId(),
+            'HAL_COMMIT' => $build->getCommit(),
+            'HAL_GITREF' => $build->getBranch(),
+            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey()
+        ];
+
+        return $vars;
     }
 
     /**

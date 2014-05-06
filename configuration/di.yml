@@ -55,6 +55,7 @@ services:
             - '@push.resolver'
             - '@push.unpacker'
             - '@push.pusher'
+            - '@push.server-command'
             - '@process.builder=' # = signifies a prototype service
 
     utility.helper.download-progress:
@@ -119,6 +120,12 @@ services:
         arguments:
             - '@build.logger'
             - '@process.builder=' # = signifies a prototype service
+    push.server-command:
+        class: 'QL\Hal\Agent\Push\ServerCommand'
+        arguments:
+            - '@build.logger'
+            - '@process.builder=' # = signifies a prototype service
+            - '%ssh-user%'
 
 ### imported from hal-core
 

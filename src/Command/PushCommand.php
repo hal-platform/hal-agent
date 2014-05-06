@@ -12,6 +12,7 @@ use MCP\DataType\Time\Clock;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
+use QL\Hal\Agent\Push\ServerCommand;
 use QL\Hal\Agent\Push\Unpacker;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Command\Command;
@@ -57,6 +58,11 @@ class PushCommand extends Command
     private $pusher;
 
     /**
+     * @var ServerCommand
+     */
+    private $serverCommand;
+
+    /**
      * @var ProcessBuilder
      */
     private $processBuilder;
@@ -74,6 +80,7 @@ class PushCommand extends Command
      * @param Resolver $resolver
      * @param Unpacker $unpacker
      * @param Pusher $pusher
+     * @param ServerCommand $serverCommand
      * @param ProcessBuilder $processBuilder
      */
     public function __construct(
@@ -84,6 +91,7 @@ class PushCommand extends Command
         Resolver $resolver,
         Unpacker $unpacker,
         Pusher $pusher,
+        ServerCommand $serverCommand,
         ProcessBuilder $processBuilder
     ) {
         parent::__construct($name);
@@ -95,6 +103,7 @@ class PushCommand extends Command
         $this->resolver = $resolver;
         $this->unpacker = $unpacker;
         $this->pusher = $pusher;
+        $this->serverCommand = $serverCommand;
 
         $this->processBuilder = $processBuilder;
         $this->artifacts = [];
@@ -170,20 +179,20 @@ class PushCommand extends Command
         $this->artifacts = array_merge($this->artifacts, [$properties['buildPath']]);
 
         // unpack
-        $unpackProperties = [
+        $unpackArgs = [
             $properties['archiveFile'],
             $properties['buildPath'],
             $properties['pushProperties']
         ];
 
         $output->writeln('<comment>Unpacking...</comment>');
-        if (!call_user_func_array($this->unpacker, $unpackProperties)) {
+        if (!call_user_func_array($this->unpacker, $unpackArgs)) {
             $this->error($output, 'Build archive could not be unpacked.');
             return 2;
         }
 
         // push
-        $pushProperties = [
+        $pushArgs = [
             $properties['buildPath'],
             $properties['syncPath'],
             $properties['excludedFiles']
@@ -191,11 +200,33 @@ class PushCommand extends Command
 
         $this->logger->debug('Pushing started', $this->timer());
         $output->writeln('<comment>Pushing...</comment>');
-        if (!call_user_func_array($this->pusher, $pushProperties)) {
+        if (!call_user_func_array($this->pusher, $pushArgs)) {
             $this->error($output, 'Push failed.');
             return 4;
         }
         $this->logger->debug('Pushing finished', $this->timer());
+
+        // post push command
+        if (!$properties['postPushCommand']) {
+            goto SKIP_POST;
+        }
+
+        $postPushArgs = [
+            $properties['hostname'],
+            $properties['remotePath'],
+            $properties['postPushCommand'],
+            $properties['environmentVariables']
+        ];
+
+        $this->logger->debug('Post push command started', $this->timer());
+        $output->writeln('<comment>Post push command executing...</comment>');
+        if (!call_user_func_array($this->serverCommand, $postPushArgs)) {
+            $this->error($output, 'Post push command failed.');
+            return 8;
+        }
+        $this->logger->debug('Post push command finished', $this->timer());
+
+        SKIP_POST:
 
         // finish
         $this->success($output);

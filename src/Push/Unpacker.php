@@ -42,11 +42,8 @@ class Unpacker
      * @param ProcessBuilder $processBuilder
      * @param Dumper $dumper
      */
-    public function __construct(
-        LoggerInterface $logger,
-        ProcessBuilder $processBuilder,
-        Dumper $dumper
-    ) {
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, Dumper $dumper)
+    {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
         $this->dumper = $dumper;
