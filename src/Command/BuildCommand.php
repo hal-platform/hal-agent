@@ -30,6 +30,18 @@ use Symfony\Component\Process\ProcessBuilder;
  */
 class BuildCommand extends Command
 {
+    use CommandTrait;
+    use FormatterTrait;
+
+    static $codes = [
+        0 => 'Success!',
+        1 => 'Build details could not be resolved.',
+        2 => 'Repository archive could not be downloaded.',
+        4 => 'Repository archive could not be unpacked.',
+        8 => 'Build command failed.',
+        16 => 'Build archive could not be created.'
+    ];
+
     /**
      * @var LoggerInterface
      */
@@ -145,6 +157,51 @@ class BuildCommand extends Command
                 InputArgument::REQUIRED,
                 'The Build ID to build.'
             );
+
+        $errors = "Exit Codes:\n";
+        foreach (static::$codes as $code => $message) {
+            $errors .= $this->formatSection($code, $message) . "\n";
+        }
+        $this->setHelp($errors);
+    }
+
+    /**
+     *  Run the command
+     *
+     *  @param InputInterface $input
+     *  @param OutputInterface $output
+     *  @return null
+     */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        // expected build statuses
+        // Waiting, Downloading, Building, Finished, Error
+
+        $buildId = $input->getArgument('BUILD_ID');
+
+        if (!$properties = $this->resolve($output, $buildId)) {
+            return $this->failure($output, 1);
+        }
+
+        $this->prepare($output, $properties);
+
+        if (!$this->download($output, $properties)) {
+            return $this->failure($output, 2);
+        }
+
+        if (!$this->unpack($output, $properties)) {
+            return $this->failure($output, 4);
+        }
+
+        if (!$this->build($output, $properties)) {
+            return $this->failure($output, 8);
+        }
+
+        if (!$this->pack($output, $properties)) {
+            return $this->failure($output, 16);
+        }
+
+        $this->success($output);
     }
 
     /**
@@ -166,125 +223,31 @@ class BuildCommand extends Command
 
     /**
      * @param OutputInterface $output
-     * @param string $message
+     * @param int $exitCode
      * @return null
      */
-    private function error(OutputInterface $output, $message)
+    private function finish(OutputInterface $output, $exitCode)
     {
         if ($this->build) {
-            $this->build->setStatus('Error');
-        }
+            $status = ($exitCode === 0) ? 'Success' : 'Error';
+            $this->build->setStatus($status);
 
-        $this->finish($output);
-        $output->writeln(sprintf('<error>%s</error>', $message));
-    }
-
-    /**
-     *  Run the command
-     *
-     *  @param InputInterface $input
-     *  @param OutputInterface $output
-     *  @return null
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        // expected build statuses
-        // Waiting, Downloading, Building, Finished, Error
-
-        $buildId = $input->getArgument('BUILD_ID');
-
-        // resolve
-        $output->writeln('<comment>Resolving...</comment>');
-        if (!$properties = call_user_func($this->resolver, $buildId)) {
-            $this->error($output, 'Build details could not be resolved.');
-            return 1;
-        }
-
-        $this->build = $properties['build'];
-        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
-
-        // Update the build status asap so no other worker can pick it up
-        $this->setEntityStatus('Building', true);
-
-        // add artifacts for cleanup
-        $this->artifacts = array_merge($this->artifacts, [$properties['archiveFile'], $properties['buildPath']]);
-
-        // download
-        $downloadProperties = [
-            $properties['githubUser'],
-            $properties['githubRepo'],
-            $properties['githubReference'],
-            $properties['archiveFile']
-        ];
-
-        $this->logger->debug('Download started', $this->timer());
-        $output->writeln('<comment>Downloading...</comment>');
-        $this->progress->enableDownloadProgress($output);
-        if (!call_user_func_array($this->downloader, $downloadProperties)) {
-            $this->error($output, 'Repository archive could not be downloaded.');
-            return 2;
-        }
-        $this->logger->debug('Download finished', $this->timer());
-
-        // unpack
-        $output->writeln('<comment>Unpacking...</comment>');
-        if (!call_user_func($this->unpacker, $properties['archiveFile'], $properties['buildPath'])) {
-            $this->error($output, 'Repository archive could not be unpacked.');
-            return 4;
-        }
-
-        // build
-        if (!$properties['buildCommand']) {
-            goto SKIP_BUILDING;
-        }
-
-        $buildProperties = [
-            $properties['buildPath'],
-            $properties['buildCommand'],
-            $properties['environmentVariables']
-        ];
-
-        $this->logger->debug('Building started', $this->timer());
-        $output->writeln('<comment>Building...</comment>');
-        if (!call_user_func_array($this->builder, $buildProperties)) {
-            $this->error($output, 'Build command failed.');
-            return 8;
-        }
-        $this->logger->debug('Building finished', $this->timer());
-
-        SKIP_BUILDING:
-
-        // pack
-        $output->writeln('<comment>Packing...</comment>');
-        if (!call_user_func($this->packer, $properties['buildPath'], $properties['buildFile'])) {
-            $this->error($output, 'Build archive could not be created.');
-            return 16;
-        }
-
-        $this->success($output);
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     * @return null
-     */
-    private function finish(OutputInterface $output)
-    {
-        if ($this->build) {
             $this->build->setEnd($this->clock->read());
             $this->entityManager->merge($this->build);
             $this->entityManager->flush();
         }
 
-        // Output log messages if verbosity is set
-        // Output log context if debug verbosity
+        // verbosity = 1: Output log messages
+        // verbosity = 2: Output log context
         if ($output->isVerbose() && $loggerOutput = $this->logger->output($output->isVeryVerbose())) {
             $output->writeln($loggerOutput);
         }
 
         $this->cleanup();
+
+        return $exitCode;
     }
+
     /**
      * @param string $status
      * @param boolean $start
@@ -306,20 +269,6 @@ class BuildCommand extends Command
     }
 
     /**
-     * @param OutputInterface $output
-     * @return null
-     */
-    private function success(OutputInterface $output)
-    {
-        if ($this->build) {
-            $this->build->setStatus('Success');
-        }
-
-        $this->finish($output);
-        $output->writeln(sprintf('<question>%s</question>', 'Success!'));
-    }
-
-    /**
      * @var array $context
      * @return array
      */
@@ -327,7 +276,122 @@ class BuildCommand extends Command
     {
         return array_merge(
             $context,
-            ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]
+            ['time' => $this->clock->read()->format('c', 'America/Detroit')]
+        );
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $buildId
+     * @return null
+     */
+    private function resolve(OutputInterface $output, $buildId)
+    {
+        $output->writeln('<comment>Resolving...</comment>');
+        return call_user_func($this->resolver, $buildId);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return null
+     */
+    private function prepare(OutputInterface $output, array $properties)
+    {
+        $this->build = $properties['build'];
+        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
+
+        // Update the build status asap so no other worker can pick it up
+        $this->setEntityStatus('Building', true);
+
+        // add artifacts for cleanup
+        $this->artifacts = array_merge($this->artifacts, [$properties['archiveFile'], $properties['buildPath']]);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function download(OutputInterface $output, array $properties)
+    {
+        $this->logger->debug('Download started', $this->timer());
+
+        $output->writeln('<comment>Downloading...</comment>');
+        $this->progress->enableDownloadProgress($output);
+
+        $success = call_user_func_array($this->downloader, [
+            $properties['githubUser'],
+            $properties['githubRepo'],
+            $properties['githubReference'],
+            $properties['archiveFile']
+        ]);
+
+        if (!$success) {
+            return false;
+        }
+
+        $this->logger->debug('Download finished', $this->timer());
+        return true;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function unpack(OutputInterface $output, array $properties)
+    {
+        $output->writeln('<comment>Unpacking...</comment>');
+        return call_user_func(
+            $this->unpacker,
+            $properties['archiveFile'],
+            $properties['buildPath']
+        );
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function build(OutputInterface $output, array $properties)
+    {
+        if (!$properties['buildCommand']) {
+            return true;
+        }
+
+        $this->logger->debug('Building started', $this->timer());
+
+        $output->writeln('<comment>Building...</comment>');
+
+        $success = call_user_func_array($this->builder, [
+            $properties['buildPath'],
+            $properties['buildCommand'],
+            $properties['environmentVariables']
+        ]);
+
+        if (!$success) {
+            return false;
+        }
+
+        $this->logger->debug('Building finished', $this->timer());
+
+        return true;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function pack(OutputInterface $output, array $properties)
+    {
+        $output->writeln('<comment>Packing...</comment>');
+        return call_user_func(
+            $this->packer,
+            $properties['buildPath'],
+            $properties['buildFile']
         );
     }
 }
