@@ -33,6 +33,11 @@ class BuildCommand extends Command
     use CommandTrait;
     use FormatterTrait;
 
+    /**
+     * A list of all possible exit codes of this command
+     *
+     * @var array
+     */
     static $codes = [
         0 => 'Success!',
         1 => 'Build details could not be resolved.',
@@ -158,11 +163,11 @@ class BuildCommand extends Command
                 'The Build ID to build.'
             );
 
-        $errors = "Exit Codes:\n";
+        $errors = ['Exit Codes:'];
         foreach (static::$codes as $code => $message) {
-            $errors .= $this->formatSection($code, $message) . "\n";
+            $errors[] = $this->formatSection($code, $message);
         }
-        $this->setHelp($errors);
+        $this->setHelp(implode("\n", $errors));
     }
 
     /**
@@ -283,7 +288,7 @@ class BuildCommand extends Command
     /**
      * @param OutputInterface $output
      * @param string $buildId
-     * @return null
+     * @return array|null
      */
     private function resolve(OutputInterface $output, $buildId)
     {
@@ -316,8 +321,8 @@ class BuildCommand extends Command
     private function download(OutputInterface $output, array $properties)
     {
         $this->logger->debug('Download started', $this->timer());
-
         $output->writeln('<comment>Downloading...</comment>');
+
         $this->progress->enableDownloadProgress($output);
 
         $success = call_user_func_array($this->downloader, [
@@ -362,7 +367,6 @@ class BuildCommand extends Command
         }
 
         $this->logger->debug('Building started', $this->timer());
-
         $output->writeln('<comment>Building...</comment>');
 
         $success = call_user_func_array($this->builder, [
@@ -376,7 +380,6 @@ class BuildCommand extends Command
         }
 
         $this->logger->debug('Building finished', $this->timer());
-
         return true;
     }
 

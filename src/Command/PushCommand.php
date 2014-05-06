@@ -27,6 +27,23 @@ use Symfony\Component\Process\ProcessBuilder;
  */
 class PushCommand extends Command
 {
+    use CommandTrait;
+    use FormatterTrait;
+
+    /**
+     * A list of all possible exit codes of this command
+     *
+     * @var array
+     */
+    static $codes = [
+        0 => 'Success!',
+        1 => 'Push details could not be resolved.',
+        2 => 'Build archive could not be unpacked.',
+        4 => 'Pre push command failed.',
+        8 => 'Push failed.',
+        16 => 'Post push command failed.'
+    ];
+
     /**
      * @var LoggerInterface
      */
@@ -127,6 +144,53 @@ class PushCommand extends Command
                 'The deployment method to use.',
                 'rsync'
             );
+
+        $errors = ['Exit Codes:'];
+        foreach (static::$codes as $code => $message) {
+            $errors[] = $this->formatSection($code, $message);
+        }
+        $this->setHelp(implode("\n", $errors));
+    }
+
+    /**
+     *  Run the command
+     *
+     *  @param InputInterface $input
+     *  @param OutputInterface $output
+     *  @return null
+     */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        // expected push statuses
+        // Waiting, Pushing, Error, Success
+
+        $pushId = $input->getArgument('PUSH_ID');
+        $method = $input->getArgument('METHOD');
+
+        if (!$properties = $this->resolve($output, $pushId, $method)) {
+            return $this->failure($output, 1);
+        }
+
+        $this->prepare($output, $properties);
+
+        if (!$this->unpack($output, $properties)) {
+            return $this->failure($output, 2);
+        }
+
+        if (!$this->prepush($output, $properties)) {
+            return $this->failure($output, 4);
+        }
+
+        if (!$this->push($output, $properties)) {
+            return $this->failure($output, 8);
+        }
+
+        if (!$this->postpush($output, $properties)) {
+            return $this->failure($output, 16);
+        }
+
+        // finish
+        $this->success($output);
     }
 
     /**
@@ -147,138 +211,16 @@ class PushCommand extends Command
     }
 
     /**
-     *  Run the command
-     *
-     *  @param InputInterface $input
-     *  @param OutputInterface $output
-     *  @return null
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        // expected push statuses
-        // Waiting, Pushing, Error, Success
-
-        $pushId = $input->getArgument('PUSH_ID');
-        $method = $input->getArgument('METHOD');
-
-        // resolve
-        $output->writeln('<comment>Resolving...</comment>');
-        if (!$properties = call_user_func($this->resolver, $pushId, $method)) {
-            $this->error($output, 'Push details could not be resolved.');
-            return 1;
-        }
-
-        $this->push = $properties['push'];
-
-        // Update the push status asap so no other worker can pick it up
-        $this->setEntityStatus('Pushing', true);
-
-        $output->writeln(sprintf('<info>Push properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
-
-        // add artifacts for cleanup
-        $this->artifacts = array_merge($this->artifacts, [$properties['buildPath']]);
-
-        // unpack
-        $unpackArgs = [
-            $properties['archiveFile'],
-            $properties['buildPath'],
-            $properties['pushProperties']
-        ];
-
-        $output->writeln('<comment>Unpacking...</comment>');
-        if (!call_user_func_array($this->unpacker, $unpackArgs)) {
-            $this->error($output, 'Build archive could not be unpacked.');
-            return 2;
-        }
-
-        // pre push command
-        if (!$properties['prePushCommand']) {
-            goto SKIP_PRE_COMMAND;
-        }
-
-        $postPushArgs = [
-            $properties['hostname'],
-            $properties['remotePath'],
-            $properties['prePushCommand'],
-            $properties['environmentVariables']
-        ];
-
-        $this->logger->debug('Pre push command started', $this->timer());
-        $output->writeln('<comment>Pre push command executing...</comment>');
-        if (!call_user_func_array($this->serverCommand, $postPushArgs)) {
-            $this->error($output, 'Pre push command failed.');
-            return 4;
-        }
-        $this->logger->debug('Pre push command finished', $this->timer());
-
-        SKIP_PRE_COMMAND:
-
-        // push
-        $pushArgs = [
-            $properties['buildPath'],
-            $properties['syncPath'],
-            $properties['excludedFiles']
-        ];
-
-        $this->logger->debug('Pushing started', $this->timer());
-        $output->writeln('<comment>Pushing...</comment>');
-        if (!call_user_func_array($this->pusher, $pushArgs)) {
-            $this->error($output, 'Push failed.');
-            return 8;
-        }
-        $this->logger->debug('Pushing finished', $this->timer());
-
-        // post push command
-        if (!$properties['postPushCommand']) {
-            goto SKIP_POST_COMMAND;
-        }
-
-        $postPushArgs = [
-            $properties['hostname'],
-            $properties['remotePath'],
-            $properties['postPushCommand'],
-            $properties['environmentVariables']
-        ];
-
-        $this->logger->debug('Post push command started', $this->timer());
-        $output->writeln('<comment>Post push command executing...</comment>');
-        if (!call_user_func_array($this->serverCommand, $postPushArgs)) {
-            $this->error($output, 'Post push command failed.');
-            return 16;
-        }
-        $this->logger->debug('Post push command finished', $this->timer());
-
-        SKIP_POST_COMMAND:
-
-        // finish
-        $this->success($output);
-    }
-
-    /**
      * @param OutputInterface $output
-     * @param string $message
+     * @param int $exitCode
      * @return null
      */
-    private function error(OutputInterface $output, $message)
+    private function finish(OutputInterface $output, $exitCode)
     {
         if ($this->push) {
-            $this->push->setStatus('Error');
-        }
+            $status = ($exitCode === 0) ? 'Success' : 'Error';
+            $this->push->setStatus($status);
 
-        $this->finish($output);
-        $output->writeln(sprintf('<error>%s</error>', $message));
-    }
-
-    /**
-     * Duplicated from BuildCommand
-     *
-     * @param OutputInterface $output
-     * @param string $message
-     * @return null
-     */
-    private function finish(OutputInterface $output)
-    {
-        if ($this->push) {
             $this->push->setEnd($this->clock->read());
             $this->entityManager->merge($this->push);
             $this->entityManager->flush();
@@ -291,11 +233,10 @@ class PushCommand extends Command
         }
 
         $this->cleanup();
+        return $exitCode;
     }
 
     /**
-     * Duplicated from BuildCommand
-     *
      * @param string $status
      * @param boolean $start
      * @return null
@@ -316,22 +257,6 @@ class PushCommand extends Command
     }
 
     /**
-     * Duplicated from BuildCommand
-     *
-     * @param OutputInterface $output
-     * @return null
-     */
-    private function success(OutputInterface $output)
-    {
-        if ($this->push) {
-            $this->push->setStatus('Success');
-        }
-
-        $this->finish($output);
-        $output->writeln(sprintf('<question>%s</question>', 'Success!'));
-    }
-
-    /**
      * @var array $context
      * @return array
      */
@@ -339,7 +264,134 @@ class PushCommand extends Command
     {
         return array_merge(
             $context,
-            ['time' => $this->clock->read()->format('H:i:s', 'America/Detroit')]
+            ['time' => $this->clock->read()->format('c', 'America/Detroit')]
         );
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $pushId
+     * @param string $method
+     * @return array|null
+     */
+    private function resolve(OutputInterface $output, $pushId, $method)
+    {
+        $output->writeln('<comment>Resolving...</comment>');
+        return call_user_func($this->resolver, $pushId, $method);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return null
+     */
+    private function prepare(OutputInterface $output, array $properties)
+    {
+        $this->push = $properties['push'];
+
+        // Update the push status asap so no other worker can pick it up
+        $this->setEntityStatus('Pushing', true);
+
+        $output->writeln(sprintf('<info>Push properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
+
+        // add artifacts for cleanup
+        $this->artifacts = array_merge($this->artifacts, [$properties['buildPath']]);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function unpack(OutputInterface $output, array $properties)
+    {
+        $output->writeln('<comment>Unpacking...</comment>');
+        return call_user_func_array($this->unpacker, [
+            $properties['archiveFile'],
+            $properties['buildPath'],
+            $properties['pushProperties']
+        ]);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function prepush(OutputInterface $output, array $properties)
+    {
+        if (!$properties['prePushCommand']) {
+            return true;
+        }
+
+        $this->logger->debug('Pre push command started', $this->timer());
+        $output->writeln('<comment>Pre push command executing...</comment>');
+
+        $success = call_user_func_array($this->serverCommand, [
+            $properties['hostname'],
+            $properties['remotePath'],
+            $properties['prePushCommand'],
+            $properties['environmentVariables']
+        ]);
+
+        if (!$success) {
+            return false;
+        }
+
+        $this->logger->debug('Pre push command finished', $this->timer());
+        return true;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function push(OutputInterface $output, array $properties)
+    {
+        $this->logger->debug('Pushing started', $this->timer());
+        $output->writeln('<comment>Pushing...</comment>');
+
+        $success = call_user_func_array($this->pusher, [
+            $properties['buildPath'],
+            $properties['syncPath'],
+            $properties['excludedFiles']
+        ]);
+
+        if (!$success) {
+            return false;
+        }
+
+        $this->logger->debug('Pushing finished', $this->timer());
+        return true;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function postpush(OutputInterface $output, array $properties)
+    {
+        if (!$properties['postPushCommand']) {
+            return true;
+        }
+
+        $this->logger->debug('Post push command started', $this->timer());
+        $output->writeln('<comment>Post push command executing...</comment>');
+
+        $success = call_user_func_array($this->serverCommand, [
+            $properties['hostname'],
+            $properties['remotePath'],
+            $properties['postPushCommand'],
+            $properties['environmentVariables']
+        ]);
+
+        if (!$success) {
+            return false;
+        }
+
+        $this->logger->debug('Post push command finished', $this->timer());
+        return true;
     }
 }
