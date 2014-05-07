@@ -93,7 +93,7 @@ class CreatePushCommand extends Command
                 'porcelain',
                 null,
                 InputOption::VALUE_NONE,
-                'If set, Only the build id will be returned'
+                'If set, Only the build ID will be returned.'
             );
     }
 

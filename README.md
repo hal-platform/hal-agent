@@ -31,15 +31,15 @@ Command          | Description
 ---------------- | ----------
 `build:create`   | Create a build job for an application based on an environment
 `build:build`    | Download, build, and archive a build
+`build:remove`   | Remove archive for a build.
 `push:create`    | Create a push job for an application based on a build and deployment
 `push:push`      | Push a built application to a server
+`builds:list`    | List all existing builds.
 
 ## Not Implemented
 
 Command          | Description
 ---------------- | ----------
-`build:list`     | List all existing builds.
-`build:remove`   | Remove archive for a build.
 `build:package`  | Package an existing build for use elsewhere.
 
 ## Testing

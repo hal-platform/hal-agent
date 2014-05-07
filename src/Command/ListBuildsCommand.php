@@ -23,6 +23,7 @@ use Symfony\Component\Filesystem\Filesystem;
 class ListBuildsCommand extends Command
 {
     use CommandTrait;
+    use FormatterTrait;
 
     /**
      * @var string
@@ -76,27 +77,34 @@ class ListBuildsCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('List builds')
+            ->setDescription('List builds in tabular format.')
             ->addOption(
                 'status',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter by status'
+                'Filter by status.',
+                'Success'
             )
             ->addOption(
                 'porcelain',
                 null,
                 InputOption::VALUE_NONE,
-                'Return only build ids'
+                'Return only build IDs.'
             )
             ->addOption(
                 'verify',
                 null,
                 InputOption::VALUE_NONE,
-                'Verify build archive existence'
+                'Verify build archive existence.'
             );
 
-        $this->setHelp('Note: pagination is not currently supported.');
+        $help = 'Note: pagination is not currently supported.';
+        $errors = ['', 'Exit Codes:'];
+        foreach (static::$codes as $code => $message) {
+            $errors[] = $this->formatSection($code, $message);
+        }
+
+        $this->setHelp($help . implode("\n", $errors));
     }
 
     /**

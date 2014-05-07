@@ -25,6 +25,7 @@ use Symfony\Component\Filesystem\Filesystem;
 class RemoveBuildCommand extends Command
 {
     use CommandTrait;
+    use FormatterTrait;
 
     /**
      * @var string
@@ -90,7 +91,7 @@ class RemoveBuildCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Remove build archive')
+            ->setDescription('Remove build archive.')
             ->addArgument(
                 'BUILD_ID',
                 InputArgument::REQUIRED,
@@ -100,8 +101,15 @@ class RemoveBuildCommand extends Command
                 'silent',
                 null,
                 InputOption::VALUE_NONE,
-                'Silently fail if archive does not exist'
+                'Silently fail if archive does not exist.'
             );
+
+        $errors = [ 'Exit Codes:'];
+        foreach (static::$codes as $code => $message) {
+            $errors[] = $this->formatSection($code, $message);
+        }
+
+        $this->setHelp(implode("\n", $errors));
     }
 
     /**
