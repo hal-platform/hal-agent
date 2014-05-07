@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
+use QL\Hal\Agent\Github\ReferenceResolver;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
 use QL\Hal\Core\Entity\Repository\RepositoryRepository;
@@ -27,6 +28,16 @@ class CreateBuildCommand extends Command
     use CommandTrait;
     use FormatterTrait;
 
+    const STATIC_HELP = <<<'HELP'
+<fg=cyan>Supported git reference types:</fg=cyan>
+<info>Branch</info> {BRANCH_NAME}
+<info>Commit</info> {40_CHARACTER_SHA}
+<info>Tag</info> tag/{TAG_NAME}
+<info>Pull Request</info> pull/{PULL_REQUEST_NUMBER}
+
+<fg=cyan>Exit codes:</fg=cyan>
+HELP;
+
     /**
      * A list of all possible exit codes of this command
      *
@@ -36,7 +47,8 @@ class CreateBuildCommand extends Command
         0 => 'Success',
         1 => 'Repository not found.',
         2 => 'Environment not found.',
-        4 => 'User not found.'
+        4 => 'User not found.',
+        8 => 'Invalid git reference specified.'
     ];
 
     /**
@@ -65,12 +77,18 @@ class CreateBuildCommand extends Command
     private $userRepo;
 
     /**
+     * @var ReferenceResolver
+     */
+    private $refResolver;
+
+    /**
      * @param string $name
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param RepositoryRepository $repoRepo
      * @param EnvironmentRepository $environmentRepo
      * @param UserRepository $userRepo
+     * @param ReferenceResolver $refResolver
      */
     public function __construct(
         $name,
@@ -78,7 +96,8 @@ class CreateBuildCommand extends Command
         Clock $clock,
         RepositoryRepository $repoRepo,
         EnvironmentRepository $environmentRepo,
-        UserRepository $userRepo
+        UserRepository $userRepo,
+        ReferenceResolver $refResolver
     ) {
         parent::__construct($name);
 
@@ -87,6 +106,7 @@ class CreateBuildCommand extends Command
         $this->repoRepo = $repoRepo;
         $this->environmentRepo = $environmentRepo;
         $this->userRepo = $userRepo;
+        $this->refResolver = $refResolver;
     }
 
     /**
@@ -107,7 +127,7 @@ class CreateBuildCommand extends Command
                 'The ID of the environment to build for.'
             )
             ->addArgument(
-                'GIT_REF',
+                'GIT_REFERENCE',
                 InputArgument::REQUIRED,
                 'The git reference to build.'
             )
@@ -123,11 +143,12 @@ class CreateBuildCommand extends Command
                 'If set, only the build ID will be returned.'
             );
 
-        $errors = ['Exit Codes:'];
+        $help = [self::STATIC_HELP];
         foreach (static::$codes as $code => $message) {
-            $errors[] = $this->formatSection($code, $message);
+            $help[] = $this->formatSection($code, $message);
         }
-        $this->setHelp(implode("\n", $errors));
+
+        $this->setHelp(implode("\n", $help));
     }
 
     /**
@@ -141,7 +162,7 @@ class CreateBuildCommand extends Command
     {
         $repositoryId = $input->getArgument('REPOSITORY_ID');
         $environmentId = $input->getArgument('ENVIRONMENT_ID');
-        $reference = $input->getArgument('GIT_REF');
+        $ref = $input->getArgument('GIT_REFERENCE');
         $userId = $input->getArgument('USER_ID');
 
         if (!$repository = $this->repoRepo->find($repositoryId)) {
@@ -157,7 +178,15 @@ class CreateBuildCommand extends Command
             return $this->failure($output, 4);
         }
 
-        // need to validate the ref
+        $commitSha = $this->refResolver->resolve(
+            $repository->getGithubUser(),
+            $repository->getGithubRepo(),
+            $ref
+        );
+
+        if (!$commitSha) {
+            return $this->failure($output, 8);
+        }
 
         $build = new Build;
         $build->setId($this->generateBuildId());
@@ -165,8 +194,8 @@ class CreateBuildCommand extends Command
         $build->setRepository($repository);
         $build->setEnvironment($environment);
         $build->setUser($user);
-        $build->setCommit($reference);
-        $build->setBranch('dontcare');
+        $build->setCommit($commitSha);
+        $build->setBranch($ref);
 
         $this->entityManager->persist($build);
         $this->entityManager->flush();

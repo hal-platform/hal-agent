@@ -32,6 +32,7 @@ services:
             - '@repo.repository'
             - '@repo.environment'
             - '@repo.user'
+            - '@utility.reference-resolver'
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
@@ -102,6 +103,12 @@ services:
         scope: prototype
         calls:
             - ['inheritEnvironmentVariables', [false]]
+    utility.reference-resolver:
+        class: 'QL\Hal\Agent\Github\ReferenceResolver'
+        arguments:
+            - '@github.references'
+            - '@github.commits'
+            - '@github.pull-requests'
 
     # build actions
     build.resolver:

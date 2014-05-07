@@ -19,6 +19,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
     public $envRepo;
     public $repoRepo;
     public $userRepo;
+    public $resolver;
     public $clock;
 
     public $input;
@@ -30,6 +31,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->envRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\EnvironmentRepository');
         $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
+        $this->resolver = Mockery::mock('QL\Hal\Agent\Github\ReferenceResolver');
         $this->clock = new Clock('now', 'UTC');
 
         $this->output = new BufferedOutput;
@@ -44,7 +46,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->input = new ArrayInput([
             'REPOSITORY_ID' => '1',
             'ENVIRONMENT_ID' => '2',
-            'GIT_REF' => '3'
+            'GIT_REFERENCE' => '3'
         ]);
 
         $command = new CreateBuildCommand(
@@ -53,7 +55,8 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             $this->clock,
             $this->repoRepo,
             $this->envRepo,
-            $this->userRepo
+            $this->userRepo,
+            $this->resolver
         );
 
         $command->run($this->input, $this->output);
@@ -78,7 +81,7 @@ OUTPUT;
         $this->input = new ArrayInput([
             'REPOSITORY_ID' => '1',
             'ENVIRONMENT_ID' => '2',
-            'GIT_REF' => '3'
+            'GIT_REFERENCE' => '3'
         ]);
 
         $command = new CreateBuildCommand(
@@ -87,7 +90,8 @@ OUTPUT;
             $this->clock,
             $this->repoRepo,
             $this->envRepo,
-            $this->userRepo
+            $this->userRepo,
+            $this->resolver
         );
 
         $command->run($this->input, $this->output);
