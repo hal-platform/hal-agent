@@ -12,17 +12,17 @@ package for deployment elsewhere (AWS, etc).
 
 When installed with composer, the application can be run as follows:
 ```
-vendor/bin/hal-agent [command]
+vendor/bin/hal [command]
 ```
 
 When installed stand-alone, the application can be run as follows:
 ```
-bin/hal-agent [command]
+bin/hal [command]
 ```
 
 Help for any command may be viewed by adding the --help flag as follows.
 ```
-bin/hal-agent [command] [options] --help
+bin/hal [command] [options] --help
 ```
 
 ## Available Commands
@@ -48,14 +48,14 @@ The porcelain commands can be used to create and build entities in a single proc
 
 Build example:
 ```
-bin/hal-agent build:build $(bin/hal-agent build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
-bin/hal-agent b:b $(bin/hal-agent b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
+bin/hal build:build $(bin/hal build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
+bin/hal b:b $(bin/hal b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
 ```
 
 Push example:
 ```
-bin/hal-agent push:push $(bin/hal-agent push:create BUILD_ID DEPLOYMENT_ID --porcelain)
-bin/hal-agent p:p $(bin/hal-agent p:c BUILD_ID DEPLOYMENT_ID --porcelain)
+bin/hal push:push $(bin/hal push:create BUILD_ID DEPLOYMENT_ID --porcelain)
+bin/hal p:p $(bin/hal p:c BUILD_ID DEPLOYMENT_ID --porcelain)
 ```
 
 ## Deployment
