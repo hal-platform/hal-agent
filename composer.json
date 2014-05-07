@@ -2,8 +2,13 @@
     "name": "ql/hal-agent",
     "description": "HAL9000 Console Application",
     "license": "proprietary",
-    "type": "library",
     "authors": [
+        {
+            "name": "Steve Kluck",
+            "email": "stevekluck@quickenloans.com",
+            "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cSKluck",
+            "role": "Developer"
+        },
         {
             "name": "Matt Colf",
             "email": "matthewcolf@quickenloans.com",
@@ -30,11 +35,11 @@
         }
     },
     "bin": [
-        "bin/console"
+        "bin/hal-agent"
     ],
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0.x-dev"
+            "dev-master": "1.0.x-dev"
         }
     },
     "repositories": [
@@ -52,11 +57,11 @@
         "php-64bit":                    ">=5.4.0",
         "psr/log":                      "*",
         "ql/hal-core":                  "2.*@dev",
-        "symfony/config":               "~2.4",
-        "symfony/console":              "~2.4",
-        "symfony/dependency-injection": "~2.4",
-        "symfony/filesystem":           "~2.4",
-        "symfony/process":              "~2.4"
+        "symfony/config":               "2.4.*",
+        "symfony/console":              "2.4.*",
+        "symfony/dependency-injection": "2.4.*",
+        "symfony/filesystem":           "2.4.*",
+        "symfony/process":              "2.4.*"
     },
     "require-dev": {
         "mockery/mockery":              "*",

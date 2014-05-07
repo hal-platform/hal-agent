@@ -1,5 +1,4 @@
-HAL 9000 Console Application
-============================
+## HAL 9000 Console Application
 
 The HAL 9000 Console Application can perform various build and deploy operations and replaces the previous
 monolithic pusher script. The build and deploy processes are now separate - in order to deploy an application, it
@@ -13,17 +12,17 @@ package for deployment elsewhere (AWS, etc).
 
 When installed with composer, the application can be run as follows:
 ```
-vendor/bin/console [command]
+vendor/bin/hal-agent [command]
 ```
 
 When installed stand-alone, the application can be run as follows:
 ```
-bin/console [command]
+bin/hal-agent [command]
 ```
 
 Help for any command may be viewed by adding the --help flag as follows.
 ```
-bin/console [command] [options] --help
+bin/hal-agent [command] [options] --help
 ```
 
 ## Available Commands
@@ -49,12 +48,12 @@ The porcelain commands can be used to create and build entities in a single proc
 
 Build example:
 ```
-bin/console build:build $(bin/console build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
-bin/console b:b $(bin/console b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
+bin/hal-agent build:build $(bin/hal-agent build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
+bin/hal-agent b:b $(bin/hal-agent b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
 ```
 
 Push example:
 ```
-bin/console push:push $(bin/console push:create BUILD_ID DEPLOYMENT_ID --porcelain)
-bin/console p:p $(bin/console p:c BUILD_ID DEPLOYMENT_ID --porcelain)
+bin/hal-agent push:push $(bin/hal-agent push:create BUILD_ID DEPLOYMENT_ID --porcelain)
+bin/hal-agent p:p $(bin/hal-agent p:c BUILD_ID DEPLOYMENT_ID --porcelain)
 ```
