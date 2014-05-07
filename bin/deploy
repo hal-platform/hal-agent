@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+if [ -z  "$HAL_ENVIRONMENT" ] ; then
+    exit 0
+fi
+
+DIR=$( cd "$( dirname "$0" )" && pwd )
+TARGET_CONFIG="config.env.yml"
+NORMALIZED_ENV=$(echo "$HAL_ENVIRONMENT" | tr "[:upper:]" "[:lower:]")
+CONFIG="config.$NORMALIZED_ENV.yml"
+
+echo "Current environment: $HAL_ENVIRONMENT"
+echo "Normalized environment: $NORMALIZED_ENV"
+
+EXISTS=$(test -e $DIR/../configuration/$CONFIG && echo 1 || echo 0)
+if [[ $EXISTS -eq "1" ]]; then
+    echo "Configuration found: $CONFIG"
+    echo "Overwriting $TARGET_CONFIG"
+    cat "$DIR/../configuration/config.test.yml" > "$DIR/../configuration/config.env.yml"
+else
+    echo "Configuration not found: $CONFIG"
+fi
+
+exit 0
