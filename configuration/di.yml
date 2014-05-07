@@ -68,6 +68,8 @@ services:
             - ['setIndentation', ['4']]
     utility.logger:
         class: 'QL\Hal\Agent\Helper\MemoryLogger'
+    utility.filesystem:
+        class: 'Symfony\Component\Filesystem\Filesystem'
 
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
@@ -121,6 +123,7 @@ services:
         arguments:
             - '@utility.logger'
             - '@process.builder=' # = signifies a prototype service
+            - '@utility.filesystem'
             - '@utility.yaml-dumper'
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'

@@ -8,6 +8,8 @@
 namespace QL\Hal\Agent\Push;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Yaml\Dumper;
 
@@ -20,7 +22,7 @@ class Unpacker
     const SUCCESS_PROPERTIES = 'Push details written to application directory';
 
     const ERR_UNPACK_FAILURE = 'Unable to unpack repository archive';
-    const ERR_PROPERTIES = 'Push details could not be written';
+    const ERR_PROPERTIES = 'Push details could not be written: %s';
 
     /**
      * @var LoggerInterface
@@ -33,6 +35,11 @@ class Unpacker
     private $processBuilder;
 
     /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
      * @var Dumper
      */
     private $dumper;
@@ -40,12 +47,18 @@ class Unpacker
     /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
+     * @param Filesystem $filesystem
      * @param Dumper $dumper
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, Dumper $dumper)
-    {
+    public function __construct(
+        LoggerInterface $logger,
+        ProcessBuilder $processBuilder,
+        Filesystem $filesystem,
+        Dumper $dumper
+    ) {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
+        $this->filesystem = $filesystem;
         $this->dumper = $dumper;
     }
 
@@ -91,13 +104,16 @@ class Unpacker
 
         $yml = $this->dumper->dump($properties, 2);
 
-        if (file_put_contents($file, $yml)) {
-            $this->logger->info(self::SUCCESS_PROPERTIES, $context);
-            return true;
+        try {
+            $this->filesystem->dumpFile($file, $yml);
+
+        } catch(IOException $exception) {
+            $this->logger->critical(sprintf(self::ERR_PROPERTIES, $exception->getMessage()), $context);
+            return false;
         }
 
-        $this->logger->critical(self::ERR_PROPERTIES, $context);
-        return false;
+        $this->logger->info(self::SUCCESS_PROPERTIES, $context);
+        return true;
     }
 
     /**
