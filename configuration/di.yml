@@ -6,10 +6,13 @@ services:
             - '%application.name%'
             - '%application.version%'
         calls:
+            # Every one of these commands is instantiated regardless of the running command
+            # There is no way to lazy load these without significant jankiness
             - ['add', ['@command.build.create']]
             - ['add', ['@command.build.build']]
             - ['add', ['@command.push.create']]
             - ['add', ['@command.push.push']]
+            - ['add', ['@command.builds.list']]
 
     clock:
         class: 'MCP\DataType\Time\Clock'
@@ -37,6 +40,13 @@ services:
             - '@build.packer'
             - '@utility.helper.download-progress'
             - '@process.builder=' # = signifies a prototype service
+    command.builds.list:
+        class: 'QL\Hal\Agent\Command\ListBuildsCommand'
+        arguments:
+            - 'builds:list'
+            - '@repo.build'
+            - '@utility.filesystem'
+            - '%environment.archive%'
     command.push.create:
         class: 'QL\Hal\Agent\Command\CreatePushCommand'
         arguments:

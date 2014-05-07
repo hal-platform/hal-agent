@@ -20,8 +20,8 @@ class Resolver
      * @var string
      */
     const FS_DIRECTORY_PREFIX = 'hal9000-build-%s';
-    const FS_ARCHIVE_PREFIX = 'hal9000-build-%s.tar.gz';
-    const FS_BUILD_PREFIX = 'hal9000-%s.tar.gz';
+    const FS_BUILD_PREFIX = 'hal9000-build-%s.tar.gz';
+    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
 
     /**
      * @var string
@@ -143,7 +143,7 @@ class Resolver
      */
     private function generateRepositoryDownload($id)
     {
-        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_PREFIX, $id);
+        return $this->getBuildDirectory() . sprintf(self::FS_BUILD_PREFIX, $id);
     }
 
     /**
@@ -169,7 +169,7 @@ class Resolver
             '%s%s%s',
             rtrim($this->archivePath, '/'),
             DIRECTORY_SEPARATOR,
-            sprintf(self::FS_BUILD_PREFIX, $id)
+            sprintf(self::FS_ARCHIVE_PREFIX, $id)
         );
     }
 

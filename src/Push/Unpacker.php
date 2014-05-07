@@ -25,6 +25,11 @@ class Unpacker
     const ERR_PROPERTIES = 'Push details could not be written: %s';
 
     /**
+     * @var string
+     */
+    const FS_DETAILS_FILE = '.hal9000.yml';
+
+    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -99,7 +104,7 @@ class Unpacker
             '%s%s%s',
             $buildPath,
             DIRECTORY_SEPARATOR,
-            '.hal9000.yml'
+            self::FS_DETAILS_FILE
         );
 
         $yml = $this->dumper->dump($properties, 2);
