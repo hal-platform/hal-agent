@@ -8,9 +8,26 @@
 namespace QL\Hal\Agent\Github;
 
 use Github\Api\AbstractApi;
+use Github\Client;
+use Symfony\Component\Filesystem\Filesystem;
 
 class ArchiveApi extends AbstractApi
 {
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
+     * @param Client $client
+     * @param Filesystem $filesystem Allows null just to maintain parent compatibility
+     */
+    public function __construct(Client $client, Filesystem $filesystem = null)
+    {
+        $this->client = $client;
+        $this->filesystem = $filesystem ?: new Filesystem;
+    }
+
     /**
      * Get content of archives in a repository
      *
@@ -32,7 +49,7 @@ class ArchiveApi extends AbstractApi
         );
 
         $response = $this->client->getHttpClient()->get($path, ['ref' => $reference]);
-        file_put_contents($target, $response->getBody());
+        $this->filesystem->dumpFile($target, $response->getBody());
 
         return $response->isSuccessful();
     }

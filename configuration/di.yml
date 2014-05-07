@@ -198,7 +198,9 @@ services:
 
     github.archive:
         class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments: ['@github.client']
+        arguments:
+            - '@github.client'
+            - '@utility.filesystem'
     github.client:
         class: 'Github\Client'
         arguments: ['@github.httpClient']

@@ -12,6 +12,7 @@ use Github\HttpClient\HttpClient;
 use Guzzle\Http\Client as GuzzleClient;
 use Guzzle\Http\Message\Response;
 use Guzzle\Plugin\Mock\MockPlugin;
+use Mockery;
 use PHPUnit_Framework_TestCase;
 
 class ArchiveApiTest extends PHPUnit_Framework_TestCase
@@ -23,9 +24,12 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
             new Response(200)
         ]));
 
-        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)));
+        $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
+        $filesystem->shouldReceive('dumpFile');
 
-        $success = $api->download('user', 'repo', 'ref', 'php://temp');
+        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)), $filesystem);
+
+        $success = $api->download('user', 'repo', 'ref', 'path/derp');
         $this->assertTrue($success);
     }
 
@@ -39,9 +43,11 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
             new Response(503)
         ]));
 
-        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)));
+        $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
 
-        $success = $api->download('user', 'repo', 'ref', 'php://temp');
+        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)), $filesystem);
+
+        $success = $api->download('user', 'repo', 'ref', 'path/derp');
     }
 
     public function testMessageBodyGoesToTarget()
@@ -51,12 +57,20 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
             new Response(200, null, 'test-body')
         ]));
 
-        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)));
+        $body = null;
 
-        ob_start();
-        $api->download('user', 'repo', 'ref', 'php://output');
-        $buffer = ob_get_clean();
+        $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
+        $filesystem
+            ->shouldReceive('dumpFile')
+            ->with('path/derp', Mockery::on(function($v) use (&$body) {
+                $body = $v;
+                return true;
+            }))
+            ->once();
 
-        $this->assertSame('test-body', $buffer);
+        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)), $filesystem);
+
+        $api->download('user', 'repo', 'ref', 'path/derp');
+        $this->assertSame('test-body', (string) $body);
     }
 }
