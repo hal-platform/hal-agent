@@ -130,7 +130,7 @@ class Resolver
      *  @param string $directory
      *  @return string
      */
-    private function setHomeDirectory($directory)
+    public function setHomeDirectory($directory)
     {
         $this->homeDirectory = $directory;
     }
