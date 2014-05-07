@@ -92,7 +92,8 @@ class CreateBuildCommand extends Command
                 'GIT_REF',
                 InputArgument::REQUIRED,
                 'The git reference to build.'
-            )->addOption(
+            )
+            ->addOption(
                 'porcelain',
                 null,
                 InputOption::VALUE_NONE,
