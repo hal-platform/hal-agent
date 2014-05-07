@@ -12,6 +12,7 @@ use MCP\DataType\Time\Clock;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
 use QL\Hal\Core\Entity\Repository\RepositoryRepository;
+use QL\Hal\Core\Entity\Repository\UserRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,7 +35,8 @@ class CreateBuildCommand extends Command
     private static $codes = [
         0 => 'Success',
         1 => 'Repository not found.',
-        2 => 'Environment not found.'
+        2 => 'Environment not found.',
+        4 => 'User not found.'
     ];
 
     /**
@@ -58,18 +60,25 @@ class CreateBuildCommand extends Command
     private $environmentRepo;
 
     /**
+     * @var UserRepository
+     */
+    private $userRepo;
+
+    /**
      * @param string $name
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param RepositoryRepository $repoRepo
      * @param EnvironmentRepository $environmentRepo
+     * @param UserRepository $userRepo
      */
     public function __construct(
         $name,
         EntityManager $entityManager,
         Clock $clock,
         RepositoryRepository $repoRepo,
-        EnvironmentRepository $environmentRepo
+        EnvironmentRepository $environmentRepo,
+        UserRepository $userRepo
     ) {
         parent::__construct($name);
 
@@ -77,6 +86,7 @@ class CreateBuildCommand extends Command
         $this->clock = $clock;
         $this->repoRepo = $repoRepo;
         $this->environmentRepo = $environmentRepo;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -101,11 +111,16 @@ class CreateBuildCommand extends Command
                 InputArgument::REQUIRED,
                 'The git reference to build.'
             )
+            ->addArgument(
+                'USER_ID',
+                InputArgument::OPTIONAL,
+                'The user that triggered the build.'
+            )
             ->addOption(
                 'porcelain',
                 null,
                 InputOption::VALUE_NONE,
-                'If set, Only the build ID will be returned.'
+                'If set, only the build ID will be returned.'
             );
 
         $errors = ['Exit Codes:'];
@@ -127,6 +142,7 @@ class CreateBuildCommand extends Command
         $repositoryId = $input->getArgument('REPOSITORY_ID');
         $environmentId = $input->getArgument('ENVIRONMENT_ID');
         $reference = $input->getArgument('GIT_REF');
+        $userId = $input->getArgument('USER_ID');
 
         if (!$repository = $this->repoRepo->find($repositoryId)) {
             return $this->failure($output, 1);
@@ -136,6 +152,11 @@ class CreateBuildCommand extends Command
             return $this->failure($output, 2);
         }
 
+        $user = null;
+        if ($userId && !$user = $this->userRepo->find($userId)) {
+            return $this->failure($output, 4);
+        }
+
         // need to validate the ref
 
         $build = new Build;
@@ -143,6 +164,7 @@ class CreateBuildCommand extends Command
         $build->setStatus('Waiting');
         $build->setRepository($repository);
         $build->setEnvironment($environment);
+        $build->setUser($user);
         $build->setCommit($reference);
         $build->setBranch('dontcare');
 

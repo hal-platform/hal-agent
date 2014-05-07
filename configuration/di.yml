@@ -1,3 +1,6 @@
+imports:
+    -
+        resource: imported.yml
 services:
 
     application:
@@ -19,6 +22,7 @@ services:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
+    # commands
     command.build.create:
         class: 'QL\Hal\Agent\Command\CreateBuildCommand'
         arguments:
@@ -27,6 +31,7 @@ services:
             - '@clock'
             - '@repo.repository'
             - '@repo.environment'
+            - '@repo.user'
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
@@ -40,7 +45,7 @@ services:
             - '@build.builder'
             - '@build.packer'
             - '@utility.helper.download-progress'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
     command.build.remove:
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
@@ -64,6 +69,7 @@ services:
             - '@clock'
             - '@repo.build'
             - '@repo.deployment'
+            - '@repo.user'
     command.push.push:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
@@ -75,8 +81,9 @@ services:
             - '@push.unpacker'
             - '@push.pusher'
             - '@push.server-command'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
 
+    # utility
     utility.helper.download-progress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
         arguments:
@@ -90,6 +97,13 @@ services:
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
 
+    utility.process.builder:
+        class: 'Symfony\Component\Process\ProcessBuilder'
+        scope: prototype
+        calls:
+            - ['inheritEnvironmentVariables', [false]]
+
+    # build actions
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
@@ -109,24 +123,19 @@ services:
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
             - '@utility.logger'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
     build.builder:
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
             - '@utility.logger'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
             - '@utility.logger'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
 
-    process.builder:
-        class: 'Symfony\Component\Process\ProcessBuilder'
-        scope: prototype
-        calls:
-            - ['inheritEnvironmentVariables', [false]]
-
+    # push actions
     push.resolver:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
@@ -141,97 +150,17 @@ services:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
             - '@utility.logger'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
             - '@utility.filesystem'
             - '@utility.yaml-dumper'
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
             - '@utility.logger'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
     push.server-command:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
             - '@utility.logger'
-            - '@process.builder=' # = signifies a prototype service
+            - '@utility.process.builder=' # = signifies a prototype service
             - '%ssh-user%'
-
-### imported from hal-core
-
-    # Repositories
-    repo.build:
-        class: 'QL\Hal\Core\Entity\Repository\BuildRepository'
-        factory_service:  doctrine.em
-        factory_method:   getRepository
-        arguments:
-            - 'QL\Hal\Core\Entity\Build'
-    repo.deployment:
-        class: 'QL\Hal\Core\Entity\Repository\DeploymentRepository'
-        factory_service:  doctrine.em
-        factory_method:   getRepository
-        arguments:
-            - 'QL\Hal\Core\Entity\Deployment'
-    repo.environment:
-        class: 'QL\Hal\Core\Entity\Repository\EnvironmentRepository'
-        factory_service:  doctrine.em
-        factory_method:   getRepository
-        arguments:
-            - 'QL\Hal\Core\Entity\Environment'
-    repo.push:
-        class: 'QL\Hal\Core\Entity\Repository\PushRepository'
-        factory_service:  doctrine.em
-        factory_method:   getRepository
-        arguments:
-            - 'QL\Hal\Core\Entity\Push'
-    repo.repository:
-        class: 'QL\Hal\Core\Entity\Repository\RepositoryRepository'
-        factory_service:  doctrine.em
-        factory_method:   getRepository
-        arguments:
-            - 'QL\Hal\Core\Entity\Repository'
-
-    # Doctrine Configuration
-    doctrine.config:
-        class:            'Doctrine\ORM\Configuration'
-        factory_class:    'Doctrine\ORM\Tools\Setup'
-        factory_method:   createAnnotationMetadataConfiguration
-        arguments:
-            - %doctrine.mappings%
-            - %doctrine.devmode%
-
-    # Doctrine Entity Manager Configurator
-    doctrine.em.config:
-        class: 'QL\Hal\Core\Entity\Configurator\EntityManagerConfigurator'
-
-    # Doctrine Entity Manager
-    doctrine.em:
-        class:            'Doctrine\ORM\EntityManager'
-        factory_class:    'Doctrine\ORM\EntityManager'
-        factory_method:   create
-        arguments:
-            - %doctrine.connection%
-            - @doctrine.config
-        configurator: ['@doctrine.em.config', 'configure']
-
-### imported from hal
-
-    github.archive:
-        class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments:
-            - '@github.client'
-            - '@utility.filesystem'
-    github.client:
-        class: 'Github\Client'
-        arguments: ['@github.httpClient']
-    github.httpClient:
-        class: 'Github\HttpClient\HttpClient'
-        arguments: [[], '@github.guzzleHttpClient']
-        calls:
-            - ['authenticate', ['%github.token%', null, 'http_token']]
-    github.guzzleHttpClient:
-        class: 'Guzzle\Http\Client'
-        arguments:
-            - 'http://git/api/v3/'
-            -
-                curl.options:
-                    progress: true

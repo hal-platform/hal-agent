@@ -19,6 +19,7 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
     public $em;
     public $buildRepo;
     public $deployRepo;
+    public $userRepo;
     public $clock;
 
     public $input;
@@ -29,6 +30,7 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
         $this->deployRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\DeploymentRepository');
+        $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
         $this->clock = new Clock('now', 'UTC');
 
         $this->output = new BufferedOutput;
@@ -50,7 +52,8 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
             $this->em,
             $this->clock,
             $this->buildRepo,
-            $this->deployRepo
+            $this->deployRepo,
+            $this->userRepo
         );
 
         $command->run($this->input, $this->output);
@@ -85,7 +88,8 @@ OUTPUT;
             $this->em,
             $this->clock,
             $this->buildRepo,
-            $this->deployRepo
+            $this->deployRepo,
+            $this->userRepo
         );
 
         $command->run($this->input, $this->output);

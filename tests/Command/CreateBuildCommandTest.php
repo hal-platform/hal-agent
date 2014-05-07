@@ -18,6 +18,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
     public $em;
     public $envRepo;
     public $repoRepo;
+    public $userRepo;
     public $clock;
 
     public $input;
@@ -28,6 +29,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->envRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\EnvironmentRepository');
         $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
+        $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
         $this->clock = new Clock('now', 'UTC');
 
         $this->output = new BufferedOutput;
@@ -50,7 +52,8 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             $this->em,
             $this->clock,
             $this->repoRepo,
-            $this->envRepo
+            $this->envRepo,
+            $this->userRepo
         );
 
         $command->run($this->input, $this->output);
@@ -83,7 +86,8 @@ OUTPUT;
             $this->em,
             $this->clock,
             $this->repoRepo,
-            $this->envRepo
+            $this->envRepo,
+            $this->userRepo
         );
 
         $command->run($this->input, $this->output);

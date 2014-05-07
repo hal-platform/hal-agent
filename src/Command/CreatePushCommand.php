@@ -12,6 +12,7 @@ use MCP\DataType\Time\Clock;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\DeploymentRepository;
+use QL\Hal\Core\Entity\Repository\UserRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -35,7 +36,8 @@ class CreatePushCommand extends Command
         0 => 'Success',
         1 => 'Build not found.',
         2 => 'Provided build was not successful! It cannot be pushed.',
-        4 => 'Deployment not found.'
+        4 => 'Deployment not found.',
+        8 => 'User not found.',
     ];
 
     /**
@@ -59,18 +61,25 @@ class CreatePushCommand extends Command
     private $deploymentRepo;
 
     /**
+     * @var UserRepository
+     */
+    private $userRepo;
+
+    /**
      * @param string $name
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param BuildRepository $buildRepo
      * @param DeploymentRepository $deploymentRepo
+     * @param UserRepository $userRepo
      */
     public function __construct(
         $name,
         EntityManager $entityManager,
         Clock $clock,
         BuildRepository $buildRepo,
-        DeploymentRepository $deploymentRepo
+        DeploymentRepository $deploymentRepo,
+        UserRepository $userRepo
     ) {
         parent::__construct($name);
 
@@ -78,6 +87,7 @@ class CreatePushCommand extends Command
         $this->clock = $clock;
         $this->buildRepo = $buildRepo;
         $this->deploymentRepo = $deploymentRepo;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -97,11 +107,16 @@ class CreatePushCommand extends Command
                 InputArgument::REQUIRED,
                 'The ID of the deployment relationship.'
             )
+            ->addArgument(
+                'USER_ID',
+                InputArgument::OPTIONAL,
+                'The user that triggered the push.'
+            )
             ->addOption(
                 'porcelain',
                 null,
                 InputOption::VALUE_NONE,
-                'If set, Only the build ID will be returned.'
+                'If set, only the Push ID will be returned.'
             );
 
         $errors = ['Exit Codes:'];
@@ -122,6 +137,7 @@ class CreatePushCommand extends Command
     {
         $buildId = $input->getArgument('BUILD_ID');
         $deploymentId = $input->getArgument('DEPLOYMENT_ID');
+        $userId = $input->getArgument('USER_ID');
 
         if (!$build = $this->buildRepo->find($buildId)) {
             return $this->failure($output, 1);
@@ -135,10 +151,16 @@ class CreatePushCommand extends Command
             return $this->failure($output, 4);
         }
 
+        $user = null;
+        if ($userId && !$user = $this->userRepo->find($userId)) {
+            return $this->failure($output, 8);
+        }
+
         $push = new Push;
         $push->setStatus('Waiting');
         $push->setBuild($build);
         $push->setDeployment($deployment);
+        $push->setUser($user);
 
         $this->entityManager->persist($push);
         $this->entityManager->flush();

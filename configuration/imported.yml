@@ -1,0 +1,86 @@
+services:
+### imported from hal-core
+
+    # Repositories
+    repo.build:
+        class: 'QL\Hal\Core\Entity\Repository\BuildRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Build'
+    repo.deployment:
+        class: 'QL\Hal\Core\Entity\Repository\DeploymentRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Deployment'
+    repo.environment:
+        class: 'QL\Hal\Core\Entity\Repository\EnvironmentRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Environment'
+    repo.push:
+        class: 'QL\Hal\Core\Entity\Repository\PushRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Push'
+    repo.repository:
+        class: 'QL\Hal\Core\Entity\Repository\RepositoryRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\Repository'
+    repo.user:
+        class: 'QL\Hal\Core\Entity\Repository\UserRepository'
+        factory_service:  doctrine.em
+        factory_method:   getRepository
+        arguments:
+            - 'QL\Hal\Core\Entity\User'
+
+    # Doctrine Configuration
+    doctrine.config:
+        class:            'Doctrine\ORM\Configuration'
+        factory_class:    'Doctrine\ORM\Tools\Setup'
+        factory_method:   createAnnotationMetadataConfiguration
+        arguments:
+            - %doctrine.mappings%
+            - %doctrine.devmode%
+
+    # Doctrine Entity Manager Configurator
+    doctrine.em.config:
+        class: 'QL\Hal\Core\Entity\Configurator\EntityManagerConfigurator'
+
+    # Doctrine Entity Manager
+    doctrine.em:
+        class:            'Doctrine\ORM\EntityManager'
+        factory_class:    'Doctrine\ORM\EntityManager'
+        factory_method:   create
+        arguments:
+            - %doctrine.connection%
+            - @doctrine.config
+        configurator: ['@doctrine.em.config', 'configure']
+
+### imported from hal
+
+    github.archive:
+        class: 'QL\Hal\Agent\Github\ArchiveApi'
+        arguments:
+            - '@github.client'
+            - '@utility.filesystem'
+    github.client:
+        class: 'Github\Client'
+        arguments: ['@github.httpClient']
+    github.httpClient:
+        class: 'Github\HttpClient\HttpClient'
+        arguments: [[], '@github.guzzleHttpClient']
+        calls:
+            - ['authenticate', ['%github.token%', null, 'http_token']]
+    github.guzzleHttpClient:
+        class: 'Guzzle\Http\Client'
+        arguments:
+            - 'http://git/api/v3/'
+            -
+                curl.options:
+                    progress: true
