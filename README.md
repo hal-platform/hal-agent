@@ -57,3 +57,7 @@ Push example:
 bin/hal-agent push:push $(bin/hal-agent push:create BUILD_ID DEPLOYMENT_ID --porcelain)
 bin/hal-agent p:p $(bin/hal-agent p:c BUILD_ID DEPLOYMENT_ID --porcelain)
 ```
+
+## Deployment
+
+`bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`
