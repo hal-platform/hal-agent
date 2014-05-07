@@ -98,13 +98,14 @@ class ListBuildsCommand extends Command
                 'Verify build archive existence.'
             );
 
-        $help = 'Note: pagination is not currently supported.';
-        $errors = ['', 'Exit Codes:'];
+        $help = [
+            'Note: pagination is not currently supported.',
+            '<fg=cyan>Exit codes:</fg=cyan>'
+        ];
         foreach (static::$codes as $code => $message) {
-            $errors[] = $this->formatSection($code, $message);
+            $help[] = $this->formatSection($code, $message);
         }
-
-        $this->setHelp($help . implode("\n", $errors));
+        $this->setHelp(implode("\n", $help));
     }
 
     /**

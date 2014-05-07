@@ -104,12 +104,11 @@ class RemoveBuildCommand extends Command
                 'Silently fail if archive does not exist.'
             );
 
-        $errors = [ 'Exit Codes:'];
+        $help = ['<fg=cyan>Exit codes:</fg=cyan>'];
         foreach (static::$codes as $code => $message) {
-            $errors[] = $this->formatSection($code, $message);
+            $help[] = $this->formatSection($code, $message);
         }
-
-        $this->setHelp(implode("\n", $errors));
+        $this->setHelp(implode("\n", $help));
     }
 
     /**
