@@ -10,6 +10,7 @@ services:
             # There is no way to lazy load these without significant jankiness
             - ['add', ['@command.build.create']]
             - ['add', ['@command.build.build']]
+            - ['add', ['@command.build.remove']]
             - ['add', ['@command.push.create']]
             - ['add', ['@command.push.push']]
             - ['add', ['@command.builds.list']]
@@ -40,6 +41,14 @@ services:
             - '@build.packer'
             - '@utility.helper.download-progress'
             - '@process.builder=' # = signifies a prototype service
+    command.build.remove:
+        class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
+        arguments:
+            - 'build:remove'
+            - '@doctrine.em'
+            - '@repo.build'
+            - '@utility.filesystem'
+            - '%environment.archive%'
     command.builds.list:
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:

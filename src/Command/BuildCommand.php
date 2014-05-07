@@ -24,7 +24,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
- *  Build an application for a particular environment.
+ * Build an application for a particular environment.
  *
  * The amount of dependencies of this command is too damn high.
  */

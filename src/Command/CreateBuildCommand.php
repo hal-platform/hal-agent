@@ -19,7 +19,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- *  Create a build job
+ * Create a build job
  */
 class CreateBuildCommand extends Command
 {

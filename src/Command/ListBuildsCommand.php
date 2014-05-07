@@ -16,7 +16,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- *  List builds
+ * List builds
+ *
+ * BUILT FOR COMMAND LINE ONLY
  */
 class ListBuildsCommand extends Command
 {

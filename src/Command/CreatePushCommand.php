@@ -19,7 +19,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- *  Create a push job
+ * Create a push job
  */
 class CreatePushCommand extends Command
 {
