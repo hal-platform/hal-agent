@@ -23,11 +23,19 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CreateBuildCommand extends Command
 {
+    use CommandTrait;
+    use FormatterTrait;
+
     /**
-     * @var string
+     * A list of all possible exit codes of this command
+     *
+     * @var array
      */
-    const ERR_REPO_NOT_FOUND = '<error>Repository ID "%s" not found.</error>';
-    const ERR_ENV_NOT_FOUND = '<error>Environment ID "%s" not found.</error>';
+    private static $codes = [
+        0 => 'Success',
+        1 => 'Repository not found.',
+        2 => 'Environment not found.'
+    ];
 
     /**
      * @var EntityManager
@@ -99,6 +107,12 @@ class CreateBuildCommand extends Command
                 InputOption::VALUE_NONE,
                 'If set, Only the build ID will be returned.'
             );
+
+        $errors = ['Exit Codes:'];
+        foreach (static::$codes as $code => $message) {
+            $errors[] = $this->formatSection($code, $message);
+        }
+        $this->setHelp(implode("\n", $errors));
     }
 
     /**
@@ -115,13 +129,11 @@ class CreateBuildCommand extends Command
         $reference = $input->getArgument('GIT_REF');
 
         if (!$repository = $this->repoRepo->find($repositoryId)) {
-            $output->writeln(sprintf(self::ERR_REPO_NOT_FOUND, $repositoryId));
-            return 1;
+            return $this->failure($output, 1);
         }
 
         if (!$environment = $this->environmentRepo->find($environmentId)) {
-            $output->writeln(sprintf(self::ERR_ENV_NOT_FOUND, $environmentId));
-            return 2;
+            return $this->failure($output, 2);
         }
 
         // need to validate the ref
@@ -137,14 +149,12 @@ class CreateBuildCommand extends Command
         $this->entityManager->persist($build);
         $this->entityManager->flush();
 
-        $id = $build->getId();
-        $text = $id;
+        if ($input->getOption('porcelain')) {
+            $output->writeln($build->getId());
 
-        if (!$input->getOption('porcelain')) {
-            $text = sprintf('<question>Build created: %s</question>', $id);
+        } else {
+            $this->success($output, sprintf('Build created: %s', $build->getId()));
         }
-
-        $output->writeln($text);
     }
 
     /**

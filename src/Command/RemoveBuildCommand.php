@@ -143,7 +143,7 @@ class RemoveBuildCommand extends Command
 
         $this->filesystem->remove($archive);
 
-        return $this->success($output);
+        return $this->success($output, sprintf('Archive for build "%s" removed.', $buildId));
     }
 
     /**

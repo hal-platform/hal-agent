@@ -23,12 +23,20 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CreatePushCommand extends Command
 {
+    use CommandTrait;
+    use FormatterTrait;
+
     /**
-     * @var string
+     * A list of all possible exit codes of this command
+     *
+     * @var array
      */
-    const ERR_BUILD_NOT_FOUND = '<error>Build ID "%s" not found.</error>';
-    const ERR_DEPLOY_NOT_FOUND = '<error>Deployment ID "%s" not found.</error>';
-    const ERR_BUILD_STATUS = '<error>Build "%s" has a status of "%s"! It cannot be pushed.</error>';
+    private static $codes = [
+        0 => 'Success',
+        1 => 'Build not found.',
+        2 => 'Provided build was not successful! It cannot be pushed.',
+        4 => 'Deployment not found.'
+    ];
 
     /**
      * @var EntityManager
@@ -95,6 +103,12 @@ class CreatePushCommand extends Command
                 InputOption::VALUE_NONE,
                 'If set, Only the build ID will be returned.'
             );
+
+        $errors = ['Exit Codes:'];
+        foreach (static::$codes as $code => $message) {
+            $errors[] = $this->formatSection($code, $message);
+        }
+        $this->setHelp(implode("\n", $errors));
     }
 
     /**
@@ -110,18 +124,15 @@ class CreatePushCommand extends Command
         $deploymentId = $input->getArgument('DEPLOYMENT_ID');
 
         if (!$build = $this->buildRepo->find($buildId)) {
-            $output->writeln(sprintf(self::ERR_BUILD_NOT_FOUND, $buildId));
-            return 1;
+            return $this->failure($output, 1);
         }
 
         if ($build->getStatus() !== 'Success') {
-            $output->writeln(sprintf(self::ERR_BUILD_STATUS, $buildId, $build->getStatus()));
-            return 2;
+            return $this->failure($output, 2);
         }
 
         if (!$deployment = $this->deploymentRepo->find($deploymentId)) {
-            $output->writeln(sprintf(self::ERR_DEPLOY_NOT_FOUND, $deploymentId));
-            return 4;
+            return $this->failure($output, 4);
         }
 
         $push = new Push;
@@ -132,13 +143,11 @@ class CreatePushCommand extends Command
         $this->entityManager->persist($push);
         $this->entityManager->flush();
 
-        $id = $push->getId();
-        $text = $id;
+        if ($input->getOption('porcelain')) {
+            $output->writeln($push->getId());
 
-        if (!$input->getOption('porcelain')) {
-            $text = sprintf('<question>Push created: %s</question>', $id);
+        } else {
+            $this->success($output, sprintf('Push created: %s', $push->getId()));
         }
-
-        $output->writeln($text);
     }
 }

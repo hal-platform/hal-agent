@@ -56,7 +56,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
-Repository ID "1" not found.
+Repository not found.
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -89,7 +89,7 @@ OUTPUT;
         $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
-Environment ID "2" not found.
+Environment not found.
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());

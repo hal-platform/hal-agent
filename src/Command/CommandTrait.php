@@ -54,18 +54,22 @@ trait CommandTrait
 
     /**
      * @param OutputInterface $output
-     * @param string $message
-     * @param string $message
+     * @param string $customMessage
      * @return int
      */
-    private function success(OutputInterface $output, $exit = 0)
+    private function success(OutputInterface $output, $customMessage = null)
     {
         // The finish can modify the exit code with custom logic per command
         $message = 'Success';
-        $exitCode = $this->finish($output, $exit);
+        $exitCode = $this->finish($output, 0);
 
         if (isset(static::$codes) && isset(static::$codes[$exitCode])) {
             $message = static::$codes[$exitCode];
+        }
+
+        // Overwrite with custom message if provided
+        if ($customMessage !== null) {
+            $message = $customMessage;
         }
 
         $output->writeln(sprintf('<bg=green>%s</bg=green>', $message));

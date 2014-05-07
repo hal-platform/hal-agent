@@ -171,7 +171,7 @@ class ListBuildsCommand extends Command
         $output->writeln(sprintf('Displaying %s - %s out of %s: ', $offset + 1, $offset + count($builds), count($builds)));
         $table->render($output);
 
-        return 0;
+        $this->success($output, '');
     }
 
     /**
