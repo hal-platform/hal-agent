@@ -6,6 +6,7 @@
 # recommended location for build artifacts
 /.build/
 
+/composer.lock
 /configuration/config.env.yml
 /phpunit.xml
 /vendor/
