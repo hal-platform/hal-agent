@@ -15,7 +15,7 @@ EXISTS=$(test -e $DIR/../configuration/$CONFIG && echo 1 || echo 0)
 if [[ $EXISTS -eq "1" ]]; then
     echo "Configuration found: $CONFIG"
     echo "Overwriting $TARGET_CONFIG"
-    cat "$DIR/../configuration/config.test.yml" > "$DIR/../configuration/config.env.yml"
+    cat "$DIR/../configuration/$CONFIG" > "$DIR/../configuration/config.env.yml"
 else
     echo "Configuration not found: $CONFIG"
 fi
