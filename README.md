@@ -28,7 +28,7 @@ bin/hal [command] [options] --help
 ## Available Commands
 
 Command          | Description
----------------- | ----------
+---------------- | -----------
 `build:create`   | Create a build job for an application based on an environment
 `build:build`    | Download, build, and archive a build
 `build:remove`   | Remove archive for a build.
@@ -36,11 +36,19 @@ Command          | Description
 `push:push`      | Push a built application to a server
 `builds:list`    | List all existing builds.
 
+## Worker Commands
+
+These commands can be set on a timer or cron to pick up and process waiting actions.
+
+Command          | Description
+---------------- | -----------
+`worker:build`   | Find and build all waiting builds.
+
 ## Not Implemented
 
 Command          | Description
----------------- | ----------
-`build:package`  | Package an existing build for use elsewhere.
+---------------- | -----------
+`worker:push`    | Find and push all waiting pushes.
 
 ## Testing
 
