@@ -56,14 +56,6 @@ services:
             - '@repo.build'
             - '@utility.filesystem'
             - '%environment.archive%'
-    command.build.worker:
-        class: 'QL\Hal\Agent\Command\WorkerBuildCommand'
-        arguments:
-            - 'build:worker'
-            - 'build:build'
-            - '@utility.logger'
-            - '@repo.build'
-            - '@doctrine.em'
     command.builds.list:
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
@@ -92,7 +84,15 @@ services:
             - '@push.pusher'
             - '@push.server-command'
             - '@utility.process.builder=' # = signifies a prototype service
-
+    command.worker.build:
+        class: 'QL\Hal\Agent\Command\WorkerBuildCommand'
+        arguments:
+            - 'worker:build'
+            - 'build:build'
+            - '@utility.logger'
+            - '@repo.build'
+            - '@doctrine.em'
+            - '@utility.forker'
     # utility
     utility.helper.download-progress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
@@ -118,6 +118,8 @@ services:
             - '@github.references'
             - '@github.commits'
             - '@github.pull-requests'
+    utility.forker:
+        class: 'QL\Hal\Agent\Helper\ForkHelper'
 
     # build actions
     build.resolver:

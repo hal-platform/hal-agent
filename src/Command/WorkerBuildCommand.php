@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Helper\ForkHelper;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -22,7 +23,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 class WorkerbuildCommand extends Command
 {
     use CommandTrait;
-    use FormatterTrait;
 
     /**
      * A list of all possible exit codes of this command
@@ -31,7 +31,8 @@ class WorkerbuildCommand extends Command
      */
     private static $codes = [
         0 => 'All waiting builds have been started.',
-        1 => 'Could not fork a build worker.'
+        1 => 'Could not fork a build worker.',
+        2 => 'Build Command not found.'
     ];
 
     /**
@@ -55,18 +56,25 @@ class WorkerbuildCommand extends Command
     private $entityManager;
 
     /**
+     * @var ForkHelper
+     */
+    private $forker;
+
+    /**
      * @param string $name
      * @param string $buildCommand
      * @param LoggerInterface $logger
      * @param BuildRepository $buildRepo
      * @param EntityManager $entityManager
+     * @param ForkHelper $forker
      */
     public function __construct(
         $name,
         $buildCommand,
         LoggerInterface $logger,
         BuildRepository $buildRepo,
-        EntityManager $entityManager
+        EntityManager $entityManager,
+        ForkHelper $forker
     ) {
         parent::__construct($name);
         $this->buildCommand = $buildCommand;
@@ -74,6 +82,7 @@ class WorkerbuildCommand extends Command
         $this->logger = $logger;
         $this->buildRepo = $buildRepo;
         $this->entityManager = $entityManager;
+        $this->forker = $forker;
     }
 
     /**
@@ -95,20 +104,20 @@ class WorkerbuildCommand extends Command
     {
         // find a build
         if (!$builds = $this->buildRepo->findBy(['status' => 'Waiting'], null)) {
-            $output->writeln('No waiting builds found.');
-            return $this->success($output, '');
+            return $this->success($output, 'No waiting builds found.');
         }
 
-        // Get build command
         $command = $this->getApplication()->find($this->buildCommand);
+        if (!$command instanceof Command) {
+            return $this->failure($output, 2);
+        }
 
         $this->logger->info(sprintf('Found %s waiting builds', count($builds)));
         $output->writeln(sprintf('Waiting builds: %s', count($builds)));
-
         $output->writeln('<comment>Starting build workers...</comment>');
 
         foreach ($builds as $build) {
-            $pid = pcntl_fork();
+            $pid = $this->forker->fork();
             if ($pid === -1) {
                 return $this->failure($output, 1);
 
