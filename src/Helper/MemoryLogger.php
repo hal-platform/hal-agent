@@ -16,6 +16,16 @@ use Psr\Log\LoggerInterface;
  */
 class MemoryLogger extends AbstractLogger
 {
+    const MESSAGE_WITH_NO_BREAKS = <<<'TEXT'
+%s: %s
+
+TEXT;
+    const MESSAGE_WITH_BREAKS = <<<'TEXT'
+%s:
+%s
+
+TEXT;
+
     /**
      *            level,  message, context
      * @var array(string $level, string $message,  array $context)[]
@@ -67,19 +77,18 @@ class MemoryLogger extends AbstractLogger
      *
      * @param string $level
      * @param string $message
+     * @param array $context
      * @return null
      */
-    public function send($level, $message)
+    public function send($level, $message, array $context = [])
     {
         // silently fail if no logger or messages
         if (!$this->bufferedLogger || !$this->messages) {
             return;
         }
 
-        $output = $this->output(true);
-        $message . "\n\n" . $output;
-
-        $this->bufferedLogger->$level($message);
+        $context = array_merge($context, ['messages' => $this->output(true)]);
+        $this->bufferedLogger->$level($message, $context);
     }
 
     /**
@@ -104,10 +113,35 @@ class MemoryLogger extends AbstractLogger
         $formatted .= $subject . "\n";
 
         if ($context && $showContext) {
-            $context = json_encode($context, JSON_PRETTY_PRINT);
-            $formatted .= $context . "\n";
+            $formatted .= $this->formatContext($context);
         }
 
         return $formatted;
+    }
+
+    /**
+     * @param array $context
+     * @return string
+     */
+    private function formatContext(array $context)
+    {
+        $rendered = '';
+        foreach ($context as $property => $value) {
+            // array
+            if (is_array($value)) {
+                $flags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+                $rendered .= sprintf(self::MESSAGE_WITH_BREAKS, $property, json_encode($value, $flags));
+
+            // text with line breaks
+            } elseif (is_string($value) && strpos($value, "\n") !== false) {
+                $rendered .= sprintf(self::MESSAGE_WITH_BREAKS, $property, $value);
+
+            // everything else
+            } else {
+                $rendered .= sprintf(self::MESSAGE_WITH_NO_BREAKS, $property, var_export($value, true));
+            }
+        }
+
+        return $rendered . "\n";
     }
 }

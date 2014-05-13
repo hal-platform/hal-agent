@@ -217,13 +217,19 @@ class PushCommand extends Command
      */
     private function finish(OutputInterface $output, $exitCode)
     {
+        $repositoryName = '';
         if ($this->push) {
+            $repositoryName = $this->push->getBuild()->getRepository()->getKey();
+
             $status = ($exitCode === 0) ? 'Success' : 'Error';
             $this->push->setStatus($status);
 
             $this->push->setEnd($this->clock->read());
             $this->entityManager->merge($this->push);
             $this->entityManager->flush();
+
+            // Only send logs if the push was found
+            $this->sendLogMessages($exitCode);
         }
 
         // Output log messages if verbosity is set
@@ -234,6 +240,40 @@ class PushCommand extends Command
 
         $this->cleanup();
         return $exitCode;
+    }
+
+    /**
+     * Send the buffered log messages.
+     * This requires that a push was found by the resolver.
+     *
+     * @param int $exitCode
+     * @return null
+     */
+    private function sendLogMessages($exitCode)
+    {
+        $level = 'error';
+        $contextMessage = 'Failure';
+
+        if ($exitCode === 0) {
+            $level = 'info';
+            $contextMessage = 'Success';
+        }
+
+        $deployment = $this->push->getDeployment();
+        $server = $deployment->getServer();
+
+        $repositoryName = $deployment->getRepository()->getKey();
+        $environmentName = $server->getEnvironment()->getKey();
+        $serverName = $server->getName();
+        $message = sprintf('%s (%s:%s) - Push - %s', $repositoryName, $environmentName, $serverName, $contextMessage);
+
+        $context = [
+            'pushId' => $this->push->getId(),
+            'pushStatus' => ($exitCode === 0) ? 'Success' : 'Error',
+            'pushExitCode' => $exitCode
+        ];
+
+        $this->logger->send($level, $message, $context);
     }
 
     /**
@@ -292,7 +332,8 @@ class PushCommand extends Command
         // Update the push status asap so no other worker can pick it up
         $this->setEntityStatus('Pushing', true);
 
-        $output->writeln(sprintf('<info>Push properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
+        $encoded = json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $output->writeln(sprintf('<info>Push properties:</info> %s', $encoded));
 
         // add artifacts for cleanup
         $this->artifacts = array_merge($this->artifacts, [$properties['buildPath']]);

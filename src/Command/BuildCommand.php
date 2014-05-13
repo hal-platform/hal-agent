@@ -240,6 +240,9 @@ class BuildCommand extends Command
             $this->build->setEnd($this->clock->read());
             $this->entityManager->merge($this->build);
             $this->entityManager->flush();
+
+            // Only send logs if the build was found
+            $this->sendLogMessages($exitCode);
         }
 
         // verbosity = 1: Output log messages
@@ -251,6 +254,36 @@ class BuildCommand extends Command
         $this->cleanup();
 
         return $exitCode;
+    }
+
+    /**
+     * Send the buffered log messages.
+     * This requires that a build was found by the resolver.
+     *
+     * @param int $exitCode
+     * @return null
+     */
+    private function sendLogMessages($exitCode)
+    {
+        $level = 'error';
+        $contextMessage = 'Failure';
+
+        if ($exitCode === 0) {
+            $level = 'info';
+            $contextMessage = 'Success';
+        }
+
+        $repositoryName = $this->build->getRepository()->getKey();
+        $environmentName = $this->build->getEnvironment()->getKey();
+        $message = sprintf('%s (%s) - Build - %s', $repositoryName, $environmentName, $contextMessage);
+
+        $context = [
+            'buildId' => $this->build->getId(),
+            'buildStatus' => ($exitCode === 0) ? 'Success' : 'Error',
+            'buildExitCode' => $exitCode
+        ];
+
+        $this->logger->send($level, $message, $context);
     }
 
     /**
@@ -304,7 +337,8 @@ class BuildCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->build = $properties['build'];
-        $output->writeln(sprintf('<info>Build properties:</info> %s', json_encode($properties, JSON_PRETTY_PRINT)));
+        $encoded = json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $output->writeln(sprintf('<info>Build properties:</info> %s', $encoded));
 
         // Update the build status asap so no other worker can pick it up
         $this->setEntityStatus('Building', true);
