@@ -16,7 +16,8 @@ use Psr\Log\AbstractLogger;
 class MemoryLogger extends AbstractLogger
 {
     /**
-     * @array(string, string, [])[]
+     *            level,  message, context
+     * @var array(string $level, string $message,  array $context)[]
      */
     private $messages = [];
 
