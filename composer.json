@@ -65,7 +65,7 @@
     },
     "require-dev": {
         "mockery/mockery":              "*",
-        "phpunit/phpunit":              "3.7.*",
+        "phpunit/phpunit":              "*",
         "squizlabs/php_codesniffer":    "*"
     }
 }
