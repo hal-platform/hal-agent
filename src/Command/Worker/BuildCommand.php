@@ -5,10 +5,11 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace QL\Hal\Agent\Command\Worker;
 
 use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
@@ -20,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Cron worker that will pick up and build any available builds.
  */
-class WorkerbuildCommand extends Command
+class BuildCommand extends Command
 {
     use CommandTrait;
 

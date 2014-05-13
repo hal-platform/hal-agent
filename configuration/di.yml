@@ -14,10 +14,10 @@ services:
             - ['add', ['@command.build.create']]
             - ['add', ['@command.build.build']]
             - ['add', ['@command.build.remove']]
-            - ['add', ['@command.build.worker']]
             - ['add', ['@command.push.create']]
             - ['add', ['@command.push.push']]
             - ['add', ['@command.builds.list']]
+            - ['add', ['@command.worker.build']]
 
     clock:
         class: 'MCP\DataType\Time\Clock'
@@ -85,7 +85,7 @@ services:
             - '@push.server-command'
             - '@utility.process.builder=' # = signifies a prototype service
     command.worker.build:
-        class: 'QL\Hal\Agent\Command\WorkerBuildCommand'
+        class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
             - 'build:build'

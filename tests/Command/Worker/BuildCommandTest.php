@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace QL\Hal\Agent\Command\Worker;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -14,7 +14,7 @@ use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class WorkerBuildCommandTest extends PHPUnit_Framework_TestCase
+class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
     public $buildRepo;
@@ -57,7 +57,7 @@ class WorkerBuildCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('findBy')
             ->andReturnNull();
 
-        $command = new WorkerBuildCommand(
+        $command = new BuildCommand(
             'cmd',
             'build-cmd',
             $this->logger,
@@ -107,7 +107,7 @@ OUTPUT;
             ->shouldReceive('run')
             ->andReturn(0);
 
-        $command = new WorkerBuildCommand(
+        $command = new BuildCommand(
             'cmd',
             'build-cmd',
             $this->logger,
@@ -157,7 +157,7 @@ OUTPUT;
             ->shouldReceive('getConnection')
             ->never();
 
-        $command = new WorkerBuildCommand(
+        $command = new BuildCommand(
             'cmd',
             'build-cmd',
             $this->logger,
@@ -210,7 +210,7 @@ OUTPUT;
             ->shouldReceive('getConnection')
             ->never();
 
-        $command = new WorkerBuildCommand(
+        $command = new BuildCommand(
             'cmd',
             'build-cmd',
             $this->logger,
@@ -242,7 +242,7 @@ OUTPUT;
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $command = new WorkerBuildCommand(
+        $command = new BuildCommand(
             'cmd',
             'build-cmd',
             $this->logger,
