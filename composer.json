@@ -44,10 +44,6 @@
     },
     "repositories": [
         {
-            "type": "vcs",
-            "url": "git@git:web-core/hal-core.git"
-        },
-        {
             "type": "composer",
             "url": "http://composer/"
         }
@@ -57,9 +53,12 @@
         "php-64bit":                    ">=5.4.0",
         "psr/log":                      "*",
         "ql/hal-core":                  "2.*@dev",
+        "ql/mcp-core":                  "*",
+        "ql/mcp-logger":                "*",
         "symfony/config":               "2.4.*",
         "symfony/console":              "2.4.*",
         "symfony/dependency-injection": "2.4.*",
+        "symfony/event-dispatcher":     "2.4.*",
         "symfony/filesystem":           "2.4.*",
         "symfony/process":              "2.4.*"
     },
