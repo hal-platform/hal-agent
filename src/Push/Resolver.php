@@ -182,7 +182,8 @@ class Resolver
             'HAL_BUILDID' => $build->getId(),
             'HAL_COMMIT' => $build->getCommit(),
             'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey()
+            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
+            'HAL_REPO' => $build->getRepository()->getKey()
         ];
 
         return $vars;

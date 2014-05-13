@@ -70,6 +70,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $repository->setGithubRepo('repo1');
         $repository->setPrePushCmd('bin/pre');
         $repository->setPostPushCmd('bin/post');
+        $repository->setKey('repokey');
 
         $environment = new Environment;
         $environment->setKey('envname');
@@ -118,7 +119,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'HAL_BUILDID' => '8956',
             'HAL_COMMIT' => '5555',
             'HAL_GITREF' => 'master',
-            'HAL_ENVIRONMENT' => 'envname'
+            'HAL_ENVIRONMENT' => 'envname',
+            'HAL_REPO' => 'repokey'
         ];
 
         $expectedPushProperties = [

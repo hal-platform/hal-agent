@@ -217,10 +217,7 @@ class PushCommand extends Command
      */
     private function finish(OutputInterface $output, $exitCode)
     {
-        $repositoryName = '';
         if ($this->push) {
-            $repositoryName = $this->push->getBuild()->getRepository()->getKey();
-
             $status = ($exitCode === 0) ? 'Success' : 'Error';
             $this->push->setStatus($status);
 

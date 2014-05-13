@@ -89,6 +89,13 @@ OUTPUT;
             'setStatus' => null,
             'setStart' => null,
             'setEnd' => null,
+            'getId' => 1234,
+            'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
+                'getKey' => null
+            ]),
+            'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
+                'getKey' => null
+            ])
         ]);
 
         $this->em
@@ -153,16 +160,16 @@ Build properties: {
     "build": {
 
     },
-    "archiveFile": "path\/file",
-    "buildPath": "path\/dir",
+    "archiveFile": "path/file",
+    "buildPath": "path/dir",
     "githubUser": "user1",
     "githubRepo": "repo1",
     "githubReference": "master",
-    "buildCommand": "bin\/build",
+    "buildCommand": "bin/build",
     "environmentVariables": [
 
     ],
-    "buildFile": "path\/file"
+    "buildFile": "path/file"
 }
 Downloading...
 Unpacking...

@@ -51,9 +51,8 @@ TEXT;
         $expected = <<<'TEXT'
 [INFO]     wut
 [CRITICAL] wat
-{
-    "data": "here"
-}
+data: 'here'
+
 
 TEXT;
 

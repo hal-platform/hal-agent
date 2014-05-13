@@ -85,6 +85,18 @@ OUTPUT;
             'setStatus' => null,
             'setStart' => null,
             'setEnd' => null,
+            'getDeployment' => Mockery::mock('QL\Hal\Core\Entity\Deployment', [
+                'getServer' => Mockery::mock('QL\Hal\Core\Entity\Server', [
+                    'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
+                        'getKey' => null
+                    ]),
+                    'getName' => null
+                ]),
+                'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
+                    'getKey' => null
+                ])
+            ]),
+            'getId' => 1234
         ]);
 
         $this->em
@@ -142,19 +154,19 @@ Push properties: {
     "push": {
 
     },
-    "buildPath": "path\/dir",
-    "archiveFile": "path\/file",
+    "buildPath": "path/dir",
+    "archiveFile": "path/file",
     "pushProperties": [
 
     ],
-    "prePushCommand": "bin\/cmd",
-    "postPushCommand": "bin\/cmd",
+    "prePushCommand": "bin/cmd",
+    "postPushCommand": "bin/cmd",
     "hostname": "localhost",
-    "remotePath": "path\/dir",
+    "remotePath": "path/dir",
     "environmentVariables": [
 
     ],
-    "syncPath": "user@localhost:path\/dir",
+    "syncPath": "user@localhost:path/dir",
     "excludedFiles": [
 
     ]

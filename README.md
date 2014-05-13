@@ -43,11 +43,6 @@ These commands can be set on a timer or cron to pick up and process waiting acti
 Command          | Description
 ---------------- | -----------
 `worker:build`   | Find and build all waiting builds.
-
-## Not Implemented
-
-Command          | Description
----------------- | -----------
 `worker:push`    | Find and push all waiting pushes.
 
 ## Testing
@@ -65,6 +60,50 @@ Push example:
 bin/hal push:push $(bin/hal push:create BUILD_ID DEPLOYMENT_ID --porcelain)
 bin/hal p:p $(bin/hal p:c BUILD_ID DEPLOYMENT_ID --porcelain)
 ```
+
+## Application available environment
+
+### On Build
+
+During the build process, The following environment variables are available to application build scripts:
+
+Variable         | Description
+---------------- | -----------
+HOME             | Home Directory
+PATH             | Global include path
+HAL_BUILDID      | ID of the build
+HAL_COMMIT       | 40 character commit SHA
+HAL_GITREF       | Git reference (such as `master`)
+HAL_ENVIRONMENT  | Environment (such as `test`, `beta`, `prod`)
+HAL_REPO         | Hal name for the deployed application
+
+
+### On Push
+
+A yaml file in the following format is written to the application directory during a push:
+
+Filename `.hal9000.yml`
+```yaml
+id: ''      # build ID
+source: ''  # full url of github repository
+env: ''     # environment of the build
+user: ''    # Username of user that triggered the push
+branch: ''  # Git Reference
+commit: ''  # Git commit SHA
+date: ''    # ISO 8601 date
+```
+
+The following environment variables are available to application pre and post push scripts:
+
+Variable         | Description
+---------------- | -----------
+HAL_HOSTNAME     | Hostname of server
+PATH             | Global include path
+HAL_BUILDID      | ID of the build
+HAL_COMMIT       | 40 character commit SHA
+HAL_GITREF       | Git reference (such as `master`)
+HAL_ENVIRONMENT  | Environment (such as `test`, `beta`, `prod`)
+HAL_REPO         | Hal name for the deployed application
 
 ## Deployment
 
