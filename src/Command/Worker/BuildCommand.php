@@ -8,9 +8,9 @@
 namespace QL\Hal\Agent\Command\Worker;
 
 use Doctrine\ORM\EntityManager;
-use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
+use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -42,7 +42,7 @@ class BuildCommand extends Command
     private $buildCommand;
 
     /**
-     * @var LoggerInterface
+     * @var MemoryLogger
      */
     private $logger;
 
@@ -64,7 +64,7 @@ class BuildCommand extends Command
     /**
      * @param string $name
      * @param string $buildCommand
-     * @param LoggerInterface $logger
+     * @param MemoryLogger $logger
      * @param BuildRepository $buildRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
@@ -72,7 +72,7 @@ class BuildCommand extends Command
     public function __construct(
         $name,
         $buildCommand,
-        LoggerInterface $logger,
+        MemoryLogger $logger,
         BuildRepository $buildRepo,
         EntityManager $entityManager,
         ForkHelper $forker

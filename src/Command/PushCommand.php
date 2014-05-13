@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\ServerCommand;
@@ -45,7 +45,7 @@ class PushCommand extends Command
     ];
 
     /**
-     * @var LoggerInterface
+     * @var MemoryLogger
      */
     private $logger;
 
@@ -91,7 +91,7 @@ class PushCommand extends Command
 
     /**
      * @param string $name
-     * @param LoggerInterface $logger
+     * @param MemoryLogger $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param Resolver $resolver
@@ -102,7 +102,7 @@ class PushCommand extends Command
      */
     public function __construct(
         $name,
-        LoggerInterface $logger,
+        MemoryLogger $logger,
         EntityManager $entityManager,
         Clock $clock,
         Resolver $resolver,

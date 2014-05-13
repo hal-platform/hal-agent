@@ -8,9 +8,9 @@
 namespace QL\Hal\Agent\Command\Worker;
 
 use Doctrine\ORM\EntityManager;
-use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
+use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -42,7 +42,7 @@ class PushCommand extends Command
     private $pushCommand;
 
     /**
-     * @var LoggerInterface
+     * @var MemoryLogger
      */
     private $logger;
 
@@ -64,7 +64,7 @@ class PushCommand extends Command
     /**
      * @param string $name
      * @param string $pushCommand
-     * @param LoggerInterface $logger
+     * @param MemoryLogger $logger
      * @param PushRepository $pushRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
@@ -72,7 +72,7 @@ class PushCommand extends Command
     public function __construct(
         $name,
         $pushCommand,
-        LoggerInterface $logger,
+        MemoryLogger $logger,
         PushRepository $pushRepo,
         EntityManager $entityManager,
         ForkHelper $forker

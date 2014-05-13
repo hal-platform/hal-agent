@@ -9,13 +9,13 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
-use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Build\Builder;
 use QL\Hal\Agent\Build\Downloader;
 use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
+use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -48,7 +48,7 @@ class BuildCommand extends Command
     ];
 
     /**
-     * @var LoggerInterface
+     * @var MemoryLogger
      */
     private $logger;
 
@@ -109,7 +109,7 @@ class BuildCommand extends Command
 
     /**
      * @param string $name
-     * @param LoggerInterface $logger
+     * @param MemoryLogger $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param Resolver $resolver
@@ -121,7 +121,7 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
-        LoggerInterface $logger,
+        MemoryLogger $logger,
         EntityManager $entityManager,
         Clock $clock,
         Resolver $resolver,
