@@ -9,14 +9,12 @@ namespace QL\Hal\Agent\Command\Worker;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
-    public $logger;
     public $buildRepo;
     public $em;
     public $forker;
@@ -30,7 +28,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = new MemoryLogger;
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->forker = Mockery::mock('QL\Hal\Agent\Helper\ForkHelper');
@@ -60,7 +57,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $command = new BuildCommand(
             'cmd',
             'build-cmd',
-            $this->logger,
             $this->buildRepo,
             $this->em,
             $this->forker
@@ -110,7 +106,6 @@ OUTPUT;
         $command = new BuildCommand(
             'cmd',
             'build-cmd',
-            $this->logger,
             $this->buildRepo,
             $this->em,
             $this->forker
@@ -160,7 +155,6 @@ OUTPUT;
         $command = new BuildCommand(
             'cmd',
             'build-cmd',
-            $this->logger,
             $this->buildRepo,
             $this->em,
             $this->forker
@@ -213,7 +207,6 @@ OUTPUT;
         $command = new BuildCommand(
             'cmd',
             'build-cmd',
-            $this->logger,
             $this->buildRepo,
             $this->em,
             $this->forker
@@ -245,7 +238,6 @@ OUTPUT;
         $command = new BuildCommand(
             'cmd',
             'build-cmd',
-            $this->logger,
             $this->buildRepo,
             $this->em,
             $this->forker

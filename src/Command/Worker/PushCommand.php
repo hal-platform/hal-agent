@@ -10,7 +10,6 @@ namespace QL\Hal\Agent\Command\Worker;
 use Doctrine\ORM\EntityManager;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
-use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -20,6 +19,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Cron worker that will pick up and push any available pushes.
+ *
+ * BUILT FOR COMMAND LINE ONLY
  */
 class PushCommand extends Command
 {
@@ -42,11 +43,6 @@ class PushCommand extends Command
     private $pushCommand;
 
     /**
-     * @var MemoryLogger
-     */
-    private $logger;
-
-    /**
      * @var PushRepository
      */
     private $pushRepo;
@@ -64,7 +60,6 @@ class PushCommand extends Command
     /**
      * @param string $name
      * @param string $pushCommand
-     * @param MemoryLogger $logger
      * @param PushRepository $pushRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
@@ -72,7 +67,6 @@ class PushCommand extends Command
     public function __construct(
         $name,
         $pushCommand,
-        MemoryLogger $logger,
         PushRepository $pushRepo,
         EntityManager $entityManager,
         ForkHelper $forker
@@ -80,7 +74,6 @@ class PushCommand extends Command
         parent::__construct($name);
         $this->pushCommand = $pushCommand;
 
-        $this->logger = $logger;
         $this->pushRepo = $pushRepo;
         $this->entityManager = $entityManager;
         $this->forker = $forker;
@@ -112,7 +105,6 @@ class PushCommand extends Command
             return $this->failure($output, 2);
         }
 
-        $this->logger->info(sprintf('Found %s waiting pushes', count($pushes)));
         $output->writeln(sprintf('Waiting pushes: %s', count($pushes)));
         $output->writeln('<comment>Starting push workers...</comment>');
 
@@ -138,27 +130,10 @@ class PushCommand extends Command
                 return $command->run($input, new BufferedOutput);
 
             } else {
-                $this->logger->info('Push worker started', ['pushId' => $push->getId()]);
                 $output->writeln(sprintf('Push ID %s started.', $push->getId()));
             }
         }
 
         return $this->success($output);
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param int $exitCode
-     * @return null
-     */
-    private function finish(OutputInterface $output, $exitCode)
-    {
-        // Output log messages if verbosity is set
-        // Output log context if debug verbosity
-        if ($output->isVerbose() && $loggerOutput = $this->logger->output($output->isVeryVerbose())) {
-            $output->writeln($loggerOutput);
-        }
-
-        return $exitCode;
     }
 }

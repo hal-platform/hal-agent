@@ -10,7 +10,6 @@ namespace QL\Hal\Agent\Command\Worker;
 use Doctrine\ORM\EntityManager;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
-use QL\Hal\Agent\Helper\MemoryLogger;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -20,6 +19,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Cron worker that will pick up and build any available builds.
+ *
+ * BUILT FOR COMMAND LINE ONLY
  */
 class BuildCommand extends Command
 {
@@ -42,11 +43,6 @@ class BuildCommand extends Command
     private $buildCommand;
 
     /**
-     * @var MemoryLogger
-     */
-    private $logger;
-
-    /**
      * @var BuildRepository
      */
     private $buildRepo;
@@ -64,7 +60,6 @@ class BuildCommand extends Command
     /**
      * @param string $name
      * @param string $buildCommand
-     * @param MemoryLogger $logger
      * @param BuildRepository $buildRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
@@ -72,7 +67,6 @@ class BuildCommand extends Command
     public function __construct(
         $name,
         $buildCommand,
-        MemoryLogger $logger,
         BuildRepository $buildRepo,
         EntityManager $entityManager,
         ForkHelper $forker
@@ -80,7 +74,6 @@ class BuildCommand extends Command
         parent::__construct($name);
         $this->buildCommand = $buildCommand;
 
-        $this->logger = $logger;
         $this->buildRepo = $buildRepo;
         $this->entityManager = $entityManager;
         $this->forker = $forker;
@@ -112,7 +105,6 @@ class BuildCommand extends Command
             return $this->failure($output, 2);
         }
 
-        $this->logger->info(sprintf('Found %s waiting builds', count($builds)));
         $output->writeln(sprintf('Waiting builds: %s', count($builds)));
         $output->writeln('<comment>Starting build workers...</comment>');
 
@@ -138,27 +130,10 @@ class BuildCommand extends Command
                 return $command->run($input, new BufferedOutput);
 
             } else {
-                $this->logger->info('Build worker started', ['buildId' => $build->getId()]);
                 $output->writeln(sprintf('Build ID %s started.', $build->getId()));
             }
         }
 
         return $this->success($output);
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param int $exitCode
-     * @return null
-     */
-    private function finish(OutputInterface $output, $exitCode)
-    {
-        // Output log messages if verbosity is set
-        // Output log context if debug verbosity
-        if ($output->isVerbose() && $loggerOutput = $this->logger->output($output->isVeryVerbose())) {
-            $output->writeln($loggerOutput);
-        }
-
-        return $exitCode;
     }
 }

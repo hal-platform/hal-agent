@@ -95,7 +95,6 @@ services:
         arguments:
             - 'worker:build'
             - 'build:build'
-            - '@utility.logger'
             - '@repo.build'
             - '@doctrine.em'
             - '@utility.forker'
@@ -104,7 +103,6 @@ services:
         arguments:
             - 'worker:push'
             - 'push:push'
-            - '@utility.logger'
             - '@repo.push'
             - '@doctrine.em'
             - '@utility.forker'
@@ -120,6 +118,8 @@ services:
             - ['setIndentation', ['4']]
     utility.logger:
         class: 'QL\Hal\Agent\Helper\MemoryLogger'
+        calls:
+            - ['setBufferedLogger', ['@mcp-logger']]
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
 
