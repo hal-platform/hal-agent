@@ -45,22 +45,6 @@ Command          | Description
 `worker:build`   | Find and build all waiting builds.
 `worker:push`    | Find and push all waiting pushes.
 
-## Testing
-
-The porcelain commands can be used to create and build entities in a single process:
-
-Build example:
-```
-bin/hal build:build $(bin/hal build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
-bin/hal b:b $(bin/hal b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
-```
-
-Push example:
-```
-bin/hal push:push $(bin/hal push:create BUILD_ID DEPLOYMENT_ID --porcelain)
-bin/hal p:p $(bin/hal p:c BUILD_ID DEPLOYMENT_ID --porcelain)
-```
-
 ## Application available environment
 
 ### On Build
@@ -84,9 +68,9 @@ A yaml file in the following format is written to the application directory duri
 
 Filename `.hal9000.yml`
 ```yaml
-id: ''      # build ID
-source: ''  # full url of github repository
-env: ''     # environment of the build
+id: ''      # Build ID
+source: ''  # Full url of github repository
+env: ''     # Environment of the build
 user: ''    # Username of user that triggered the push
 branch: ''  # Git Reference
 commit: ''  # Git commit SHA
@@ -108,3 +92,19 @@ HAL_REPO         | Hal name for the deployed application
 ## Deployment
 
 `bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`
+
+## Testing
+
+The porcelain commands can be used to create and build entities in a single process:
+
+Build example:
+```
+bin/hal build:build $(bin/hal build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
+bin/hal b:b $(bin/hal b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
+```
+
+Push example:
+```
+bin/hal push:push $(bin/hal push:create BUILD_ID DEPLOYMENT_ID --porcelain)
+bin/hal p:p $(bin/hal p:c BUILD_ID DEPLOYMENT_ID --porcelain)
+```
