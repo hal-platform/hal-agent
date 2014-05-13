@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Helper;
 
 use Psr\Log\AbstractLogger;
+use Psr\Log\LoggerInterface;
 
 /**
  * A custom PSR-3 logger that lets us send a shit ton of messages to the logger
@@ -20,6 +21,11 @@ class MemoryLogger extends AbstractLogger
      * @var array(string $level, string $message,  array $context)[]
      */
     private $messages = [];
+
+    /**
+     * @var LoggerInterface
+     */
+    private $bufferedLogger;
 
     /**
      * Logs with an arbitrary level.
@@ -54,6 +60,35 @@ class MemoryLogger extends AbstractLogger
         }
 
         return $output;
+    }
+
+    /**
+     * Collate all buffered messages and send to a logger.
+     *
+     * @param string $level
+     * @param string $message
+     * @return null
+     */
+    public function send($level, $message)
+    {
+        // silently fail if no logger or messages
+        if (!$this->bufferedLogger || !$this->messages) {
+            return;
+        }
+
+        $output = $this->output(true);
+        $message . "\n\n" . $output;
+
+        $this->bufferedLogger->$level($message);
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     * @return null
+     */
+    public function setBufferedLogger(LoggerInterface $logger)
+    {
+        $this->bufferedLogger = $logger;
     }
 
     /**
