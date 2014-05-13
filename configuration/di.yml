@@ -18,6 +18,7 @@ services:
             - ['add', ['@command.push.push']]
             - ['add', ['@command.builds.list']]
             - ['add', ['@command.worker.build']]
+            - ['add', ['@command.worker.push']]
 
     clock:
         class: 'MCP\DataType\Time\Clock'
@@ -93,6 +94,16 @@ services:
             - '@repo.build'
             - '@doctrine.em'
             - '@utility.forker'
+    command.worker.push:
+        class: 'QL\Hal\Agent\Command\Worker\PushCommand'
+        arguments:
+            - 'worker:push'
+            - 'push:push'
+            - '@utility.logger'
+            - '@repo.push'
+            - '@doctrine.em'
+            - '@utility.forker'
+
     # utility
     utility.helper.download-progress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'

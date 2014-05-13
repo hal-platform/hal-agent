@@ -11,7 +11,7 @@ use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
-use QL\Hal\Core\Entity\Repository\BuildRepository;
+use QL\Hal\Core\Entity\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,9 +19,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Cron worker that will pick up and build any available builds.
+ * Cron worker that will pick up and push any available pushes.
  */
-class BuildCommand extends Command
+class PushCommand extends Command
 {
     use CommandTrait;
 
@@ -31,15 +31,15 @@ class BuildCommand extends Command
      * @var array
      */
     private static $codes = [
-        0 => 'All waiting builds have been started.',
-        1 => 'Could not fork a build worker.',
-        2 => 'Build Command not found.'
+        0 => 'All waiting pushes have been started.',
+        1 => 'Could not fork a push worker.',
+        2 => 'Push Command not found.'
     ];
 
     /**
      * @var string
      */
-    private $buildCommand;
+    private $pushCommand;
 
     /**
      * @var LoggerInterface
@@ -47,9 +47,9 @@ class BuildCommand extends Command
     private $logger;
 
     /**
-     * @var BuildRepository
+     * @var PushRepository
      */
-    private $buildRepo;
+    private $pushRepo;
 
     /**
      * @var EntityManager
@@ -63,25 +63,25 @@ class BuildCommand extends Command
 
     /**
      * @param string $name
-     * @param string $buildCommand
+     * @param string $pushCommand
      * @param LoggerInterface $logger
-     * @param BuildRepository $buildRepo
+     * @param PushRepository $pushRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
      */
     public function __construct(
         $name,
-        $buildCommand,
+        $pushCommand,
         LoggerInterface $logger,
-        BuildRepository $buildRepo,
+        PushRepository $pushRepo,
         EntityManager $entityManager,
         ForkHelper $forker
     ) {
         parent::__construct($name);
-        $this->buildCommand = $buildCommand;
+        $this->pushCommand = $pushCommand;
 
         $this->logger = $logger;
-        $this->buildRepo = $buildRepo;
+        $this->pushRepo = $pushRepo;
         $this->entityManager = $entityManager;
         $this->forker = $forker;
     }
@@ -91,7 +91,7 @@ class BuildCommand extends Command
      */
     protected function configure()
     {
-        $this->setDescription('Find and build all waiting builds.');
+        $this->setDescription('Find and sync all waiting pushes.');
     }
 
     /**
@@ -103,20 +103,20 @@ class BuildCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if (!$builds = $this->buildRepo->findBy(['status' => 'Waiting'], null)) {
-            return $this->success($output, 'No waiting builds found.');
+        if (!$pushes = $this->pushRepo->findBy(['status' => 'Waiting'], null)) {
+            return $this->success($output, 'No waiting pushes found.');
         }
 
-        $command = $this->getApplication()->find($this->buildCommand);
+        $command = $this->getApplication()->find($this->pushCommand);
         if (!$command instanceof Command) {
             return $this->failure($output, 2);
         }
 
-        $this->logger->info(sprintf('Found %s waiting builds', count($builds)));
-        $output->writeln(sprintf('Waiting builds: %s', count($builds)));
-        $output->writeln('<comment>Starting build workers...</comment>');
+        $this->logger->info(sprintf('Found %s waiting pushes', count($pushes)));
+        $output->writeln(sprintf('Waiting pushes: %s', count($pushes)));
+        $output->writeln('<comment>Starting push workers...</comment>');
 
-        foreach ($builds as $build) {
+        foreach ($pushes as $push) {
             $pid = $this->forker->fork();
             if ($pid === -1) {
                 return $this->failure($output, 1);
@@ -130,16 +130,16 @@ class BuildCommand extends Command
                 $connection->connect();
 
                 $input = new ArrayInput([
-                    'command' => $this->buildCommand,
-                    'BUILD_ID' => $build->getId()
+                    'command' => $this->pushCommand,
+                    'PUSH_ID' => $push->getId()
                 ]);
 
                 // Need to use buffered here because NullOutput doesn't have the correct verbosity methods
                 return $command->run($input, new BufferedOutput);
 
             } else {
-                $this->logger->info('Build worker started', ['buildId' => $build->getId()]);
-                $output->writeln(sprintf('Build ID %s started.', $build->getId()));
+                $this->logger->info('Push worker started', ['pushId' => $push->getId()]);
+                $output->writeln(sprintf('Push ID %s started.', $push->getId()));
             }
         }
 
