@@ -17,3 +17,6 @@ parameters:
 
     # user used to SSH and RSYNC to target servers
     ssh-user: ''
+
+    # Core logger service hostname
+    mcp-logger.host: 'qlsonictest'

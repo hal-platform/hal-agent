@@ -19,6 +19,11 @@ services:
             - ['add', ['@command.builds.list']]
             - ['add', ['@command.worker.build']]
             - ['add', ['@command.worker.push']]
+            - ['setDispatcher', ['@dispatcher']]
+    dispatcher:
+        class: 'Symfony\Component\EventDispatcher\EventDispatcher'
+        calls:
+            - ['addSubscriber', ['@mcp-logger.factory.subscriber']]
 
     clock:
         class: 'MCP\DataType\Time\Clock'

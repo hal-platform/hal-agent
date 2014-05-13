@@ -97,3 +97,36 @@ services:
             -
                 curl.options:
                     progress: true
+
+### mcp logger
+    mcp-logger:
+        class: 'MCP\Service\Logger\Logger'
+        arguments: ['@mcp-logger.service', '@mcp-logger.factory']
+    mcp-logger.service:
+        class: 'MCP\Service\Logger\Service\GuzzleService'
+        arguments: ['@mcp-logger.guzzle', '@mcp-logger.renderer', true]
+    mcp-logger.guzzle:
+        class: 'Guzzle\Http\Client'
+        arguments: ['http://%mcp-logger.host%:2581/web/core/logentries']
+
+    mcp-logger.renderer:
+        class: 'MCP\Service\Logger\Renderer\XmlRenderer'
+        arguments: ['@mcp-logger.renderer.writer']
+    mcp-logger.renderer.writer:
+        class: 'XMLWriter'
+
+    mcp-logger.factory:
+        class: 'MCP\Service\Logger\Adapter\Psr\MessageFactory'
+        arguments: ['@clock']
+        calls:
+          - ['setDefaultProperty', ['applicationId', '%mcp-logger.applicationId%']]
+          - ['setDefaultProperty', ['machineIPAddress', '@mcp-logger.factory.serverIp']]
+          - ['setDefaultProperty', ['machineName', 'localhost']]
+    mcp-logger.factory.subscriber:
+        class: 'QL\Hal\Agent\Helper\McpLoggerSetupSubscriber'
+        arguments: ['@mcp-logger.factory']
+    mcp-logger.factory.serverIp:
+        class: 'MCP\DataType\IPv4Address'
+        factory_class: 'MCP\DataType\IPv4Address'
+        factory_method: 'create'
+        arguments: ['0.0.0.0']
