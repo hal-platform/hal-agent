@@ -1,6 +1,7 @@
+# Standalone installation only
+
 imports:
     # These settings are imported from hal-core configuration
-    # They should only be loaded for standalone installations
     -
         resource: ../vendor/ql/hal-core/config/di.yml
         # doctrine.em
