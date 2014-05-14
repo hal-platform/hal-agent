@@ -40,11 +40,14 @@ services:
 
     mcp-logger.factory:
         class: 'MCP\Service\Logger\Adapter\Psr\MessageFactory'
-        arguments: ['@clock']
+        arguments: ['@mcp-logger.factory.clock']
         calls:
           - ['setDefaultProperty', ['applicationId', '%agent.application.id%']]
           - ['setDefaultProperty', ['machineIPAddress', '@mcp-logger.factory.serverIp']]
           - ['setDefaultProperty', ['machineName', 'localhost']]
+    mcp-logger.factory.clock:
+        class: 'MCP\DataType\Time\Clock'
+        arguments: ['now', 'UTC']
     mcp-logger.factory.subscriber:
         class: 'QL\Hal\Agent\Helper\McpLoggerSetupSubscriber'
         arguments: ['@mcp-logger.factory']

@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-# autoloader
+# autoloader - try standalone installation then dependency installation
 (@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
 
 use Symfony\Component\Config\FileLocator;
@@ -9,16 +9,27 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Scope;
 
-$config = __DIR__ . '/../configuration';
+$config = [__DIR__ . '/../configuration'];
 
 $container = new ContainerBuilder;
+$container->addScope(new Scope('agent'));
 $builder = new YamlFileLoader($container, new FileLocator($config));
 $builder->load('config.yml');
+
+if (isset($_SERVER['HAL_AGENT_CONFIG']) && file_exists($_SERVER['HAL_AGENT_CONFIG'])) {
+    $builder->load($_SERVER['HAL_AGENT_CONFIG']);
+
+} else {
+    // standalone installation
+    $container->setParameter('annotations_suck', __DIR__ . '/../vendor/ql/hal-core/src/QL/Hal/Core/Entity');
+    $builder->load('imported.yml');
+}
+
 $container->set('service_container', null);
-$container->setParameter('annotations_suck', __DIR__ . '/../vendor/ql/hal-core/src/QL/Hal/Core/Entity');
 $container->compile();
 
+$container->enterScope('agent');
 $app = $container->get('application');
-
 $app->run();
