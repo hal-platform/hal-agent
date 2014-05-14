@@ -45,7 +45,7 @@ Command          | Description
 `worker:build`   | Find and build all waiting builds.
 `worker:push`    | Find and push all waiting pushes.
 
-## Application available environment
+## Application scripting environment
 
 ### On Build
 
@@ -66,8 +66,9 @@ HAL_REPO         | Hal name for the deployed application
 
 A yaml file in the following format is written to the application directory during a push:
 
-Filename `.hal9000.yml`
 ```yaml
+# filename: APPLICATION_ROOT/.hal9000.yml
+
 id: ''      # Build ID
 source: ''  # Full url of github repository
 env: ''     # Environment of the build
@@ -91,9 +92,7 @@ HAL_REPO         | Hal name for the deployed application
 
 ## Deployment
 
-Required services:
-
-This application requires several Doctrine ORM services as well as environment-based parameters. 
+This application requires several Doctrine ORM services as well as environment-based parameters.
 
 ### Standalone
 
@@ -105,24 +104,30 @@ will be loaded from `config.env.yml`.
 
 ### As a dependency
 
-Neither `imported.yml` or `config.env.yml` will be loaded when run as a dependency. Instead, the parent application must
-set an environment variable before running the hal executable.
+Neither `imported.yml` or `config.env.yml` will be loaded when installed as a dependency. Instead, the parent
+application must set an environment variable before running the hal executable.
 
 Hal Agent will look for a file at `HAL_AGENT_CONFIG`. This should be a fully qualified path to a symfony dependency
 injection configuration with the required services and parameters.
 
-### Required services
+### Required configuration
 
-Services          | Parameters
------------------ | ----------
-doctrine.em       | agent.environment.archive
-repository.repo   | agent.environment.path
-environment.repo  | agent.environment.temp
-user.repo         | agent.environment.home
-deployment.repo   | agent.ssh-user
-push.repo         | github.token
-                  | github.baseurl
-                  | mcp-logger.host
+Key                       | Type      | Description
+------------------------- | --------- | -----------
+doctrine.em               | Service   | Doctrine Entity Manager
+repository.repo           | Service   | Doctrine Entity Repository
+environment.repo          | Service   | Doctrine Entity Repository
+user.repo                 | Service   | Doctrine Entity Repository
+deployment.repo           | Service   | Doctrine Entity Repository
+push.repo                 | Service   | Doctrine Entity Repository
+agent.environment.archive | Parameter | Path to permanent archive directory for successful builds
+agent.environment.temp    | Parameter | Path to temporary build directory
+agent.environment.path    | Parameter | System PATH
+agent.environment.home    | Parameter | System HOME
+agent.ssh-user            | Parameter | Username for rsync to servers
+github.token              | Parameter | Github authentication token
+github.baseurl            | Parameter | Github url
+mcp-logger.host           | Parameter | Core logger hostname
 
 ## Testing
 
