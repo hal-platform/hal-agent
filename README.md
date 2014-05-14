@@ -16,8 +16,18 @@ bin/hal [command]
 ```
 
 Help for any command may be viewed by adding the --help flag as follows.
-```
+```bash
 bin/hal [command] [options] --help
+```
+
+Debug messaging will be displayed if run with verbosity.
+```bash
+bin/hal [command] -v
+```
+
+Contextual variables will be displayed if run with increased verbosity.
+```bash
+bin/hal [command] -vv
 ```
 
 ## Available Commands
