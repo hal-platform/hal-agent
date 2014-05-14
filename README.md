@@ -10,12 +10,7 @@ application will then be called in the background. It can also be interacted wit
 allow for triggered builds and deploys from a CI server. It will also be possible to obtain a completed build as a
 package for deployment elsewhere (AWS, etc).
 
-When installed with composer, the application can be run as follows:
-```
-vendor/bin/hal [command]
-```
-
-When installed stand-alone, the application can be run as follows:
+The application can be run as follows:
 ```
 bin/hal [command]
 ```
@@ -107,8 +102,20 @@ will be loaded from `config.env.yml`.
 Neither `imported.yml` or `config.env.yml` will be loaded when installed as a dependency. Instead, the parent
 application must set an environment variable before running the hal executable.
 
-Hal Agent will look for a file at `HAL_AGENT_CONFIG`. This should be a fully qualified path to a symfony dependency
+Hal Agent will look for a file at `HAL_APPLICATION_CONFIG`. This should be a fully qualified path to a symfony dependency
 injection configuration with the required services and parameters.
+
+For this reason it is highly recommended when using the agent as a dependency, a new script should be created
+that sets the environment variable, and calls the actual hal-agent bin.
+
+Example:
+```bash
+#!/usr/bin/env bash
+DIR=$( cd "$( dirname "$0" )" && pwd )
+
+export HAL_APPLICATION_CONFIG="$DIR/../app/config.yml"
+"$DIR/../vendor/bin/hal" $?
+```
 
 ### Required configuration
 

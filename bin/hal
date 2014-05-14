@@ -18,8 +18,8 @@ $container->addScope(new Scope('agent'));
 $builder = new YamlFileLoader($container, new FileLocator($config));
 $builder->load('config.yml');
 
-if (isset($_SERVER['HAL_AGENT_CONFIG']) && file_exists($_SERVER['HAL_AGENT_CONFIG'])) {
-    $builder->load($_SERVER['HAL_AGENT_CONFIG']);
+if (isset($_SERVER['HAL_APPLICATION_CONFIG']) && file_exists($_SERVER['HAL_APPLICATION_CONFIG'])) {
+    $builder->load($_SERVER['HAL_APPLICATION_CONFIG']);
 
 } else {
     // standalone installation
