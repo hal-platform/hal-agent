@@ -1,13 +1,26 @@
-imports:
-    -
-        resource: imported.yml
 services:
 
+    # imported from global scope
+    # @doctrine.em
+    # @repository.repo
+    # @environment.repo
+    # @user.repo
+    # @deployment.repo
+    # @push.repo
+
+    # %agent.environment.archive%
+    # %agent.environment.path%
+    # %agent.environment.temp%
+    # %agent.environment.home%
+    # %agent.ssh-user%
+    # %github.token%
+    # %mcp-logger.host%
     application:
+        scope: 'agent'
         class: 'Symfony\Component\Console\Application'
         arguments:
-            - '%application.name%'
-            - '%application.version%'
+            - '%agent.application.name%'
+            - '%agent.application.version%'
         calls:
             # Every one of these commands is instantiated regardless of the running command
             # There is no way to lazy load these without significant jankiness
@@ -21,26 +34,30 @@ services:
             - ['add', ['@command.worker.push']]
             - ['setDispatcher', ['@dispatcher']]
     dispatcher:
+        scope: 'agent'
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
             - ['addSubscriber', ['@mcp-logger.factory.subscriber']]
 
     clock:
+        scope: 'agent'
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
     # commands
     command.build.create:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\CreateBuildCommand'
         arguments:
             - 'build:create'
             - '@doctrine.em'
             - '@clock'
-            - '@repo.repository'
-            - '@repo.environment'
-            - '@repo.user'
+            - '@repository.repo'
+            - '@environment.repo'
+            - '@user.repo'
             - '@utility.reference-resolver'
     command.build.build:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
@@ -55,30 +72,34 @@ services:
             - '@utility.helper.download-progress'
             - '@utility.process.builder=' # = signifies a prototype service
     command.build.remove:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
             - 'build:remove'
             - '@doctrine.em'
-            - '@repo.build'
+            - '@build.repo'
             - '@utility.filesystem'
-            - '%environment.archive%'
+            - '%agent.environment.archive%'
     command.builds.list:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
             - 'builds:list'
-            - '@repo.build'
+            - '@build.repo'
             - '@utility.filesystem'
-            - '%environment.archive%'
+            - '%agent.environment.archive%'
     command.push.create:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\CreatePushCommand'
         arguments:
             - 'push:create'
             - '@doctrine.em'
             - '@clock'
-            - '@repo.build'
-            - '@repo.deployment'
-            - '@repo.user'
+            - '@build.repo'
+            - '@deployment.repo'
+            - '@user.repo'
     command.push.push:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
@@ -91,79 +112,93 @@ services:
             - '@push.server-command'
             - '@utility.process.builder=' # = signifies a prototype service
     command.worker.build:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
             - 'build:build'
-            - '@repo.build'
+            - '@build.repo'
             - '@doctrine.em'
             - '@utility.forker'
     command.worker.push:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
             - 'push:push'
-            - '@repo.push'
+            - '@push.repo'
             - '@doctrine.em'
             - '@utility.forker'
 
     # utility
     utility.helper.download-progress:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
         arguments:
             - '@github.guzzleHttpClient'
     utility.yaml-dumper:
+        scope: 'agent'
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
             - ['setIndentation', ['4']]
     utility.logger:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Helper\MemoryLogger'
         calls:
             - ['setBufferedLogger', ['@mcp-logger']]
     utility.filesystem:
+        scope: 'agent'
         class: 'Symfony\Component\Filesystem\Filesystem'
 
     utility.process.builder:
+        scope: 'agent'
         class: 'Symfony\Component\Process\ProcessBuilder'
         scope: prototype
         calls:
             - ['inheritEnvironmentVariables', [false]]
     utility.reference-resolver:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Github\ReferenceResolver'
         arguments:
             - '@github.references'
             - '@github.commits'
             - '@github.pull-requests'
     utility.forker:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Helper\ForkHelper'
 
     # build actions
     build.resolver:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
             - '@utility.logger'
-            - '@repo.build'
-            - '%environment.path%'
-            - '%environment.archive%'
+            - '@build.repo'
+            - '%agent.environment.path%'
+            - '%agent.environment.archive%'
         calls:
-            - ['setBaseBuildDirectory', ['%environment.temp%']]
-            - ['setHomeDirectory', ['%environment.home%']]
+            - ['setBaseBuildDirectory', ['%agent.environment.temp%']]
+            - ['setHomeDirectory', ['%agent.environment.home%']]
     build.downloader:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:
             - '@utility.logger'
             - '@github.archive'
     build.unpacker:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
             - '@utility.logger'
             - '@utility.process.builder=' # = signifies a prototype service
     build.builder:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
             - '@utility.logger'
             - '@utility.process.builder=' # = signifies a prototype service
     build.packer:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
             - '@utility.logger'
@@ -171,16 +206,18 @@ services:
 
     # push actions
     push.resolver:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
             - '@utility.logger'
-            - '@repo.push'
+            - '@push.repo'
             - '@clock'
-            - '%ssh-user%'
-            - '%environment.archive%'
+            - '%agent.ssh-user%'
+            - '%agent.environment.archive%'
         calls:
-            - ['setBaseBuildDirectory', ['%environment.temp%']]
+            - ['setBaseBuildDirectory', ['%agent.environment.temp%']]
     push.unpacker:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
             - '@utility.logger'
@@ -188,13 +225,57 @@ services:
             - '@utility.filesystem'
             - '@utility.yaml-dumper'
     push.pusher:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
             - '@utility.logger'
             - '@utility.process.builder=' # = signifies a prototype service
     push.server-command:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
             - '@utility.logger'
             - '@utility.process.builder=' # = signifies a prototype service
-            - '%ssh-user%'
+            - '%agent.ssh-user%'
+
+    # github services
+    github.archive:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Github\ArchiveApi'
+        arguments:
+            - '@github.client'
+            - '@utility.filesystem'
+    github.references:
+        scope: 'agent'
+        class: 'Github\Api\GitData\References'
+        arguments:
+            - '@github.client'
+    github.commits:
+        scope: 'agent'
+        class: 'Github\Api\GitData\Commits'
+        arguments:
+            - '@github.client'
+    github.pull-requests:
+        scope: 'agent'
+        class: 'Github\Api\PullRequest'
+        arguments:
+            - '@github.client'
+
+    github.client:
+        scope: 'agent'
+        class: 'Github\Client'
+        arguments: ['@github.httpClient']
+    github.httpClient:
+        scope: 'agent'
+        class: 'Github\HttpClient\HttpClient'
+        arguments: [[], '@github.guzzleHttpClient']
+        calls:
+            - ['authenticate', ['%github.token%', null, 'http_token']]
+    github.guzzleHttpClient:
+        scope: 'agent'
+        class: 'Guzzle\Http\Client'
+        arguments:
+            - '%github.baseurl%'
+            -
+                curl.options:
+                    progress: true

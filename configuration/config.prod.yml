@@ -2,21 +2,32 @@ parameters:
     github.token: ''
 
     # system PATH inherited by build scripts
-    environment.path: ''
+    agent.environment.path: '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin'
 
     # system HOME inherited by build scripts
     # Leave this empty to use the system temporary directory
-    environment.home: ''
+    agent.environment.home: '/var/spool/hal9000/home'
 
     # temporary storage for build and push artifacts
     # Leave this empty to use the system temporary directory
-    environment.temp: ''
+    agent.environment.temp: '/var/spool/hal9000'
 
     # file path to store permanent archives of builds
-    environment.archive: ''
+    agent.environment.archive: ''
 
     # user used to SSH and RSYNC to target servers
-    ssh-user: ''
+    agent.ssh-user: ''
 
     # Core logger service hostname
     mcp-logger.host: 'qlsonicprod'
+
+    # doctrine configuration
+    doctrine.connection:
+        driver:     pdo_mysql
+        host:       localhost
+        user:       root
+        password:
+        dbname:     hal
+    doctrine.devmode: true
+    doctrine.mappings:
+        - '%annotations_suck%'

@@ -91,7 +91,38 @@ HAL_REPO         | Hal name for the deployed application
 
 ## Deployment
 
-`bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`
+Required services:
+
+This application requires several Doctrine ORM services as well as environment-based parameters. 
+
+### Standalone
+
+`bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.
+For development deployments, create a `config.env.yml` using `config.env.yml.dist` as a prototype.
+
+In standalone deployment, the required services will be imported from `imported.yml`, and environment-based parameters
+will be loaded from `config.env.yml`.
+
+### As a dependency
+
+Neither `imported.yml` or `config.env.yml` will be loaded when run as a dependency. Instead, the parent application must
+set an environment variable before running the hal executable.
+
+Hal Agent will look for a file at `HAL_AGENT_CONFIG`. This should be a fully qualified path to a symfony dependency
+injection configuration with the required services and parameters.
+
+### Required services
+
+Services          | Parameters
+----------------- | ----------
+doctrine.em       | agent.environment.archive
+repository.repo   | agent.environment.path
+environment.repo  | agent.environment.temp
+user.repo         | agent.environment.home
+deployment.repo   | agent.ssh-user
+push.repo         | github.token
+                  | github.baseurl
+                  | mcp-logger.host
 
 ## Testing
 

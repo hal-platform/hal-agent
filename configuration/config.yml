@@ -1,21 +1,8 @@
 imports:
     -
         resource: di.yml
-    -
-        resource: config.env.yml
 
 parameters:
-    application.name: 'HAL 9000 Agent'
-    application.version: '1.0-alpha'
-    mcp-logger.applicationId: '200947'
-
-### imported from hal-core
-    doctrine.mappings:
-        - '%annotations_suck%'
-    doctrine.devmode: true
-    doctrine.connection:
-        driver:     pdo_mysql
-        host:       localhost
-        user:       root
-        password:
-        dbname:     hal_orm2
+    agent.application.name: 'HAL 9000 Agent'
+    agent.application.version: '1.0-alpha'
+    agent.application.id: '200947'
