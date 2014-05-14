@@ -7,6 +7,8 @@ services:
     # @user.repo
     # @deployment.repo
     # @push.repo
+    # @mcp-logger
+    # @mcp-logger.factory
 
     # %agent.environment.archive%
     # %agent.environment.path%
@@ -279,3 +281,9 @@ services:
             -
                 curl.options:
                     progress: true
+
+    # logger services
+    mcp-logger.factory.subscriber:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Helper\McpLoggerSetupSubscriber'
+        arguments: ['@mcp-logger.factory']

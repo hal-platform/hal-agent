@@ -48,9 +48,6 @@ services:
     mcp-logger.factory.clock:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
-    mcp-logger.factory.subscriber:
-        class: 'QL\Hal\Agent\Helper\McpLoggerSetupSubscriber'
-        arguments: ['@mcp-logger.factory']
     mcp-logger.factory.serverIp:
         class: 'MCP\DataType\IPv4Address'
         factory_class: 'MCP\DataType\IPv4Address'
