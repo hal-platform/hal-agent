@@ -50,6 +50,7 @@
     ],
     "require": {
         "knplabs/github-api":           "*",
+        "monolog/monolog":              "1.9.*",
         "php-64bit":                    ">=5.4.0",
         "psr/log":                      "*",
         "ql/hal-core":                  "2.*@dev",
@@ -61,6 +62,7 @@
         "symfony/dependency-injection": "2.4.*",
         "symfony/event-dispatcher":     "2.4.*",
         "symfony/filesystem":           "2.4.*",
+        "symfony/monolog-bridge":       "2.4.*",
         "symfony/process":              "2.4.*"
     },
     "require-dev": {
