@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\CommandLogger;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\ServerCommand;
@@ -45,7 +45,7 @@ class PushCommand extends Command
     ];
 
     /**
-     * @var MemoryLogger
+     * @var CommandLogger
      */
     private $logger;
 
@@ -91,7 +91,7 @@ class PushCommand extends Command
 
     /**
      * @param string $name
-     * @param MemoryLogger $logger
+     * @param CommandLogger $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param Resolver $resolver
@@ -102,7 +102,7 @@ class PushCommand extends Command
      */
     public function __construct(
         $name,
-        MemoryLogger $logger,
+        CommandLogger $logger,
         EntityManager $entityManager,
         Clock $clock,
         Resolver $resolver,
@@ -226,51 +226,15 @@ class PushCommand extends Command
             $this->entityManager->flush();
 
             // Only send logs if the push was found
-            $this->sendLogMessages($exitCode);
-        }
-
-        // Output log messages if verbosity is set
-        // Output log context if debug verbosity
-        if ($output->isVerbose() && $loggerOutput = $this->logger->output($output->isVeryVerbose())) {
-            $output->writeln($loggerOutput);
+            $type = ($exitCode === 0) ? 'success' : 'failure';
+            $this->logger->$type($this->push, [
+                'pushId' => $this->push->getId(),
+                'pushExitCode' => $exitCode
+            ]);
         }
 
         $this->cleanup();
         return $exitCode;
-    }
-
-    /**
-     * Send the buffered log messages.
-     * This requires that a push was found by the resolver.
-     *
-     * @param int $exitCode
-     * @return null
-     */
-    private function sendLogMessages($exitCode)
-    {
-        $level = 'error';
-        $contextMessage = 'Failure';
-
-        if ($exitCode === 0) {
-            $level = 'info';
-            $contextMessage = 'Success';
-        }
-
-        $deployment = $this->push->getDeployment();
-        $server = $deployment->getServer();
-
-        $repositoryName = $deployment->getRepository()->getKey();
-        $environmentName = $server->getEnvironment()->getKey();
-        $serverName = $server->getName();
-        $message = sprintf('%s (%s:%s) - Push - %s', $repositoryName, $environmentName, $serverName, $contextMessage);
-
-        $context = [
-            'pushId' => $this->push->getId(),
-            'pushStatus' => ($exitCode === 0) ? 'Success' : 'Error',
-            'pushExitCode' => $exitCode
-        ];
-
-        $this->logger->send($level, $message, $context);
     }
 
     /**
@@ -294,15 +258,16 @@ class PushCommand extends Command
     }
 
     /**
-     * @var array $context
-     * @return array
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
      */
-    private function timer(array $context = [])
+    private function status(OutputInterface $output, $message)
     {
-        return array_merge(
-            $context,
-            ['time' => $this->clock->read()->format('c', 'America/Detroit')]
-        );
+        $this->logger->notice($message);
+
+        $message = sprintf('<comment>%s</comment>', $message);
+        $output->writeln($message);
     }
 
     /**
@@ -313,7 +278,7 @@ class PushCommand extends Command
      */
     private function resolve(OutputInterface $output, $pushId, $method)
     {
-        $output->writeln('<comment>Resolving...</comment>');
+        $this->status($output, 'Resolving push properties');
         return call_user_func($this->resolver, $pushId, $method);
     }
 
@@ -329,9 +294,6 @@ class PushCommand extends Command
         // Update the push status asap so no other worker can pick it up
         $this->setEntityStatus('Pushing', true);
 
-        $encoded = json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $output->writeln(sprintf('<info>Push properties:</info> %s', $encoded));
-
         // add artifacts for cleanup
         $this->artifacts = array_merge($this->artifacts, [$properties['buildPath']]);
     }
@@ -343,7 +305,7 @@ class PushCommand extends Command
      */
     private function unpack(OutputInterface $output, array $properties)
     {
-        $output->writeln('<comment>Unpacking...</comment>');
+        $this->status($output, 'Unpacking build archive');
         return call_user_func_array($this->unpacker, [
             $properties['archiveFile'],
             $properties['buildPath'],
@@ -359,25 +321,17 @@ class PushCommand extends Command
     private function prepush(OutputInterface $output, array $properties)
     {
         if (!$properties['prePushCommand']) {
+            $this->status($output, 'Skipping pre-push command');
             return true;
         }
 
-        $this->logger->debug('Pre push command started', $this->timer());
-        $output->writeln('<comment>Pre push command executing...</comment>');
-
-        $success = call_user_func_array($this->serverCommand, [
+        $this->status($output, 'Running pre-push command');
+        return call_user_func_array($this->serverCommand, [
             $properties['hostname'],
             $properties['remotePath'],
             $properties['prePushCommand'],
             $properties['environmentVariables']
         ]);
-
-        if (!$success) {
-            return false;
-        }
-
-        $this->logger->debug('Pre push command finished', $this->timer());
-        return true;
     }
 
     /**
@@ -387,21 +341,12 @@ class PushCommand extends Command
      */
     private function push(OutputInterface $output, array $properties)
     {
-        $this->logger->debug('Pushing started', $this->timer());
-        $output->writeln('<comment>Pushing...</comment>');
-
-        $success = call_user_func_array($this->pusher, [
+        $this->status($output, 'Pushing code to server');
+        return call_user_func_array($this->pusher, [
             $properties['buildPath'],
             $properties['syncPath'],
             $properties['excludedFiles']
         ]);
-
-        if (!$success) {
-            return false;
-        }
-
-        $this->logger->debug('Pushing finished', $this->timer());
-        return true;
     }
 
     /**
@@ -412,24 +357,16 @@ class PushCommand extends Command
     private function postpush(OutputInterface $output, array $properties)
     {
         if (!$properties['postPushCommand']) {
+            $this->status($output, 'Skipping post-push command');
             return true;
         }
 
-        $this->logger->debug('Post push command started', $this->timer());
-        $output->writeln('<comment>Post push command executing...</comment>');
-
-        $success = call_user_func_array($this->serverCommand, [
+        $this->status($output, 'Running post-push command');
+        return call_user_func_array($this->serverCommand, [
             $properties['hostname'],
             $properties['remotePath'],
             $properties['postPushCommand'],
             $properties['environmentVariables']
         ]);
-
-        if (!$success) {
-            return false;
-        }
-
-        $this->logger->debug('Post push command finished', $this->timer());
-        return true;
     }
 }

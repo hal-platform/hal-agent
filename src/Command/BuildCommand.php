@@ -15,7 +15,7 @@ use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\CommandLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -48,7 +48,7 @@ class BuildCommand extends Command
     ];
 
     /**
-     * @var MemoryLogger
+     * @var CommandLogger
      */
     private $logger;
 
@@ -109,7 +109,7 @@ class BuildCommand extends Command
 
     /**
      * @param string $name
-     * @param MemoryLogger $logger
+     * @param CommandLogger $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param Resolver $resolver
@@ -121,7 +121,7 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
-        MemoryLogger $logger,
+        CommandLogger $logger,
         EntityManager $entityManager,
         Clock $clock,
         Resolver $resolver,
@@ -242,48 +242,16 @@ class BuildCommand extends Command
             $this->entityManager->flush();
 
             // Only send logs if the build was found
-            $this->sendLogMessages($exitCode);
-        }
-
-        // verbosity = 1: Output log messages
-        // verbosity = 2: Output log context
-        if ($output->isVerbose() && $loggerOutput = $this->logger->output($output->isVeryVerbose())) {
-            $output->writeln($loggerOutput);
+            $type = ($exitCode === 0) ? 'success' : 'failure';
+            $this->logger->$type($this->build, [
+                'buildId' => $this->build->getId(),
+                'buildExitCode' => $exitCode
+            ]);
         }
 
         $this->cleanup();
 
         return $exitCode;
-    }
-
-    /**
-     * Send the buffered log messages.
-     * This requires that a build was found by the resolver.
-     *
-     * @param int $exitCode
-     * @return null
-     */
-    private function sendLogMessages($exitCode)
-    {
-        $level = 'error';
-        $contextMessage = 'Failure';
-
-        if ($exitCode === 0) {
-            $level = 'info';
-            $contextMessage = 'Success';
-        }
-
-        $repositoryName = $this->build->getRepository()->getKey();
-        $environmentName = $this->build->getEnvironment()->getKey();
-        $message = sprintf('%s (%s) - Build - %s', $repositoryName, $environmentName, $contextMessage);
-
-        $context = [
-            'buildId' => $this->build->getId(),
-            'buildStatus' => ($exitCode === 0) ? 'Success' : 'Error',
-            'buildExitCode' => $exitCode
-        ];
-
-        $this->logger->send($level, $message, $context);
     }
 
     /**
@@ -307,15 +275,16 @@ class BuildCommand extends Command
     }
 
     /**
-     * @var array $context
-     * @return array
+     * @param OutputInterface $output
+     * @param string $message
+     * @return null
      */
-    private function timer(array $context = [])
+    private function status(OutputInterface $output, $message)
     {
-        return array_merge(
-            $context,
-            ['time' => $this->clock->read()->format('c', 'America/Detroit')]
-        );
+        $this->logger->notice($message);
+
+        $message = sprintf('<comment>%s</comment>', $message);
+        $output->writeln($message);
     }
 
     /**
@@ -325,7 +294,7 @@ class BuildCommand extends Command
      */
     private function resolve(OutputInterface $output, $buildId)
     {
-        $output->writeln('<comment>Resolving...</comment>');
+        $this->status($output, 'Resolving build properties');
         return call_user_func($this->resolver, $buildId);
     }
 
@@ -337,8 +306,6 @@ class BuildCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->build = $properties['build'];
-        $encoded = json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $output->writeln(sprintf('<info>Build properties:</info> %s', $encoded));
 
         // Update the build status asap so no other worker can pick it up
         $this->setEntityStatus('Building', true);
@@ -354,24 +321,15 @@ class BuildCommand extends Command
      */
     private function download(OutputInterface $output, array $properties)
     {
-        $this->logger->debug('Download started', $this->timer());
-        $output->writeln('<comment>Downloading...</comment>');
-
         $this->progress->enableDownloadProgress($output);
 
-        $success = call_user_func_array($this->downloader, [
+        $this->status($output, 'Downloading github repository');
+        return call_user_func_array($this->downloader, [
             $properties['githubUser'],
             $properties['githubRepo'],
             $properties['githubReference'],
             $properties['buildFile']
         ]);
-
-        if (!$success) {
-            return false;
-        }
-
-        $this->logger->debug('Download finished', $this->timer());
-        return true;
     }
 
     /**
@@ -381,7 +339,7 @@ class BuildCommand extends Command
      */
     private function unpack(OutputInterface $output, array $properties)
     {
-        $output->writeln('<comment>Unpacking...</comment>');
+        $this->status($output, 'Unpacking github repository');
         return call_user_func(
             $this->unpacker,
             $properties['buildFile'],
@@ -397,24 +355,16 @@ class BuildCommand extends Command
     private function build(OutputInterface $output, array $properties)
     {
         if (!$properties['buildCommand']) {
+            $this->status($output, 'Skipping build command');
             return true;
         }
 
-        $this->logger->debug('Building started', $this->timer());
-        $output->writeln('<comment>Building...</comment>');
-
-        $success = call_user_func_array($this->builder, [
+        $this->status($output, 'Running build command');
+        return call_user_func_array($this->builder, [
             $properties['buildPath'],
             $properties['buildCommand'],
             $properties['environmentVariables']
         ]);
-
-        if (!$success) {
-            return false;
-        }
-
-        $this->logger->debug('Building finished', $this->timer());
-        return true;
     }
 
     /**
@@ -424,7 +374,7 @@ class BuildCommand extends Command
      */
     private function pack(OutputInterface $output, array $properties)
     {
-        $output->writeln('<comment>Packing...</comment>');
+        $this->status($output, 'Packing build into archive');
         return call_user_func(
             $this->packer,
             $properties['buildPath'],

@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Helper;
+namespace QL\Hal\Agent\Logger;
 
 use MCP\DataType\IPv4Address;
 use MCP\Service\Logger\Adapter\Psr\MessageFactory;

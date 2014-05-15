@@ -18,7 +18,7 @@ class Unpacker
     /**
      * @var string
      */
-    const SUCCESS_UNPACK = 'Repository unpacked';
+    const SUCCESS_UNPACK = 'Build archive unpacked';
     const SUCCESS_PROPERTIES = 'Push details written to application directory';
 
     const ERR_UNPACK_FAILURE = 'Unable to unpack repository archive';

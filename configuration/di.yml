@@ -40,11 +40,19 @@ services:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
             - ['addSubscriber', ['@mcp-logger.factory.subscriber']]
+            - ['addSubscriber', ['@monolog.handler.console']]
 
     clock:
         scope: 'agent'
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
+
+    logger:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Logger\CommandLogger'
+        arguments:
+            - '@monolog'
+            - '@monolog.handler.buffer'
 
     # commands
     command.build.create:
@@ -63,7 +71,7 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - '@utility.logger'
+            - '@logger'
             - '@doctrine.em'
             - '@clock'
             - '@build.resolver'
@@ -105,7 +113,7 @@ services:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - '@utility.logger'
+            - '@logger'
             - '@doctrine.em'
             - '@clock'
             - '@push.resolver'
@@ -143,11 +151,7 @@ services:
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
             - ['setIndentation', ['4']]
-    utility.logger:
-        scope: 'agent'
-        class: 'QL\Hal\Agent\Helper\MemoryLogger'
-        calls:
-            - ['setBufferedLogger', ['@mcp-logger']]
+
     utility.filesystem:
         scope: 'agent'
         class: 'Symfony\Component\Filesystem\Filesystem'
@@ -174,7 +178,7 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@build.repo'
             - '%agent.environment.path%'
             - '%agent.environment.archive%'
@@ -185,25 +189,25 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@github.archive'
     build.unpacker:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
     build.builder:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
     build.packer:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
 
     # push actions
@@ -211,7 +215,7 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@push.repo'
             - '@clock'
             - '%agent.ssh-user%'
@@ -222,7 +226,7 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
             - '@utility.filesystem'
             - '@utility.yaml-dumper'
@@ -230,13 +234,13 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
     push.server-command:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
-            - '@utility.logger'
+            - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
             - '%agent.ssh-user%'
 
@@ -283,7 +287,75 @@ services:
                     progress: true
 
     # logger services
+    # the amount of handlers is ridiculous
+    monolog:
+        scope: 'agent'
+        class: 'Monolog\Logger'
+        arguments: ['hal9000']
+        calls:
+            - ['pushHandler', ['@monolog.handler.console']]
+            - ['pushHandler', ['@monolog.handler.buffer']]
+    monolog.handler.buffer:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Logger\BufferHandler'
+        arguments:
+            - '@monolog.handler.group'
+    monolog.handler.group:
+        scope: 'agent'
+        class: 'Monolog\Handler\GroupHandler'
+        arguments:
+            - ['@monolog.handler.parent', '@monolog.handler.swiftmailer']
+
+    # mcp handler
+    monolog.handler.parent:
+        class: 'QL\Hal\Agent\Logger\ParentLogHandler'
+        arguments: ['@mcp-logger']
+        calls:
+            - ['setFormatter', ['@monolog.formatter.text-formatter']]
+
+    # email handler
+    monolog.handler.swiftmailer:
+        scope: 'agent'
+        class: 'Monolog\Handler\SwiftMailerHandler'
+        arguments:
+            - '@emailer'
+            - '@emailer.message'
+            - '100'
+        calls:
+            - ['setFormatter', ['@monolog.handler.swiftmailer.formatter']]
+    monolog.handler.swiftmailer.formatter:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Logger\HtmlFormatter'
+
+    # console handler
+    monolog.handler.console:
+        scope: 'agent'
+        class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
+
+    monolog.formatter.text-formatter:
+        class: 'QL\Hal\Agent\Logger\TextFormatter'
+        arguments: ['', '', true]
+
     mcp-logger.factory.subscriber:
         scope: 'agent'
-        class: 'QL\Hal\Agent\Helper\McpLoggerSetupSubscriber'
+        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
         arguments: ['@mcp-logger.factory']
+
+    # emailer services
+    emailer:
+        scope: 'agent'
+        class: 'Swift_Mailer'
+        arguments: ['@emailer.transport']
+    emailer.transport:
+        scope: 'agent'
+        class: 'Swift_SmtpTransport'
+        arguments: ['%agent.email.server%']
+    emailer.message:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\SwiftMailer\Message'
+        arguments:
+            - '%agent.email.subject%'
+        calls:
+            - ['setFrom', ['%agent.email.from%', 'HAL9000']]
+            - ['setReplyTo', ['%agent.email.reply%']]
+            - ['setCc', ['%agent.email.notify%']]

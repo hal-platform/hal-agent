@@ -6,3 +6,10 @@ parameters:
     agent.application.name: 'HAL 9000 Agent'
     agent.application.version: '1.0-alpha'
     agent.application.id: '200947'
+
+    agent.email.server: 'mail.example.com'
+    agent.email.notify:
+        - 'stevekluck@quickenloans.com'
+    agent.email.from: 'stevekluck@quickenloans.com'
+    agent.email.reply: 'stevekluck@quickenloans.com'
+    agent.email.subject: 'HAL9000 - {repo} [{status}][{env}][{server}]'

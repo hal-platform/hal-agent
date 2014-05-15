@@ -92,7 +92,7 @@ class Resolver
             return null;
         }
 
-        return [
+        $properties = [
             'build' => $build,
             'buildCommand' => $build->getRepository()->getBuildCmd(),
 
@@ -106,6 +106,9 @@ class Resolver
 
             'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
         ];
+
+        $this->logger->info('Resolved build properties', $properties);
+        return $properties;
     }
 
     /**

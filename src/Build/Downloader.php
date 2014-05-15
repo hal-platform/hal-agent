@@ -15,8 +15,8 @@ class Downloader
     /**
      * @var string
      */
-    const SUCCESS = 'Build downloaded';
-    const ERR_FAILURE = 'Github archive could not be downloaded';
+    const SUCCESS = 'Application code downloaded';
+    const ERR_FAILURE = 'Application code could not be downloaded';
 
     /**
      * @var LoggerInterface

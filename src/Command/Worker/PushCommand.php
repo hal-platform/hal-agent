@@ -14,7 +14,7 @@ use QL\Hal\Core\Entity\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -126,8 +126,7 @@ class PushCommand extends Command
                     'PUSH_ID' => $push->getId()
                 ]);
 
-                // Need to use buffered here because NullOutput doesn't have the correct verbosity methods
-                return $command->run($input, new BufferedOutput);
+                return $command->run($input, new NullOutput);
 
             } else {
                 $output->writeln(sprintf('Push ID %s started.', $push->getId()));

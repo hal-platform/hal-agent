@@ -15,13 +15,13 @@ class Unpacker
     /**
      * @var string
      */
-    const SUCCESS_UNPACK = 'Repository unpacked';
-    const SUCCESS_LOCATED = 'Unpacked archive located';
-    const SUCCESS_SANITIZED = 'Unpacked archive sanitized';
+    const SUCCESS_UNPACK = 'Application code unpacked';
+    const SUCCESS_LOCATED = 'Unpacked code located';
+    const SUCCESS_SANITIZED = 'Unpacked code sanitized';
 
-    const ERR_UNPACK_FAILURE = 'Unable to unpack repository archive';
-    const ERR_LOCATED = 'Unpacked archive could not be located';
-    const ERR_SANITIZED = 'Unpacked archive could not be sanitized';
+    const ERR_UNPACK_FAILURE = 'Unable to unpack code application code';
+    const ERR_LOCATED = 'Unpacked code could not be located';
+    const ERR_SANITIZED = 'Unpacked code could not be sanitized';
 
     /**
      * @var LoggerInterface

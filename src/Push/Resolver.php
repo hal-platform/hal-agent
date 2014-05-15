@@ -106,7 +106,7 @@ class Resolver
             $this->logger->critical(sprintf('Cannot resolve hostname "%s"', $serverName));
         }
 
-        return [
+        $properties = [
             'push' => $push,
             'method' => $method,
             'hostname' => $hostname,
@@ -140,6 +140,9 @@ class Resolver
 
             'environmentVariables' => $this->generateServerEnvironmentVariables($build, $deployment, $hostname)
         ];
+
+        $this->logger->info('Resolved push properties', $properties);
+        return $properties;
     }
 
     /**

@@ -15,7 +15,7 @@ class Pusher
     /**
      * @var string
      */
-    const SUCCESS_PUSH = 'Application code pushed';
+    const SUCCESS_PUSH = 'Application code synced to server';
     const ERR_PUSH = 'Unable to finish syncing application code';
 
     /**
