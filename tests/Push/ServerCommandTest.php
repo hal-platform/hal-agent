@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Push;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 
 class ServerCommandTest extends PHPUnit_Framework_TestCase
 {
@@ -33,7 +33,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
         $success = $action('host', 'sync/path', 'bin/cmd', []);
         $this->assertTrue($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Server command executed', $message[1]);
     }
@@ -58,7 +58,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
         $success = $action('host', 'sync/path', 'bin/cmd', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
         $this->assertSame('Server command executed with errors', $message[1]);
     }

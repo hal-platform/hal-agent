@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Push;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 
 class PusherTest extends PHPUnit_Framework_TestCase
 {
@@ -33,9 +33,9 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $success = $action('build/path', 'sync/path', []);
         $this->assertTrue($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('Application code pushed', $message[1]);
+        $this->assertSame('Application code synced to server', $message[1]);
     }
 
     public function testFail()
@@ -58,7 +58,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $success = $action('build/path', 'sync/path', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
         $this->assertSame('Unable to finish syncing application code', $message[1]);
     }

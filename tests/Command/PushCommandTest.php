@@ -10,7 +10,6 @@ namespace QL\Hal\Agent\Command;
 use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -30,7 +29,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = new MemoryLogger;
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\CommandLogger', ['notice' => null]);
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->clock = new Clock('now', 'UTC');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
@@ -67,7 +66,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command->run($this->input, $this->output);
         $expected = <<<'OUTPUT'
-Resolving...
+Resolving push properties
 Push details could not be resolved.
 
 OUTPUT;
@@ -130,6 +129,10 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
+        $this->logger
+            ->shouldReceive('success')
+            ->once();
+
         // cleanup
         $this->processBuilder
             ->shouldReceive('getProcess->run')
@@ -149,32 +152,11 @@ OUTPUT;
 
         $command->run($this->input, $this->output);
         $expected = <<<'OUTPUT'
-Resolving...
-Push properties: {
-    "push": {
-
-    },
-    "buildPath": "path/dir",
-    "archiveFile": "path/file",
-    "pushProperties": [
-
-    ],
-    "prePushCommand": "bin/cmd",
-    "postPushCommand": "bin/cmd",
-    "hostname": "localhost",
-    "remotePath": "path/dir",
-    "environmentVariables": [
-
-    ],
-    "syncPath": "user@localhost:path/dir",
-    "excludedFiles": [
-
-    ]
-}
-Unpacking...
-Pre push command executing...
-Pushing...
-Post push command executing...
+Resolving push properties
+Unpacking build archive
+Running pre-push command
+Pushing code to server
+Running post-push command
 Success!
 
 OUTPUT;

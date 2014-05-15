@@ -10,7 +10,6 @@ namespace QL\Hal\Agent\Command;
 use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -32,7 +31,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = new MemoryLogger;
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\CommandLogger', ['notice' => null]);
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->clock = new Clock('now', 'UTC');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Build\Resolver');
@@ -72,7 +71,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
         $command->run($this->input, $this->output);
         $expected = <<<'OUTPUT'
-Resolving...
+Resolving build properties
 Build details could not be resolved.
 
 OUTPUT;
@@ -134,6 +133,10 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
+        $this->logger
+            ->shouldReceive('success')
+            ->once();
+
         // cleanup
         $this->processBuilder
             ->shouldReceive('getProcess->run')
@@ -155,26 +158,11 @@ OUTPUT;
 
         $command->run($this->input, $this->output);
         $expected = <<<'OUTPUT'
-Resolving...
-Build properties: {
-    "build": {
-
-    },
-    "archiveFile": "path/file",
-    "buildPath": "path/dir",
-    "githubUser": "user1",
-    "githubRepo": "repo1",
-    "githubReference": "master",
-    "buildCommand": "bin/build",
-    "environmentVariables": [
-
-    ],
-    "buildFile": "path/file"
-}
-Downloading...
-Unpacking...
-Building...
-Packing...
+Resolving build properties
+Downloading github repository
+Unpacking github repository
+Running build command
+Packing build into archive
 Success!
 
 OUTPUT;

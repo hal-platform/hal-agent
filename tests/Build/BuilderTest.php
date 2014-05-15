@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 
 class BuilderTest extends PHPUnit_Framework_TestCase
 {
@@ -32,7 +32,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Build command executed', $message[1]);
         $this->assertSame('test-output', $message[2]['output']);
@@ -58,7 +58,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
         $this->assertSame('Build command executed with errors', $message[1]);
         $this->assertSame('test-output', $message[2]['output']);

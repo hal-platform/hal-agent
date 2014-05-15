@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 
 class DownloaderTest extends PHPUnit_Framework_TestCase
 {
@@ -25,9 +25,9 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
         $success = $action('user', 'repo', 'ref', []);
         $this->assertTrue($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('Build downloaded', $message[1]);
+        $this->assertSame('Application code downloaded', $message[1]);
     }
 
     public function testFailure()
@@ -42,9 +42,9 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
         $success = $action('user', 'repo', 'ref', 'php://memory');
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('Github archive could not be downloaded', $message[1]);
+        $this->assertSame('Application code could not be downloaded', $message[1]);
 
         $this->assertSame('user/repo', $message[2]['repository']);
         $this->assertSame('ref', $message[2]['reference']);

@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Push;
 use Mockery;
 use MCP\DataType\Time\Clock;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
@@ -33,7 +33,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('error', $message[0]);
         $this->assertSame('Push "1234" could not be found!', $message[1]);
     }
@@ -54,11 +54,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Found push: 1234', $message[1]);
 
-        $message = $logger->messages()[1];
+        $message = $logger[1];
         $this->assertSame('error', $message[0]);
         $this->assertSame('Push "1234" has a status of "Poo"! It cannot be redeployed.', $message[1]);
     }

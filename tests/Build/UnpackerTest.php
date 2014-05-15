@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 
 class UnpackerTest extends PHPUnit_Framework_TestCase
 {
@@ -32,17 +32,17 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('Repository unpacked', $message[1]);
+        $this->assertSame('Application code unpacked', $message[1]);
 
-        $message = $logger->messages()[1];
+        $message = $logger[1];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('Unpacked archive located', $message[1]);
+        $this->assertSame('Unpacked code located', $message[1]);
 
-        $message = $logger->messages()[2];
+        $message = $logger[2];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('Unpacked archive sanitized', $message[1]);
+        $this->assertSame('Unpacked code sanitized', $message[1]);
     }
 
     public function testMakeDirectoryFails()
@@ -68,9 +68,9 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unable to unpack repository archive', $message[1]);
+        $this->assertSame('Unable to unpack code application code', $message[1]);
     }
 
     public function testUnpackingFails()
@@ -100,9 +100,9 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unable to unpack repository archive', $message[1]);
+        $this->assertSame('Unable to unpack code application code', $message[1]);
     }
 
     public function testLocatingUnpackedArchiveFails()
@@ -132,9 +132,9 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[1];
+        $message = $logger[1];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unpacked archive could not be located', $message[1]);
+        $this->assertSame('Unpacked code could not be located', $message[1]);
     }
 
     public function testSanitizingUnpackedArchiveFails()
@@ -164,8 +164,8 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[2];
+        $message = $logger[2];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unpacked archive could not be sanitized', $message[1]);
+        $this->assertSame('Unpacked code could not be sanitized', $message[1]);
     }
 }

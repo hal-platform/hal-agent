@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Push;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Yaml\Dumper;
 
@@ -39,11 +39,11 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('archive', 'php://temp', []);
         $this->assertTrue($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('Repository unpacked', $message[1]);
+        $this->assertSame('Build archive unpacked', $message[1]);
 
-        $message = $logger->messages()[1];
+        $message = $logger[1];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Push details written to application directory', $message[1]);
     }
@@ -80,7 +80,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('archive', 'php://temp', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('critical', $message[0]);
         $this->assertSame('Unable to unpack repository archive', $message[1]);
     }
@@ -113,11 +113,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $success = $action('archive', 'php://temp', []);
         $this->assertFalse($success);
 
-        $message = $logger->messages()[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Repository unpacked', $message[1]);
-
-        $message = $logger->messages()[1];
+        $message = $logger[1];
         $this->assertSame('critical', $message[0]);
         $this->assertSame('Push details could not be written: msg', $message[1]);
     }

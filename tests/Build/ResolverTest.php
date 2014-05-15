@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Helper\MemoryLogger;
+use QL\Hal\Agent\Logger\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Repository;
@@ -28,7 +28,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
         $this->assertNull($properties);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('error', $message[0]);
         $this->assertSame('Build "1234" could not be found!', $message[1]);
     }
@@ -48,11 +48,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
         $this->assertNull($properties);
 
-        $message = $logger->messages()[0];
+        $message = $logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Found build: 1234', $message[1]);
 
-        $message = $logger->messages()[1];
+        $message = $logger[1];
         $this->assertSame('error', $message[0]);
         $this->assertSame('Build "1234" has a status of "Poo"! It cannot be rebuilt.', $message[1]);
     }
@@ -110,6 +110,5 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         unset($properties['environmentVariables']);
         $this->assertSame($expected, $properties);
-
     }
 }
