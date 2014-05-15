@@ -74,11 +74,11 @@ class CommandLogger extends AbstractLogger
     public function failure($entity, array $context = [])
     {
         if ($entity instanceof Build) {
-            return $this->flush('error', $this->formatBuildSubject($entity), $context);
+            return $this->flush('critical', $this->formatBuildSubject($entity), $context);
         }
 
         if ($entity instanceof Push) {
-            return $this->flush('error', $this->formatPushSubject($entity), $context);
+            return $this->flush('critical', $this->formatPushSubject($entity), $context);
         }
     }
 
@@ -119,7 +119,7 @@ class CommandLogger extends AbstractLogger
      */
     private function formatPushSubject(Push $push)
     {
-        $deployment = $this->push->getDeployment();
+        $deployment = $push->getDeployment();
         $server = $deployment->getServer();
 
         return sprintf(

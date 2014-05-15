@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Logger;
 
 use Monolog\Handler\AbstractProcessingHandler;
+use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -24,10 +25,14 @@ class ParentLogHandler extends AbstractProcessingHandler
 
     /**
      * @param LoggerInterface $logger
+     * @param integer $level  The minimum logging level at which this handler will be triggered
+     * @param Boolean $bubble Whether the messages that are handled can bubble up the stack or not
      */
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, $level = Logger::DEBUG, $bubble = true)
     {
         $this->logger = $logger;
+
+        parent::__construct($level, $bubble);
     }
 
     /**
