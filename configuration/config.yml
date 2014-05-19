@@ -9,7 +9,7 @@ parameters:
 
     agent.email.server: 'mail.example.com'
     agent.email.notify:
-        - 'stevekluck@quickenloans.com'
-    agent.email.from: 'stevekluck@quickenloans.com'
-    agent.email.reply: 'stevekluck@quickenloans.com'
+        - 'hal@example.com'
+    agent.email.from: 'hal@example.com'
+    agent.email.reply: 'hal@example.com'
     agent.email.subjects: []
