@@ -129,11 +129,19 @@ class PushCommand extends Command
     /**
      * In case of error or critical failure, ensure that we clean up the build artifacts.
      *
+     * Note that this is only called for exceptions and non-fatal errors.
+     * Fatal errors WILL NOT trigger this.
+     *
      * @return null
      */
     public function __destruct()
     {
         $this->cleanup();
+
+        // If we got to this point and the status is still "Pushing", something terrible has happened.
+        if ($this->push && $this->push->getStatus() === 'Pushing') {
+            $this->setEntityStatus('Error');
+        }
     }
 
     /**
