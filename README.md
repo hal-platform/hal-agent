@@ -10,8 +10,19 @@ application will then be called in the background. It can also be interacted wit
 allow for triggered builds and deploys from a CI server. It will also be possible to obtain a completed build as a
 package for deployment elsewhere (AWS, etc).
 
+Table of Contents:
+* [Usage](#usage)
+* [Available Commands](#available-commands)
+* [Worker Commands](#worker-commands)
+* [Application scripting environment](#application-scripting-environment)
+* [Deployment](#deployment)
+* [Dependencies](#dependencies)
+* [Testing](#testing)
+
+## Usage
+
 The application can be run as follows:
-```
+```bash
 bin/hal [command]
 ```
 
@@ -29,28 +40,6 @@ Contextual variables will be displayed if run with increased verbosity.
 ```bash
 bin/hal [command] -vv
 ```
-
-## Dependencies
-
-This application has a lot of dependencies. Here are a list of what they are used for.
-
-Package                        | Description
------------------------------- | -----------
-`knplabs/github-api`           | Download code from github and resolve git references.
-`monolog/monolog`              | Log handling
-`psr/log`                      | Logging standard
-`ql/hal-core`                  | Domain model
-`ql/mcp-core`                  | Core utilities
-`ql/mcp-logger`                | Logging to core logger
-`swiftmailer/swiftmailer`      | Emailer
-`symfony/config`               | Cascading configuration
-`symfony/console`              | The core of this application
-`symfony/dependency-injection` | Dependency injection and service container
-`symfony/debug`                | Convert errors to exceptions
-`symfony/event-dispatcher`     | Event dispatching for the console application
-`symfony/filesystem`           | Filesystem abstraction
-`symfony/monolog-bridge`       | Console output of log messages
-`symfony/process`              | System process abstraction
 
 ## Available Commands
 
@@ -71,6 +60,10 @@ Command          | Description
 ---------------- | -----------
 `worker:build`   | Find and build all waiting builds.
 `worker:push`    | Find and push all waiting pushes.
+
+**A note on permissions:**  
+Within the console application, no user switching or `sudo` is performed. The worker commands must be run as the
+user with the proper permissions to perform the required system actions.
 
 ## Application scripting environment
 
@@ -164,9 +157,32 @@ agent.environment.temp    | Parameter | Path to temporary build directory
 agent.environment.path    | Parameter | System PATH
 agent.environment.home    | Parameter | System HOME
 agent.ssh-user            | Parameter | Username for rsync to servers
+agent.email.subjects      | Parameter | Templates for email and log messages
 github.token              | Parameter | Github authentication token
 github.baseurl            | Parameter | Github url
 mcp-logger.host           | Parameter | Core logger hostname
+
+## Dependencies
+
+This application has a lot of dependencies. Here are a list of what they are used for.
+
+Package                        | Description
+------------------------------ | -----------
+`knplabs/github-api`           | Download code from github and resolve git references.
+`monolog/monolog`              | Log handling
+`psr/log`                      | Logging standard
+`ql/hal-core`                  | Domain model
+`ql/mcp-core`                  | Core utilities
+`ql/mcp-logger`                | Logging to core logger
+`swiftmailer/swiftmailer`      | Emailer
+`symfony/config`               | Cascading configuration
+`symfony/console`              | The core of this application
+`symfony/dependency-injection` | Dependency injection and service container
+`symfony/debug`                | Convert errors to exceptions
+`symfony/event-dispatcher`     | Event dispatching for the console application
+`symfony/filesystem`           | Filesystem abstraction
+`symfony/monolog-bridge`       | Console output of log messages
+`symfony/process`              | System process abstraction
 
 ## Testing
 
