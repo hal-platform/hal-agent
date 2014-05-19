@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command\Worker;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -18,6 +19,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public $buildRepo;
     public $em;
     public $forker;
+    public $logger;
 
     public $connection;
     public $application;
@@ -31,6 +33,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->forker = Mockery::mock('QL\Hal\Agent\Helper\ForkHelper');
+        $this->logger = new MemoryLogger;
 
         $this->connection = Mockery::mock('Doctrine\DBAL\Connection');
 
@@ -59,7 +62,8 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             'build-cmd',
             $this->buildRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
 
         $command->run($this->input, $this->output);
@@ -108,14 +112,15 @@ OUTPUT;
             'build-cmd',
             $this->buildRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
 Waiting builds: 1
-Starting build workers...
+Starting build workers
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -157,14 +162,15 @@ OUTPUT;
             'build-cmd',
             $this->buildRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
 Waiting builds: 2
-Starting build workers...
+Starting build workers
 Build ID 1234 started.
 Build ID 5555 started.
 All waiting builds have been started.
@@ -209,14 +215,15 @@ OUTPUT;
             'build-cmd',
             $this->buildRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
 Waiting builds: 2
-Starting build workers...
+Starting build workers
 Build ID 1234 started.
 Could not fork a build worker.
 
@@ -240,7 +247,8 @@ OUTPUT;
             'build-cmd',
             $this->buildRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);

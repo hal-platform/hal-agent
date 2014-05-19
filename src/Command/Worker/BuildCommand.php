@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Command\Worker;
 
 use Doctrine\ORM\EntityManager;
+use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
@@ -58,18 +59,25 @@ class BuildCommand extends Command
     private $forker;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @param string $name
      * @param string $buildCommand
      * @param BuildRepository $buildRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
+     * @param LoggerInterface $logger
      */
     public function __construct(
         $name,
         $buildCommand,
         BuildRepository $buildRepo,
         EntityManager $entityManager,
-        ForkHelper $forker
+        ForkHelper $forker,
+        LoggerInterface $logger
     ) {
         parent::__construct($name);
         $this->buildCommand = $buildCommand;
@@ -77,6 +85,7 @@ class BuildCommand extends Command
         $this->buildRepo = $buildRepo;
         $this->entityManager = $entityManager;
         $this->forker = $forker;
+        $this->logger = $logger;
     }
 
     /**
@@ -106,7 +115,7 @@ class BuildCommand extends Command
         }
 
         $output->writeln(sprintf('Waiting builds: %s', count($builds)));
-        $output->writeln('<comment>Starting build workers...</comment>');
+        $output->writeln('<comment>Starting build workers</comment>');
 
         foreach ($builds as $build) {
             $pid = $this->forker->fork();
@@ -134,5 +143,20 @@ class BuildCommand extends Command
         }
 
         return $this->success($output);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param int $exitCode
+     * @return null
+     */
+    private function finish(OutputInterface $output, $exitCode)
+    {
+        if ($exitCode !== 0) {
+            $message = (isset(static::$codes[$exitCode])) ? static::$codes[$exitCode] : 'An error occcured';
+            $this->logger->critical(sprintf('WORKER (Build) - %s', $message));
+        }
+
+        return $exitCode;
     }
 }

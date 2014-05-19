@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command\Worker;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\MemoryLogger;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -18,6 +19,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     public $pushRepo;
     public $em;
     public $forker;
+    public $logger;
 
     public $connection;
     public $application;
@@ -31,6 +33,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->pushRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository');
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->forker = Mockery::mock('QL\Hal\Agent\Helper\ForkHelper');
+        $this->logger = new MemoryLogger;
 
         $this->connection = Mockery::mock('Doctrine\DBAL\Connection');
 
@@ -59,7 +62,8 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
 
         $command->run($this->input, $this->output);
@@ -108,14 +112,15 @@ OUTPUT;
             'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
 Waiting pushes: 1
-Starting push workers...
+Starting push workers
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -157,14 +162,15 @@ OUTPUT;
             'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
 Waiting pushes: 2
-Starting push workers...
+Starting push workers
 Push ID 1234 started.
 Push ID 5555 started.
 All waiting pushes have been started.
@@ -209,14 +215,15 @@ OUTPUT;
             'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
 Waiting pushes: 2
-Starting push workers...
+Starting push workers
 Push ID 1234 started.
 Could not fork a push worker.
 
@@ -240,7 +247,8 @@ OUTPUT;
             'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker
+            $this->forker,
+            $this->logger
         );
         $command->setApplication($this->application);
         $exitCode = $command->run($this->input, $this->output);

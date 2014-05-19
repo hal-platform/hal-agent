@@ -132,6 +132,7 @@ services:
             - '@build.repo'
             - '@doctrine.em'
             - '@utility.forker'
+            - '@mcp-logger'
     command.worker.push:
         scope: 'agent'
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
@@ -141,6 +142,7 @@ services:
             - '@push.repo'
             - '@doctrine.em'
             - '@utility.forker'
+            - '@mcp-logger'
 
     # utility
     utility.helper.download-progress:

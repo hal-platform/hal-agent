@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Command\Worker;
 
 use Doctrine\ORM\EntityManager;
+use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
 use QL\Hal\Core\Entity\Repository\PushRepository;
@@ -58,18 +59,25 @@ class PushCommand extends Command
     private $forker;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @param string $name
      * @param string $pushCommand
      * @param PushRepository $pushRepo
      * @param EntityManager $entityManager
      * @param ForkHelper $forker
+     * @param LoggerInterface $logger
      */
     public function __construct(
         $name,
         $pushCommand,
         PushRepository $pushRepo,
         EntityManager $entityManager,
-        ForkHelper $forker
+        ForkHelper $forker,
+        LoggerInterface $logger
     ) {
         parent::__construct($name);
         $this->pushCommand = $pushCommand;
@@ -77,6 +85,7 @@ class PushCommand extends Command
         $this->pushRepo = $pushRepo;
         $this->entityManager = $entityManager;
         $this->forker = $forker;
+        $this->logger = $logger;
     }
 
     /**
@@ -106,7 +115,7 @@ class PushCommand extends Command
         }
 
         $output->writeln(sprintf('Waiting pushes: %s', count($pushes)));
-        $output->writeln('<comment>Starting push workers...</comment>');
+        $output->writeln('<comment>Starting push workers</comment>');
 
         foreach ($pushes as $push) {
             $pid = $this->forker->fork();
@@ -134,5 +143,20 @@ class PushCommand extends Command
         }
 
         return $this->success($output);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param int $exitCode
+     * @return null
+     */
+    private function finish(OutputInterface $output, $exitCode)
+    {
+        if ($exitCode !== 0) {
+            $message = (isset(static::$codes[$exitCode])) ? static::$codes[$exitCode] : 'An error occcured';
+            $this->logger->critical(sprintf('WORKER (Push) - %s', $message));
+        }
+
+        return $exitCode;
     }
 }
