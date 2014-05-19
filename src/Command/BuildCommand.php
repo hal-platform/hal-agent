@@ -151,6 +151,16 @@ class BuildCommand extends Command
     }
 
     /**
+     * In case of error or critical failure, ensure that we clean up the build artifacts.
+     *
+     * @return null
+     */
+    public function __destruct()
+    {
+        $this->cleanup();
+    }
+
+    /**
      *  Configure the command
      */
     protected function configure()
@@ -216,7 +226,12 @@ class BuildCommand extends Command
     {
         $this->processBuilder->setPrefix(['rm', '-rf']);
 
-        foreach ($this->artifacts as $path) {
+        $poppers = 0;
+        while ($this->artifacts && $poppers < 10) {
+            # while loops make me paranoid, ok?
+            $poppers++;
+
+            $path = array_pop($this->artifacts);
             $process = $this->processBuilder
                 ->setWorkingDirectory(null)
                 ->setArguments([$path])

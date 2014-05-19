@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Scope;
+use Symfony\Component\Debug\ErrorHandler;
 
 $config = [__DIR__ . '/../configuration'];
 
@@ -31,5 +32,9 @@ $container->set('service_container', null);
 $container->compile();
 
 $container->enterScope('agent');
+
+ErrorHandler::register(E_ALL, false);
+ErrorHandler::setLogger($container->get('mcp-logger'), 'emergency');
+
 $app = $container->get('application');
 $app->run();

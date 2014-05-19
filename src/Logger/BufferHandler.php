@@ -17,4 +17,8 @@ use Monolog\Handler\BufferHandler as BaseBufferHandler;
 class BufferHandler extends BaseBufferHandler
 {
     protected $initialized = true;
+
+    public function close()
+    {
+    }
 }

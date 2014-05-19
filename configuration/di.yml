@@ -41,6 +41,7 @@ services:
         calls:
             - ['addSubscriber', ['@mcp-logger.factory.subscriber']]
             - ['addSubscriber', ['@monolog.handler.console']]
+            - ['addSubscriber', ['@utility.exception-handler']]
 
     clock:
         scope: 'agent'
@@ -155,11 +156,9 @@ services:
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
             - ['setIndentation', ['4']]
-
     utility.filesystem:
         scope: 'agent'
         class: 'Symfony\Component\Filesystem\Filesystem'
-
     utility.process.builder:
         scope: 'agent'
         class: 'Symfony\Component\Process\ProcessBuilder'
@@ -176,6 +175,10 @@ services:
     utility.forker:
         scope: 'agent'
         class: 'QL\Hal\Agent\Helper\ForkHelper'
+    utility.exception-handler:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Helper\ExceptionHandlerSubscriber'
+        arguments: ['@mcp-logger']
 
     # build actions
     build.resolver:
@@ -362,4 +365,5 @@ services:
             - ['setReplyTo', ['%agent.email.reply%']]
             - ['setCc', ['%agent.email.notify%']]
             - ['setContentType', ['text/html']]
+            - ['setSubject', ['Critical Error']]
             # to, subject will be set at runtime

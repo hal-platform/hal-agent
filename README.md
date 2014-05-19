@@ -30,6 +30,28 @@ Contextual variables will be displayed if run with increased verbosity.
 bin/hal [command] -vv
 ```
 
+## Dependencies
+
+This application has a lot of dependencies. Here are a list of what they are used for.
+
+Package                        | Description
+------------------------------ | -----------
+`knplabs/github-api`           | Download code from github and resolve git references.
+`monolog/monolog`              | Log handling
+`psr/log`                      | Logging standard
+`ql/hal-core`                  | Domain model
+`ql/mcp-core`                  | Core utilities
+`ql/mcp-logger`                | Logging to core logger
+`swiftmailer/swiftmailer`      | Emailer
+`symfony/config`               | Cascading configuration
+`symfony/console`              | The core of this application
+`symfony/dependency-injection` | Dependency injection and service container
+`symfony/debug`                | Convert errors to exceptions
+`symfony/event-dispatcher`     | Event dispatching for the console application
+`symfony/filesystem`           | Filesystem abstraction
+`symfony/monolog-bridge`       | Console output of log messages
+`symfony/process`              | System process abstraction
+
 ## Available Commands
 
 Command          | Description
