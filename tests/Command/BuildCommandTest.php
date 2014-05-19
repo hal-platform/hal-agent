@@ -85,6 +85,7 @@ OUTPUT;
         ]);
 
         $build = Mockery::mock('QL\Hal\Core\Entity\Build', [
+            'getStatus' => null,
             'setStatus' => null,
             'setStart' => null,
             'setEnd' => null,

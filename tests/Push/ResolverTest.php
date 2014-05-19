@@ -46,7 +46,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $logger = new MemoryLogger;
         $clock = new Clock('now', 'UTC');
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push
+            'find' => $push,
+            'findBy' => []
         ]);
 
         $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
@@ -61,6 +62,34 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $message = $logger[1];
         $this->assertSame('error', $message[0]);
         $this->assertSame('Push "1234" has a status of "Poo"! It cannot be redeployed.', $message[1]);
+    }
+
+    public function testPushFindsActiveDeployment()
+    {
+        $deployment = new Deployment;
+        $push = new Push;
+        $push->setStatus('Waiting');
+        $push->setDeployment($deployment);
+
+        $logger = new MemoryLogger;
+        $clock = new Clock('now', 'UTC');
+        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
+            'find' => $push,
+            'findBy' => ['derp']
+        ]);
+
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
+
+        $properties = $action('1234', 'pushmethod');
+        $this->assertNull($properties);
+
+        $message = $logger[0];
+        $this->assertSame('info', $message[0]);
+        $this->assertSame('Found push: 1234', $message[1]);
+
+        $message = $logger[1];
+        $this->assertSame('error', $message[0]);
+        $this->assertSame('Push "1234" is trying to clobber a running push! It cannot be deployed at this time.', $message[1]);
     }
 
     public function testSuccess()
@@ -136,7 +165,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $logger = new MemoryLogger;
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push
+            'find' => $push,
+            'findBy' => []
         ]);
 
         $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');

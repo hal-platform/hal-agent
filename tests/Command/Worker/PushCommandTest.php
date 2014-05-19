@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Command\Worker;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Agent\Logger\MemoryLogger;
+use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -76,8 +77,10 @@ OUTPUT;
 
     public function testConnectionIsResetWhenPushForked()
     {
+        $deploy = new Deployment;
         $push1 = new Push;
         $push1->setId('1234');
+        $push1->setDeployment($deploy);
 
         $this->pushRepo
             ->shouldReceive('findBy')
@@ -129,10 +132,17 @@ OUTPUT;
 
     public function testParentOutputWithMultipleBuilds()
     {
+        $deploy1 = new Deployment;
+        $deploy1->setId('6666');
+        $deploy2 = new Deployment;
+        $deploy2->setId('8888');
+
         $push1 = new Push;
         $push1->setId('1234');
+        $push1->setDeployment($deploy1);
         $push2 = new Push;
         $push2->setId('5555');
+        $push2->setDeployment($deploy2);
 
         $this->pushRepo
             ->shouldReceive('findBy')
@@ -182,10 +192,17 @@ OUTPUT;
 
     public function testParentOutputWithForkFailure()
     {
+        $deploy1 = new Deployment;
+        $deploy1->setId('6666');
+        $deploy2 = new Deployment;
+        $deploy2->setId('8888');
+
         $push1 = new Push;
         $push1->setId('1234');
+        $push1->setDeployment($deploy1);
         $push2 = new Push;
         $push2->setId('5555');
+        $push2->setDeployment($deploy2);
 
         $this->pushRepo
             ->shouldReceive('findBy')
@@ -259,5 +276,54 @@ Push Command not found.
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
         $this->assertSame(2, $exitCode);
+    }
+
+    public function testParentOutputWhenDuplicateDeploymentSkipsPush()
+    {
+        $deploy1 = new Deployment;
+        $deploy1->setId('6666');
+
+        $push1 = new Push;
+        $push1->setId('1234');
+        $push1->setDeployment($deploy1);
+        $push2 = new Push;
+        $push2->setId('5555');
+        $push2->setDeployment($deploy1);
+
+        $this->pushRepo
+            ->shouldReceive('findBy')
+            ->andReturn([$push1, $push2]);
+
+        $this->application
+            ->shouldReceive('find')
+            ->andReturn($this->command);
+
+        // fork
+        $this->forker
+            ->shouldReceive('fork')
+            ->andReturn(1)
+            ->once();
+
+        $command = new PushCommand(
+            'cmd',
+            'push-cmd',
+            $this->pushRepo,
+            $this->em,
+            $this->forker,
+            $this->logger
+        );
+        $command->setApplication($this->application);
+        $exitCode = $command->run($this->input, $this->output);
+
+        $expected = <<<'OUTPUT'
+Waiting pushes: 2
+Starting push workers
+Push ID 1234 started.
+Push ID 5555 skipped: A push to deployment 6666 is already running.
+All waiting pushes have been started.
+
+OUTPUT;
+        $this->assertSame($expected, $this->output->fetch());
+        $this->assertSame(0, $exitCode);
     }
 }

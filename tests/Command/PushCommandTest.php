@@ -81,6 +81,7 @@ OUTPUT;
         ]);
 
         $push = Mockery::mock('QL\Hal\Core\Entity\Push', [
+            'getStatus' => null,
             'setStatus' => null,
             'setStart' => null,
             'setEnd' => null,

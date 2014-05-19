@@ -30,6 +30,7 @@ class Resolver
     const SUCCESS_FOUND = 'Found push: %s';
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
+    const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
 
     /**
      * @var LoggerInterface
@@ -93,6 +94,11 @@ class Resolver
 
         if ($push->getStatus() !== 'Waiting') {
             $this->logger->error(sprintf(self::ERR_BAD_STATUS, $pushId, $push->getStatus()));
+            return null;
+        }
+
+        if ($this->hasConcurrentDeployment($push->getDeployment())) {
+            $this->logger->error(sprintf(self::ERR_CLOBBERING_TIME, $pushId));
             return null;
         }
 
@@ -215,6 +221,26 @@ class Resolver
 
         return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
+
+    /**
+     * This is rather expensive, but we need to prevent concurrent syncs.
+     *
+     * The push worker also has logic to avoid concurrent syncs, so this is more of a backup. This doesn't seem
+     * to ever hit successfully because the child workers fork so quickly.
+     *
+     * @param Deployment $deployment
+     * @return boolean
+     */
+    private function hasConcurrentDeployment(Deployment $deployment)
+    {
+        $concurrentSyncs = $this->pushRepo->findBy([
+            'status' => 'Pushing',
+            'deployment' => $deployment
+        ]);
+
+        return (count($concurrentSyncs) > 0);
+    }
+
     /**
      *  Validate a hostname
      *

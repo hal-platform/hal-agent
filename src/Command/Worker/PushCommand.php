@@ -11,6 +11,8 @@ use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
+use QL\Hal\Core\Entity\Deployment;
+use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -64,6 +66,11 @@ class PushCommand extends Command
     private $logger;
 
     /**
+     * @var array
+     */
+    private $deploymentCache;
+
+    /**
      * @param string $name
      * @param string $pushCommand
      * @param PushRepository $pushRepo
@@ -86,6 +93,8 @@ class PushCommand extends Command
         $this->entityManager = $entityManager;
         $this->forker = $forker;
         $this->logger = $logger;
+
+        $this->deploymentCache = [];
     }
 
     /**
@@ -105,7 +114,7 @@ class PushCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if (!$pushes = $this->pushRepo->findBy(['status' => 'Waiting'], null)) {
+        if (!$pushes = $this->pushRepo->findBy(['status' => 'Waiting'])) {
             return $this->success($output, 'No waiting pushes found.');
         }
 
@@ -118,6 +127,20 @@ class PushCommand extends Command
         $output->writeln('<comment>Starting push workers</comment>');
 
         foreach ($pushes as $push) {
+
+            // Every time the worker runs we need to ensure all deployments spawned are unique.
+            // This helps prevent concurrent syncs.
+            if ($this->hasConcurrentDeployment($push->getDeployment())) {
+                $message = sprintf(
+                    'Push ID %s skipped: A push to deployment %s is already running.',
+                    $push->getId(),
+                    $push->getDeployment()->getId()
+                );
+                $output->writeln($message);
+
+                continue;
+            }
+
             $pid = $this->forker->fork();
             if ($pid === -1) {
                 return $this->failure($output, 1);
@@ -158,5 +181,19 @@ class PushCommand extends Command
         }
 
         return $exitCode;
+    }
+
+    /**
+     * @param Deployment $deployment
+     * @return boolean
+     */
+    private function hasConcurrentDeployment(Deployment $deployment)
+    {
+        if (isset($this->deploymentCache[$deployment->getId()])) {
+            return true;
+        }
+
+        $this->deploymentCache[$deployment->getId()] = true;
+        return false;
     }
 }
