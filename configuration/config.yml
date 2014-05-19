@@ -12,4 +12,4 @@ parameters:
         - 'stevekluck@quickenloans.com'
     agent.email.from: 'stevekluck@quickenloans.com'
     agent.email.reply: 'stevekluck@quickenloans.com'
-    agent.email.subject: 'HAL9000 - {repo} [{status}][{env}][{server}]'
+    agent.email.subjects: []

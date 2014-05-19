@@ -15,11 +15,13 @@ use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
+use Swift_Message;
 
 class CommandLoggerTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
     public $handler;
+    public $message;
     public $env;
     public $repo;
 
@@ -27,6 +29,7 @@ class CommandLoggerTest extends PHPUnit_Framework_TestCase
     {
         $this->logger = new MemoryLogger;
         $this->handler = Mockery::mock('Monolog\Handler\BufferHandler');
+        $this->message = new Swift_Message; # this is unmockable
 
         $this->env = new Environment;
         $this->env->setKey('unittest');
@@ -41,7 +44,7 @@ class CommandLoggerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('flush')
             ->never();
 
-        $logger = new CommandLogger($this->logger, $this->handler);
+        $logger = new CommandLogger($this->logger, $this->handler, $this->message);
         $logger->success('what');
     }
 
@@ -54,36 +57,44 @@ class CommandLoggerTest extends PHPUnit_Framework_TestCase
         $this->handler
             ->shouldReceive('flush')
             ->once();
-
-        $logger = new CommandLogger($this->logger, $this->handler);
+        $logger = new CommandLogger($this->logger, $this->handler, $this->message);
         $logger->success($build);
 
         $message = $this->logger[0];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('repo (unittest) - Build - Success', $message[1]);
+        $this->assertSame('repo (unittest) - Build - SUCCESS', $message[1]);
+
+        $this->assertSame('HAL9000 - repo (unittest) - Build - [SUCCESS]', $this->message->getSubject());
     }
 
     public function testFailureMessageIsBuiltAndHandlerFlushed()
     {
         $server = new Server;
         $server->setname('servername');
-        $server->setEnvironment($this->env);
+
         $deploy = new Deployment;
         $deploy->setServer($server);
-        $deploy->setRepository($this->repo);
+
+        $build = new Build;
+        $build->setEnvironment($this->env);
+        $build->setRepository($this->repo);
+        $build->setEnvironment($this->env);
 
         $push = new Push;
         $push->setDeployment($deploy);
+        $push->setBuild($build);
 
         $this->handler
             ->shouldReceive('flush')
             ->once();
 
-        $logger = new CommandLogger($this->logger, $this->handler);
+        $logger = new CommandLogger($this->logger, $this->handler, $this->message);
         $logger->failure($push);
 
         $message = $this->logger[0];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('repo (unittest:servername) - Push - Failure', $message[1]);
+        $this->assertSame('repo (unittest:servername) - Push - FAILURE', $message[1]);
+
+        $this->assertSame('HAL9000 - repo (unittest:servername) - Push - [FAILURE]', $this->message->getSubject());
     }
 }

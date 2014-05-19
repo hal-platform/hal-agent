@@ -53,6 +53,8 @@ services:
         arguments:
             - '@monolog'
             - '@monolog.handler.buffer'
+            - '@emailer.message'
+            - '%agent.email.subjects%'
 
     # commands
     command.build.create:
@@ -352,10 +354,10 @@ services:
         arguments: ['%agent.email.server%']
     emailer.message:
         scope: 'agent'
-        class: 'QL\Hal\Agent\SwiftMailer\Message'
-        arguments:
-            - '%agent.email.subject%'
+        class: 'Swift_Message'
         calls:
             - ['setFrom', ['%agent.email.from%', 'HAL9000']]
             - ['setReplyTo', ['%agent.email.reply%']]
             - ['setCc', ['%agent.email.notify%']]
+            - ['setContentType', ['text/html']]
+            # to, subject will be set at runtime
