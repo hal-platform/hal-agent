@@ -16,6 +16,8 @@ services:
     # %agent.environment.home%
     # %agent.ssh-user%
     # %github.token%
+    # %github.baseurl%
+    # %github.com.token%
     # %mcp-logger.host%
     application:
         scope: 'agent'
@@ -204,6 +206,13 @@ services:
         arguments:
             - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
+    build.package-manager-preparer:
+        scope: 'agent'
+        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
+        arguments:
+            - '@logger'
+            - '@utility.filesystem'
+            - '%github.com.token%'
     build.builder:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Builder'
