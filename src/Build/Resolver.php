@@ -153,12 +153,18 @@ class Resolver
             $properties['buildPath']
         ];
 
-        if (isset($properties['environmentVariables']['NPM_CONFIG_CACHE'])) {
-            $artifacts[] = $properties['environmentVariables']['NPM_CONFIG_CACHE'];
-        }
+        $caches = [
+            'BOWER_STORAGE__CACHE',
+            'BOWER_STORAGE__PACKAGES',
+            'BOWER_TMP',
+            'COMPOSER_CACHE_DIR',
+            'NPM_CONFIG_CACHE'
+        ];
 
-        if (isset($properties['environmentVariables']['NPM_CONFIG_CACHE'])) {
-            $artifacts[] = $properties['environmentVariables']['COMPOSER_CACHE_DIR'];
+        foreach ($caches as $cache) {
+            if (isset($properties['environmentVariables'][$cache])) {
+                $artifacts[] = $properties['environmentVariables'][$cache];
+            }
         }
 
         return $artifacts;
@@ -249,9 +255,13 @@ class Resolver
 
         // add package manager configuration
         $vars = array_merge($vars, [
-            'NPM_CONFIG_STRICT_SSL' => 'false',
+            'BOWER_INTERACTIVE' => 'false',
+            'BOWER_STRICT_SSL' => 'false',
+
+            'COMPOSER_HOME' => $vars['HOME'],
             'COMPOSER_NO_INTERACTION' => '1',
-            'COMPOSER_HOME' => $vars['HOME']
+
+            'NPM_CONFIG_STRICT_SSL' => 'false'
         ]);
 
         // add package manager configuration for isolated builds
@@ -259,10 +269,20 @@ class Resolver
         // if ($build->getRepository()->isIsolated()) {
             $buildPath = $this->generateBuildPath($build->getId());
             $vars = array_merge($vars, [
-                # DEFAULT = $HOME/.npm
-                'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache',
+                # DEFAULT = ???, version < 1.0.0
+                'BOWER_STORAGE__CACHE' => $buildPath . '-bower-cache',
+
+                # DEFAULT = ???, version >= 1.0.0
+                'BOWER_STORAGE__PACKAGES' => $buildPath . '-bower-cache',
+
+                # DEFAULT = $TEMP/bower
+                'BOWER_TMP' => $buildPath . '-bower',
+
                 # DEFAULT = $COMPOSER_HOME/cache
-                'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache'
+                'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache',
+
+                # DEFAULT = $HOME/.npm
+                'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache'
             ]);
         }
 

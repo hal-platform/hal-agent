@@ -101,9 +101,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'HAL_REPO' => 'repokey',
 
             // package manager configuration
-            'NPM_CONFIG_STRICT_SSL' => 'false',
+            'BOWER_INTERACTIVE' => 'false',
+            'BOWER_STRICT_SSL' => 'false',
+            'COMPOSER_HOME' => 'testdir/home/',
             'COMPOSER_NO_INTERACTION' => '1',
-            'COMPOSER_HOME' => 'testdir/home/'
+            'NPM_CONFIG_STRICT_SSL' => 'false'
         ];
 
         $logger = new MemoryLogger;
