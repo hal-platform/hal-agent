@@ -73,8 +73,6 @@ During the build process, The following environment variables are available to a
 
 Variable         | Description
 ---------------- | -----------
-HOME             | Home Directory
-PATH             | Global include path
 HAL_BUILDID      | ID of the build
 HAL_COMMIT       | 40 character commit SHA
 HAL_GITREF       | Git reference (such as `master`)
