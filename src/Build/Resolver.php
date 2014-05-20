@@ -107,6 +107,8 @@ class Resolver
             'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
         ];
 
+        $properties['artifacts'] = $this->findBuildArtifacts($properties);
+
         $this->logger->info('Resolved build properties', $properties);
         return $properties;
     }
@@ -136,6 +138,30 @@ class Resolver
     public function setHomeDirectory($directory)
     {
         $this->homeDirectory = $directory;
+    }
+
+    /**
+     * Find the build artifacts that must be cleaned up after build.
+     *
+     * @param array $properties
+     * @return array
+     */
+    private function findBuildArtifacts(array $properties)
+    {
+        $artifacts = [
+            $properties['buildFile'],
+            $properties['buildPath']
+        ];
+
+        if (isset($properties['environmentVariables']['NPM_CONFIG_CACHE'])) {
+            $artifacts[] = $properties['environmentVariables']['NPM_CONFIG_CACHE'];
+        }
+
+        if (isset($properties['environmentVariables']['NPM_CONFIG_CACHE'])) {
+            $artifacts[] = $properties['environmentVariables']['COMPOSER_CACHE_DIR'];
+        }
+
+        return $artifacts;
     }
 
     /**
@@ -185,7 +211,7 @@ class Resolver
     private function generateHomePath()
     {
         if (!$this->homeDirectory) {
-            $this->homeDirectory = $this->getBuildDirectory() . 'build-home';
+            $this->homeDirectory = $this->getBuildDirectory() . 'home';
         }
 
         return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
@@ -220,6 +246,25 @@ class Resolver
             'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
             'HAL_REPO' => $build->getRepository()->getKey()
         ];
+
+        // add package manager configuration
+        $vars = array_merge($vars, [
+            'NPM_CONFIG_STRICT_SSL' => 'false',
+            'COMPOSER_NO_INTERACTION' => '1',
+            'COMPOSER_HOME' => $vars['HOME']
+        ]);
+
+        // add package manager configuration for isolated builds
+        if (false) {
+        // if ($build->getRepository()->isIsolated()) {
+            $buildPath = $this->generateBuildPath($build->getId());
+            $vars = array_merge($vars, [
+                # DEFAULT = $HOME/.npm
+                'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache',
+                # DEFAULT = $COMPOSER_HOME/cache
+                'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache'
+            ]);
+        }
 
         return $vars;
     }

@@ -334,7 +334,7 @@ class BuildCommand extends Command
         $this->setEntityStatus('Building', true);
 
         // add artifacts for cleanup
-        $this->artifacts = array_merge($this->artifacts, [$properties['buildFile'], $properties['buildPath']]);
+        $this->artifacts = $properties['artifacts'];
     }
 
     /**

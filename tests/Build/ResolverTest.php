@@ -84,17 +84,26 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'archiveFile' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
             'githubUser' => 'user1',
             'githubRepo' => 'repo1',
-            'githubReference' => '5555'
+            'githubReference' => '5555',
+            'artifacts' => [
+                'testdir/hal9000-build-1234.tar.gz',
+                'testdir/hal9000-build-1234'
+            ]
         ];
 
         $expectedEnv = [
-            'HOME' => 'testdir/build-home/',
+            'HOME' => 'testdir/home/',
             'PATH' => 'ENV_PATH',
             'HAL_BUILDID' => '1234',
             'HAL_COMMIT' => '5555',
             'HAL_GITREF' => 'master',
             'HAL_ENVIRONMENT' => 'envkey',
-            'HAL_REPO' => 'repokey'
+            'HAL_REPO' => 'repokey',
+
+            // package manager configuration
+            'NPM_CONFIG_STRICT_SSL' => 'false',
+            'COMPOSER_NO_INTERACTION' => '1',
+            'COMPOSER_HOME' => 'testdir/home/'
         ];
 
         $logger = new MemoryLogger;

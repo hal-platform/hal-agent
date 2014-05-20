@@ -115,7 +115,11 @@ OUTPUT;
                 'githubReference' => 'master',
                 'buildCommand' => 'bin/build',
                 'environmentVariables' => [],
-                'buildFile' => 'path/file'
+                'buildFile' => 'path/file',
+                'artifacts' => [
+                    'path/dir',
+                    'path/file'
+                ]
             ]);
 
         $this->downloadProgress
