@@ -16,7 +16,6 @@ class PackageManagerPreparer
     /**
      * @var string
      */
-    const NPMRC_FS = '%s/.npmrc';
     const COMPOSER_CONFIG_FS = '%s/config.json';
 
     /**
@@ -34,16 +33,6 @@ class PackageManagerPreparer
 }
 
 JSON;
-
-    /**
-     * $HOME/.npmrc
-     *
-     * @var string
-     */
-    const NPMRC_DEFAULT = <<<'INI'
-strict-ssl = false
-
-INI;
 
     /**
      * @var LoggerInterface
@@ -78,11 +67,9 @@ INI;
      */
     public function __invoke(array $environment)
     {
-        $npmrc = sprintf(self::NPMRC_FS, rtrim($environment['HOME'], '/'));
         $composerConfig = sprintf(self::COMPOSER_CONFIG_FS, rtrim($environment['COMPOSER_HOME'], '/'));
 
         $this->handleComposerConfiguration($composerConfig);
-        $this->handleNPMConfiguration($npmrc);
     }
 
     /**
@@ -105,27 +92,6 @@ INI;
         }
 
         $this->logger->warning('Composer configuration could not be written.', $context);
-    }
-
-    /**
-     * @param string $filename
-     * @return null
-     */
-    private function handleNPMConfiguration($filename)
-    {
-        $context = ['npm-config' => $filename];
-
-        if ($this->filesystem->exists($filename)) {
-            $this->logger->info('NPM configuration found.', $context);
-            return;
-        }
-
-        if ($this->write($filename, self::NPMRC_DEFAULT)) {
-            $this->logger->info('NPM configuration written successfully.', $context);
-            return;
-        }
-
-        $this->logger->warning('NPM configuration could not be written.', $context);
     }
 
     /**

@@ -23,11 +23,6 @@ class PackageManagerPreparerTest extends PHPUnit_Framework_TestCase
 
     public function testCorrectFileContentsAreWritten()
     {
-        $expectedNpm = <<<'INI'
-strict-ssl = false
-
-INI;
-
         $expectedComposer = <<<'JSON'
 {
     "config": {
@@ -49,14 +44,6 @@ JSON;
                 return true;
             }));
 
-        $npm = null;
-        $filesystem
-            ->shouldReceive('dumpFile')
-            ->with('/home/.npmrc', Mockery::on(function($v) use (&$npm) {
-                $npm = $v;
-                return true;
-            }));
-
         $preparer = new PackageManagerPreparer($this->logger, $filesystem, 'tokentoken');
 
         $env = [
@@ -67,7 +54,6 @@ JSON;
         $preparer($env);
 
 
-        $this->assertSame($expectedNpm, $npm);
         $this->assertSame($expectedComposer, $composer);
     }
 
@@ -91,10 +77,6 @@ JSON;
         $message = $this->logger[0];
         $this->assertSame('warning', $message[0]);
         $this->assertSame('Composer configuration could not be written.', $message[1]);
-
-        $message = $this->logger[1];
-        $this->assertSame('warning', $message[0]);
-        $this->assertSame('NPM configuration could not be written.', $message[1]);
     }
 
     public function testLoggedMessagesWhenConfigurationsFound()
@@ -112,9 +94,5 @@ JSON;
         $message = $this->logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Composer configuration found.', $message[1]);
-
-        $message = $this->logger[1];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('NPM configuration found.', $message[1]);
     }
 }
