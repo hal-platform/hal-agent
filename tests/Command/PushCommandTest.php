@@ -118,7 +118,10 @@ OUTPUT;
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
-                'excludedFiles' => []
+                'excludedFiles' => [],
+                'artifacts' => [
+                    'path/dir'
+                ]
             ]);
         $this->unpacker
             ->shouldReceive('__invoke')

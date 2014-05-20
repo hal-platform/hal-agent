@@ -139,7 +139,10 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'buildPath' => 'testdir/hal9000-push-1234',
 
             'prePushCommand' => 'bin/pre',
-            'postPushCommand' => 'bin/post'
+            'postPushCommand' => 'bin/post',
+            'artifacts' => [
+                'testdir/hal9000-push-1234'
+            ]
         ];
 
         $expectedEnv = [

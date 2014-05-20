@@ -147,6 +147,8 @@ class Resolver
             'environmentVariables' => $this->generateServerEnvironmentVariables($build, $deployment, $hostname)
         ];
 
+        $properties['artifacts'] = $this->findPushArtifacts($properties);
+
         $this->logger->info('Resolved push properties', $properties);
         return $properties;
     }
@@ -158,6 +160,19 @@ class Resolver
     public function setBaseBuildDirectory($directory)
     {
         $this->buildDirectory = $directory;
+    }
+
+    /**
+     * Find the push artifacts that must be cleaned up after push.
+     *
+     * @param array $properties
+     * @return array
+     */
+    private function findPushArtifacts(array $properties)
+    {
+        return [
+            $properties['buildPath']
+        ];
     }
 
     /**

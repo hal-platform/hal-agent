@@ -19,27 +19,6 @@ class Builder
     const ERR_BUILDING = 'Build command executed with errors';
 
     /**
-     * $HOME/.composer/config.json
-     * $COMPOSER_HOME/config.json
-     */
-    const DEFAULT_COMPOSER_CONFIG = <<<'JSON'
-{
-    "config": {
-        "github.com": "oauth-token-here"
-    }
-}
-
-JSON;
-
-    /**
-     * $HOME/.npmrc
-     */
-    const DEFAULT_NPM_CONFIG = <<<'INI'
-strict-ssl = false
-
-INI;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;

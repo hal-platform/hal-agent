@@ -318,7 +318,7 @@ class PushCommand extends Command
         $this->setEntityStatus('Pushing', true);
 
         // add artifacts for cleanup
-        $this->artifacts = array_merge($this->artifacts, [$properties['buildPath']]);
+        $this->artifacts = $properties['artifacts'];
     }
 
     /**
