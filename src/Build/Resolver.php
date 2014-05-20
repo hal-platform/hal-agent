@@ -167,6 +167,13 @@ class Resolver
             }
         }
 
+        // Add $HOME if this is an isolated build
+        // For the love of all that is holy $HOME better be set to a build specific directory!
+        if (false) {
+        // if ($properties['build']->getRepository()->isIsolated()) {
+            $artifacts[] = $properties['HOME'];
+        }
+
         return $artifacts;
     }
 
@@ -282,7 +289,9 @@ class Resolver
                 'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache',
 
                 # DEFAULT = $HOME/.npm
-                'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache'
+                'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache',
+
+                'HOME' =>  $buildPath . '-home'
             ]);
         }
 
