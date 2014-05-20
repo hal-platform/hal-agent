@@ -219,6 +219,7 @@ services:
         arguments:
             - '@logger'
             - '@utility.process.builder=' # = signifies a prototype service
+            - '@build.package-manager-preparer'
     build.packer:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Packer'

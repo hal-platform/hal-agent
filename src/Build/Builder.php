@@ -31,11 +31,13 @@ class Builder
     /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
+     * @param PackageManagerPreparer $preparer
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, PackageManagerPreparer $preparer)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
+        $this->preparer = $preparer;
     }
 
     /**
@@ -58,6 +60,9 @@ class Builder
             ->setTimeout(300)
             ->getProcess();
         $process->setCommandLine($command . ' 2>&1');
+
+        // prepare package manager configuration
+        call_user_func($this->preparer, $env);
 
         $process->run();
 

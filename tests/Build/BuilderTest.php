@@ -13,6 +13,13 @@ use QL\Hal\Agent\Logger\MemoryLogger;
 
 class BuilderTest extends PHPUnit_Framework_TestCase
 {
+    public $preparer;
+
+    public function setUp()
+    {
+        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\PackageManagerPreparer', ['__invoke' => null]);
+    }
+
     public function testSuccess()
     {
         $logger = new MemoryLogger;
@@ -27,7 +34,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder);
+        $action = new Builder($logger, $builder, $this->preparer);
 
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
@@ -53,7 +60,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder);
+        $action = new Builder($logger, $builder, $this->preparer);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);

@@ -78,8 +78,8 @@ INI;
      */
     public function __invoke(array $environment)
     {
-        $npmrc = sprintf(self::NPMRC_FS, $environment['HOME']);
-        $composerConfig = sprintf(self::COMPOSER_CONFIG_FS, $environment['COMPOSER_HOME']);
+        $npmrc = sprintf(self::NPMRC_FS, rtrim($environment['HOME'], '/'));
+        $composerConfig = sprintf(self::COMPOSER_CONFIG_FS, rtrim($environment['COMPOSER_HOME'], '/'));
 
         $this->handleComposerConfiguration($composerConfig);
         $this->handleNPMConfiguration($npmrc);
