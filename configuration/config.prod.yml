@@ -34,5 +34,3 @@ parameters:
         password:
         dbname:     hal
     doctrine.devmode: true
-    doctrine.mappings:
-        - '%annotations_suck%'

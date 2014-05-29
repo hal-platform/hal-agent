@@ -1,27 +1,16 @@
 #!/usr/bin/env php
 <?php
+
+namespace QL\Hal\Agent;
+
+use Doctrine\ORM\Tools\Console\ConsoleRunner;
+
 # autoloader
 (@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
 
-use Doctrine\ORM\Tools\Console\ConsoleRunner;
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+$bootstrap = new Bootstrap(__DIR__ . '/../');
+$bootstrap->load();
+$di = $bootstrap->container();
 
-$config = __DIR__ . '/../configuration';
-
-$container = new ContainerBuilder;
-$builder = new YamlFileLoader($container, new FileLocator($config));
-$builder->load('config.yml');
-$container->set('service_container', null);
-$container->setParameter('annotations_suck', __DIR__ . '/../vendor/ql/hal-core/src/QL/Hal/Core/Entity');
-$container->compile();
-
-$app = $container->get('application');
-
-$helperSet = ConsoleRunner::createHelperSet($container->get('doctrine.em'));
-
-// gfy doctrine.php
+$helperSet = ConsoleRunner::createHelperSet($di->get('doctrine.em'));
 ConsoleRunner::run($helperSet, []);

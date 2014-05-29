@@ -1,40 +1,18 @@
 #!/usr/bin/env php
 <?php
 
+namespace QL\Hal\Agent;
+
+use Symfony\Component\Debug\ErrorHandler;
+
 # autoloader - try standalone installation then dependency installation
 (@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
 
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-use Symfony\Component\DependencyInjection\Scope;
-use Symfony\Component\Debug\ErrorHandler;
-
-$config = [__DIR__ . '/../configuration'];
-
-$container = new ContainerBuilder;
-$container->addScope(new Scope('agent'));
-$builder = new YamlFileLoader($container, new FileLocator($config));
-$builder->load('config.yml');
-
-if (isset($_SERVER['HAL_APPLICATION_CONFIG']) && file_exists($_SERVER['HAL_APPLICATION_CONFIG'])) {
-    $builder->load($_SERVER['HAL_APPLICATION_CONFIG']);
-
-} else {
-    // standalone installation
-    $container->setParameter('annotations_suck', __DIR__ . '/../vendor/ql/hal-core/src/QL/Hal/Core/Entity');
-    $builder->load('imported.yml');
-}
-
-$container->set('service_container', null);
-$container->compile();
-
-$container->enterScope('agent');
+$bootstrap = new Bootstrap(__DIR__ . '/../');
+$bootstrap->load();
+$di = $bootstrap->container();
 
 ErrorHandler::register(E_ALL, false);
-ErrorHandler::setLogger($container->get('agent.logger'), 'emergency');
+ErrorHandler::setLogger($di->get('agent.logger'), 'emergency');
 
-$app = $container->get('application');
-$app->run();
+$bootstrap();
