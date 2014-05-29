@@ -7,8 +7,9 @@ services:
     # @user.repo
     # @deployment.repo
     # @push.repo
-    # @mcp-logger
-    # @mcp-logger.factory
+
+    # @agent.logger
+    # @agent.logger.mcp.factory
 
     # %agent.environment.archive%
     # %agent.environment.path%
@@ -18,7 +19,7 @@ services:
     # %github.token%
     # %github.baseurl%
     # %github.com.token%
-    # %mcp-logger.host%
+
     application:
         scope: 'agent'
         class: 'Symfony\Component\Console\Application'
@@ -41,7 +42,7 @@ services:
         scope: 'agent'
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
-            - ['addSubscriber', ['@mcp-logger.factory.subscriber']]
+            - ['addSubscriber', ['@logger.mcp.subscriber']]
             - ['addSubscriber', ['@monolog.handler.console']]
             - ['addSubscriber', ['@utility.exception-handler']]
 
@@ -50,7 +51,10 @@ services:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
-    logger:
+    # This is a buffered, group logger that formats and distributes log messages.
+    # It's primary usage is for during builds and pushes.
+    # Error messages and other abnormal log messages should be sent direct to the mcp logger.
+    logger.command:
         scope: 'agent'
         class: 'QL\Hal\Agent\Logger\CommandLogger'
         arguments:
@@ -76,7 +80,7 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - '@logger'
+            - '@logger.command'
             - '@doctrine.em'
             - '@clock'
             - '@build.resolver'
@@ -118,7 +122,7 @@ services:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - '@logger'
+            - '@logger.command'
             - '@doctrine.em'
             - '@clock'
             - '@push.resolver'
@@ -135,7 +139,7 @@ services:
             - '@build.repo'
             - '@doctrine.em'
             - '@utility.forker'
-            - '@mcp-logger'
+            - '@agent.logger'
     command.worker.push:
         scope: 'agent'
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
@@ -145,7 +149,7 @@ services:
             - '@push.repo'
             - '@doctrine.em'
             - '@utility.forker'
-            - '@mcp-logger'
+            - '@agent.logger'
 
     # utility
     utility.helper.download-progress:
@@ -180,14 +184,14 @@ services:
     utility.exception-handler:
         scope: 'agent'
         class: 'QL\Hal\Agent\Helper\ExceptionHandlerSubscriber'
-        arguments: ['@mcp-logger']
+        arguments: ['@agent.logger']
 
     # build actions
     build.resolver:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@build.repo'
             - '%agent.environment.path%'
             - '%agent.environment.archive%'
@@ -198,33 +202,33 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@github.archive'
     build.unpacker:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
     build.package-manager-preparer:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.filesystem'
             - '%github.com.token%'
     build.builder:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
             - '@build.package-manager-preparer'
     build.packer:
         scope: 'agent'
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
 
     # push actions
@@ -232,7 +236,7 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@push.repo'
             - '@clock'
             - '%agent.ssh-user%'
@@ -243,7 +247,7 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
             - '@utility.filesystem'
             - '@utility.yaml-dumper'
@@ -251,13 +255,13 @@ services:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
     push.server-command:
         scope: 'agent'
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
-            - '@logger'
+            - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
             - '%agent.ssh-user%'
 
@@ -325,8 +329,9 @@ services:
 
     # mcp handler
     monolog.handler.parent:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\ParentLogHandler'
-        arguments: ['@mcp-logger']
+        arguments: ['@agent.logger']
         calls:
             - ['setFormatter', ['@monolog.formatter.text-formatter']]
 
@@ -350,13 +355,14 @@ services:
         class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
 
     monolog.formatter.text-formatter:
+        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\TextFormatter'
         arguments: ['', '', true]
 
-    mcp-logger.factory.subscriber:
+    logger.mcp.subscriber:
         scope: 'agent'
         class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
-        arguments: ['@mcp-logger.factory']
+        arguments: ['@agent.logger.mcp.factory']
 
     # emailer services
     emailer:

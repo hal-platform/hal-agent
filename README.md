@@ -16,6 +16,7 @@ Table of Contents:
 * [Worker Commands](#worker-commands)
 * [Application scripting environment](#application-scripting-environment)
 * [Deployment](#deployment)
+* [Customization](#customization)
 * [Dependencies](#dependencies)
 * [Testing](#testing)
 
@@ -101,7 +102,6 @@ The following environment variables are available to application pre and post pu
 Variable         | Description
 ---------------- | -----------
 HAL_HOSTNAME     | Hostname of server
-PATH             | Global include path
 HAL_BUILDID      | ID of the build
 HAL_COMMIT       | 40 character commit SHA
 HAL_GITREF       | Git reference (such as `master`)
@@ -142,6 +142,15 @@ export HAL_APPLICATION_CONFIG="$DIR/../app/config.yml"
 
 ### Required configuration
 
+These services and parameters must be supplied when running `hal-agent`.
+
+Standalone installation:
+- services will be read from `imported.yml`.
+- parameters will be read from `config.env.yml`.
+
+Dependency installation:
+- Both services and parameters must be set in the symfony di configuration in the file provided at environment variable `HAL_APPLICATION_CONFIG`.
+
 Key                       | Type      | Description
 ------------------------- | --------- | -----------
 doctrine.em               | Service   | Doctrine Entity Manager
@@ -155,10 +164,46 @@ agent.environment.temp    | Parameter | Path to temporary build directory
 agent.environment.path    | Parameter | System PATH
 agent.environment.home    | Parameter | System HOME
 agent.ssh-user            | Parameter | Username for rsync to servers
-agent.email.subjects      | Parameter | Templates for email and log messages
 github.token              | Parameter | Github authentication token
+github.com.token          | Parameter | Github.com authentication token
 github.baseurl            | Parameter | Github url
-mcp-logger.host           | Parameter | Core logger hostname
+agent.logger              | Service   | A PSR-3 Logger
+agent.logger.mcp.factory  | Service   | MCP Logger factory
+
+## Customization
+
+Key                       | Type      | Description
+------------------------- | --------- | -----------
+agent.email.subjects      | Parameter | Templates for email and log subjects
+agent.email.notify        | Parameter | A list of secondary email addresses to notify
+
+A note on `agent.email.subjects`:
+
+The subject of email and log messages is customizable by providing an associative array containing the replaced templates.
+
+The following subjects are available:
+- `email.build`
+- `email.push`
+- `log.build`
+- `log.push`
+
+The following tokens are available:
+- `buildId`
+- `pushId`
+- `github`
+- `repository`
+- `server`
+- `environment`
+- `status`
+
+Example usage:
+
+```yaml
+# config.yml
+agent.email.subjects:
+    email.build: '{status} - {repository} ({environment})'
+    log.push: '{status} - {repository} ({server}) - Push {pushId}'
+```
 
 ## Dependencies
 
@@ -175,8 +220,8 @@ Package                        | Description
 `swiftmailer/swiftmailer`      | Emailer
 `symfony/config`               | Cascading configuration
 `symfony/console`              | The core of this application
-`symfony/dependency-injection` | Dependency injection and service container
 `symfony/debug`                | Convert errors to exceptions
+`symfony/dependency-injection` | Dependency injection and service container
 `symfony/event-dispatcher`     | Event dispatching for the console application
 `symfony/filesystem`           | Filesystem abstraction
 `symfony/monolog-bridge`       | Console output of log messages

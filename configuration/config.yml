@@ -4,7 +4,7 @@ imports:
 
 parameters:
     agent.application.name: 'HAL 9000 Agent'
-    agent.application.version: '1.0-alpha'
+    agent.application.version: '1.0-beta'
     agent.application.id: '200947'
 
     agent.email.server: 'mail.example.com'
@@ -12,4 +12,21 @@ parameters:
         - 'hal@example.com'
     agent.email.from: 'hal@example.com'
     agent.email.reply: 'hal@example.com'
+
+    # An associative array of email/log subject templates:
+
+    # The following templates can be customized:
+    # - email.build
+    # - email.push
+    # - log.build
+    # - log.push
+
+    # Available tokens:
+    # - buildId
+    # - pushId
+    # - github
+    # - repository
+    # - server
+    # - environment
+    # - status
     agent.email.subjects: []

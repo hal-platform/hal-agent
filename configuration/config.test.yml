@@ -23,7 +23,8 @@ parameters:
     agent.ssh-user: ''
 
     # Core logger service hostname
-    mcp-logger.host: 'qlsonictest'
+    # Only required in standalone installations
+    agent.logger.mcp.host: 'http://qlsonictest:2581/web/core/logentries'
 
     # doctrine configuration
     doctrine.connection:

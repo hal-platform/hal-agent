@@ -23,34 +23,53 @@ imports:
 
 services:
 
-    mcp-logger:
-        class: 'MCP\Service\Logger\Logger'
-        arguments: ['@mcp-logger.service', '@mcp-logger.factory']
-    mcp-logger.service:
-        class: 'MCP\Service\Logger\Service\GuzzleService'
-        arguments: ['@mcp-logger.guzzle', '@mcp-logger.renderer', true]
-    mcp-logger.guzzle:
-        class: 'Guzzle\Http\Client'
-        arguments: ['http://%mcp-logger.host%:2581/web/core/logentries']
+    # imported from global scope
+    # %agent.logger.mcp.host%
 
-    mcp-logger.renderer:
+    agent.logger:
+        alias: 'logger.mcp'
+    agent.logger.mcp.factory:
+        alias: 'logger.mcp.factory'
+
+    logger.mcp:
+        scope: 'agent'
+        class: 'MCP\Service\Logger\Logger'
+        arguments: ['@logger.mcp.service', '@logger.mcp.factory']
+
+    logger.mcp.service:
+        scope: 'agent'
+        class: 'MCP\Service\Logger\Service\GuzzleService'
+        arguments: ['@logger.mcp.guzzle', '@logger.mcp.renderer', true]
+    logger.mcp.guzzle:
+        scope: 'agent'
+        class: 'Guzzle\Http\Client'
+        arguments: ['%agent.logger.mcp.host%']
+    logger.mcp.renderer:
+        scope: 'agent'
         class: 'MCP\Service\Logger\Renderer\XmlRenderer'
-        arguments: ['@mcp-logger.renderer.writer']
-    mcp-logger.renderer.writer:
+        arguments: ['@logger.mcp.writer']
+    logger.mcp.writer:
+        scope: 'agent'
         class: 'XMLWriter'
 
-    mcp-logger.factory:
+    logger.mcp.factory:
+        scope: 'agent'
         class: 'MCP\Service\Logger\Adapter\Psr\MessageFactory'
-        arguments: ['@mcp-logger.factory.clock']
+        arguments: ['@logger.mcp.clock']
         calls:
           - ['setDefaultProperty', ['applicationId', '%agent.application.id%']]
-          - ['setDefaultProperty', ['machineIPAddress', '@mcp-logger.factory.serverIp']]
+          # replaced at runtime, maybe
+          - ['setDefaultProperty', ['machineIPAddress', '@logger.mcp.serverIp']]
+          # replaced at runtime
           - ['setDefaultProperty', ['machineName', 'localhost']]
-    mcp-logger.factory.clock:
-        class: 'MCP\DataType\Time\Clock'
-        arguments: ['now', 'UTC']
-    mcp-logger.factory.serverIp:
+    logger.mcp.serverIp:
+        scope: 'agent'
         class: 'MCP\DataType\IPv4Address'
         factory_class: 'MCP\DataType\IPv4Address'
         factory_method: 'create'
         arguments: ['0.0.0.0']
+    logger.mcp.clock:
+        scope: 'agent'
+        class: 'MCP\DataType\Time\Clock'
+        arguments: ['now', 'UTC']
+

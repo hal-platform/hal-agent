@@ -34,7 +34,7 @@ $container->compile();
 $container->enterScope('agent');
 
 ErrorHandler::register(E_ALL, false);
-ErrorHandler::setLogger($container->get('mcp-logger'), 'emergency');
+ErrorHandler::setLogger($container->get('agent.logger'), 'emergency');
 
 $app = $container->get('application');
 $app->run();
