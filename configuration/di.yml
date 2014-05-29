@@ -27,16 +27,14 @@ services:
             - '%agent.application.name%'
             - '%agent.application.version%'
         calls:
-            # Every one of these commands is instantiated regardless of the running command
-            # There is no way to lazy load these without significant jankiness
-            - ['add', ['@command.build.create']]
-            - ['add', ['@command.build.build']]
-            - ['add', ['@command.build.remove']]
-            - ['add', ['@command.push.create']]
-            - ['add', ['@command.push.push']]
-            - ['add', ['@command.builds.list']]
-            - ['add', ['@command.worker.build']]
-            - ['add', ['@command.worker.push']]
+            - ['add', ['@lazy.command.build.create']]
+            - ['add', ['@lazy.command.build.build']]
+            - ['add', ['@lazy.command.build.remove']]
+            - ['add', ['@lazy.command.push.create']]
+            - ['add', ['@lazy.command.push.push']]
+            - ['add', ['@lazy.command.builds.list']]
+            - ['add', ['@lazy.command.worker.build']]
+            - ['add', ['@lazy.command.worker.push']]
             - ['setDispatcher', ['@dispatcher']]
     dispatcher:
         scope: 'agent'
@@ -62,6 +60,35 @@ services:
             - '@monolog.handler.buffer'
             - '@emailer.message'
             - '%agent.email.subjects%'
+
+    # lazy commands
+    lazy.command.build.create:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['build:create', 'command.build.create', '@service_container']
+    lazy.command.build.build:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['build:build', 'command.build.build', '@service_container']
+    lazy.command.build.remove:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['build:remove', 'command.build.remove', '@service_container']
+
+    lazy.command.push.create:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['push:create', 'command.push.create', '@service_container']
+    lazy.command.push.push:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['push:push', 'command.push.push', '@service_container']
+
+    lazy.command.builds.list:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['builds:list', 'command.builds.list', '@service_container']
+
+    lazy.command.worker.build:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['worker:build', 'command.worker.build', '@service_container']
+    lazy.command.worker.push:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['worker:push', 'command.worker.push', '@service_container']
 
     # commands
     command.build.create:
