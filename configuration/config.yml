@@ -1,17 +1,21 @@
 imports:
     -
+        resource: ../vendor/ql/hal-core/config/di.yml
+    -
         resource: di.yml
+    -
+        resource: config.env.yml
 
 parameters:
-    agent.application.name: 'HAL 9000 Agent'
-    agent.application.version: '1.0-beta'
-    agent.application.id: '200947'
+    application.name: 'HAL 9000 Agent'
+    application.version: '1.0-beta'
+    application.id: '200947'
 
-    agent.email.server: 'mail.example.com'
-    agent.email.notify:
+    email.server: 'mail.example.com'
+    email.notify:
         - 'hal@example.com'
-    agent.email.from: 'hal@example.com'
-    agent.email.reply: 'hal@example.com'
+    email.from: 'hal@example.com'
+    email.reply: 'hal@example.com'
 
     # An associative array of email/log subject templates:
 
@@ -29,4 +33,4 @@ parameters:
     # - server
     # - environment
     # - status
-    agent.email.subjects: []
+    email.subjects: []

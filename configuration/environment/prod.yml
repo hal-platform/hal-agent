@@ -1,36 +1,34 @@
-# Standalone installation only
-
 parameters:
     github.token: ''
     github.baseurl: 'http://git/api/v3/'
     github.com.token: ''
 
     # system PATH inherited by build scripts
-    agent.environment.path: '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin'
+    environment.path: '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin'
 
     # system HOME inherited by build scripts
     # Leave this empty to use the system temporary directory
-    agent.environment.home: '/var/spool/hal9000test/home'
+    environment.home: '/var/spool/hal9000/home'
 
     # temporary storage for build and push artifacts
     # Leave this empty to use the system temporary directory
-    agent.environment.temp: '/var/spool/hal9000test'
+    environment.temp: '/var/spool/hal9000'
 
     # file path to store permanent archives of builds
-    agent.environment.archive: ''
+    environment.archive: ''
 
     # user used to SSH and RSYNC to target servers
-    agent.ssh-user: ''
+    push.sshUser: ''
 
     # Core logger service hostname
     # Only required in standalone installations
-    agent.logger.mcp.host: 'http://qlsonictest:2581/web/core/logentries'
+    logger.mcp.host: 'http://qlsonicprod:2581/web/core/logentries'
 
     # doctrine configuration
-    doctrine.connection:
-        driver:     pdo_mysql
-        host:       localhost
-        user:       root
-        password:
-        dbname:     hal
     doctrine.devmode: true
+    doctrine.connection:
+        driver: pdo_mysql
+        host: prod.example.com
+        user: placeholder
+        password: placeholder
+        dbname: hal9000

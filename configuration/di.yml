@@ -1,31 +1,10 @@
 services:
 
-    # imported from global scope
-    # @doctrine.em
-    # @repository.repo
-    # @environment.repo
-    # @user.repo
-    # @deployment.repo
-    # @push.repo
-
-    # @agent.logger
-    # @agent.logger.mcp.factory
-
-    # %agent.environment.archive%
-    # %agent.environment.path%
-    # %agent.environment.temp%
-    # %agent.environment.home%
-    # %agent.ssh-user%
-    # %github.token%
-    # %github.baseurl%
-    # %github.com.token%
-
     application:
-        scope: 'agent'
         class: 'Symfony\Component\Console\Application'
         arguments:
-            - '%agent.application.name%'
-            - '%agent.application.version%'
+            - '%application.name%'
+            - '%application.version%'
         calls:
             - ['add', ['@lazy.command.build.create']]
             - ['add', ['@lazy.command.build.build']]
@@ -37,15 +16,13 @@ services:
             - ['add', ['@lazy.command.worker.push']]
             - ['setDispatcher', ['@dispatcher']]
     dispatcher:
-        scope: 'agent'
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
             - ['addSubscriber', ['@logger.mcp.subscriber']]
             - ['addSubscriber', ['@monolog.handler.console']]
-            - ['addSubscriber', ['@utility.exception-handler']]
+            - ['addSubscriber', ['@utility.exceptionHandler']]
 
     clock:
-        scope: 'agent'
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
@@ -53,13 +30,12 @@ services:
     # It's primary usage is for during builds and pushes.
     # Error messages and other abnormal log messages should be sent direct to the mcp logger.
     logger.command:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\CommandLogger'
         arguments:
             - '@monolog'
             - '@monolog.handler.buffer'
             - '@emailer.message'
-            - '%agent.email.subjects%'
+            - '%email.subjects%'
 
     # lazy commands
     lazy.command.build.create:
@@ -92,7 +68,6 @@ services:
 
     # commands
     command.build.create:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\CreateBuildCommand'
         arguments:
             - 'build:create'
@@ -101,9 +76,8 @@ services:
             - '@repository.repo'
             - '@environment.repo'
             - '@user.repo'
-            - '@utility.reference-resolver'
+            - '@utility.referenceResolver'
     command.build.build:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
@@ -115,27 +89,24 @@ services:
             - '@build.unpacker'
             - '@build.builder'
             - '@build.packer'
-            - '@utility.helper.download-progress'
+            - '@utility.helper.downloadProgress'
             - '@utility.process.builder=' # = signifies a prototype service
     command.build.remove:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
             - 'build:remove'
             - '@doctrine.em'
             - '@build.repo'
             - '@utility.filesystem'
-            - '%agent.environment.archive%'
+            - '%environment.archive%'
     command.builds.list:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
             - 'builds:list'
             - '@build.repo'
             - '@utility.filesystem'
-            - '%agent.environment.archive%'
+            - '%environment.archive%'
     command.push.create:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\CreatePushCommand'
         arguments:
             - 'push:create'
@@ -145,7 +116,6 @@ services:
             - '@deployment.repo'
             - '@user.repo'
     command.push.push:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
@@ -155,10 +125,9 @@ services:
             - '@push.resolver'
             - '@push.unpacker'
             - '@push.pusher'
-            - '@push.server-command'
+            - '@push.serverCommand'
             - '@utility.process.builder=' # = signifies a prototype service
     command.worker.build:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
@@ -166,9 +135,8 @@ services:
             - '@build.repo'
             - '@doctrine.em'
             - '@utility.forker'
-            - '@agent.logger'
+            - '@logger.mcp'
     command.worker.push:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
@@ -176,83 +144,70 @@ services:
             - '@push.repo'
             - '@doctrine.em'
             - '@utility.forker'
-            - '@agent.logger'
+            - '@logger.mcp'
 
     # utility
-    utility.helper.download-progress:
-        scope: 'agent'
+    utility.helper.downloadProgress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
         arguments:
             - '@github.guzzleHttpClient'
-    utility.yaml-dumper:
-        scope: 'agent'
+    utility.yamlDumper:
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
             - ['setIndentation', ['4']]
     utility.filesystem:
-        scope: 'agent'
         class: 'Symfony\Component\Filesystem\Filesystem'
     utility.process.builder:
-        scope: 'agent'
         class: 'Symfony\Component\Process\ProcessBuilder'
         scope: prototype
         calls:
             - ['inheritEnvironmentVariables', [false]]
-    utility.reference-resolver:
-        scope: 'agent'
+    utility.referenceResolver:
         class: 'QL\Hal\Agent\Github\ReferenceResolver'
         arguments:
             - '@github.references'
             - '@github.commits'
             - '@github.pull-requests'
     utility.forker:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Helper\ForkHelper'
-    utility.exception-handler:
-        scope: 'agent'
+    utility.exceptionHandler:
         class: 'QL\Hal\Agent\Helper\ExceptionHandlerSubscriber'
-        arguments: ['@agent.logger']
+        arguments: ['@logger.mcp']
 
     # build actions
     build.resolver:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
             - '@logger.command'
             - '@build.repo'
-            - '%agent.environment.path%'
-            - '%agent.environment.archive%'
+            - '%environment.path%'
+            - '%environment.archive%'
         calls:
-            - ['setBaseBuildDirectory', ['%agent.environment.temp%']]
-            - ['setHomeDirectory', ['%agent.environment.home%']]
+            - ['setBaseBuildDirectory', ['%environment.temp%']]
+            - ['setHomeDirectory', ['%environment.home%']]
     build.downloader:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments:
             - '@logger.command'
             - '@github.archive'
     build.unpacker:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
             - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
-    build.package-manager-preparer:
-        scope: 'agent'
+    build.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
         arguments:
             - '@logger.command'
             - '@utility.filesystem'
             - '%github.com.token%'
     build.builder:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
             - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
-            - '@build.package-manager-preparer'
+            - '@build.preparer'
     build.packer:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
             - '@logger.command'
@@ -260,73 +215,62 @@ services:
 
     # push actions
     push.resolver:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
             - '@logger.command'
             - '@push.repo'
             - '@clock'
-            - '%agent.ssh-user%'
-            - '%agent.environment.archive%'
+            - '%push.sshUser%'
+            - '%environment.archive%'
         calls:
-            - ['setBaseBuildDirectory', ['%agent.environment.temp%']]
+            - ['setBaseBuildDirectory', ['%environment.temp%']]
     push.unpacker:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
             - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
             - '@utility.filesystem'
-            - '@utility.yaml-dumper'
+            - '@utility.yamlDumper'
     push.pusher:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
             - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
-    push.server-command:
-        scope: 'agent'
+    push.serverCommand:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
             - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
-            - '%agent.ssh-user%'
+            - '%push.sshUser%'
 
     # github services
     github.archive:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Github\ArchiveApi'
         arguments:
             - '@github.client'
             - '@utility.filesystem'
     github.references:
-        scope: 'agent'
         class: 'Github\Api\GitData\References'
         arguments:
             - '@github.client'
     github.commits:
-        scope: 'agent'
         class: 'Github\Api\GitData\Commits'
         arguments:
             - '@github.client'
     github.pull-requests:
-        scope: 'agent'
         class: 'Github\Api\PullRequest'
         arguments:
             - '@github.client'
 
     github.client:
-        scope: 'agent'
         class: 'Github\Client'
         arguments: ['@github.httpClient']
     github.httpClient:
-        scope: 'agent'
         class: 'Github\HttpClient\HttpClient'
         arguments: [[], '@github.guzzleHttpClient']
         calls:
             - ['authenticate', ['%github.token%', null, 'http_token']]
     github.guzzleHttpClient:
-        scope: 'agent'
         class: 'Guzzle\Http\Client'
         arguments:
             - '%github.baseurl%'
@@ -337,34 +281,29 @@ services:
     # logger services
     # the amount of handlers is ridiculous
     monolog:
-        scope: 'agent'
         class: 'Monolog\Logger'
         arguments: ['hal9000']
         calls:
             - ['pushHandler', ['@monolog.handler.console']]
             - ['pushHandler', ['@monolog.handler.buffer']]
     monolog.handler.buffer:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\BufferHandler'
         arguments:
             - '@monolog.handler.group'
     monolog.handler.group:
-        scope: 'agent'
         class: 'Monolog\Handler\GroupHandler'
         arguments:
             - ['@monolog.handler.parent', '@monolog.handler.swiftmailer']
 
     # mcp handler
     monolog.handler.parent:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\ParentLogHandler'
-        arguments: ['@agent.logger']
+        arguments: ['@logger.mcp']
         calls:
-            - ['setFormatter', ['@monolog.formatter.text-formatter']]
+            - ['setFormatter', ['@monolog.formatter.textFormatter']]
 
     # email handler
     monolog.handler.swiftmailer:
-        scope: 'agent'
         class: 'Monolog\Handler\SwiftMailerHandler'
         arguments:
             - '@emailer'
@@ -373,40 +312,66 @@ services:
         calls:
             - ['setFormatter', ['@monolog.handler.swiftmailer.formatter']]
     monolog.handler.swiftmailer.formatter:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\HtmlFormatter'
 
     # console handler
     monolog.handler.console:
-        scope: 'agent'
         class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
 
-    monolog.formatter.text-formatter:
-        scope: 'agent'
+    monolog.formatter.textFormatter:
         class: 'QL\Hal\Agent\Logger\TextFormatter'
         arguments: ['', '', true]
 
     logger.mcp.subscriber:
-        scope: 'agent'
         class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
-        arguments: ['@agent.logger.mcp.factory']
+        arguments: ['@logger.mcp.factory']
 
     # emailer services
     emailer:
-        scope: 'agent'
         class: 'Swift_Mailer'
         arguments: ['@emailer.transport']
     emailer.transport:
-        scope: 'agent'
         class: 'Swift_SmtpTransport'
-        arguments: ['%agent.email.server%']
+        arguments: ['%email.server%']
     emailer.message:
-        scope: 'agent'
         class: 'Swift_Message'
         calls:
-            - ['setFrom', ['%agent.email.from%', 'HAL9000']]
-            - ['setReplyTo', ['%agent.email.reply%']]
-            - ['setCc', ['%agent.email.notify%']]
+            - ['setFrom', ['%email.from%', 'HAL9000']]
+            - ['setReplyTo', ['%email.reply%']]
+            - ['setCc', ['%email.notify%']]
             - ['setContentType', ['text/html']]
             - ['setSubject', ['Critical Error']]
             # to, subject will be set at runtime
+
+    # mcp logger
+    logger.mcp:
+        class: 'MCP\Service\Logger\Logger'
+        arguments: ['@logger.mcp.service', '@logger.mcp.factory']
+
+    logger.mcp.service:
+        class: 'MCP\Service\Logger\Service\GuzzleService'
+        arguments: ['@logger.mcp.guzzle', '@logger.mcp.renderer', true]
+    logger.mcp.guzzle:
+        class: 'Guzzle\Http\Client'
+        arguments: ['%logger.mcp.host%']
+    logger.mcp.renderer:
+        class: 'MCP\Service\Logger\Renderer\XmlRenderer'
+        arguments: ['@logger.mcp.writer']
+    logger.mcp.writer:
+        class: 'XMLWriter'
+
+    logger.mcp.factory:
+        class: 'MCP\Service\Logger\Adapter\Psr\MessageFactory'
+        arguments: ['@clock']
+        calls:
+          - ['setDefaultProperty', ['applicationId', '%application.id%']]
+          # replaced at runtime, maybe
+          - ['setDefaultProperty', ['machineIPAddress', '@logger.mcp.serverIp']]
+          # replaced at runtime
+          - ['setDefaultProperty', ['machineName', 'localhost']]
+    logger.mcp.serverIp:
+        class: 'MCP\DataType\IPv4Address'
+        factory_class: 'MCP\DataType\IPv4Address'
+        factory_method: 'create'
+        arguments: ['0.0.0.0']
+
