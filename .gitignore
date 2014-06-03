@@ -6,8 +6,11 @@
 # recommended location for build artifacts
 /.build/
 
-/composer.lock
-/configuration/config.env.yml
+# unit testing artifacts
 /phpunit.xml
 /phpunit/
+
+# compiled configuration, package manager installation
+/configuration/config.env.yml
+/src/CachedContainer.php
 /vendor/
