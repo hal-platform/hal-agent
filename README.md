@@ -16,7 +16,7 @@ Table of Contents:
 * [Worker Commands](#worker-commands)
 * [Application scripting environment](#application-scripting-environment)
 * [Deployment](#deployment)
-* [Customization](#customization)
+* [Configuration](#configuration)
 * [Dependencies](#dependencies)
 * [Testing](#testing)
 
@@ -110,72 +110,23 @@ HAL_REPO         | Hal name for the deployed application
 
 ## Deployment
 
-This application requires several Doctrine ORM services as well as environment-based parameters.
-
-### Standalone
-
 `bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.
 For development deployments, create a `config.env.yml` using `config.env.yml.dist` as a prototype.
 
-In standalone deployment, the required services will be imported from `imported.yml`, and environment-based parameters
-will be loaded from `config.env.yml`.
+### Configuration
 
-### As a dependency
-
-Neither `imported.yml` or `config.env.yml` will be loaded when installed as a dependency. Instead, the parent
-application must set an environment variable before running the hal executable.
-
-Hal Agent will look for a file at `HAL_APPLICATION_CONFIG`. This should be a fully qualified path to a symfony dependency
-injection configuration with the required services and parameters.
-
-For this reason it is highly recommended when using the agent as a dependency, a new script should be created
-that sets the environment variable, and calls the actual hal-agent bin.
-
-Example:
-```bash
-#!/usr/bin/env bash
-DIR=$( cd "$( dirname "$0" )" && pwd )
-
-export HAL_APPLICATION_CONFIG="$DIR/../app/config.yml"
-"$DIR/../vendor/bin/hal" $?
-```
-
-### Required configuration
-
-These services and parameters must be supplied when running `hal-agent`.
-
-Standalone installation:
-- services will be read from `imported.yml`.
-- parameters will be read from `config.env.yml`.
-
-Dependency installation:
-- Both services and parameters must be set in the symfony di configuration in the file provided at environment variable `HAL_APPLICATION_CONFIG`.
-
-Key                       | Type      | Description
-------------------------- | --------- | -----------
-doctrine.em               | Service   | Doctrine Entity Manager
-repository.repo           | Service   | Doctrine Entity Repository
-environment.repo          | Service   | Doctrine Entity Repository
-user.repo                 | Service   | Doctrine Entity Repository
-deployment.repo           | Service   | Doctrine Entity Repository
-push.repo                 | Service   | Doctrine Entity Repository
-agent.environment.archive | Parameter | Path to permanent archive directory for successful builds
-agent.environment.temp    | Parameter | Path to temporary build directory
-agent.environment.path    | Parameter | System PATH
-agent.environment.home    | Parameter | System HOME
-agent.ssh-user            | Parameter | Username for rsync to servers
-github.token              | Parameter | Github authentication token
-github.com.token          | Parameter | Github.com authentication token
-github.baseurl            | Parameter | Github url
-agent.logger              | Service   | A PSR-3 Logger
-agent.logger.mcp.factory  | Service   | MCP Logger factory
-
-## Customization
-
-Key                       | Type      | Description
-------------------------- | --------- | -----------
-agent.email.subjects      | Parameter | Templates for email and log subjects
-agent.email.notify        | Parameter | A list of secondary email addresses to notify
+Key                       | Description
+------------------------- | -----------
+email.subjects            | Templates for email and log subjects
+email.notify              | A list of secondary email addresses to notify
+environment.archive       | Path to permanent archive directory for successful builds
+environment.temp          | Path to temporary build directory
+environment.path          | System PATH
+environment.home          | System HOME
+push.sshUser              | Username used to ssh to servers for syncing code
+github.token              | Github Enterprise authentication token
+github.com.token          | Github.com authentication token
+github.baseurl            | Github url
 
 A note on `agent.email.subjects`:
 
@@ -200,7 +151,7 @@ Example usage:
 
 ```yaml
 # config.yml
-agent.email.subjects:
+email.subjects:
     email.build: '{status} - {repository} ({environment})'
     log.push: '{status} - {repository} ({server}) - Push {pushId}'
 ```
