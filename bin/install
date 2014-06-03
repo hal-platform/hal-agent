@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+set -u
+set -e
+
 DIR=$( cd "$( dirname "$0" )" && pwd )
 BIN="$DIR/composer install --prefer-dist --no-interaction"
 

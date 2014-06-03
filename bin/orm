@@ -1,16 +1,18 @@
 #!/usr/bin/env php
 <?php
+/**
+ * @copyright ©2014 Quicken Loans Inc. All rights reserved. Trade Secret,
+ *    Confidential and Proprietary. Any dissemination outside of Quicken Loans
+ *    is strictly prohibited.
+ */
 
-namespace QL\Hal\Agent;
+namespace QL\Hal\Agent\Bootstrap;
 
 use Doctrine\ORM\Tools\Console\ConsoleRunner;
 
-# autoloader
-(@include_once __DIR__ . '/../vendor/autoload.php') || @require_once __DIR__ . '/../../../autoload.php';
+$root = __DIR__ . '/../';
+require_once $root . '/configuration/bootstrap.php';
 
-$bootstrap = new Bootstrap(__DIR__ . '/../');
-$bootstrap->load();
-$di = $bootstrap->container();
-
+$di = getDi($root);
 $helperSet = ConsoleRunner::createHelperSet($di->get('doctrine.em'));
 ConsoleRunner::run($helperSet, []);

@@ -5,6 +5,7 @@ rm -rf composer.lock
 DIR=$( cd "$( dirname "$0" )" && pwd )
 DELFILES=(
     "composer.lock"
+    "src/CachedContainer.php"
 )
 
 DELFOLDERS=(

@@ -8,14 +8,18 @@
 
 namespace QL\Hal\Agent\Bootstrap;
 
-use Symfony\Component\Debug\ErrorHandler;
-
 $root = __DIR__ . '/../';
 require_once $root . '/configuration/bootstrap.php';
 
-$di = getDi($root);
+$file = $root . 'src/CachedContainer.php';
+$class = 'QL\Hal\Agent\CachedContainer';
+$container = buildDi($root);
 
-ErrorHandler::register(E_ALL, false);
-ErrorHandler::setLogger($di->get('logger.mcp'), 'emergency');
+file_put_contents($file, dumpDi($container, $class));
 
-$di->get('application')->run();
+echo <<<OUTPUT
+Dumping DI Container cache:
+File: $file
+Class: $class
+
+OUTPUT;
