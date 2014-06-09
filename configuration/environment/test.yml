@@ -17,7 +17,7 @@ parameters:
     environment.temp: '/var/spool/hal9000test'
 
     # file path to store permanent archives of builds
-    environment.archive: ''
+    environment.archive: '/builds/hal9000test'
 
     # user used to SSH and RSYNC to target servers
     push.sshUser: ''
