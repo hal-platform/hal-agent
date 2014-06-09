@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+DIR=$( cd "$( dirname "$0" )" && pwd )
+
+function runAsync() {
+    "$DIR/hal" "worker:push" &
+}
+
+function runSync() {
+    "$DIR/hal" "worker:push"
+}
+
+if [[ "$1" != "--alt" ]] ; then
+    runAsync # run on 0
+    sleep 30
+    runSync # run on 30
+else
+    sleep 15
+    runAsync # run on 15
+    sleep 30
+    runSync # run on 45
+fi
+
+exit 0
