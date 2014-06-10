@@ -72,6 +72,11 @@ Two convenience bash scripts are included to make it easier to set up cronjobs e
 If no arguments are provided, both scripts will fire immediately, then wait 30 seconds and fire again (0s and 30s marks).
 If `--alt` is used as a parameter, the scripts will wait 15 seconds, fire, then wait 30 seconds and fire again (15s and 45s marks).
 
+Command            | Description
+------------------ | -----------
+`bin/worker-build` | Bash script for builds
+`bin/worker-push`  | Bash script for pushes
+
 ## Application scripting environment
 
 ### On Build
