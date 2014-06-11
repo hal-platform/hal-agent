@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Push;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\ProcessUtils;
 
 class ServerCommand
 {
@@ -54,8 +55,6 @@ class ServerCommand
      */
     public function __invoke($hostname, $remotePath, $serverCommand, array $env)
     {
-        $actualRemoteCommand = $serverCommand;
-
         $context = [
             'hostname' => $hostname,
             'remotePath' => $remotePath,
@@ -63,13 +62,17 @@ class ServerCommand
             'environment' => $env
         ];
 
+        $serverCommand = $this->sanitizeCommand($serverCommand);
+
+        // Add environment variables if possible
         if ($envSetters = $this->formatEnvSetters($env)) {
             $serverCommand = implode(' ', [$envSetters, $serverCommand]);
         }
 
+        // move to the application directory before command is executed
         $remoteCommand = implode(' && ', [
             sprintf('cd %s', $remotePath),
-            $serverCommand . ' 2>&1'
+            $serverCommand
         ]);
 
         $command = implode(' ', [
@@ -110,9 +113,30 @@ class ServerCommand
     {
         $envSetters = [];
         foreach ($env as $property => $value) {
-            $envSetters[] = sprintf('%s=%s', $property, escapeshellarg($value));
+            $envSetters[] = sprintf('%s=%s', $property, ProcessUtils::escapeArgument($value));
         }
 
         return implode(' ', $envSetters);
+    }
+
+    /**
+     * @var string $command
+     * @return string
+     */
+    private function sanitizeCommand($command)
+    {
+        // parameterize the command
+        $parameters = explode(' ', $command);
+
+        // remove empty parameters
+        $parameters = array_filter($parameters, function($v) {
+            return (trim($v) !== '');
+        });
+
+        // manually escape user supplied command
+        $parameters = array_map(['Symfony\Component\Process\ProcessUtils', 'escapeArgument'], $parameters);
+
+        // Combine user command back into string
+        return implode(' ', $parameters);
     }
 }

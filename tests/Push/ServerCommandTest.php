@@ -30,7 +30,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
 
         $action = new ServerCommand($logger, $builder, 'sshuser');
 
-        $success = $action('host', 'sync/path', 'bin/cmd', []);
+        $success = $action('host', 'sync/path', 'env && pwd', ['derp' => 'derp1', 'derp2' => 'derp3']);
         $this->assertTrue($success);
 
         $message = $logger[0];
