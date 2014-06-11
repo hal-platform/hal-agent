@@ -24,8 +24,8 @@ class CommandLogger extends AbstractLogger
      */
     const BUILD_SUBJECT = '{repository} ({environment}) - Build - {status}';
     const PUSH_SUBJECT = '{repository} ({environment}:{server}) - Push - {status}';
-    const BUILD_EMAIL_SUBJECT = 'HAL9000 - {repository} ({environment}) - Build - [{status}]';
-    const PUSH_EMAIL_SUBJECT = 'HAL9000 - {repository} ({environment}:{server}) - Push - [{status}]';
+    const BUILD_EMAIL_SUBJECT = '{repository} ({environment}) - Build - [{status}]';
+    const PUSH_EMAIL_SUBJECT = '{repository} ({environment}:{server}) - Push - [{status}]';
 
     /**
      * @var LoggerInterface
