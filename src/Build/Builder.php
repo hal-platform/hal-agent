@@ -53,17 +53,11 @@ class Builder
             'buildCommand' => $command
         ];
 
-        // parameterize the command
-        $args = explode(' ', $command);
-
-        // remove empty parameters
-        $args = array_filter($args, function($v) {
-            return (trim($v) !== '');
-        });
+        $command = $this->sanitizeCommand($command);
 
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
-            ->setArguments(array_values($args))
+            ->setArguments($command)
             ->addEnvironmentVariables($env)
             ->setTimeout(300)
             ->getProcess();
@@ -86,5 +80,23 @@ class Builder
 
         $this->logger->critical(self::ERR_BUILDING, $context);
         return false;
+    }
+
+    /**
+     * @var string $command
+     * @return string
+     */
+    private function sanitizeCommand($command)
+    {
+        // parameterize the command
+        $parameters = explode(' ', $command);
+
+        // remove empty parameters
+        $parameters = array_filter($parameters, function($v) {
+            return (trim($v) !== '');
+        });
+
+        // collapse array elements
+        return array_values($parameters);
     }
 }
