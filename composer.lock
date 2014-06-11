@@ -3,7 +3,7 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "8f2d44bdf8d6299c865cc7afb32909db",
+    "hash": "c3d2a03f4aa05a74bef1e1dece74c549",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -816,17 +816,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.0.0-alpha1",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "2.0.0-alpha1"
+                "reference": "2.0.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer//dist/ql-hal-core-2.0.0-alpha1-d67850.zip",
-                "reference": "2.0.0-alpha1",
-                "shasum": "e9cc20efb83e3b504a66affab64a0316cab921be"
+                "url": "http://composer//dist/ql-hal-core-2.0.0-f7ca6a.zip",
+                "reference": "2.0.0",
+                "shasum": "a4ef747c2b7821881117a7a004ee03457258b959"
             },
             "require": {
                 "doctrine/orm": "~2.4",
@@ -2500,9 +2500,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "ql/hal-core": 15
-    },
+    "stability-flags": [],
     "platform": {
         "php-64bit": ">=5.4.0"
     },
