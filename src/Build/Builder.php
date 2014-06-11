@@ -53,13 +53,20 @@ class Builder
             'buildCommand' => $command
         ];
 
+        // parameterize the command
+        $args = explode(' ', $command);
+
+        // remove empty parameters
+        $args = array_filter($args, function($v) {
+            return (trim($v) !== '');
+        });
+
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
-            ->setArguments([''])
+            ->setArguments(array_values($args))
             ->addEnvironmentVariables($env)
             ->setTimeout(300)
             ->getProcess();
-        $process->setCommandLine($command . ' 2>&1');
 
         // prepare package manager configuration
         call_user_func($this->preparer, $env);
@@ -74,7 +81,9 @@ class Builder
             return true;
         }
 
-        $context = array_merge($context, ['exitCode' => $process->getExitCode()]);
+        $errorContext = ['exitCode' => $process->getExitCode(), 'errorOutput' => $process->getErrorOutput()];
+        $context = array_merge($context, $errorContext);
+
         $this->logger->critical(self::ERR_BUILDING, $context);
         return false;
     }

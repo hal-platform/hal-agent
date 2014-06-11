@@ -51,6 +51,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
             'isSuccessful' => false,
             'getExitCode' => 127
         ])->makePartial();
@@ -70,5 +71,60 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $this->assertSame('Build command executed with errors', $message[1]);
         $this->assertSame('test-output', $message[2]['output']);
         $this->assertSame(127, $message[2]['exitCode']);
+        $this->assertSame('test-error-output', $message[2]['errorOutput']);
+    }
+
+    public function testBuildCommandIsParameterizedCorrectly()
+    {
+        $command = "bin/deploy --production && env > text.txt && bin/cmd 0  false         end\nweird\t";
+        $expectedParameters = [
+            'bin/deploy',
+            '--production',
+            '&&',
+            'env',
+            '>',
+            'text.txt',
+            '&&',
+            'bin/cmd',
+            '0',
+            'false',
+            "end\nweird\t"
+        ];
+
+        $logger = new MemoryLogger;
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getOutput' => null,
+            'isSuccessful' => true,
+            'stop' => null
+        ]);
+
+        $actualParameters = null;
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $builder
+            ->shouldReceive('setWorkingDirectory')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setArguments')
+            ->with(Mockery::on(function($v) use (&$actualParameters) {
+                $actualParameters = $v;
+                return true;
+            }))
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('addEnvironmentVariables')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setTimeout')
+            ->with(300)
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+
+        $action = new Builder($logger, $builder, $this->preparer);
+        $success = $action('path', $command, []);
+
+        $this->assertSame($expectedParameters, $actualParameters);
     }
 }
