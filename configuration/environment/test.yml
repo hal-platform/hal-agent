@@ -27,7 +27,7 @@ parameters:
     logger.mcp.host: 'http://qlsonictest:2581/web/core/logentries'
 
     # doctrine configuration
-    doctrine.devmode: true
+    doctrine.devmode: false
     doctrine.connection:
         driver: pdo_mysql
         host: test.example.com
