@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Bootstrap;
 
 use Doctrine\ORM\Tools\Console\ConsoleRunner;
 
-$root = __DIR__ . '/../';
+$root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
 $di = getDi($root);
