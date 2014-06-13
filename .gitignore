@@ -6,6 +6,9 @@
 # recommended location for build artifacts
 /.build/
 
+# doctrine proxy location
+/.doctrine/
+
 # unit testing artifacts
 /phpunit.xml
 /phpunit/

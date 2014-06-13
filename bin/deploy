@@ -7,3 +7,4 @@ DIR=$( cd "$( dirname "$0" )" && pwd )
 "$DIR/normalize-configuration"
 "$DIR/install"
 "$DIR/dump-di"
+"$DIR/orm orm:generate-proxies"
