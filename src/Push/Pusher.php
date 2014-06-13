@@ -97,7 +97,8 @@ class Pusher
             '--devices',
             '--specials',
             '--checksum',
-            '--verbose'
+            '--verbose',
+            '--delete-after'
         ];
 
         foreach ($excludedFiles as $excluded) {
