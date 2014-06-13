@@ -11,7 +11,7 @@ namespace QL\Hal\Agent\Bootstrap;
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
-$file = $root . 'src/CachedContainer.php';
+$file = $root . '/src/CachedContainer.php';
 $class = 'QL\Hal\Agent\CachedContainer';
 $container = buildDi($root);
 
