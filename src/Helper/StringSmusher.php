@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Helper;
 /**
  * Concatenate a bunch of strings together.
  *
- * THis is simply used to dynamically construct synthetic services that are really just parameters
+ * This is simply used to dynamically construct synthetic services that are really just parameters
  * but Symfony limitations prevent setting those after the container is frozen.
  */
 class StringSmusher
