@@ -13,8 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-$root = __DIR__ . '/../';
-require_once $root . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // Set Timezone to UTC
 ini_set('date.timezone', 'UTC');
@@ -49,9 +48,10 @@ function getDi($root)
         if ($container->getParameter('debug')) {
             $container = buildDi($root);
         }
-
-        return $container;
+    } else {
+        $container = buildDi($root);
     }
 
-    return buildDi($root);
+    $container->set('root', $root);
+    return $container;
 }
