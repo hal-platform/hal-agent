@@ -166,6 +166,6 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $message = $logger[2];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unpacked code could not be sanitized', $message[1]);
+        $this->assertSame('Unpacked code directory was not empty after sanitizing.', $message[1]);
     }
 }

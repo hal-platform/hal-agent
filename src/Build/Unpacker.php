@@ -21,7 +21,7 @@ class Unpacker
 
     const ERR_UNPACK_FAILURE = 'Unable to unpack code application code';
     const ERR_LOCATED = 'Unpacked code could not be located';
-    const ERR_SANITIZED = 'Unpacked code could not be sanitized';
+    const ERR_SANITIZED = 'Unpacked code directory was not empty after sanitizing.';
 
     /**
      * @var LoggerInterface
@@ -114,29 +114,32 @@ class Unpacker
             ->setArguments([''])
             ->getProcess()
             // processbuilder escapes input, but we need these wildcards to resolve correctly unescaped
-            ->setCommandLine('mv * .[^.]* ..');
+            ->setCommandLine('mv {,.[!.],..?}* ..');
 
         $process->run();
 
-        if ($process->isSuccessful()) {
+
+        // remove unpacked directory
+        $cmd = ['rmdir', $unpackedPath];
+        $removalProcess = $this->processBuilder
+            ->setWorkingDirectory(null)
+            ->setArguments($cmd)
+            ->getProcess();
+
+        $removalProcess->run();
+
+        if ($removalProcess->isSuccessful()) {
             $this->logger->info(self::SUCCESS_SANITIZED, $context);
-
-            // remove unpacked directory
-            $cmd = ['rm', '-r', $unpackedPath];
-            $removalProcess = $this->processBuilder
-                ->setWorkingDirectory(null)
-                ->setArguments($cmd)
-                ->getProcess();
-
-            $removalProcess->run();
-
             return true;
         }
 
         $context = array_merge($context, [
             'command' => $process->getCommandLine(),
             'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput()
+            'output' => $process->getOutput(),
+            'removalCommand' => $removalProcess->getCommandLine(),
+            'removalExitCode' => $removalProcess->getExitCode(),
+            'removalOutput' => $removalProcess->getOutput()
         ]);
 
         $this->logger->critical(self::ERR_SANITIZED, $context);

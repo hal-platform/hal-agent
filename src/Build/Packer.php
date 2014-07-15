@@ -63,7 +63,11 @@ class Packer
             return true;
         }
 
-        $context = array_merge($context, ['output' => $process->getOutput()]);
+        $context = array_merge($context, [
+            'command' => $process->getCommandLine(),
+            'exitCode' => $process->getExitCode(),
+            'output' => $process->getOutput()
+        ]);
         $this->logger->critical(self::ERR_PACKED, $context);
         return false;
     }
