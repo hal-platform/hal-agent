@@ -43,12 +43,13 @@ class ArchiveApi extends AbstractApi
     public function download($username, $repository, $reference, $target)
     {
         $path = sprintf(
-            'repos/%s/%s/tarball',
+            'repos/%s/%s/tarball/%s',
             rawurlencode($username),
-            rawurlencode($repository)
+            rawurlencode($repository),
+            rawurlencode($reference)
         );
 
-        $response = $this->client->getHttpClient()->get($path, ['ref' => $reference]);
+        $response = $this->client->getHttpClient()->get($path);
         $this->filesystem->dumpFile($target, $response->getBody());
 
         return $response->isSuccessful();
