@@ -24,20 +24,29 @@ class Builder
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @var PackageManagerPreparer
      */
-    private $processBuilder;
+    private $preparer;
+
+    /**
+     * Time (in seconds) to wait for the build to process before aborting
+     *
+     * @var int
+     */
+    private $buildTimeout;
 
     /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
      * @param PackageManagerPreparer $preparer
+     * @param int $buildTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, PackageManagerPreparer $preparer)
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, PackageManagerPreparer $preparer, $buildTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
         $this->preparer = $preparer;
+        $this->buildTimeout = $buildTimeout;
     }
 
     /**
@@ -59,7 +68,7 @@ class Builder
             ->setWorkingDirectory($buildPath)
             ->setArguments($command)
             ->addEnvironmentVariables($env)
-            ->setTimeout(300)
+            ->setTimeout($this->buildTimeout)
             ->getProcess();
 
         // prepare package manager configuration

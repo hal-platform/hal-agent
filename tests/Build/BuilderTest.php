@@ -34,7 +34,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder, $this->preparer);
+        $action = new Builder($logger, $builder, $this->preparer, 5);
 
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
@@ -61,7 +61,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder, $this->preparer);
+        $action = new Builder($logger, $builder, $this->preparer, 5);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
@@ -116,13 +116,13 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->andReturn(Mockery::self());
         $builder
             ->shouldReceive('setTimeout')
-            ->with(300)
+            ->with(5)
             ->andReturn(Mockery::self());
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder, $this->preparer);
+        $action = new Builder($logger, $builder, $this->preparer, 5);
         $success = $action('path', $command, []);
 
         $this->assertSame($expectedParameters, $actualParameters);
