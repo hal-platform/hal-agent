@@ -4,33 +4,11 @@ imports:
     -
         resource: di.yml
     -
+        resource: parameters.yml
+    -
         resource: config.env.yml
 
 parameters:
     application.name: 'HAL 9000 Agent'
-    application.version: '1.0-beta'
+    application.version: '1.0.1'
     application.id: '200947'
-
-    email.server: 'mail.example.com'
-    email.notify:
-        - 'hal@example.com'
-    email.from: 'hal@example.com'
-    email.reply: 'hal@example.com'
-
-    # An associative array of email/log subject templates:
-
-    # The following templates can be customized:
-    # - email.build
-    # - email.push
-    # - log.build
-    # - log.push
-
-    # Available tokens:
-    # - buildId
-    # - pushId
-    # - github
-    # - repository
-    # - server
-    # - environment
-    # - status
-    email.subjects: []

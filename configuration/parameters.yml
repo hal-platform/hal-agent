@@ -1,0 +1,26 @@
+parameters:
+    email.server: 'mail.example.com'
+    email.notify:
+        - 'hal@example.com'
+    email.from: 'hal@example.com'
+    email.reply: 'hal@example.com'
+
+    timeout.build: 300
+
+    # An associative array of email/log subject templates:
+
+    # The following templates can be customized:
+    # - email.build
+    # - email.push
+    # - log.build
+    # - log.push
+
+    # Available tokens:
+    # - buildId
+    # - pushId
+    # - github
+    # - repository
+    # - server
+    # - environment
+    # - status
+    email.subjects: []
