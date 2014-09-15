@@ -35,15 +35,22 @@ class ServerCommand
     private $sshUser;
 
     /**
+     * @var int
+     */
+    private $commandTimeout;
+
+    /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
      * @param string $sshUser
+     * @param int $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $sshUser)
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $sshUser, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
         $this->sshUser = $sshUser;
+        $this->commandTimeout = $commandTimeout;
     }
 
     /**
@@ -86,7 +93,7 @@ class ServerCommand
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments([''])
-            ->setTimeout(300)
+            ->setTimeout($this->commandTimeout)
             ->getProcess();
 
         $process->setCommandLine($command);

@@ -259,7 +259,8 @@ services:
         arguments:
             - '@logger.command'
             - '@utility.process.builder=' # = signifies a prototype service
-            - '%push.sshUser%'
+            - %push.sshUser%
+            - %timeout.pushCommand%
 
     # github services
     github.archive:

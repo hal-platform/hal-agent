@@ -28,7 +28,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new ServerCommand($logger, $builder, 'sshuser');
+        $action = new ServerCommand($logger, $builder, 'sshuser', 10);
 
         $success = $action('host', 'sync/path', 'env && pwd', ['derp' => 'derp1', 'derp2' => 'derp3']);
         $this->assertTrue($success);
@@ -53,7 +53,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new ServerCommand($logger, $builder, 'sshuser');
+        $action = new ServerCommand($logger, $builder, 'sshuser', 10);
 
         $success = $action('host', 'sync/path', 'bin/cmd', []);
         $this->assertFalse($success);
