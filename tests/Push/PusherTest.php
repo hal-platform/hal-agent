@@ -28,7 +28,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Pusher($logger, $builder);
+        $action = new Pusher($logger, $builder, 20);
 
         $success = $action('build/path', 'sync/path', []);
         $this->assertTrue($success);
@@ -53,7 +53,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Pusher($logger, $builder);
+        $action = new Pusher($logger, $builder, 20);
 
         $success = $action('build/path', 'sync/path', []);
         $this->assertFalse($success);

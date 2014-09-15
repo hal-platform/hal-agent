@@ -246,7 +246,10 @@ services:
             - @utility.yamlDumper
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
-        arguments: [@logger.command, @utility.process.builder=] # = signifies a prototype service
+        arguments:
+            - @logger.command
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.push%
     push.serverCommand:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:

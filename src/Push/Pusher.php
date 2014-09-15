@@ -29,13 +29,20 @@ class Pusher
     private $processBuilder;
 
     /**
+     * @var int
+     */
+    private $commandTimeout;
+
+    /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
+     * @param int $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
+        $this->commandTimeout = $commandTimeout;
     }
 
     /**
@@ -58,7 +65,7 @@ class Pusher
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments($command)
-            ->setTimeout(300)
+            ->setTimeout($this->commandTimeout)
             ->getProcess();
         $process->setCommandLine($process->getCommandLine() . ' 2>&1');
 

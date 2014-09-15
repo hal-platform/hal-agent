@@ -7,6 +7,7 @@ parameters:
 
     timeout.build: 300
     timeout.pushCommand: 300
+    timeout.push: 300
 
     # An associative array of email/log subject templates:
 
