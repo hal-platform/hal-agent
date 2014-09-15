@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Logger\CommandLogger;
+use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\ServerCommand;
@@ -70,6 +71,11 @@ class PushCommand extends Command
     private $unpacker;
 
     /**
+     * @var Builder
+     */
+    private $builder;
+
+    /**
      * @var Pusher
      */
     private $pusher;
@@ -96,6 +102,7 @@ class PushCommand extends Command
      * @param Clock $clock
      * @param Resolver $resolver
      * @param Unpacker $unpacker
+     * @param Builder $builder
      * @param Pusher $pusher
      * @param ServerCommand $serverCommand
      * @param ProcessBuilder $processBuilder
@@ -107,6 +114,7 @@ class PushCommand extends Command
         Clock $clock,
         Resolver $resolver,
         Unpacker $unpacker,
+        Builder $builder,
         Pusher $pusher,
         ServerCommand $serverCommand,
         ProcessBuilder $processBuilder
@@ -119,6 +127,7 @@ class PushCommand extends Command
 
         $this->resolver = $resolver;
         $this->unpacker = $unpacker;
+        $this->builder = $builder;
         $this->pusher = $pusher;
         $this->serverCommand = $serverCommand;
 
@@ -195,16 +204,20 @@ class PushCommand extends Command
             return $this->failure($output, 2);
         }
 
-        if (!$this->prepush($output, $properties)) {
+        if (!$this->build($output, $properties)) {
             return $this->failure($output, 4);
         }
 
-        if (!$this->push($output, $properties)) {
+        if (!$this->prepush($output, $properties)) {
             return $this->failure($output, 8);
         }
 
-        if (!$this->postpush($output, $properties)) {
+        if (!$this->push($output, $properties)) {
             return $this->failure($output, 16);
+        }
+
+        if (!$this->postpush($output, $properties)) {
+            return $this->failure($output, 32);
         }
 
         // finish
@@ -333,6 +346,26 @@ class PushCommand extends Command
             $properties['archiveFile'],
             $properties['buildPath'],
             $properties['pushProperties']
+        ]);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function build(OutputInterface $output, array $properties)
+    {
+        if (!$properties['buildCommand']) {
+            $this->status($output, 'Skipping build command');
+            return true;
+        }
+
+        $this->status($output, 'Running build command');
+        return call_user_func_array($this->builder, [
+            $properties['buildPath'],
+            $properties['buildCommand'],
+            $properties['environmentVariables']
         ]);
     }
 

@@ -138,6 +138,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'archiveFile' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
             'buildPath' => 'testdir/hal9000-push-1234',
 
+            'buildCommand' => '',
             'prePushCommand' => 'bin/pre',
             'postPushCommand' => 'bin/post',
             'artifacts' => [

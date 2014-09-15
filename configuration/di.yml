@@ -134,6 +134,7 @@ services:
             - @clock
             - @push.resolver
             - @push.unpacker
+            - @push.builder
             - @push.pusher
             - @push.serverCommand
             - @utility.process.builder= # = signifies a prototype service
@@ -244,6 +245,12 @@ services:
             - @utility.process.builder= # = signifies a prototype service
             - @utility.filesystem
             - @utility.yamlDumper
+    push.builder:
+        class: 'QL\Hal\Agent\Push\Builder'
+        arguments:
+            - @logger.command
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.push.build%
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
@@ -256,7 +263,7 @@ services:
             - @logger.command
             - @utility.process.builder= # = signifies a prototype service
             - %push.sshUser%
-            - %timeout.pushCommand%
+            - %timeout.push.serverCommand%
 
     ####################################################################################################################
     # github

@@ -127,6 +127,7 @@ class Resolver
             'archiveFile' => $this->generateBuildArchive($build->getId()),
             'buildPath' => $this->generatePushPath($push->getId()),
 
+            'buildCommand' => '',
             'prePushCommand' => $repository->getPrePushCmd(),
             'postPushCommand' => $repository->getPostPushCmd(),
 
