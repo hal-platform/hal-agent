@@ -1,12 +1,9 @@
 imports:
-    -
-        resource: ../vendor/ql/hal-core/config/di.yml
-    -
-        resource: di.yml
-    -
-        resource: parameters.yml
-    -
-        resource: config.env.yml
+    - resource: ../vendor/ql/hal-core/config/di.yml
+    - resource: di.yml
+    - resource: di.logging.yml
+    - resource: parameters.yml
+    - resource: config.env.yml
 
 parameters:
     application.name: 'HAL 9000 Agent'

@@ -9,165 +9,160 @@ services:
         factory_method: 'createAnnotationMetadataConfiguration'
         arguments:
             - ['@doctrine.mapping']
-            - '%doctrine.devmode%'
-            - '@doctrine.proxyDir'
+            - %doctrine.devmode%
+            - @doctrine.proxyDir
     doctrine.proxyDir:
         class: 'DOES_NOT_MATTER'
         factory_class: 'QL\Hal\Agent\Helper\StringSmusher'
         factory_method: 'smush'
-        arguments: ['@root', '/.doctrine']
+        arguments: [@root, '/.doctrine']
 
     application:
         class: 'Symfony\Component\Console\Application'
-        arguments:
-            - '%application.name%'
-            - '%application.version%'
+        arguments: [%application.name%, %application.version%]
         calls:
-            - ['add', ['@lazy.command.build.create']]
-            - ['add', ['@lazy.command.build.build']]
-            - ['add', ['@lazy.command.build.remove']]
-            - ['add', ['@lazy.command.push.create']]
-            - ['add', ['@lazy.command.push.push']]
-            - ['add', ['@lazy.command.builds.list']]
-            - ['add', ['@lazy.command.worker.build']]
-            - ['add', ['@lazy.command.worker.push']]
-            - ['setDispatcher', ['@dispatcher']]
+            - ['add', [@lazy.command.build.create]]
+            - ['add', [@lazy.command.build.build]]
+            - ['add', [@lazy.command.build.remove]]
+            - ['add', [@lazy.command.push.create]]
+            - ['add', [@lazy.command.push.push]]
+            - ['add', [@lazy.command.builds.list]]
+            - ['add', [@lazy.command.worker.build]]
+            - ['add', [@lazy.command.worker.push]]
+            - ['setDispatcher', [@dispatcher]]
     dispatcher:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
-            - ['addSubscriber', ['@logger.mcp.subscriber']]
-            - ['addSubscriber', ['@monolog.handler.console']]
-            - ['addSubscriber', ['@utility.exceptionHandler']]
+            - ['addSubscriber', [@logger.mcp.subscriber]]
+            - ['addSubscriber', [@monolog.handler.console]]
+            - ['addSubscriber', [@utility.exceptionHandler]]
 
     clock:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
-    # This is a buffered, group logger that formats and distributes log messages.
-    # It's primary usage is for during builds and pushes.
-    # Error messages and other abnormal log messages should be sent direct to the mcp logger.
-    logger.command:
-        class: 'QL\Hal\Agent\Logger\CommandLogger'
-        arguments:
-            - '@monolog'
-            - '@monolog.handler.buffer'
-            - '@emailer.message'
-            - '%email.subjects%'
-
+    ####################################################################################################################
     # lazy commands
+    ####################################################################################################################
+
     lazy.command.build.create:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['build:create', 'command.build.create', '@service_container']
+        arguments: ['build:create', 'command.build.create', @service_container]
     lazy.command.build.build:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['build:build', 'command.build.build', '@service_container']
+        arguments: ['build:build', 'command.build.build', @service_container]
     lazy.command.build.remove:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['build:remove', 'command.build.remove', '@service_container']
+        arguments: ['build:remove', 'command.build.remove', @service_container]
 
     lazy.command.push.create:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['push:create', 'command.push.create', '@service_container']
+        arguments: ['push:create', 'command.push.create', @service_container]
     lazy.command.push.push:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['push:push', 'command.push.push', '@service_container']
+        arguments: ['push:push', 'command.push.push', @service_container]
 
     lazy.command.builds.list:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['builds:list', 'command.builds.list', '@service_container']
+        arguments: ['builds:list', 'command.builds.list', @service_container]
 
     lazy.command.worker.build:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['worker:build', 'command.worker.build', '@service_container']
+        arguments: ['worker:build', 'command.worker.build', @service_container]
     lazy.command.worker.push:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['worker:push', 'command.worker.push', '@service_container']
+        arguments: ['worker:push', 'command.worker.push', @service_container]
 
+    ####################################################################################################################
     # commands
+    ####################################################################################################################
+
     command.build.create:
         class: 'QL\Hal\Agent\Command\CreateBuildCommand'
         arguments:
             - 'build:create'
-            - '@doctrine.em'
-            - '@clock'
-            - '@repository.repo'
-            - '@environment.repo'
-            - '@user.repo'
-            - '@utility.referenceResolver'
+            - @doctrine.em
+            - @clock
+            - @repository.repo
+            - @environment.repo
+            - @user.repo
+            - @utility.referenceResolver
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - '@logger.command'
-            - '@doctrine.em'
-            - '@clock'
-            - '@build.resolver'
-            - '@build.downloader'
-            - '@build.unpacker'
-            - '@build.builder'
-            - '@build.packer'
-            - '@utility.helper.downloadProgress'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - @logger.command
+            - @doctrine.em
+            - @clock
+            - @build.resolver
+            - @build.downloader
+            - @build.unpacker
+            - @build.builder
+            - @build.packer
+            - @utility.helper.downloadProgress
+            - @utility.process.builder= # = signifies a prototype service
     command.build.remove:
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
             - 'build:remove'
-            - '@doctrine.em'
-            - '@build.repo'
-            - '@utility.filesystem'
-            - '%environment.archive%'
+            - @doctrine.em
+            - @build.repo
+            - @utility.filesystem
+            - %environment.archive%
     command.builds.list:
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
             - 'builds:list'
-            - '@build.repo'
-            - '@utility.filesystem'
-            - '%environment.archive%'
+            - @build.repo
+            - @utility.filesystem
+            - %environment.archive%
     command.push.create:
         class: 'QL\Hal\Agent\Command\CreatePushCommand'
         arguments:
             - 'push:create'
-            - '@doctrine.em'
-            - '@clock'
-            - '@build.repo'
-            - '@deployment.repo'
-            - '@user.repo'
+            - @doctrine.em
+            - @clock
+            - @build.repo
+            - @deployment.repo
+            - @user.repo
     command.push.push:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - '@logger.command'
-            - '@doctrine.em'
-            - '@clock'
-            - '@push.resolver'
-            - '@push.unpacker'
-            - '@push.pusher'
-            - '@push.serverCommand'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - @logger.command
+            - @doctrine.em
+            - @clock
+            - @push.resolver
+            - @push.unpacker
+            - @push.pusher
+            - @push.serverCommand
+            - @utility.process.builder= # = signifies a prototype service
     command.worker.build:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
             - 'build:build'
-            - '@build.repo'
-            - '@doctrine.em'
-            - '@utility.forker'
-            - '@logger.mcp'
+            - @build.repo
+            - @doctrine.em
+            - @utility.forker
+            - @logger.mcp
     command.worker.push:
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
             - 'push:push'
-            - '@push.repo'
-            - '@doctrine.em'
-            - '@utility.forker'
-            - '@logger.mcp'
+            - @push.repo
+            - @doctrine.em
+            - @utility.forker
+            - @logger.mcp
 
+    ####################################################################################################################
     # utility
+    ####################################################################################################################
+
     utility.helper.downloadProgress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
-        arguments:
-            - '@github.guzzleHttpClient'
+        arguments: [@github.guzzleHttpClient]
     utility.yamlDumper:
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
@@ -182,215 +177,113 @@ services:
     utility.referenceResolver:
         class: 'QL\Hal\Agent\Github\ReferenceResolver'
         arguments:
-            - '@github.references'
-            - '@github.commits'
-            - '@github.pullRequests'
+            - @github.references
+            - @github.commits
+            - @github.pullRequests
     utility.forker:
         class: 'QL\Hal\Agent\Helper\ForkHelper'
     utility.exceptionHandler:
         class: 'QL\Hal\Agent\Helper\ExceptionHandlerSubscriber'
-        arguments: ['@logger.mcp']
+        arguments: [@logger.mcp]
 
+    ####################################################################################################################
     # build actions
+    ####################################################################################################################
+
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - '@logger.command'
-            - '@build.repo'
-            - '%environment.path%'
-            - '%environment.archive%'
+            - @logger.command
+            - @build.repo
+            - %environment.path%
+            - %environment.archive%
         calls:
             - ['setBaseBuildDirectory', ['%environment.temp%']]
             - ['setHomeDirectory', ['%environment.home%']]
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
-        arguments:
-            - '@logger.command'
-            - '@github.archive'
+        arguments: [@logger.command, @github.archive]
     build.unpacker:
         class: 'QL\Hal\Agent\Build\Unpacker'
-        arguments:
-            - '@logger.command'
-            - '@utility.process.builder=' # = signifies a prototype service
+        arguments: [@logger.command, @utility.process.builder=] # = signifies a prototype service
     build.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
         arguments:
-            - '@logger.command'
-            - '@utility.filesystem'
-            - '%github.com.token%'
+            - @logger.command
+            - @utility.filesystem
+            - %github.com.token%
     build.builder:
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
-            - '@logger.command'
-            - '@utility.process.builder=' # = signifies a prototype service
-            - '@build.preparer'
+            - @logger.command
+            - @utility.process.builder= # = signifies a prototype service
+            - @build.preparer
             - %timeout.build%
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
-        arguments:
-            - '@logger.command'
-            - '@utility.process.builder=' # = signifies a prototype service
+        arguments: [@logger.command, @utility.process.builder=] # = signifies a prototype service
 
+    ####################################################################################################################
     # push actions
+    ####################################################################################################################
+
     push.resolver:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
-            - '@logger.command'
-            - '@push.repo'
-            - '@clock'
-            - '%push.sshUser%'
-            - '%environment.archive%'
+            - @logger.command
+            - @push.repo
+            - @clock
+            - %push.sshUser%
+            - %environment.archive%
         calls:
             - ['setBaseBuildDirectory', ['%environment.temp%']]
     push.unpacker:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
-            - '@logger.command'
-            - '@utility.process.builder=' # = signifies a prototype service
-            - '@utility.filesystem'
-            - '@utility.yamlDumper'
+            - @logger.command
+            - @utility.process.builder= # = signifies a prototype service
+            - @utility.filesystem
+            - @utility.yamlDumper
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
-        arguments:
-            - '@logger.command'
-            - '@utility.process.builder=' # = signifies a prototype service
+        arguments: [@logger.command, @utility.process.builder=] # = signifies a prototype service
     push.serverCommand:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
-            - '@logger.command'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - @logger.command
+            - @utility.process.builder= # = signifies a prototype service
             - %push.sshUser%
             - %timeout.pushCommand%
 
-    # github services
+    ####################################################################################################################
+    # github
+    ####################################################################################################################
+
     github.archive:
         class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments:
-            - '@github.client'
-            - '@utility.filesystem'
+        arguments: [@github.client, @utility.filesystem]
     github.references:
         class: 'Github\Api\GitData\References'
-        arguments:
-            - '@github.client'
+        arguments: [@github.client]
     github.commits:
         class: 'Github\Api\GitData\Commits'
-        arguments:
-            - '@github.client'
+        arguments: [@github.client]
     github.pullRequests:
         class: 'Github\Api\PullRequest'
-        arguments:
-            - '@github.client'
+        arguments: [@github.client]
 
     github.client:
         class: 'Github\Client'
-        arguments: ['@github.httpClient']
+        arguments: [@github.httpClient]
     github.httpClient:
         class: 'Github\HttpClient\HttpClient'
-        arguments: [[], '@github.guzzleHttpClient']
+        arguments: [[], @github.guzzleHttpClient]
         calls:
-            - ['authenticate', ['%github.token%', null, 'http_token']]
+            - ['authenticate', [%github.token%, null, 'http_token']]
     github.guzzleHttpClient:
         class: 'Guzzle\Http\Client'
         arguments:
-            - '%github.baseurl%'
+            - %github.baseurl%
             -
                 curl.options:
                     progress: true
-
-    # logger services
-    # the amount of handlers is ridiculous
-    monolog:
-        class: 'Monolog\Logger'
-        arguments: ['hal9000']
-        calls:
-            - ['pushHandler', ['@monolog.handler.console']]
-            - ['pushHandler', ['@monolog.handler.buffer']]
-    monolog.handler.buffer:
-        class: 'QL\Hal\Agent\Logger\BufferHandler'
-        arguments:
-            - '@monolog.handler.group'
-    monolog.handler.group:
-        class: 'Monolog\Handler\GroupHandler'
-        arguments:
-            - ['@monolog.handler.parent', '@monolog.handler.swiftmailer']
-
-    # mcp handler
-    monolog.handler.parent:
-        class: 'QL\Hal\Agent\Logger\ParentLogHandler'
-        arguments: ['@logger.mcp']
-        calls:
-            - ['setFormatter', ['@monolog.formatter.textFormatter']]
-
-    # email handler
-    monolog.handler.swiftmailer:
-        class: 'Monolog\Handler\SwiftMailerHandler'
-        arguments:
-            - '@emailer'
-            - '@emailer.message'
-            - '100'
-        calls:
-            - ['setFormatter', ['@monolog.handler.swiftmailer.formatter']]
-    monolog.handler.swiftmailer.formatter:
-        class: 'QL\Hal\Agent\Logger\HtmlFormatter'
-
-    # console handler
-    monolog.handler.console:
-        class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
-
-    monolog.formatter.textFormatter:
-        class: 'QL\Hal\Agent\Logger\TextFormatter'
-        arguments: ['', '', true]
-
-    logger.mcp.subscriber:
-        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
-        arguments: ['@logger.mcp.factory']
-
-    # emailer services
-    emailer:
-        class: 'Swift_Mailer'
-        arguments: ['@emailer.transport']
-    emailer.transport:
-        class: 'Swift_SmtpTransport'
-        arguments: ['%email.server%']
-    emailer.message:
-        class: 'Swift_Message'
-        calls:
-            - ['setFrom', ['%email.from%', 'HAL9000']]
-            - ['setReplyTo', ['%email.reply%']]
-            - ['setCc', ['%email.notify%']]
-            - ['setContentType', ['text/html']]
-            - ['setSubject', ['Critical Error']]
-            # to, subject will be set at runtime
-
-    # mcp logger
-    logger.mcp:
-        class: 'MCP\Service\Logger\Logger'
-        arguments: ['@logger.mcp.service', '@logger.mcp.factory']
-
-    logger.mcp.service:
-        class: 'MCP\Service\Logger\Service\GuzzleService'
-        arguments: ['@logger.mcp.guzzle', '@logger.mcp.renderer', true]
-    logger.mcp.guzzle:
-        class: 'Guzzle\Http\Client'
-        arguments: ['%logger.mcp.host%']
-    logger.mcp.renderer:
-        class: 'MCP\Service\Logger\Renderer\XmlRenderer'
-        arguments: ['@logger.mcp.writer']
-    logger.mcp.writer:
-        class: 'XMLWriter'
-
-    logger.mcp.factory:
-        class: 'MCP\Service\Logger\Adapter\Psr\MessageFactory'
-        arguments: ['@clock']
-        calls:
-          - ['setDefaultProperty', ['applicationId', '%application.id%']]
-          # replaced at runtime, maybe
-          - ['setDefaultProperty', ['machineIPAddress', '@logger.mcp.serverIp']]
-          # replaced at runtime
-          - ['setDefaultProperty', ['machineName', 'localhost']]
-    logger.mcp.serverIp:
-        class: 'MCP\DataType\IPv4Address'
-        factory_class: 'MCP\DataType\IPv4Address'
-        factory_method: 'create'
-        arguments: ['0.0.0.0']
-

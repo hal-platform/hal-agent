@@ -1,0 +1,108 @@
+services:
+
+    # This is a buffered, group logger that formats and distributes log messages.
+    # It's primary usage is for during builds and pushes.
+    # Error messages and other abnormal log messages should be sent direct to the mcp logger.
+    logger.command:
+        class: 'QL\Hal\Agent\Logger\CommandLogger'
+        arguments:
+            - @monolog
+            - @monolog.handler.buffer
+            - @emailer.message
+            - %email.subjects%
+
+    # logger services
+    # the amount of handlers is ridiculous
+    monolog:
+        class: 'Monolog\Logger'
+        arguments: ['hal9000']
+        calls:
+            - ['pushHandler', [@monolog.handler.console]]
+            - ['pushHandler', [@monolog.handler.buffer]]
+    monolog.handler.buffer:
+        class: 'QL\Hal\Agent\Logger\BufferHandler'
+        arguments: [@monolog.handler.group]
+    monolog.handler.group:
+        class: 'Monolog\Handler\GroupHandler'
+        arguments:
+            - [@monolog.handler.parent, @monolog.handler.swiftmailer]
+
+    # mcp handler
+    monolog.handler.parent:
+        class: 'QL\Hal\Agent\Logger\ParentLogHandler'
+        arguments: [@logger.mcp]
+        calls:
+            - ['setFormatter', [@monolog.formatter.textFormatter]]
+
+    # email handler
+    monolog.handler.swiftmailer:
+        class: 'Monolog\Handler\SwiftMailerHandler'
+        arguments:
+            - @emailer
+            - @emailer.message
+            - '100'
+        calls:
+            - ['setFormatter', [@monolog.handler.swiftmailer.formatter]]
+    monolog.handler.swiftmailer.formatter:
+        class: 'QL\Hal\Agent\Logger\HtmlFormatter'
+
+    # console handler
+    monolog.handler.console:
+        class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
+
+    monolog.formatter.textFormatter:
+        class: 'QL\Hal\Agent\Logger\TextFormatter'
+        arguments: ['', '', true]
+
+    logger.mcp.subscriber:
+        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
+        arguments: [@logger.mcp.factory]
+
+    # emailer services
+    emailer:
+        class: 'Swift_Mailer'
+        arguments: [@emailer.transport]
+    emailer.transport:
+        class: 'Swift_SmtpTransport'
+        arguments: [%email.server%]
+    emailer.message:
+        class: 'Swift_Message'
+        calls:
+            - ['setFrom', [%email.from%, 'HAL9000']]
+            - ['setReplyTo', [%email.reply%]]
+            - ['setCc', [%email.notify%]]
+            - ['setContentType', ['text/html']]
+            - ['setSubject', ['Critical Error']]
+            # to, subject will be set at runtime
+
+    # mcp logger
+    logger.mcp:
+        class: 'MCP\Service\Logger\Logger'
+        arguments: [@logger.mcp.service, @logger.mcp.factory]
+
+    logger.mcp.service:
+        class: 'MCP\Service\Logger\Service\GuzzleService'
+        arguments: [@logger.mcp.guzzle, @logger.mcp.renderer, true]
+    logger.mcp.guzzle:
+        class: 'Guzzle\Http\Client'
+        arguments: [%logger.mcp.host%]
+    logger.mcp.renderer:
+        class: 'MCP\Service\Logger\Renderer\XmlRenderer'
+        arguments: [@logger.mcp.writer]
+    logger.mcp.writer:
+        class: 'XMLWriter'
+
+    logger.mcp.factory:
+        class: 'MCP\Service\Logger\Adapter\Psr\MessageFactory'
+        arguments: [@clock]
+        calls:
+          - ['setDefaultProperty', ['applicationId', %application.id%]]
+          # replaced at runtime, maybe
+          - ['setDefaultProperty', ['machineIPAddress', @logger.mcp.serverIp]]
+          # replaced at runtime
+          - ['setDefaultProperty', ['machineName', 'localhost']]
+    logger.mcp.serverIp:
+        class: 'MCP\DataType\IPv4Address'
+        factory_class: 'MCP\DataType\IPv4Address'
+        factory_method: 'create'
+        arguments: ['0.0.0.0']
