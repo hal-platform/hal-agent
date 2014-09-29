@@ -9,21 +9,3 @@ parameters:
     timeout.push: 300
     timeout.push.serverCommand: 300
     timeout.push.build: 300
-
-    # An associative array of email/log subject templates:
-
-    # The following templates can be customized:
-    # - email.build
-    # - email.push
-    # - log.build
-    # - log.push
-
-    # Available tokens:
-    # - buildId
-    # - pushId
-    # - github
-    # - repository
-    # - server
-    # - environment
-    # - status
-    email.subjects: []

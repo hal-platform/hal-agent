@@ -62,9 +62,9 @@ class CommandLoggerTest extends PHPUnit_Framework_TestCase
 
         $message = $this->logger[0];
         $this->assertSame('info', $message[0]);
-        $this->assertSame('repo (unittest) - Build - SUCCESS', $message[1]);
+        $this->assertSame('repo (unittest)', $message[1]);
 
-        $this->assertSame('repo (unittest) - Build - [SUCCESS]', $this->message->getSubject());
+        $this->assertSame('repo (unittest)', $this->message->getSubject());
     }
 
     public function testFailureMessageIsBuiltAndHandlerFlushed()
@@ -93,8 +93,8 @@ class CommandLoggerTest extends PHPUnit_Framework_TestCase
 
         $message = $this->logger[0];
         $this->assertSame('critical', $message[0]);
-        $this->assertSame('repo (unittest:servername) - Push - FAILURE', $message[1]);
+        $this->assertSame('repo (unittest:servername)', $message[1]);
 
-        $this->assertSame('repo (unittest:servername) - Push - [FAILURE]', $this->message->getSubject());
+        $this->assertSame('repo (unittest:servername)', $this->message->getSubject());
     }
 }
