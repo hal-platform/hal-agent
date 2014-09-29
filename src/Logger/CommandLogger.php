@@ -98,6 +98,8 @@ class CommandLogger extends AbstractLogger
      */
     public function failure($entity, array $context = [])
     {
+        $this->prepareMessage($entity);
+
         if ($entity instanceof Build) {
             return $this->finishBuild($entity, $context, false);
         }
@@ -105,73 +107,6 @@ class CommandLogger extends AbstractLogger
         if ($entity instanceof Push) {
             return $this->finishPush($entity, $context, false);
         }
-    }
-
-    /**
-     * @param Build $build
-     * @param array $context
-     * @param boolean $isSuccess
-     * @return null
-     */
-    private function finishBuild(Build $build, array $context, $isSuccess)
-    {
-        $props = $this->buildProperties($build, $isSuccess);
-
-        // prepare email message
-        $emailSubject = $this->replaceTokens(
-            $this->getSubject('email.build', self::BUILD_EMAIL_SUBJECT),
-            $props
-        );
-        $this->message->setSubject($emailSubject);
-        if ($notifyEmail = $build->getRepository()->getEmail()) {
-            $this->message->setTo($notifyEmail);
-        }
-
-        // send final log
-        $level = ($isSuccess) ? 'info' : 'critical';
-        $this->logger->$level(
-            $this->replaceTokens($this->getSubject('log.build', self::BUILD_SUBJECT), $props),
-            array_merge($context, $props)
-        );
-
-        // flush log buffer
-        $this->buffer->flush();
-    }
-
-    /**
-     * @param Build $push
-     * @param array $context
-     * @param boolean $isSuccess
-     * @return null
-     */
-    private function finishPush(Push $push, array $context, $isSuccess)
-    {
-        $build = $push->getBuild();
-        $server = $push->getDeployment()->getServer();
-        $props = array_merge($this->buildProperties($build, $isSuccess), [
-            'pushId' => $push->getId(),
-            'server' => $server->getName()
-        ]);
-
-        // prepare email message
-        $emailSubject = $this->replaceTokens(
-            $this->getSubject('email.push', self::PUSH_EMAIL_SUBJECT),
-            $props
-        );
-        $this->message->setSubject($emailSubject);
-        if ($notifyEmail = $build->getRepository()->getEmail()) {
-            $this->message->setTo($notifyEmail);
-        }
-
-        // prepare final log
-        $level = ($isSuccess) ? 'info' : 'critical';
-        $this->logger->$level(
-            $this->replaceTokens($this->getSubject('log.push', self::PUSH_SUBJECT), $props),
-            array_merge($context, $props)
-        );
-
-        // flush log buffer
-        $this->buffer->flush();
     }
 
     /**
@@ -202,6 +137,94 @@ class CommandLogger extends AbstractLogger
     }
 
     /**
+     * @param Build $build
+     * @param array $context
+     * @param boolean $isSuccess
+     * @return null
+     */
+    private function finishBuild(Build $build, array $context, $isSuccess)
+    {
+        $props = $this->buildProperties($build, $isSuccess);
+
+        // prepare email message
+        $emailSubject = $this->replaceTokens(
+            $this->getSubject('email.build', self::BUILD_EMAIL_SUBJECT),
+            $props
+        );
+        $this->message->setSubject($emailSubject);
+
+        // send final log
+        $level = ($isSuccess) ? 'info' : 'critical';
+        $this->logger->$level(
+            $this->replaceTokens($this->getSubject('log.build', self::BUILD_SUBJECT), $props),
+            array_merge($context, $props)
+        );
+
+        // flush log buffer
+        $this->buffer->flush();
+    }
+
+    /**
+     * @param Push $push
+     * @param array $context
+     * @param boolean $isSuccess
+     * @return null
+     */
+    private function finishPush(Push $push, array $context, $isSuccess)
+    {
+        $props = $this->pushProperties($push, $isSuccess);
+
+        // prepare email message
+        $emailSubject = $this->replaceTokens(
+            $this->getSubject('email.push', self::PUSH_EMAIL_SUBJECT),
+            $props
+        );
+        $this->message->setSubject($emailSubject);
+
+        // prepare final log
+        $level = ($isSuccess) ? 'info' : 'critical';
+        $this->logger->$level(
+            $this->replaceTokens($this->getSubject('log.push', self::PUSH_SUBJECT), $props),
+            array_merge($context, $props)
+        );
+
+        // flush log buffer
+        $this->buffer->flush();
+    }
+
+    /**
+     * @param string $key
+     * @param string $default
+     * @return string
+     */
+    private function getSubject($key, $default)
+    {
+        if (isset($this->subjects[$key])) {
+            return $this->subjects[$key];
+        }
+
+        return $default;
+    }
+
+    /**
+     * @param Push $push
+     * @param boolean $isSuccess
+     * @return array
+     */
+    private function pushProperties(Push $push, $isSuccess)
+    {
+        $buildProperties = $this->buildProperties($push->getBuild(), $isSuccess);
+        $server = $push->getDeployment()->getServer();
+
+        $props = array_merge($buildProperties, [
+            'pushId' => $push->getId(),
+            'server' => $server->getName()
+        ]);
+
+        return $props;
+    }
+
+    /**
      * @param string $message
      * @param array $properties
      * @return string
@@ -219,16 +242,16 @@ class CommandLogger extends AbstractLogger
     }
 
     /**
-     * @param string $key
-     * @param string $default
-     * @return string
+     * @param Build|Push $entity
+     * @return null
      */
-    private function getSubject($key, $default)
+    private function prepareMessage($entity)
     {
-        if (isset($this->subjects[$key])) {
-            return $this->subjects[$key];
-        }
+        $build = ($entity instanceof Push) ? $entity->getBuild() : $entity;
 
-        return $default;
+        // Add repo group notification
+        if ($notifyEmail = $build->getRepository()->getEmail()) {
+            $this->message->setTo($notifyEmail);
+        }
     }
 }
