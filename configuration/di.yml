@@ -91,7 +91,6 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - @logger.command
             - @doctrine.em
             - @clock
             - @build.resolver
@@ -101,6 +100,8 @@ services:
             - @build.packer
             - @utility.helper.downloadProgress
             - @utility.process.builder= # = signifies a prototype service
+        calls:
+            - ['addCommandLogging', [@logger, @monolog.handler.buffer, @logger.resolver]]
     command.build.remove:
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
@@ -129,7 +130,6 @@ services:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - @logger.command
             - @doctrine.em
             - @clock
             - @push.resolver
@@ -138,6 +138,8 @@ services:
             - @push.pusher
             - @push.serverCommand
             - @utility.process.builder= # = signifies a prototype service
+        calls:
+            - ['addCommandLogging', [@logger, @monolog.handler.buffer, @logger.resolver]]
     command.worker.build:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
@@ -194,7 +196,7 @@ services:
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - @logger.command
+            - @logger
             - @build.repo
             - %environment.path%
             - %environment.archive%
@@ -210,19 +212,19 @@ services:
     build.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
         arguments:
-            - @logger.command
+            - @logger
             - @utility.filesystem
             - %github.com.token%
     build.builder:
         class: 'QL\Hal\Agent\Build\Builder'
         arguments:
-            - @logger.command
+            - @logger
             - @utility.process.builder= # = signifies a prototype service
             - @build.preparer
             - %timeout.build%
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
-        arguments: [@logger.command, @utility.process.builder=] # = signifies a prototype service
+        arguments: [@logger, @utility.process.builder=] # = signifies a prototype service
 
     ####################################################################################################################
     # push actions
@@ -231,7 +233,7 @@ services:
     push.resolver:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
-            - @logger.command
+            - @logger
             - @push.repo
             - @clock
             - %push.sshUser%
@@ -241,26 +243,26 @@ services:
     push.unpacker:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
-            - @logger.command
+            - @logger
             - @utility.process.builder= # = signifies a prototype service
             - @utility.filesystem
             - @utility.yamlDumper
     push.builder:
         class: 'QL\Hal\Agent\Push\Builder'
         arguments:
-            - @logger.command
+            - @logger
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push.build%
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
-            - @logger.command
+            - @logger
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push%
     push.serverCommand:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
-            - @logger.command
+            - @logger
             - @utility.process.builder= # = signifies a prototype service
             - %push.sshUser%
             - %timeout.push.serverCommand%

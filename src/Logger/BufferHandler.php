@@ -10,15 +10,30 @@ namespace QL\Hal\Agent\Logger;
 use Monolog\Handler\BufferHandler as BaseBufferHandler;
 
 /**
- * This is a custom buffer handler which does not attach any callbacks to onshutdown.
- *
- * To trigger log handling, it MUST be flushed.
+ * This is a custom buffer handler which allows a callable to be set to fire when the buffer is closed out.
  */
 class BufferHandler extends BaseBufferHandler
 {
-    protected $initialized = true;
+    private $command;
 
+    /**
+     * {@inheritdoc}
+     */
     public function close()
     {
+        if ($this->bufferSize > 0 && $this->command !== null) {
+            call_user_func($this->command);
+        }
+
+        $this->flush();
+    }
+
+    /**
+     * @param callable $command
+     * @return null
+     */
+    public function setCommandOnFlush(callable $command)
+    {
+        $this->command = $command;
     }
 }

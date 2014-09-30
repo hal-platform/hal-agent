@@ -7,16 +7,28 @@
 
 namespace QL\Hal\Agent\Logger;
 
-use Monolog\Formatter\NormalizerFormatter;
 use Monolog\Logger;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Push;
 
-class HtmlFormatter extends NormalizerFormatter
+/**
+ * Standard Monolog Record:
+ *
+ * message:     (string)    $message
+ * context:     (array)     $context
+ * level:       (int)       $level
+ * level_name:  (string)    $levelName
+ * channel:     (string)    $name
+ * datetime:    (DateTime)  $datetime
+ * extra:       (array)     $extra
+ */
+class HtmlEmailFormatter implements FormatterInterface
 {
     /**
      * Table markup
      * replacements: rows
      *
-     * @var string
+     * @type string
      */
     const TABLE = <<<'HTML'
 <table cellspacing="1" cellpadding="5" border="0" style="padding: 10px auto;width: 100%%">
@@ -29,7 +41,7 @@ HTML;
      * Title row. The minimum markup for a single message.
      * replacements: color, level, message
      *
-     * @var string
+     * @type string
      */
     const TITLE_ROW = <<<'FORMAT'
     <tr style="background: %1$s;font-weight: bold; font-size: 1.25em;">
@@ -43,7 +55,7 @@ FORMAT;
      * Table markup
      * replacements: property, value
      *
-     * @var string
+     * @type string
      */
     const CONTEXT_ROW = <<<'FORMAT'
     <tr style="background: #eee;">
@@ -58,7 +70,7 @@ FORMAT;
     /**
      * Log level colors
      *
-     * @var array
+     * @type array
      */
     protected static $colors = [
         Logger::DEBUG     => '#cccccc',
@@ -72,43 +84,26 @@ FORMAT;
     ];
 
     /**
-     * Formats a log record.
-     *
-     * @param array $record A record to format
-     * @param boolean $rowsOnly if true, only rows will be returned, without the table.
-     * @return string
+     * @type Normalizer
      */
-    public function format(array $record, $rowsOnly = false)
+    private $normalizer;
+
+    /**
+     * @param Normalizer $normalizer
+     */
+    public function __construct(Normalizer $normalizer)
     {
-        $rows = [
-            $this->addTitle($record),
-            $this->addRow('time', $record['datetime'])
-        ];
-
-        foreach ($record['context'] as $key => $data) {
-            $rows[] = $this->addRow($key, $data);
-        }
-
-        $html = implode("\n", $rows);
-        if ($rowsOnly) {
-            return $html;
-        }
-
-        return sprintf(static::TABLE, $html);
+        $this->normalizer = $normalizer;
     }
 
     /**
      * {@inheritdoc}
-     * @return string
      */
-    public function formatBatch(array $records)
+    public function format(array $master, array $records)
     {
-        $html = '';
-        foreach ($records as $record) {
-            $html .= $this->format($record, true);
-        }
+        $master['message'] = $this->formatMaster($master) . $this->formatRecords($records);
 
-        return sprintf(static::TABLE, $html);
+        return $master;
     }
 
     /**
@@ -116,7 +111,7 @@ FORMAT;
      * @param string $data
      * @return string
      */
-    protected function addRow($name, $data)
+    private function addRow($name, $data)
     {
         return sprintf(
             static::CONTEXT_ROW,
@@ -129,7 +124,7 @@ FORMAT;
      * @param array $record
      * @return string
      */
-    protected function addTitle(array $record)
+    private function addTitle(array $record)
     {
         return sprintf(
             static::TITLE_ROW,
@@ -140,16 +135,63 @@ FORMAT;
     }
 
     /**
-     * Normalize a value for html.
-     *
+     * @param array $master
+     * @return string
+     */
+    private function formatMaster(array $master)
+    {
+        $html = $this->formatRecord($master);
+        return sprintf(static::TABLE, $html);
+    }
+
+    /**
+     * @param array $record
+     * @return string
+     */
+    private function formatRecord(array $record)
+    {
+        $rows = [
+            $this->addTitle($record),
+            $this->addRow('time', $this->normalize($record['datetime']))
+        ];
+
+        if ($record['context']) {
+            $rows[] = $this->addRow('data', $this->normalize($record['context']));
+        }
+
+        $html = implode("\n", $rows);
+
+        return $html;
+    }
+
+    /**
+     * @param array $records
+     * @return string
+     */
+    private function formatRecords(array $records)
+    {
+        if (count($records) === 0) {
+            return '';
+        }
+
+        $html = '';
+        foreach ($records as $record) {
+            $html .= $this->formatRecord($record);
+        }
+
+        return sprintf(static::TABLE, $html);
+    }
+
+    /**
      * @param mixed $data
      * @return string
      */
-    protected function normalize($data)
+    private function normalize($data)
     {
-        $data = parent::normalize($data);
+        $data = $this->normalizer->normalize($data);
+
         if (is_array($data)) {
-            $data = $this->toJson($data);
+            $data = $this->normalizer->flatten($data);
         }
 
         return htmlspecialchars($data, ENT_NOQUOTES, 'UTF-8');

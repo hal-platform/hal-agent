@@ -15,7 +15,6 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class PushCommandTest extends PHPUnit_Framework_TestCase
 {
-    public $logger;
     public $em;
     public $clock;
     public $resolver;
@@ -30,7 +29,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\CommandLogger', ['notice' => null]);
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->clock = new Clock('now', 'UTC');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
@@ -56,7 +54,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new PushCommand(
             'cmd',
-            $this->logger,
             $this->em,
             $this->clock,
             $this->resolver,
@@ -140,10 +137,6 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
-        $this->logger
-            ->shouldReceive('success')
-            ->once();
-
         // cleanup
         $this->processBuilder
             ->shouldReceive('getProcess->run')
@@ -151,7 +144,6 @@ OUTPUT;
 
         $command = new PushCommand(
             'cmd',
-            $this->logger,
             $this->em,
             $this->clock,
             $this->resolver,
@@ -240,10 +232,6 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
-        $this->logger
-            ->shouldReceive('success')
-            ->once();
-
         // cleanup
         $this->processBuilder
             ->shouldReceive('getProcess->run')
@@ -251,7 +239,6 @@ OUTPUT;
 
         $command = new PushCommand(
             'cmd',
-            $this->logger,
             $this->em,
             $this->clock,
             $this->resolver,

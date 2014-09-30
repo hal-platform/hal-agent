@@ -12,52 +12,79 @@ services:
 
     # logger services
     # the amount of handlers is ridiculous
+
+    # COMMAND logger
+    #  - monolog is the logger
+    #     - has two handlers:
+    #         - console handler (for sending logs to stdout)
+    #         - buffer handler (for buffering logs)
+    #             - has group handler (for sending logs to multiple handlers)
+    #                 - has parent handler
+    #                     - has text formatter
+    #                 - has email handler
+    #                     - has html formatter
+
+    logger: @monolog
+
     monolog:
         class: 'Monolog\Logger'
         arguments: ['hal9000']
         calls:
             - ['pushHandler', [@monolog.handler.console]]
             - ['pushHandler', [@monolog.handler.buffer]]
-    monolog.handler.buffer:
-        class: 'QL\Hal\Agent\Logger\BufferHandler'
-        arguments: [@monolog.handler.group]
-    monolog.handler.group:
-        class: 'Monolog\Handler\GroupHandler'
-        arguments:
-            - [@monolog.handler.parent, @monolog.handler.swiftmailer]
 
-    # mcp handler
-    monolog.handler.parent:
-        class: 'QL\Hal\Agent\Logger\ParentLogHandler'
-        arguments: [@logger.mcp]
-        calls:
-            - ['setFormatter', [@monolog.formatter.textFormatter]]
+    ####################################################################################################################
+    # monolog handlers
+    ####################################################################################################################
 
-    # email handler
-    monolog.handler.swiftmailer:
-        class: 'Monolog\Handler\SwiftMailerHandler'
-        arguments:
-            - @emailer
-            - @emailer.message
-            - '100'
-        calls:
-            - ['setFormatter', [@monolog.handler.swiftmailer.formatter]]
-    monolog.handler.swiftmailer.formatter:
-        class: 'QL\Hal\Agent\Logger\HtmlFormatter'
-
-    # console handler
     monolog.handler.console:
         class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
 
-    monolog.formatter.textFormatter:
-        class: 'QL\Hal\Agent\Logger\TextFormatter'
-        arguments: ['', '', true]
+    # custom buffer handler that can run a custom callback before close
+    monolog.handler.buffer:
+        class: 'QL\Hal\Agent\Logger\BufferHandler'
+        arguments: [@monolog.handler.agent]
 
-    logger.mcp.subscriber:
-        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
-        arguments: [@logger.mcp.factory]
+    monolog.handler.agent:
+        class: 'QL\Hal\Agent\Logger\AgentHandler'
+        calls:
+            - ['setLogger', ['mcp', @logger.mcp, @logger.mcp.formatter]]
+            - ['setLogger', ['email', @logger.email, @logger.email.formatter]]
 
-    # emailer services
+    ####################################################################################################################
+    # custom formatters and logging utils
+    ####################################################################################################################
+
+    logger.mcp.formatter:
+        class: 'QL\Hal\Agent\Logger\TextMcpFormatter'
+        arguments: [@logger.normalizer]
+
+    logger.email.formatter:
+        class: 'QL\Hal\Agent\Logger\HtmlEmailFormatter'
+        arguments: [@logger.normalizer]
+
+    logger.normalizer:
+        class: 'QL\Hal\Agent\Logger\Normalizer'
+        arguments: ['Y-m-d H:i:s']
+    logger.resolver:
+        class: 'QL\Hal\Agent\Logger\Resolver'
+
+    ####################################################################################################################
+    # actual loggers
+    ####################################################################################################################
+
+    logger.mcp:
+        class: 'MCP\Service\Logger\Logger'
+        arguments: [@logger.mcp.service, @logger.mcp.factory]
+
+    logger.email:
+        class: 'QL\Hal\Agent\Logger\EmailLogger'
+        arguments: [@emailer, @emailer.message]
+
+    ####################################################################################################################
+    # email logger services
+    ####################################################################################################################
+
     emailer:
         class: 'Swift_Mailer'
         arguments: [@emailer.transport]
@@ -74,10 +101,14 @@ services:
             - ['setSubject', ['Critical Error']]
             # to, subject will be set at runtime
 
-    # mcp logger
-    logger.mcp:
-        class: 'MCP\Service\Logger\Logger'
-        arguments: [@logger.mcp.service, @logger.mcp.factory]
+    ####################################################################################################################
+    # mcp logger services
+    ####################################################################################################################
+
+    # subscriber to symfony/console event system to prepare mcp logger
+    logger.mcp.subscriber:
+        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
+        arguments: [@logger.mcp.factory]
 
     logger.mcp.service:
         class: 'MCP\Service\Logger\Service\GuzzleService'

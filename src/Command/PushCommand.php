@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
-use QL\Hal\Agent\Logger\CommandLogger;
+use QL\Hal\Agent\Logger\CommandLoggingTrait;
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
@@ -29,6 +29,7 @@ use Symfony\Component\Process\ProcessBuilder;
 class PushCommand extends Command
 {
     use CommandTrait;
+    use CommandLoggingTrait;
     use FormatterTrait;
 
     /**
@@ -44,11 +45,6 @@ class PushCommand extends Command
         8 => 'Push failed.',
         16 => 'Post push command failed.'
     ];
-
-    /**
-     * @var CommandLogger
-     */
-    private $logger;
 
     /**
      * @var EntityManager
@@ -97,7 +93,6 @@ class PushCommand extends Command
 
     /**
      * @param string $name
-     * @param CommandLogger $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param Resolver $resolver
@@ -109,7 +104,6 @@ class PushCommand extends Command
      */
     public function __construct(
         $name,
-        CommandLogger $logger,
         EntityManager $entityManager,
         Clock $clock,
         Resolver $resolver,
@@ -121,7 +115,6 @@ class PushCommand extends Command
     ) {
         parent::__construct($name);
 
-        $this->logger = $logger;
         $this->entityManager = $entityManager;
         $this->clock = $clock;
 
@@ -145,12 +138,7 @@ class PushCommand extends Command
      */
     public function __destruct()
     {
-        $this->cleanup();
-
-        // If we got to this point and the status is still "Pushing", something terrible has happened.
-        if ($this->push && $this->push->getStatus() === 'Pushing') {
-            $this->setEntityStatus('Error');
-        }
+        $this->blowTheHatch();
     }
 
     /**
@@ -263,7 +251,9 @@ class PushCommand extends Command
 
             // Only send logs if the push was found
             $type = ($exitCode === 0) ? 'success' : 'failure';
-            $this->logger->$type($this->push, [
+
+            $this->logAndFlush($type, [
+                'push' => $this->push,
                 'pushId' => $this->push->getId(),
                 'pushExitCode' => $exitCode
             ]);
@@ -300,7 +290,7 @@ class PushCommand extends Command
      */
     private function status(OutputInterface $output, $message)
     {
-        $this->logger->notice($message);
+        $this->log('notice', $message);
 
         $message = sprintf('<comment>%s</comment>', $message);
         $output->writeln($message);
@@ -326,6 +316,9 @@ class PushCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->push = $properties['push'];
+
+        // Set emergency handler in case of super fatal
+        $this->inCaseOfEmergency([$this, 'blowTheHatch']);
 
         // Update the push status asap so no other worker can pick it up
         $this->setEntityStatus('Pushing', true);
@@ -424,5 +417,25 @@ class PushCommand extends Command
             $properties['postPushCommand'],
             $properties['environmentVariables']
         ]);
+    }
+
+    /**
+     * Emergency failsafe
+     */
+    public function blowTheHatch()
+    {
+        $this->cleanup();
+
+        // If we got to this point and the status is still "Pushing", something terrible has happened.
+        if ($this->push && $this->push->getStatus() === 'Pushing') {
+            $this->push->setEnd($this->clock->read());
+            $this->setEntityStatus('Error');
+
+            $this->logAndFlush('failure', [
+                'push' => $this->push,
+                'pushId' => $this->push->getId(),
+                'pushExitCode' => $exitCode
+            ]);
+        }
     }
 }

@@ -15,7 +15,7 @@ use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
-use QL\Hal\Agent\Logger\CommandLogger;
+use QL\Hal\Agent\Logger\CommandLoggingTrait;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -31,6 +31,7 @@ use Symfony\Component\Process\ProcessBuilder;
 class BuildCommand extends Command
 {
     use CommandTrait;
+    use CommandLoggingTrait;
     use FormatterTrait;
 
     /**
@@ -46,11 +47,6 @@ class BuildCommand extends Command
         8 => 'Build command failed.',
         16 => 'Build archive could not be created.'
     ];
-
-    /**
-     * @var CommandLogger
-     */
-    private $logger;
 
     /**
      * @var EntityManager
@@ -109,7 +105,6 @@ class BuildCommand extends Command
 
     /**
      * @param string $name
-     * @param CommandLogger $logger
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param Resolver $resolver
@@ -121,7 +116,6 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
-        CommandLogger $logger,
         EntityManager $entityManager,
         Clock $clock,
         Resolver $resolver,
@@ -134,7 +128,6 @@ class BuildCommand extends Command
     ) {
         parent::__construct($name);
 
-        $this->logger = $logger;
         $this->entityManager = $entityManager;
         $this->clock = $clock;
 
@@ -160,12 +153,7 @@ class BuildCommand extends Command
      */
     public function __destruct()
     {
-        $this->cleanup();
-
-        // If we got to this point and the status is still "Building", something terrible has happened.
-        if ($this->build && $this->build->getStatus() === 'Building') {
-            $this->setEntityStatus('Error');
-        }
+        $this->blowTheHatch();
     }
 
     /**
@@ -266,7 +254,9 @@ class BuildCommand extends Command
 
             // Only send logs if the build was found
             $type = ($exitCode === 0) ? 'success' : 'failure';
-            $this->logger->$type($this->build, [
+
+            $this->logAndFlush($type, [
+                'build' => $this->build,
                 'buildId' => $this->build->getId(),
                 'buildExitCode' => $exitCode
             ]);
@@ -304,7 +294,7 @@ class BuildCommand extends Command
      */
     private function status(OutputInterface $output, $message)
     {
-        $this->logger->notice($message);
+        $this->log('notice', $message);
 
         $message = sprintf('<comment>%s</comment>', $message);
         $output->writeln($message);
@@ -329,6 +319,9 @@ class BuildCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->build = $properties['build'];
+
+        // Set emergency handler in case of super fatal
+        $this->inCaseOfEmergency([$this, 'blowTheHatch']);
 
         // Update the build status asap so no other worker can pick it up
         $this->setEntityStatus('Building', true);
@@ -403,5 +396,25 @@ class BuildCommand extends Command
             $properties['buildPath'],
             $properties['archiveFile']
         );
+    }
+
+    /**
+     * Emergency failsafe
+     */
+    public function blowTheHatch()
+    {
+        $this->cleanup();
+
+        // If we got to this point and the status is still "Building", something terrible has happened.
+        if ($this->build && $this->build->getStatus() === 'Building') {
+            $this->build->setEnd($this->clock->read());
+            $this->setEntityStatus('Error');
+
+            $this->logAndFlush('failure', [
+                'build' => $this->build,
+                'buildId' => $this->build->getId(),
+                'buildExitCode' => 9000
+            ]);
+        }
     }
 }
