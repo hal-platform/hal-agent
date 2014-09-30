@@ -28,11 +28,11 @@ class Resolver
 
         if ($entity instanceof Push) {
             $props = $this->pushProperties($entity);
-            $props['email']['subject'] = sprintf(self::PUSH_MESSAGE, $props['repository'], $props['environment']);
+            $props['email']['subject'] = sprintf(self::PUSH_MESSAGE, $props['repository'], $props['environment'], $props['server']);
 
         } elseif ($entity instanceof Build) {
             $props = $this->buildProperties($entity);
-            $props['email']['subject'] = sprintf(self::BUILD_MESSAGE, $props['repository'], $props['environment'], $props['server']);
+            $props['email']['subject'] = sprintf(self::BUILD_MESSAGE, $props['repository'], $props['environment']);
         }
 
         return array_merge($context, $props);
@@ -55,10 +55,8 @@ class Resolver
 
         return [
             'buildId' => $build->getId(),
-            'pushId' => '',
             'github' => $github,
             'repository' => $repository->getKey(),
-            'server' => '',
             'environment' => $build->getEnvironment()->getKey(),
             'email' => [
                 'to' => $repository->getEmail()
