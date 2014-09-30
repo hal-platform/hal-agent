@@ -205,10 +205,10 @@ services:
             - ['setHomeDirectory', ['%environment.home%']]
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
-        arguments: [@logger.command, @github.archive]
+        arguments: [@logger, @github.archive]
     build.unpacker:
         class: 'QL\Hal\Agent\Build\Unpacker'
-        arguments: [@logger.command, @utility.process.builder=] # = signifies a prototype service
+        arguments: [@logger, @utility.process.builder=] # = signifies a prototype service
     build.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
         arguments:

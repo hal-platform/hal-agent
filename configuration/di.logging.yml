@@ -1,29 +1,5 @@
 services:
 
-    # This is a buffered, group logger that formats and distributes log messages.
-    # It's primary usage is for during builds and pushes.
-    # Error messages and other abnormal log messages should be sent direct to the mcp logger.
-    logger.command:
-        class: 'QL\Hal\Agent\Logger\CommandLogger'
-        arguments:
-            - @monolog
-            - @monolog.handler.buffer
-            - @emailer.message
-
-    # logger services
-    # the amount of handlers is ridiculous
-
-    # COMMAND logger
-    #  - monolog is the logger
-    #     - has two handlers:
-    #         - console handler (for sending logs to stdout)
-    #         - buffer handler (for buffering logs)
-    #             - has group handler (for sending logs to multiple handlers)
-    #                 - has parent handler
-    #                     - has text formatter
-    #                 - has email handler
-    #                     - has html formatter
-
     logger: @monolog
 
     monolog:
