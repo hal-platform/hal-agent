@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Command;
 
+use Exception;
 use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -262,4 +263,91 @@ Success!
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
     }
+
+
+    public function testEmergencyErrorHandling()
+    {
+        $this->input = new ArrayInput([
+            'PUSH_ID' => '1',
+            'METHOD' => 'rsync'
+        ]);
+
+        $push = Mockery::mock('QL\Hal\Core\Entity\Push', [
+            'getStatus' => 'Pushing',
+            'setStart' => null,
+            'getDeployment' => Mockery::mock('QL\Hal\Core\Entity\Deployment', [
+                'getServer' => Mockery::mock('QL\Hal\Core\Entity\Server', [
+                    'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
+                        'getKey' => null
+                    ]),
+                    'getName' => null
+                ]),
+                'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
+                    'getKey' => null
+                ])
+            ]),
+            'getId' => 1234
+        ]);
+
+        $push
+            ->shouldReceive('setEnd')
+            ->once();
+        $push
+            ->shouldReceive('setStatus')
+            ->with('Error')
+            ->once();
+
+        $this->em
+            ->shouldReceive('merge')
+            ->with($push);
+        $this->em
+            ->shouldReceive('flush')
+            ->once();
+
+        $this->resolver
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'push' => $push,
+                'buildPath' => 'path/dir',
+                'archiveFile' => 'path/file',
+                'pushProperties' => [],
+                'buildCommand' => '',
+                'prePushCommand' => '',
+                'postPushCommand' => '',
+                'hostname' => 'localhost',
+                'remotePath' => 'path/dir',
+                'environmentVariables' => [],
+                'syncPath' => 'user@localhost:path/dir',
+                'excludedFiles' => [],
+                'artifacts' => []
+            ]);
+
+        $this->unpacker->shouldReceive(['__invoke' => true]);
+        $this->builder->shouldReceive(['__invoke' => true]);
+        // simulate an error
+        $this->command
+            ->shouldReceive('__invoke')
+            ->andThrow(new Exception);
+        $this->pusher->shouldReceive(['__invoke' => true]);
+
+        $command = new PushCommand(
+            'cmd',
+            $this->em,
+            $this->clock,
+            $this->resolver,
+            $this->unpacker,
+            $this->builder,
+            $this->pusher,
+            $this->command,
+            $this->processBuilder
+        );
+
+        try {
+            $command->run($this->input, $this->output);
+        } catch (Exception $e) {}
+
+        // this will call __destruct
+        unset($command);
+    }
+
 }

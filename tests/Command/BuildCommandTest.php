@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Command;
 
+use Exception;
 use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -164,5 +165,79 @@ Success!
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
+    }
+
+    public function testEmergencyErrorHandling()
+    {
+        $this->input = new ArrayInput([
+            'BUILD_ID' => '1'
+        ]);
+
+        $build = Mockery::mock('QL\Hal\Core\Entity\Build', [
+            'getStatus' => 'Building',
+            'getId' => 1234,
+            'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
+                'getKey' => null
+            ]),
+            'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
+                'getKey' => null
+            ])
+        ]);
+
+        $build
+            ->shouldReceive('setEnd')
+            ->once();
+        $build
+            ->shouldReceive('setStatus')
+            ->with('Error')
+            ->once();
+
+        $this->em
+            ->shouldReceive('merge')
+            ->with($build);
+        $this->em
+            ->shouldReceive('flush')
+            ->once();
+
+        $this->downloadProgress->shouldIgnoreMissing();
+        $this->downloader->shouldReceive(['__invoke' => true]);
+        // simulate an error
+        $this->unpacker
+            ->shouldReceive('__invoke')
+            ->andThrow(new Exception);
+        $this->builder->shouldReceive(['__invoke' => true]);
+        $this->packer->shouldReceive(['__invoke' => true]);
+
+        $this->resolver
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'build'  => $build,
+                'buildPath' => 'path/dir',
+                'githubUser' => 'user1',
+                'githubRepo' => 'repo1',
+                'githubReference' => 'master',
+                'buildFile' => 'path/file',
+                'artifacts' => []
+            ]);
+
+        $command = new BuildCommand(
+            'cmd',
+            $this->em,
+            $this->clock,
+            $this->resolver,
+            $this->downloader,
+            $this->unpacker,
+            $this->builder,
+            $this->packer,
+            $this->downloadProgress,
+            $this->processBuilder
+        );
+
+        try {
+            $command->run($this->input, $this->output);
+        } catch (Exception $e) {}
+
+        // this will call __destruct
+        unset($command);
     }
 }

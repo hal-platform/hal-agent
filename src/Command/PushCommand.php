@@ -434,7 +434,7 @@ class PushCommand extends Command
             $this->logAndFlush('failure', [
                 'push' => $this->push,
                 'pushId' => $this->push->getId(),
-                'pushExitCode' => $exitCode
+                'pushExitCode' => 9000
             ]);
         }
     }
