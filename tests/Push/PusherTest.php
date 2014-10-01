@@ -45,6 +45,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
             'getOutput' => 'test-output',
+            'getErrorOutput' => 'error-output',
             'isSuccessful' => false
         ])->makePartial();
 

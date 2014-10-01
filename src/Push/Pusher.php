@@ -77,15 +77,16 @@ class Pusher
             return false;
         }
 
+        // we always want the output
+        $context = array_merge($context, ['output' => $process->getOutput()]);
+
         if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_PUSH, $context);
             return true;
         }
 
-        $context = array_merge($context, [
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput()
-        ]);
+        $errorContext = ['exitCode' => $process->getExitCode(), 'errorOutput' => $process->getErrorOutput()];
+        $context = array_merge($context, $errorContext);
 
         $this->logger->critical(self::ERR_PUSH, $context);
         return false;
