@@ -268,8 +268,18 @@ class Resolver
             'COMPOSER_HOME' => $vars['HOME'],
             'COMPOSER_NO_INTERACTION' => '1',
 
-            'NPM_CONFIG_STRICT_SSL' => 'false'
+            'NPM_CONFIG_STRICT_SSL' => 'false',
+
+            // wheres gems are installed
+            'GEM_HOME' => $vars['HOME'] . '.gem/local',
+
+            // where gems are searched for
+            'GEM_PATH' => $vars['HOME'] . '.gem/local'
         ]);
+
+        if ($gemPath = exec('gem env gempath')) {
+            $vars['GEM_PATH'] = $vars['GEM_PATH'] . ':' . $gemPath;
+        }
 
         // add package manager configuration for isolated builds
         if (false) {

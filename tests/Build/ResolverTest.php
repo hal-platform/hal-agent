@@ -105,7 +105,9 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'BOWER_STRICT_SSL' => 'false',
             'COMPOSER_HOME' => 'testdir/home/',
             'COMPOSER_NO_INTERACTION' => '1',
-            'NPM_CONFIG_STRICT_SSL' => 'false'
+            'NPM_CONFIG_STRICT_SSL' => 'false',
+            'GEM_HOME' => 'testdir/home/.gem/local',
+            'GEM_PATH' => 'testdir/home/.gem/local'
         ];
 
         $logger = new MemoryLogger;
@@ -117,6 +119,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234');
+
+        $properties['environmentVariables']['GEM_PATH'] = strtok($properties['environmentVariables']['GEM_PATH'], ':');
         $this->assertSame($expectedEnv, $properties['environmentVariables']);
 
         unset($properties['environmentVariables']);
