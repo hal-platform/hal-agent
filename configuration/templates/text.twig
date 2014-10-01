@@ -1,0 +1,69 @@
+################################################################################
+{{ alert }}
+################################################################################
+
+{% if is_build or is_push %}
+>> Gump it for me!
+{% if is_success %}
+    {% if is_push %}{% set action = 'pushed a build' %}
+    {% else %}{% set action = 'created a build' %}{% endif %}
+{% else %}
+    {% if is_push %}{% set action = 'tried to push a build' %}
+    {% else %}{% set action = 'tried to create a build' %}{% endif %}
+{% endif %}
+
+{{ username ~ ' ' ~ action }} for {{ repository }} from the code at {{ link.github_title }}{{ is_success ? '' : ', but it failed' }}
+
+>> Which project?
+
+Repository: {{ repository }}
+Group: {{ repository_group }}
+Description: {{ repository_description }}
+
+>> Who initiated this {{ type }}?
+{{ username }}
+
+{% if is_push %}
+>> Where was the code pushed?
+{server} in {environment}
+{% else %}
+>> Which environment is the {{ type }} for?
+{{ environment }}
+{% endif %}
+
+>> What code was built?
+{{ github }}
+
+>> When was the {{ type }} initiated?
+Start: {{ time.start }}
+{% if time.end %}
+End: {{ time.end }}
+Total elapsed time: {{ time.elapsed }}
+{% endif %}
+
+{% if not is_success %}
+>> What happened?
+Something went wrong. Here is some data that may help you figure it out.
+
+{{ master_context }}
+
+Check below for more details on the {{ type }} process.
+{% endif %}
+{% endif %}
+
+{% if logs %}
+################################################################################
+Logs
+################################################################################
+
+{% for log in logs %}
+--------------------------------------------------------------------------------
+{{ log.time }} {{ log.level|upper}}: {{ log.message }}
+--------------------------------------------------------------------------------
+{% if log.context %}
+
+{{ log.context }}
+{% endif %}
+
+{% endfor %}
+{% endif %}

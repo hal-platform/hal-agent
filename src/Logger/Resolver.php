@@ -28,12 +28,17 @@ class Resolver
 
         if ($entity instanceof Push) {
             $props = $this->pushProperties($entity);
-            $props['email']['subject'] = sprintf(self::PUSH_MESSAGE, $props['repository'], $props['environment'], $props['server']);
+             $props['email']['subject'] = sprintf(self::PUSH_MESSAGE, $props['repository'], $props['environment'], $props['server']);
 
         } elseif ($entity instanceof Build) {
             $props = $this->buildProperties($entity);
-            $props['email']['subject'] = sprintf(self::BUILD_MESSAGE, $props['repository'], $props['environment']);
+             $props['email']['subject'] = sprintf(self::BUILD_MESSAGE, $props['repository'], $props['environment']);
         }
+
+        $props['email']['sanitized_subject'] = $props['email']['subject'];
+
+        $prefix = ($entity && $entity->getStatus() === 'Success') ? "\xE2\x9C\x94" : "\xE2\x9C\x96";
+        $props['email']['subject'] = sprintf('[%s] ', $prefix) . $props['email']['subject'];
 
         return array_merge($context, $props);
     }
@@ -45,21 +50,27 @@ class Resolver
     private function buildProperties(Build $build)
     {
         $repository = $build->getRepository();
-        $github = sprintf(
-            '%s/%s:%s (%s)',
-            $repository->getGithubUser(),
-            $repository->getGithubRepo(),
-            $build->getBranch(),
-            $build->getCommit()
-        );
+
+        $githubRepo = sprintf('%s/%s', $repository->getGithubUser(), $repository->getGithubRepo());
+        $github = sprintf('%s:%s (%s)', $githubRepo, $build->getBranch(), $build->getCommit());
+
+        list($githubUrl, $githubTitle) = $this->getGithubStuff($githubRepo, $build->getBranch(), $build->getCommit());
 
         return [
             'buildId' => $build->getId(),
             'github' => $github,
             'repository' => $repository->getKey(),
+            'repository_group' => $repository->getGroup()->getName(),
+            'repository_description' => $repository->getDescription(),
             'environment' => $build->getEnvironment()->getKey(),
             'email' => [
                 'to' => $repository->getEmail()
+            ],
+            'link' => [
+                'build' => 'build/' . $build->getId(),
+                'repo_status' => 'repositories/' . $repository->getId() . '/status',
+                'github' => $githubUrl,
+                'github_title' => $githubTitle
             ]
         ];
     }
@@ -74,11 +85,47 @@ class Resolver
         $buildProperties = $this->buildProperties($push->getBuild());
         $server = $push->getDeployment()->getServer();
 
-        $props = array_merge($buildProperties, [
+        $props = array_merge_recursive($buildProperties, [
             'pushId' => $push->getId(),
-            'server' => $server->getName()
+            'server' => $server->getName(),
+            'link' => [
+                'push' => 'push/' . $push->getId()
+            ]
         ]);
 
         return $props;
+    }
+
+    /**
+     * @return string $repo
+     * @return string $branch
+     * @return string $commit
+     * @return array
+     */
+    private function getGithubStuff($repo, $branch, $commit)
+    {
+        $base = $repo;
+
+        // commit
+        if ($branch === $commit) {
+            return [
+                $base . '/commit/' . $commit,
+                'commit ' . $commit
+            ];
+        }
+
+        // pull request
+        if (substr($branch, 0, 5) === 'pull/') {
+            return [
+                $base . '/' . $branch,
+                'pull request #' . substr($branch, 5)
+            ];
+        }
+
+        // branch
+        return [
+            $base . '/tree/' . $branch,
+            $branch . ' ' . $branch
+        ];
     }
 }

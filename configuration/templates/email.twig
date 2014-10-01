@@ -1,0 +1,294 @@
+<!-- ***************************************************
+********************************************************
+
+HOW TO USE: Use these code examples as a guideline for formatting your HTML email. You may want to create your own template based on these snippets or just pick and choose the ones that fix your specific rendering issue(s). There are two main areas in the template: 1. The header (head) area of the document. You will find global styles, where indicated, to move inline. 2. The body section contains more specific fixes and guidance to use where needed in your design.
+
+DO NOT COPY OVER COMMENTS AND INSTRUCTIONS WITH THE CODE to your message or risk spam box banishment :).
+
+It is important to note that sometimes the styles in the header area should not be or don't need to be brought inline. Those instances will be marked accordingly in the comments.
+
+********************************************************
+**************************************************** -->
+
+<!-- Using the xHTML doctype is a good practice when sending HTML email. While not the only doctype you can use, it seems to have the least inconsistencies. For more information on which one may work best for you, check out the resources below.
+
+UPDATED: Now using xHTML strict based on the fact that gmail and hotmail uses it.  Find out more about that, and another great boilerplate, here: http://www.emailology.org/#1
+
+More info/Reference on doctypes in email:
+Campaign Monitor - http://www.campaignmonitor.com/blog/post/3317/correct-doctype-to-use-in-html-email/
+Email on Acid - http://www.emailonacid.com/blog/details/C18/doctype_-_the_black_sheep_of_html_email_design
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{ repository }} {{ type}} {{ is_success ? 'succeeded' : 'failed' }}</title>
+    <style type="text/css">
+
+        /* Start reset */
+        body {
+            width:100% !important;
+            -webkit-text-size-adjust:100%;
+            -ms-text-size-adjust:100%;
+            margin:0;
+            padding:0;
+        }
+
+        table td {
+            border-collapse: collapse;
+        }
+
+        table {
+            border-collapse:collapse;
+            mso-table-lspace:0pt;
+            mso-table-rspace:0pt;
+        }
+        /* End reset */
+
+        body {
+            font-family: Helvetica, sans-serif;
+        }
+
+        #backgroundTable {
+            margin:0;
+            padding:0;
+            width:100% !important;
+            line-height: 100% !important;
+        }
+
+        /* Alert */
+        h2.alert {
+            font-weight: bold;
+            font-size: 1.75em;
+            color: #ffffff;
+            padding: 10px;
+            margin-top: 0;
+        }
+
+        h2.alert--success {
+            background: #468847;
+        }
+
+        h2.alert--failure {
+            background: #C12A19;
+        }
+
+        h2.alert--log {
+            margin-top: 50px;
+            background: #888;
+        }
+
+        /* Master and Log Tables */
+        table.master-data {
+            padding: 10px auto;
+            width: 100%;
+        }
+
+        table.log-data {
+            width: 100%;
+        }
+
+        table.log-data td {
+            border: 2px solid white;
+        }
+
+        pre {
+            font-family: monospace;
+        }
+
+        table.master-data pre {
+            border: 2px solid #777;
+            background: #ededed;
+            padding:3px;
+            margin-left: 10px;
+        }
+
+        /* Master record */
+        .stat p {
+            padding: 10px;
+            margin: 0;
+        }
+        .stat h4 {
+            padding: 0;
+            margin: 0;
+            margin-top: 20px;
+        }
+
+        /* Log record */
+        .log {
+            color: white;
+            font-weight: bold;
+            font-size: 1.25em;
+            padding: 5px;
+        }
+
+        .log--time {
+            color: black;
+            background: none;
+        }
+
+        .log--debug {
+            background: #cccccc;
+        }
+        .log--info {
+            background: #468847;
+        }
+        .log--notice {
+            background: #3a87ad;
+        }
+        .log--warning {
+            background: #f0ad4e;
+        }
+        .log--error {
+            background: #C12A19;
+        }
+        .log--critical {
+            background: #C12A19;
+        }
+        .log--alert {
+            background: #C12A19;
+        }
+        .log--emergency {
+            background: #C12A19;
+        }
+
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0" border="0" id="backgroundTable">
+        <tr>
+            <td style="padding:10px;">
+                <h2 class="alert {{ is_success ? 'alert--success' : 'alert--failure' }}">{{ alert }}</h2>
+
+                {% if is_build or is_push %}
+                    <table class="master-data" cellpadding="0" cellspacing="0" border="0" align="center">
+                        <tr>
+                            <td valign="top" class="stat">
+                                <h4 style="margin:0;">Gump it for me!</h4>
+                                <p>
+                                    <strong>{{ username }}</strong>
+                                    {% if is_success %}
+                                        {{ is_push ? 'pushed a build' : 'created a build' }}
+                                    {% else %}
+                                        {{ is_push ? 'tried to push a build' : 'tried to create a build' }}
+                                    {% endif %}
+
+                                    for <strong>{{ repository }}</strong>
+                                    from the code at <strong>{{ link.github_title }}</strong>
+
+                                    {% if not is_success %}
+                                        , but it <strong style="color:#C12A19;">failed</strong>
+                                    {% endif %}
+                                </p>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td valign="top" class="stat">
+                                <h4>Which project?</h4>
+                                <p>
+                                    <strong>Repository:</strong> {{ repository }}
+                                    <br><strong>Group:</strong> {{ repository_group }}
+                                    <br><strong>Description:</strong> {{ repository_description }}
+                                </p>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td valign="top" class="stat">
+                                <h4 style="margin:0;">Who initiated this {{ type }}?</h4>
+                                <p>{{ username }}</p>
+                            </td>
+                        </tr>
+
+                        {% if is_push %}
+                            <tr>
+                                <td valign="top" class="stat">
+                                    <h4>Where was the code pushed?</h4>
+                                    <p>{server} in {environment}</p>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td valign="top" class="stat">
+                                    <h4>Which environment is the {{ type }} for?</h4>
+                                    <p>{{ environment }}</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+
+                        </tr>
+                        <tr>
+                            <td valign="top" class="stat">
+                                <h4>What code was built?</h4>
+                                <p>
+                                    {{ github }}
+                                    <br><a href="{{ github_url ~ link.github }}">GitHub: View code</a>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top" class="stat">
+                                <h4>When was the {{ type }} initiated?</h4>
+                                <p>
+                                    <strong>Start:</strong> {{ time.start }}
+                                {% if time.end %}
+                                    <br><strong>End:</strong> {{ time.end }}
+                                    <br><strong>Total elapsed time:</strong> {{ time.elapsed }}
+                                {% endif %}
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top" class="stat">
+                                <h4>Where can I see more information?</h4>
+                                <p>
+                                    <a href="{{ hal_url ~ link.repo_status }}">HAL 9000: {{ repository }} status page</a><br>
+                                    <br><a href="{{ hal_url ~ link.build }}">HAL 9000: build details</a>
+                                    {% if is_push %}
+                                        <br><a href="{{ hal_url ~ link.push }}">HAL 9000: push details</a>
+                                    {% endif %}
+                                </p>
+                            </td>
+                        </tr>
+                        {% if not is_success %}
+                            <tr>
+                                <td valign="top" class="stat">
+                                    <h4>What happened?</h4>
+                                    <p>Something went wrong. Here is some data that may help you figure it out.</p>
+                                    <pre>{{ master_context }}</pre>
+
+                                    <p>Check below for more details on the {{ type }} process.</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </table>
+                {% endif %}
+
+                {% if logs %}
+                    <h2 class="alert alert--log">Logs</h2>
+                    <table class="log-data" cellpadding="0" cellspacing="0" border="0" align="center">
+                        {% for log in logs %}
+                            <tr>
+                                <td width="150" valign="top" class="log log--{{ log.level }}">{{ log.level|upper }}</td>
+                                <td valign="top" class="log log--{{ log.level }}">{{ log.message }}</td>
+                                <td width="200" valign="top" class="log log--time">{{ log.time }}</td>
+                            </tr>
+                            {% if log.context %}
+                                <tr>
+                                    <td valign="top" colspan="3">
+                                        <pre>{{ log.context }}</pre>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </table>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

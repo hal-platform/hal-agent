@@ -9,3 +9,5 @@ parameters:
     timeout.push: 300
     timeout.push.serverCommand: 300
     timeout.push.build: 300
+
+    github.baseurl.site: 'http://git/'

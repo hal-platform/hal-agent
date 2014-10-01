@@ -24,26 +24,51 @@ services:
     monolog.handler.agent:
         class: 'QL\Hal\Agent\Logger\AgentHandler'
         calls:
-            - ['setLogger', ['mcp', @logger.mcp, @logger.mcp.formatter]]
-            - ['setLogger', ['email', @logger.email, @logger.email.formatter]]
+            - ['setLogger', ['mcp', @logger.mcp, @logger.template.text.formatter]]
+            - ['setLogger', ['email', @logger.email, @logger.template.email.formatter]]
 
     ####################################################################################################################
     # custom formatters and logging utils
     ####################################################################################################################
-
-    logger.mcp.formatter:
-        class: 'QL\Hal\Agent\Logger\TextMcpFormatter'
-        arguments: [@logger.normalizer]
-
-    logger.email.formatter:
-        class: 'QL\Hal\Agent\Logger\HtmlEmailFormatter'
-        arguments: [@logger.normalizer]
 
     logger.normalizer:
         class: 'QL\Hal\Agent\Logger\Normalizer'
         arguments: ['Y-m-d H:i:s']
     logger.resolver:
         class: 'QL\Hal\Agent\Logger\Resolver'
+
+    logger.template.email.formatter:
+        class: 'QL\Hal\Agent\Logger\TemplateFormatter'
+        arguments: [@logger.normalizer, @logger.email.template]
+    logger.template.text.formatter:
+        class: 'QL\Hal\Agent\Logger\McpFormatter'
+        arguments: [@logger.normalizer, @logger.text.template]
+
+    logger.email.template:
+        class: 'Twig_Template'
+        factory_service: 'logger.twig.environment'
+        factory_method: 'loadTemplate'
+        arguments: ['email.twig']
+    logger.text.template:
+        class: 'Twig_Template'
+        factory_service: 'logger.twig.environment'
+        factory_method: 'loadTemplate'
+        arguments: ['text.twig']
+
+    logger.twig.environment:
+        class: 'Twig_Environment'
+        arguments: [@logger.twig.loader]
+        calls:
+            - ['addGlobal', ['hal_url', %hal.baseurl%]]
+            - ['addGlobal', ['github_url', %github.baseurl.site%]]
+    logger.twig.loader:
+        class: 'Twig_Loader_Filesystem'
+        arguments: [@logger.twig.loader.path]
+    logger.twig.loader.path:
+        class: 'WUT'
+        factory_class: 'QL\Hal\Agent\Helper\StringSmusher'
+        factory_method: 'smush'
+        arguments: [@root, '/configuration/templates']
 
     ####################################################################################################################
     # actual loggers
