@@ -161,7 +161,7 @@ class Unpacker
     private function unpackArchive($buildPath, $archive, array $context)
     {
         $makeCommand = ['mkdir', $buildPath];
-        $unpackCommand = ['tar', '-xzf', $archive, sprintf('--directory=%s', $buildPath)];
+        $unpackCommand = ['tar', '-vxzf', $archive, sprintf('--directory=%s', $buildPath)];
 
         $makeProcess = $this->processBuilder
             ->setWorkingDirectory(null)

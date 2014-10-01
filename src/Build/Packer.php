@@ -61,7 +61,7 @@ class Packer
             'archive' => $targetFile
         ];
 
-        $cmd = ['tar', '-czf', $targetFile, '.'];
+        $cmd = ['tar', '-vczf', $targetFile, '.'];
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
             ->setArguments($cmd)
