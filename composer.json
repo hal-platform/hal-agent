@@ -4,39 +4,14 @@
     "license": "proprietary",
     "authors": [
         {
-            "name": "Steve Kluck",
-            "email": "stevekluck@quickenloans.com",
-            "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cSKluck",
-            "role": "Developer"
-        },
-        {
-            "name": "Matt Colf",
-            "email": "matthewcolf@quickenloans.com",
-            "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cMColf",
-            "role": "Developer"
-        },
-        {
-            "name": "Matt Nagi",
-            "email": "mattnagi@quickenloans.com",
-            "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cMNagi",
-            "role": "Developer"
-        },
-        {
-            "name": "Bridget Schiefer",
-            "email": "bridgetschiefer@quickenloans.com",
-            "homepage": "http://quniverse/profiles/Person.aspx?accountname=mi%5CBSchiefer",
-            "role": "Developer"
+            "name": "IT Team Web Core",
+            "email": "itteamwebcore@quickenloans.com"
         }
     ],
 
     "autoload": {
         "psr-4": {
             "QL\\Hal\\Agent\\": "src/"
-        }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0.x-dev"
         }
     },
     "repositories": [
@@ -46,26 +21,27 @@
         }
     ],
     "require": {
-        "knplabs/github-api":           "1.2.1",
-        "monolog/monolog":              "1.9.*",
-        "php-64bit":                    ">=5.4.0",
-        "psr/log":                      "*",
-        "ql/hal-core":                  "2.0.0",
-        "ql/mcp-core":                  "1.0.*",
-        "ql/mcp-logger":                "1.2.*",
-        "swiftmailer/swiftmailer":      "5.2.*",
-        "symfony/config":               "2.5.*",
-        "symfony/console":              "2.5.*",
-        "symfony/debug":                "2.5.*",
+        "knplabs/github-api": "1.2.1",
+        "monolog/monolog": "1.9.*",
+        "mustache/mustache": "2.7.*",
+        "php-64bit": ">=5.4.0",
+        "psr/log": "*",
+        "ql/hal-core": "2.0.0",
+        "ql/mcp-core": "1.0.*",
+        "ql/mcp-logger": "1.2.*",
+        "swiftmailer/swiftmailer": "5.2.*",
+        "symfony/config": "2.5.*",
+        "symfony/console": "2.5.*",
+        "symfony/debug": "2.5.*",
         "symfony/dependency-injection": "2.5.*",
-        "symfony/event-dispatcher":     "2.5.*",
-        "symfony/filesystem":           "2.5.*",
-        "symfony/monolog-bridge":       "2.5.*",
-        "symfony/process":              "2.5.*"
+        "symfony/event-dispatcher": "2.5.*",
+        "symfony/filesystem": "2.5.*",
+        "symfony/monolog-bridge": "2.5.*",
+        "symfony/process": "2.5.*"
     },
     "require-dev": {
-        "mockery/mockery":              "*",
-        "phpunit/phpunit":              "*",
-        "squizlabs/php_codesniffer":    "*"
+        "mockery/mockery": "*",
+        "phpunit/phpunit": "*",
+        "squizlabs/php_codesniffer": "*"
     }
 }
