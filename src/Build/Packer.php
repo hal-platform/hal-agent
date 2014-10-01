@@ -8,15 +8,19 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Packer
 {
+    use ProcessRunnerTrait;
+
     /**
      * @var string
      */
     const SUCCESS_PACKED = 'Build archived';
     const ERR_PACKED = 'Build archive did not pack correctly';
+    const ERR_PACKING_TIMEOUT = 'Archiving the build took too long';
 
     /**
      * @var LoggerInterface
@@ -29,13 +33,20 @@ class Packer
     private $processBuilder;
 
     /**
+     * @var string
+     */
+    private $commandTimeout;
+
+    /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
+     * @param string $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
+        $this->commandTimeout = $commandTimeout;
     }
 
     /**
@@ -54,9 +65,12 @@ class Packer
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
             ->setArguments($cmd)
+            ->setTimeout($this->commandTimeout)
             ->getProcess();
 
-        $process->run();
+        if (!$this->runProcess($process, $this->logger, self::ERR_PACKING_TIMEOUT, $this->commandTimeout)) {
+            return false;
+        }
 
         if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_PACKED, $context);

@@ -8,10 +8,13 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Unpacker
 {
+    use ProcessRunnerTrait;
+
     /**
      * @var string
      */
@@ -20,6 +23,7 @@ class Unpacker
     const SUCCESS_SANITIZED = 'Unpacked code sanitized';
 
     const ERR_UNPACK_FAILURE = 'Unable to unpack code application code';
+    const ERR_UNPACKING_TIMEOUT = 'Unpacking github code took too long';
     const ERR_LOCATED = 'Unpacked code could not be located';
     const ERR_SANITIZED = 'Unpacked code directory was not empty after sanitizing.';
 
@@ -36,11 +40,13 @@ class Unpacker
     /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
+     * @param string $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder)
+    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
+        $this->commandTimeout = $commandTimeout;
     }
 
     /**
@@ -165,12 +171,19 @@ class Unpacker
         $unpackProcess = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments($unpackCommand)
+            ->setTimeout($this->commandTimeout)
             ->getProcess();
 
         // We do it like this so unpack will not be run if makeProcess is not succesful
-        if ($makeProcess->run() === 0 && $unpackProcess->run() === 0) {
-            $this->logger->info(self::SUCCESS_UNPACK, $context);
-            return true;
+        if ($makeProcess->run() === 0) {
+            if (!$this->runProcess($unpackProcess, $this->logger, self::ERR_UNPACKING_TIMEOUT, $this->commandTimeout)) {
+                return false;
+            }
+
+            if ($unpackProcess->isSuccessful()) {
+                $this->logger->info(self::SUCCESS_UNPACK, $context);
+                return true;
+            }
         }
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;

@@ -208,7 +208,10 @@ services:
         arguments: [@logger, @github.archive]
     build.unpacker:
         class: 'QL\Hal\Agent\Build\Unpacker'
-        arguments: [@logger, @utility.process.builder=] # = signifies a prototype service
+        arguments:
+            - @logger
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filepacking%
     build.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
         arguments:
@@ -224,7 +227,10 @@ services:
             - %timeout.build%
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
-        arguments: [@logger, @utility.process.builder=] # = signifies a prototype service
+        arguments:
+            - @logger
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filepacking%
 
     ####################################################################################################################
     # push actions
@@ -247,6 +253,7 @@ services:
             - @utility.process.builder= # = signifies a prototype service
             - @utility.filesystem
             - @utility.yamlDumper
+            - %timeout.filepacking%
     push.builder:
         class: 'QL\Hal\Agent\Push\Builder'
         arguments:

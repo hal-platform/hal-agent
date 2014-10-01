@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Push;
 
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\ProcessBuilder;
@@ -15,6 +16,8 @@ use Symfony\Component\Yaml\Dumper;
 
 class Unpacker
 {
+    use ProcessRunnerTrait;
+
     /**
      * @var string
      */
@@ -22,6 +25,7 @@ class Unpacker
     const SUCCESS_PROPERTIES = 'Push details written to application directory';
 
     const ERR_UNPACK_FAILURE = 'Unable to unpack repository archive';
+    const ERR_UNPACKING_TIMEOUT = 'Unpacking archive took too long';
     const ERR_PROPERTIES = 'Push details could not be written: %s';
 
     /**
@@ -50,21 +54,29 @@ class Unpacker
     private $dumper;
 
     /**
+     * @var string
+     */
+    private $commandTimeout;
+
+    /**
      * @param LoggerInterface $logger
      * @param ProcessBuilder $processBuilder
      * @param Filesystem $filesystem
      * @param Dumper $dumper
+     * @param string $commandTimeout
      */
     public function __construct(
         LoggerInterface $logger,
         ProcessBuilder $processBuilder,
         Filesystem $filesystem,
-        Dumper $dumper
+        Dumper $dumper,
+        $commandTimeout
     ) {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
         $this->filesystem = $filesystem;
         $this->dumper = $dumper;
+        $this->commandTimeout = $commandTimeout;
     }
 
     /**
@@ -140,12 +152,19 @@ class Unpacker
         $unpackProcess = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments($unpackCommand)
+            ->setTimeout($this->commandTimeout)
             ->getProcess();
 
         // We do it like this so unpack will not be run if makeProcess is not succesful
-        if ($makeProcess->run() === 0 && $unpackProcess->run() === 0) {
-            $this->logger->info(self::SUCCESS_UNPACK, $context);
-            return true;
+        if ($makeProcess->run() === 0) {
+            if (!$this->runProcess($unpackProcess, $this->logger, self::ERR_UNPACKING_TIMEOUT, $this->commandTimeout)) {
+                return false;
+            }
+
+            if ($unpackProcess->isSuccessful()) {
+                $this->logger->info(self::SUCCESS_UNPACK, $context);
+                return true;
+            }
         }
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;

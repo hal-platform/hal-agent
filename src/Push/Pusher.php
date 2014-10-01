@@ -8,15 +8,19 @@
 namespace QL\Hal\Agent\Push;
 
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Pusher
 {
+    use ProcessRunnerTrait;
+
     /**
      * @var string
      */
     const SUCCESS_PUSH = 'Application code synced to server';
     const ERR_PUSH = 'Unable to finish syncing application code';
+    const ERR_PUSHING_TIMEOUT = 'Syncing code to server took too long';
 
     /**
      * @var LoggerInterface
@@ -69,7 +73,9 @@ class Pusher
             ->getProcess();
         $process->setCommandLine($process->getCommandLine() . ' 2>&1');
 
-        $process->run();
+        if (!$this->runProcess($process, $this->logger, self::ERR_PUSHING_TIMEOUT, $this->commandTimeout)) {
+            return false;
+        }
 
         if ($process->isSuccessful()) {
             $this->logger->info(self::SUCCESS_PUSH, $context);

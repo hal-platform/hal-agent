@@ -5,9 +5,11 @@ parameters:
     email.from: 'hal@example.com'
     email.reply: 'hal@example.com'
 
-    timeout.build: 300
+    timeout.build: 600
     timeout.push: 300
     timeout.push.serverCommand: 300
     timeout.push.build: 300
+
+    timeout.filepacking: 120
 
     github.baseurl.site: 'http://git/'

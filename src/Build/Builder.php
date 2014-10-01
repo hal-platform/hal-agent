@@ -8,15 +8,19 @@
 namespace QL\Hal\Agent\Build;
 
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Builder
 {
+    use ProcessRunnerTrait;
+
     /**
      * @var string
      */
     const SUCCESS_BUILDING = 'Build command executed';
     const ERR_BUILDING = 'Build command executed with errors';
+    const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
      * @var LoggerInterface
@@ -74,7 +78,9 @@ class Builder
         // prepare package manager configuration
         call_user_func($this->preparer, $env);
 
-        $process->run();
+        if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
+            return false;
+        }
 
         // we always want the output
         $context = array_merge($context, ['output' => $process->getOutput()]);

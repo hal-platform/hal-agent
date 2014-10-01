@@ -34,7 +34,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, $filesystem, $dumper);
+        $action = new Unpacker($logger, $builder, $filesystem, $dumper, 10);
 
         $success = $action('archive', 'php://temp', []);
         $this->assertTrue($success);
@@ -75,7 +75,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, $filesystem, $dumper);
+        $action = new Unpacker($logger, $builder, $filesystem, $dumper, 10);
 
         $success = $action('archive', 'php://temp', []);
         $this->assertFalse($success);
@@ -103,12 +103,16 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('run')
             ->andReturn(0);
 
+        $process
+            ->shouldReceive('isSuccessful')
+            ->andReturn(true);
+
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, $filesystem, $dumper);
+        $action = new Unpacker($logger, $builder, $filesystem, $dumper, 10);
 
         $success = $action('archive', 'php://temp', []);
         $this->assertFalse($success);

@@ -27,7 +27,7 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Packer($logger, $builder);
+        $action = new Packer($logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
@@ -51,7 +51,7 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Packer($logger, $builder);
+        $action = new Packer($logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
