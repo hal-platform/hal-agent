@@ -28,7 +28,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
@@ -50,7 +50,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'findBy' => []
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
@@ -78,7 +78,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'findBy' => ['derp']
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234', 'pushmethod');
         $this->assertNull($properties);
@@ -147,6 +147,18 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         ];
 
         $expectedEnv = [
+            'HOME' => 'testdir/home/',
+            'PATH' => 'ENV_PATH',
+            'HAL_HOSTNAME' => '127.0.0.1',
+            'HAL_PATH' => '/herp/derp',
+            'HAL_BUILDID' => '8956',
+            'HAL_COMMIT' => '5555',
+            'HAL_GITREF' => 'master',
+            'HAL_ENVIRONMENT' => 'envname',
+            'HAL_REPO' => 'repokey'
+        ];
+
+        $expectedServerEnv = [
             'HAL_HOSTNAME' => '127.0.0.1',
             'HAL_PATH' => '/herp/derp',
             'HAL_BUILDID' => '8956',
@@ -173,15 +185,17 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'findBy' => []
         ]);
 
-        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ARCHIVE_PATH');
+        $action = new Resolver($logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234', 'pushmethod');
 
         $this->assertSame($expectedEnv, $properties['environmentVariables']);
+        $this->assertSame($expectedServerEnv, $properties['serverEnvironmentVariables']);
         $this->assertSame($expectedPushProperties, $properties['pushProperties']);
 
         unset($properties['environmentVariables']);
+        unset($properties['serverEnvironmentVariables']);
         unset($properties['pushProperties']);
         $this->assertSame($expected, $properties);
     }

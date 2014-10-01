@@ -55,6 +55,11 @@ class Resolver
     /**
      * @var string
      */
+    private $envPath;
+
+    /**
+     * @var string
+     */
     private $archivePath;
 
     /**
@@ -63,18 +68,25 @@ class Resolver
     private $buildDirectory;
 
     /**
+     * @var string
+     */
+    private $homeDirectory;
+
+    /**
      * @param LoggerInterface $logger
      * @param PushRepository $pushRepo
      * @param Clock $clock
      * @param string $sshUser
+     * @param string $envPath
      * @param string $archivePath
      */
-    public function __construct(LoggerInterface $logger, PushRepository $pushRepo, Clock $clock, $sshUser, $archivePath)
+    public function __construct(LoggerInterface $logger, PushRepository $pushRepo, Clock $clock, $sshUser, $envPath, $archivePath)
     {
         $this->logger = $logger;
         $this->pushRepo = $pushRepo;
         $this->clock = $clock;
         $this->sshUser = $sshUser;
+        $this->envPath = $envPath;
         $this->archivePath = $archivePath;
     }
 
@@ -145,7 +157,8 @@ class Resolver
                 'date' => $this->clock->read()->format('c', 'America/Detroit')
             ],
 
-            'environmentVariables' => $this->generateServerEnvironmentVariables($build, $deployment, $hostname)
+            'environmentVariables' => $this->generateBuildEnvironmentVariables($build, $deployment, $hostname),
+            'serverEnvironmentVariables' => $this->generateServerEnvironmentVariables($build, $deployment, $hostname),
         ];
 
         $properties['artifacts'] = $this->findPushArtifacts($properties);
@@ -155,12 +168,30 @@ class Resolver
     }
 
     /**
+     * Set the base directory in which temporary build artifacts are stored.
+     *
+     * If none is provided the system temporary directory is used.
+     *
      * @param string $directory
      *  @return null
      */
     public function setBaseBuildDirectory($directory)
     {
         $this->buildDirectory = $directory;
+    }
+
+    /**
+     * Set the home directory for all build scripts. This can easily be changed
+     * later to be unique for each build.
+     *
+     * If none is provided a common location within the shared build directory is used.
+     *
+     *  @param string $directory
+     *  @return string
+     */
+    public function setHomeDirectory($directory)
+    {
+        $this->homeDirectory = $directory;
     }
 
     /**
@@ -198,6 +229,22 @@ class Resolver
      * @param string $hostname
      * @return array
      */
+    private function generateBuildEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
+    {
+        $vars = [
+            'HOME' => $this->generateHomePath(),
+            'PATH' => $this->envPath
+        ];
+
+        return array_merge($vars, $this->generateServerEnvironmentVariables($build, $deployment, $hostname));
+    }
+
+    /**
+     * @param Build $build
+     * @param Deployment $deployment
+     * @param string $hostname
+     * @return array
+     */
     private function generateServerEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
     {
         $vars = [
@@ -212,6 +259,21 @@ class Resolver
         ];
 
         return $vars;
+    }
+
+    /**
+     *  Generate a target for $HOME and/or $TEMP
+     *
+     *  @param string $id
+     *  @return string
+     */
+    private function generateHomePath()
+    {
+        if (!$this->homeDirectory) {
+            $this->homeDirectory = $this->getBuildDirectory() . 'home';
+        }
+
+        return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
     /**

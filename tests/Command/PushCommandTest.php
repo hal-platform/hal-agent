@@ -119,6 +119,7 @@ OUTPUT;
                 'hostname' => 'localhost',
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
+                'serverEnvironmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
                 'excludedFiles' => [],
                 'artifacts' => [
@@ -214,6 +215,7 @@ OUTPUT;
                 'hostname' => 'localhost',
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
+                'serverEnvironmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
                 'excludedFiles' => [],
                 'artifacts' => [
@@ -317,6 +319,7 @@ OUTPUT;
                 'hostname' => 'localhost',
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
+                'serverEnvironmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
                 'excludedFiles' => [],
                 'artifacts' => []

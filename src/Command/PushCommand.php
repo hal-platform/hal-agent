@@ -379,7 +379,7 @@ class PushCommand extends Command
             $properties['hostname'],
             $properties['remotePath'],
             $properties['prePushCommand'],
-            $properties['environmentVariables']
+            $properties['serverEnvironmentVariables']
         ]);
     }
 
@@ -415,7 +415,7 @@ class PushCommand extends Command
             $properties['hostname'],
             $properties['remotePath'],
             $properties['postPushCommand'],
-            $properties['environmentVariables']
+            $properties['serverEnvironmentVariables']
         ]);
     }
 
