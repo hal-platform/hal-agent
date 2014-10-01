@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "af80dda9b2338478ab9d95dc9f5e04ea",
+    "hash": "fea2b21e008e93ff5f5ca226d6eece8b",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -817,17 +817,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.0.0",
+            "version": "2.3.0",
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "2.0.0"
+                "reference": "22462451c2bc57408258e207f4178119f9535944"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer//dist/ql-hal-core-2.0.0-f7ca6a.zip",
-                "reference": "2.0.0",
-                "shasum": "a4ef747c2b7821881117a7a004ee03457258b959"
+                "url": "http://composer//dist/ql-hal-core-2.3.0-9c87ae.zip",
+                "reference": "22462451c2bc57408258e207f4178119f9535944",
+                "shasum": "6ed7e25e765451c1bb51116cca2682ca0a45631a"
             },
             "require": {
                 "doctrine/orm": "~2.4",
@@ -844,17 +844,9 @@
                 "symfony/dependency-injection": "*"
             },
             "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
             "autoload": {
-                "psr-0": {
-                    "QL\\Hal\\Core": [
-                        "src/",
-                        "tests/"
-                    ]
+                "psr-4": {
+                    "QL\\Hal\\Core\\": "src/"
                 }
             },
             "license": [
@@ -862,26 +854,12 @@
             ],
             "authors": [
                 {
-                    "name": "Matt Colf",
-                    "email": "matthewcolf@quickenloans.com",
-                    "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cMColf",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Matt Nagi",
-                    "email": "mattnagi@quickenloans.com",
-                    "homepage": "http://quniverse/profiles/Person.aspx?accountname=MI%5cMNagi",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Bridget Schiefer",
-                    "email": "bridgetschiefer@quickenloans.com",
-                    "homepage": "http://quniverse/profiles/Person.aspx?accountname=mi%5CBSchiefer",
-                    "role": "Developer"
+                    "name": "IT Team Web Core",
+                    "email": "itteamwebcore@quickenloans.com"
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2014-05-29 13:40:08"
+            "time": "2014-10-01 18:35:04"
         },
         {
             "name": "ql/mcp-core",
