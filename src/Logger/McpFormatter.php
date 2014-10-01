@@ -15,7 +15,7 @@ class McpFormatter extends TemplateFormatter
      */
     public function format(array $master, array $records)
     {
-        $message = $master['context']['email']['sanitized_subject'];
+        $message = isset($master['context']['email']['sanitized_subject']) ? $master['context']['email']['sanitized_subject'] : $master['message'];
 
         $master = parent::format($master, $records);
 
