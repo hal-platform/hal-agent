@@ -232,7 +232,7 @@ class Resolver
     private function generateBuildEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
     {
         $vars = [
-            'HOME' => $this->generateHomePath(),
+            'HOME' => $this->generateHomePath($build->getRepository()->getId()),
             'PATH' => $this->envPath
         ];
 
@@ -262,18 +262,20 @@ class Resolver
     }
 
     /**
-     *  Generate a target for $HOME and/or $TEMP
+     *  Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
      *
-     *  @param string $id
+     *  @param string $suffix
      *  @return string
      */
-    private function generateHomePath()
+    private function generateHomePath($suffix = '')
     {
         if (!$this->homeDirectory) {
             $this->homeDirectory = $this->getBuildDirectory() . 'home';
         }
 
-        return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $suffix = (strlen($suffix) > 0) ? sprintf('.%s', $suffix) : '';
+
+        return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . $suffix . DIRECTORY_SEPARATOR;
     }
 
     /**
