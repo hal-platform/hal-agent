@@ -19,6 +19,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 {
     public $buildRepo;
+    public $envRepo;
     public $filesystem;
     public $archive;
 
@@ -28,6 +29,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
+        $this->envRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\EnvironmentRepository');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
         $this->archive = 'path';
 
@@ -37,14 +39,15 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
     public function testBuildsNotFound()
     {
         $this->buildRepo
-            ->shouldReceive('findBy')
-            ->andReturnNull();
+            ->shouldReceive('matching')
+            ->andReturn([]);
 
         $this->input = new ArrayInput([]);
 
         $command = new ListBuildsCommand(
             'derp:cmd',
             $this->buildRepo,
+            $this->envRepo,
             $this->filesystem,
             $this->archive
         );
@@ -68,7 +71,7 @@ OUTPUT;
         $build1->setEnvironment($environment);
         $build1->setId('1234');
         $build1->setStatus('Success');
-        $build1->setStart(new TimePoint(2015, 3, 15, 4, 5, 6, 'UTC'));
+        $build1->setCreated(new TimePoint(2015, 3, 15, 4, 5, 6, 'UTC'));
 
         $build2 = new Build;
         $build2->setRepository($repository);
@@ -77,7 +80,7 @@ OUTPUT;
         $build2->setStatus('Waiting');
 
         $this->buildRepo
-            ->shouldReceive('findBy')
+            ->shouldReceive('matching')
             ->andReturn([$build1, $build2]);
 
         $this->input = new ArrayInput([]);
@@ -85,6 +88,7 @@ OUTPUT;
         $command = new ListBuildsCommand(
             'derp:cmd',
             $this->buildRepo,
+            $this->envRepo,
             $this->filesystem,
             $this->archive
         );
@@ -97,7 +101,7 @@ OUTPUT;
         $expected = <<<'OUTPUT'
 Displaying 1 - 2 out of 2: 
 +---------+---------------------------+------+------------+-------------+--------------------------+
-| Status  | Start Time                | Id   | Repository | Environment | Archive                  |
+| Status  | Created Time              | Id   | Repository | Environment | Archive                  |
 +---------+---------------------------+------+------------+-------------+--------------------------+
 | Success | 2015-03-15T00:05:06-04:00 | 1234 | repo-name  | env-name    | path/hal9000-1234.tar.gz |
 | Waiting |                           | 5678 | repo-name  | env-name    |                          |
