@@ -149,6 +149,12 @@ class ListBuildsCommand extends Command
                 'Return only build IDs.'
             )
             ->addOption(
+                'spaces',
+                null,
+                InputOption::VALUE_NONE,
+                'Use spaces instead of newlines as porcelain delimiter'
+            )
+            ->addOption(
                 'verify',
                 null,
                 InputOption::VALUE_NONE,
@@ -168,6 +174,10 @@ class ListBuildsCommand extends Command
             'Age examples (<fg=green>2014-8-15</fg=green>, <fg=green>2014-05-08</fg=green>)</fg=yellow>',
             'Note: Age filtering uses an exclusive range. If 2014-8-15 is specified, builds from 2014-8-14 and before will be displayed.',
             '',
+            'Piping',
+            '<fg=yellow>Porcelain display is used to easily pipe the output build IDs to another process.',
+            'Example: <fg=green>./hal builds:list --porcelain --spaces | xargs ./hal build:remove</fg=green>',
+            'By default IDs are delimited with a newline, the spaces flag must be used to change this to spaces.</fg=yellow>',
             '<fg=cyan>Exit codes:</fg=cyan>'
         ];
         foreach (static::$codes as $code => $message) {
@@ -193,6 +203,7 @@ class ListBuildsCommand extends Command
 
         // flags
         $porcelain = $input->getOption('porcelain');
+        $porcelainSpaces = $input->getOption('spaces');
         $verify = $input->getOption('verify');
 
         // pagination
@@ -259,8 +270,14 @@ class ListBuildsCommand extends Command
 
         // porcelain
         if ($porcelain) {
+            $c = 0;
             foreach ($builds as $build) {
-                $output->writeln($build->getId());
+                if ($porcelainSpaces) {
+                    $delimiter = ($c++ > 0) ? ' ' : '';
+                    $output->write($delimiter . $build->getId());
+                } else {
+                    $output->writeln($build->getId());
+                }
             }
 
             return 0;

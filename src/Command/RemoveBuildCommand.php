@@ -39,9 +39,7 @@ class RemoveBuildCommand extends Command
      */
     private static $codes = [
         0 => 'Archive removed.',
-        1 => 'Build not found.',
-        2 => 'Incorrect build status. Only Successful builds can be removed.',
-        4 => 'Build archive already removed.'
+        1 => 'At least once build must be specified for removal.'
     ];
 
     /**
@@ -94,17 +92,13 @@ class RemoveBuildCommand extends Command
             ->setDescription('Remove build archive.')
             ->addArgument(
                 'BUILD_ID',
-                InputArgument::REQUIRED,
+                InputArgument::IS_ARRAY,
                 'The ID of the build.'
-            )
-            ->addOption(
-                'silent',
-                null,
-                InputOption::VALUE_NONE,
-                'Silently fail if archive does not exist.'
             );
 
-        $help = ['<fg=cyan>Exit codes:</fg=cyan>'];
+        $help = [
+            '<fg=cyan>Exit codes:</fg=cyan>'
+        ];
         foreach (static::$codes as $code => $message) {
             $help[] = $this->formatSection($code, $message);
         }
@@ -120,15 +114,59 @@ class RemoveBuildCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $buildId = $input->getArgument('BUILD_ID');
-        $isSilent = $input->getOption('silent');
+        $builds = $input->getArgument('BUILD_ID');
 
+        if (!$builds) {
+            return $this->failure($output, 1);
+        }
+
+        $success = 0;
+        $failure = 0;
+
+        foreach ($builds as $buildId) {
+            if ($this->removeBuild($buildId, $output) === 0) {
+                $success++;
+            } else {
+                $failure++;
+            }
+        }
+
+        // bubble up the build exit status if only one build
+        if (count($builds) === 1) {
+            if ($success > 0) {
+                return $this->success($output);
+            } else {
+                return 1;
+            }
+        }
+
+        // determine messaging for multiremovals
+        $msg = sprintf('%s builds processed. (%s successes, %s failures)', count($builds), $success, $failure);
+        if ($failure > 0) {
+            $output->writeln(sprintf('<error>%s</error>', $msg));
+            return 1;
+        }
+
+        $output->writeln(sprintf('<bg=green>%s</bg=green>', $msg));
+        return 0;
+    }
+
+    /**
+     * @param string $buildId
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int $exitCode
+     */
+    private function removeBuild($buildId, OutputInterface $output)
+    {
         if (!$build = $this->buildRepo->find($buildId)) {
-            return $this->silentFailure($output, $isSilent, 1);
+            $output->writeln(sprintf('<error>%s</error>', sprintf('Build "%s" not found.', $buildId)));
+            return 1;
         }
 
         if (!$archive = $this->generateArchiveLocation($build)) {
-            return $this->silentFailure($output, $isSilent, 2);
+            $output->writeln(sprintf('<error>%s</error>', sprintf('Build "%s" must be status "Success" to be removed.', $buildId)));
+            return 1;
         }
 
         // Update entity
@@ -136,12 +174,13 @@ class RemoveBuildCommand extends Command
         $this->entityManager->merge($build);
         $this->entityManager->flush();
 
+        // remove file
         if (!$this->filesystem->exists($archive)) {
-            return $this->silentFailure($output, $isSilent, 4);
+            $output->writeln(sprintf('<error>%s</error>', sprintf('Archive for build "%s" was already removed.', $buildId)));
+            return 1;
         }
 
         $this->filesystem->remove($archive);
-
         return $this->success($output, sprintf('Archive for build "%s" removed.', $buildId));
     }
 
@@ -161,20 +200,5 @@ class RemoveBuildCommand extends Command
             DIRECTORY_SEPARATOR,
             sprintf(self::FS_ARCHIVE_PREFIX, $build->getId())
         );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param boolean $isSilent
-     * @param int $exitCode
-     * @return int
-     */
-    private function silentFailure(OutputInterface $output, $isSilent, $exitCode)
-    {
-        if ($isSilent) {
-            return 0;
-        }
-
-        return $this->failure($output, $exitCode);
     }
 }

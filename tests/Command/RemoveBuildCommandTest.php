@@ -39,7 +39,7 @@ class RemoveBuildCommandTest extends PHPUnit_Framework_TestCase
             ->andReturnNull();
 
         $input = new ArrayInput([
-            'BUILD_ID' => '1'
+            'BUILD_ID' => ['1']
         ]);
 
         $command = new RemoveBuildCommand(
@@ -53,7 +53,7 @@ class RemoveBuildCommandTest extends PHPUnit_Framework_TestCase
         $command->run($input, $this->output);
 
         $expected = <<<'OUTPUT'
-Build not found.
+Build "1" not found.
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -68,7 +68,7 @@ OUTPUT;
             ->andReturn($build);
 
         $input = new ArrayInput([
-            'BUILD_ID' => '1'
+            'BUILD_ID' => ['1']
         ]);
 
         $command = new RemoveBuildCommand(
@@ -82,7 +82,7 @@ OUTPUT;
         $command->run($input, $this->output);
 
         $expected = <<<'OUTPUT'
-Incorrect build status. Only Successful builds can be removed.
+Build "1" must be status "Success" to be removed.
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -108,7 +108,7 @@ OUTPUT;
             ->andReturn(false);
 
         $input = new ArrayInput([
-            'BUILD_ID' => '1'
+            'BUILD_ID' => ['1']
         ]);
 
         $command = new RemoveBuildCommand(
@@ -122,7 +122,7 @@ OUTPUT;
         $command->run($input, $this->output);
 
         $expected = <<<'OUTPUT'
-Build archive already removed.
+Archive for build "1" was already removed.
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
