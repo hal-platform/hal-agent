@@ -22,7 +22,10 @@ class NormalizerTest extends PHPUnit_Framework_TestCase
                 'array'
             ],
             'key5' => [
-                'nested' => 'arraydata1',
+                'nested' => [
+                    'we' => 'must',
+                    'go' => 'deeper'
+                ],
                 'array' => 'arraydata2'
             ],
             'key6' => 'test test test
@@ -32,25 +35,43 @@ test3 test3 test3',
         ];
 
         $expected = <<<OUTPUT
-key1: string
-key2: 
-key3: 
+key1:
+string
+
+key2:
+false
+
+key3:
+NULL
+
 key4:
-    0: nested
-    1: array
+    0:
+    nested
+    1:
+    array
+
 key5:
-    nested: arraydata1
-    array: arraydata2
-key6: test test test
+    nested:
+        we:
+        must
+        go:
+        deeper
+    array:
+    arraydata2
+
+key6:
+test test test
 test2 test2 test2
 test3 test3 test3
-key7: 
+
+key7:
+
 
 
 OUTPUT;
 
         $normalizer = new Normalizer('Y-m-d H:i:s');
-        $normalized = $normalizer->flatten($data);
+        $normalized = $normalizer->normalize($data);
         $this->assertSame($expected, $normalizer->flatten($normalized));
     }
 }

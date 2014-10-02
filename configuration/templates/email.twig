@@ -77,7 +77,6 @@ Email on Acid - http://www.emailonacid.com/blog/details/C18/doctype_-_the_black_
         }
 
         h2.alert--log {
-            margin-top: 50px;
             background: #888;
         }
 
@@ -177,11 +176,7 @@ Email on Acid - http://www.emailonacid.com/blog/details/C18/doctype_-_the_black_
                                     {% endif %}
 
                                     for <strong>{{ repository }}</strong>
-                                    from the code at <strong>{{ link.github_title }}</strong>
-
-                                    {% if not is_success %}
-                                        , but it <strong style="color:#C12A19;">failed</strong>
-                                    {% endif %}
+                                    from the code at <strong>{{ link.github_title }}</strong>{% if not is_success %}, but it <strong style="color:#C12A19;">failed</strong>{% endif %}.
                                 </p>
                             </td>
                         </tr>

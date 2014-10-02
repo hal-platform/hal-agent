@@ -91,11 +91,16 @@ class Normalizer
         }
 
         foreach ($normalized as $key => $data) {
+            $output .= $pad . sprintf('%s:', $key) . "\n";
+
             if (is_array($data)) {
-                $output .= $pad . sprintf('%s:', $key) . "\n";
                 $output .= $this->flatten($data, $level + 1);
             } else {
-                $output .= $pad . sprintf('%s: %s', $key, $data) . "\n";
+                $output .= $pad . $data . "\n";
+            }
+
+            if ($level === 0) {
+                $output .= "\n";
             }
         }
 
