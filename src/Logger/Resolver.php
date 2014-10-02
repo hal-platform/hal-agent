@@ -125,7 +125,7 @@ class Resolver
         // branch
         return [
             $base . '/tree/' . $branch,
-            $branch . ' ' . $branch
+            $branch . ' branch'
         ];
     }
 }
