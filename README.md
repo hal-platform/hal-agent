@@ -53,6 +53,40 @@ Command          | Description
 `push:push`      | Push a built application to a server
 `builds:list`    | List all existing builds.
 
+## A note on `builds:list` and `build:remove`
+
+The build removal command can take multiple build IDs as arguments to remove multiple builds at once.
+`builds:list` can be used to generate porcelain output that can be consumed by `build:remove` using xargs.
+
+The default output of `builds:list` is a table that shows the full path of the build archive.
+```bash
+./hal builds:list
+```
+
+Note that output is limited to 500 results, and paged. Specify further pages with the `--pages` flag.
+```bash
+./hal builds:list --page=2
+```
+
+Results can be filtered by build status, repository ID, environment name, and age. See the help documentation for more information.
+```bash
+./hal builds:list --status=Success --environment=test --repository=5 --older-than=2014-05-01
+
+// help documentation
+./hal help builds:list
+```
+
+The `--verify` flag will check that the archive file actually exists where we think it should. It will only verify successful builds.
+```bash
+./hal help builds:list --verify
+```
+
+Generate porcelain output (newline delimited build IDs) to pipe to build removal.
+The `--spaces` flag specifies space as the delimiter instead of newline, for easier xargs usability.
+```bash
+./hal builds:list --status=Success --environment=test --porcelain --spaces | xargs ./hal build:remove
+```
+
 ## Worker Commands
 
 These commands can be set on a timer or cron to pick up and process waiting actions.
@@ -128,7 +162,6 @@ For development deployments, create a `config.env.yml` using `config.env.yml.dis
 
 Key                       | Description
 ------------------------- | -----------
-email.subjects            | Templates for email and log subjects
 email.notify              | A list of secondary email addresses to notify
 environment.archive       | Path to permanent archive directory for successful builds
 environment.temp          | Path to temporary build directory
@@ -137,35 +170,9 @@ environment.home          | System HOME
 push.sshUser              | Username used to ssh to servers for syncing code
 github.token              | Github Enterprise authentication token
 github.com.token          | Github.com authentication token
-github.baseurl            | Github url
-
-A note on `agent.email.subjects`:
-
-The subject of email and log messages is customizable by providing an associative array containing the replaced templates.
-
-The following subjects are available:
-- `email.build`
-- `email.push`
-- `log.build`
-- `log.push`
-
-The following tokens are available:
-- `buildId`
-- `pushId`
-- `github`
-- `repository`
-- `server`
-- `environment`
-- `status`
-
-Example usage:
-
-```yaml
-# config.yml
-email.subjects:
-    email.build: '{status} - {repository} ({environment})'
-    log.push: '{status} - {repository} ({server}) - Push {pushId}'
-```
+github.baseurl            | Github API url
+github.baseurl.site       | Github url
+hal.baseurl               | HAL 9000 Application url
 
 ## Dependencies
 
