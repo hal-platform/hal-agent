@@ -115,6 +115,7 @@ services:
         arguments:
             - 'builds:list'
             - @build.repo
+            - @repository.repo
             - @environment.repo
             - @utility.filesystem
             - %environment.archive%

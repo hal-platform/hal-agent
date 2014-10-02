@@ -19,6 +19,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 {
     public $buildRepo;
+    public $repoRepo;
     public $envRepo;
     public $filesystem;
     public $archive;
@@ -29,6 +30,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
+        $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
         $this->envRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\EnvironmentRepository');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
         $this->archive = 'path';
@@ -47,6 +49,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
         $command = new ListBuildsCommand(
             'derp:cmd',
             $this->buildRepo,
+            $this->repoRepo,
             $this->envRepo,
             $this->filesystem,
             $this->archive
@@ -88,6 +91,7 @@ OUTPUT;
         $command = new ListBuildsCommand(
             'derp:cmd',
             $this->buildRepo,
+            $this->repoRepo,
             $this->envRepo,
             $this->filesystem,
             $this->archive

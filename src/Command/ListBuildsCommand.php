@@ -13,6 +13,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
+use QL\Hal\Core\Entity\Repository\RepositoryRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -44,14 +45,20 @@ class ListBuildsCommand extends Command
     private static $codes = [
         0 => 'Success!',
         1 => 'No builds found.',
-        2 => 'Invalid environment specified.',
-        3 => 'Invalid date specified. Please use "YYYY-MM-DD" format.'
+        2 => 'Invalid repository ID specified.',
+        3 => 'Invalid environment specified.',
+        4 => 'Invalid date specified. Please use "YYYY-MM-DD" format.'
     ];
 
     /**
      * @var BuildRepository
      */
     private $buildRepo;
+
+    /**
+     * @var RepositoryRepository
+     */
+    private $repoRepo;
 
     /**
      * @var EnvironmentRepository
@@ -71,12 +78,14 @@ class ListBuildsCommand extends Command
     /**
      * @param string $name
      * @param BuildRepository $buildRepo
+     * @param RepositoryRepository $repoRepo
      * @param EnvironmentRepository $envRepo
      * @param Filesystem $filesystem
      * @param string $archivePath
      */
     public function __construct($name,
         BuildRepository $buildRepo,
+        RepositoryRepository $repoRepo,
         EnvironmentRepository $envRepo,
         Filesystem $filesystem,
         $archivePath
@@ -84,6 +93,7 @@ class ListBuildsCommand extends Command
         parent::__construct($name);
 
         $this->buildRepo = $buildRepo;
+        $this->repoRepo = $repoRepo;
         $this->envRepo = $envRepo;
         $this->filesystem = $filesystem;
         $this->archivePath = $archivePath;
@@ -108,6 +118,12 @@ class ListBuildsCommand extends Command
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Filter by environment name.'
+            )
+            ->addOption(
+                'repository',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Filter by repository ID.'
             )
             ->addOption(
                 'older-than',
@@ -145,8 +161,9 @@ class ListBuildsCommand extends Command
             'To specify a different page, use the "page" option.</fg=yellow>',
             '',
             'Filtering',
-            '<fg=yellow>Results can be filtered by status, environment, or age',
+            '<fg=yellow>Results can be filtered by status, repository, environment, or age',
             'Status examples (<fg=green>Waiting</fg=green>, <fg=green>Building</fg=green>, <fg=green>Success</fg=green>, <fg=green>Error</fg=green>)',
+            'Repository examples (<fg=green>1</fg=green>, <fg=green>8</fg=green>)',
             'Environment examples (<fg=green>test</fg=green>, <fg=green>beta</fg=green>, <fg=green>prod</fg=green>)',
             'Age examples (<fg=green>2014-8-15</fg=green>, <fg=green>2014-05-08</fg=green>)</fg=yellow>',
             'Note: Age filtering uses an exclusive range. If 2014-8-15 is specified, builds from 2014-8-14 and before will be displayed.',
@@ -171,6 +188,7 @@ class ListBuildsCommand extends Command
         // filters
         $status = $input->getOption('status');
         $environment = $input->getOption('environment');
+        $repository = $input->getOption('repository');
         $older = $input->getOption('older-than');
 
         // flags
@@ -192,9 +210,17 @@ class ListBuildsCommand extends Command
             $criteria->andWhere(Criteria::expr()->eq('status', $status));
         }
 
+        if ($repository) {
+            if (!$repository = $this->repoRepo->findOneBy(['id' => $repository])) {
+                return $this->failure($output, 2);
+            }
+
+            $criteria->andWhere(Criteria::expr()->eq('repository', $repository));
+        }
+
         if ($environment) {
             if (!$env = $this->envRepo->findOneBy(['key' => $environment])) {
-                return $this->failure($output, 2);
+                return $this->failure($output, 3);
             }
 
             $criteria->andWhere(Criteria::expr()->eq('environment', $env));
@@ -203,7 +229,7 @@ class ListBuildsCommand extends Command
         if ($older) {
             $date = explode('-', $older);
             if (count($date) !== 3) {
-                return $this->failure($output, 3);
+                return $this->failure($output, 4);
             }
 
             list($y, $m, $d) = $date;
@@ -242,33 +268,47 @@ class ListBuildsCommand extends Command
 
         // full table
         $table = $this->getHelperSet()->get('table');
-        $table->setHeaders(['Status', 'Created Time', 'Id', 'Repository', 'Environment', 'Archive']);
+
+        $headers = ['Status', 'Created Time', 'Id', 'Repository', 'Environment', 'Archive'];
+        if ($verify) {
+            $headers[] = 'Size (MB)';
+        }
 
         foreach ($builds as $build) {
-            $archive = $this->generateArchiveLocation($build);
-
-            // Check for archive existence
-            if ($archive && $verify && !$this->filesystem->exists($archive)) {
-                $file = explode(DIRECTORY_SEPARATOR, $archive);
-                $archive = sprintf(
-                    '<error>%s not found!</error>',
-                    end($file)
-                );
-            }
-
-            $table->addRow([
+            $data = [
                 $build->getStatus(),
                 $build->getCreated() ? $build->getCreated()->format('c', self::TIMEZONE) : null,
                 $build->getId(),
                 $build->getRepository()->getKey(),
-                $build->getEnvironment()->getKey(),
-                $archive
-            ]);
+                $build->getEnvironment()->getKey()
+            ];
+
+            $archive = $this->generateArchiveLocation($build);
+            $data[] = $archive;
+
+            // Check for archive existence
+            if ($archive && $verify) {
+                if ($this->filesystem->exists($archive)) {
+                    // megabyte
+                    $mb = 1048576;
+                    $size = filesize($archive) / $mb;
+                    $data[] = round($size, 2);
+                } else {
+                    array_pop($data);
+                    $file = explode(DIRECTORY_SEPARATOR, $archive);
+                    $data[] = sprintf('<error>%s not found!</error>', array_pop($file));
+                    $data[] = '';
+                }
+            }
+
+            $table->addRow($data);
         }
 
         $start = $page * self::PAGE_SIZE;
 
         $output->writeln(sprintf('Displaying %s - %s out of %s: ', $start + 1, $start + $buildCount, $totalCount));
+
+        $table->setHeaders($headers);
         $table->render($output);
 
         return 0;
