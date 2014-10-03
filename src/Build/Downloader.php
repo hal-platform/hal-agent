@@ -54,6 +54,10 @@ class Downloader
         ];
 
         if ($isSuccessful = $this->github->download($user, $repo, $ref, $target)) {
+
+            $size = filesize($target) / 1048576;
+            $context['downloadSize'] = sprintf('%s MB', round($size, 2));
+
             $this->logger->info(self::SUCCESS, $context);
 
         } else {

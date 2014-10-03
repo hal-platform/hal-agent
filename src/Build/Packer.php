@@ -73,6 +73,10 @@ class Packer
         }
 
         if ($process->isSuccessful()) {
+
+            $size = filesize($targetFile) / 1048576;
+            $context['archiveSize'] = sprintf('%s MB', round($size, 2));
+
             $this->logger->info(self::SUCCESS_PACKED, $context);
             return true;
         }
