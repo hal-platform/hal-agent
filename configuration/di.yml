@@ -200,6 +200,7 @@ services:
         arguments:
             - @logger
             - @build.repo
+            - @utility.process.builder= # = signifies a prototype service
             - %environment.path%
             - %environment.archive%
         calls:

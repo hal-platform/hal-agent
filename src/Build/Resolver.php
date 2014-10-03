@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Build;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Resolve build properties from user and environment input
@@ -41,6 +42,11 @@ class Resolver
     private $buildRepo;
 
     /**
+     * @var ProcessBuilder
+     */
+    private $processBuilder;
+
+    /**
      * @var string
      */
     private $envPath;
@@ -63,13 +69,20 @@ class Resolver
     /**
      * @param LoggerInterface $logger
      * @param BuildRepository $buildRepo
+     * @param ProcessBuilder $processBuilder
      * @param string $envPath
      * @param string $archivePath
      */
-    public function __construct(LoggerInterface $logger, BuildRepository $buildRepo, $envPath, $archivePath)
-    {
+    public function __construct(
+        LoggerInterface $logger,
+        BuildRepository $buildRepo,
+        ProcessBuilder $processBuilder,
+        $envPath,
+        $archivePath
+    ) {
         $this->logger = $logger;
         $this->buildRepo = $buildRepo;
+        $this->processBuilder = $processBuilder;
         $this->envPath = $envPath;
         $this->archivePath = $archivePath;
     }
@@ -263,7 +276,112 @@ class Resolver
         ];
 
         // add package manager configuration
-        $vars = array_merge($vars, [
+        $vars = array_merge($vars, $this->getPackageManagerEnv($vars));
+        $vars = array_merge($vars, $this->getRubyEnv($vars));
+        $vars = array_merge($vars, $this->getIsolatedEnv($vars, $build));
+
+        return $vars;
+    }
+
+    /**
+     * NOT ACTIVE.
+     *
+     * This was not updated to correctly isolated the ruby env
+     *
+     * @param array $env
+     * @param Build $build
+     * @return array
+     */
+    private function getIsolatedEnv(array $vars, Build $build)
+    {
+        if (true) {
+        // if ($build->getRepository()->isIsolated()) {
+            return [];
+        }
+
+        $buildPath = $this->generateBuildPath($build->getId());
+
+        return [
+            # DEFAULT = ???, version < 1.0.0
+            'BOWER_STORAGE__CACHE' => $buildPath . '-bower-cache',
+
+            # DEFAULT = ???, version >= 1.0.0
+            'BOWER_STORAGE__PACKAGES' => $buildPath . '-bower-cache',
+
+            # DEFAULT = $TEMP/bower
+            'BOWER_TMP' => $buildPath . '-bower',
+
+            # DEFAULT = $COMPOSER_HOME/cache
+            'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache',
+
+            # DEFAULT = $HOME/.npm
+            'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache',
+
+            'HOME' =>  $buildPath . '-home'
+        ];
+    }
+
+    /**
+     * Ruby sucks. This is ridiculous.
+     *
+     * @param array $env
+     * @return array
+     */
+    private function getRubyEnv(array $vars)
+    {
+        /**
+         * Get the default gempath when we remove the GEM_HOME and GEM_PATH env variables
+         */
+        $process = $this->processBuilder
+            ->setWorkingDirectory($vars['HOME'])
+            ->setArguments(['gem', 'env', 'gempath'])
+            ->addEnvironmentVariables(['HOME' => $vars['HOME']])
+            ->getProcess();
+
+        $process->run();
+
+        if (!$process->isSuccessful() || !$gemPaths = $process->getOutput()) {
+            return [];
+        }
+
+        $default = null;
+
+        /**
+         * Get the gem path within the HOME dir
+         */
+        $paths = explode(':', $gemPaths);
+        foreach ($paths as $path) {
+            if (stripos($path, $vars['HOME']) === 0) {
+                $default = $path;
+            }
+        }
+
+        if (!$default) {
+            // if not found just bail out and don't set any ruby envs.
+            return [];
+        }
+
+        $bindir = sprintf('%s/bin', $default);
+
+        return [
+            // wheres gems are installed
+            'GEM_HOME' => $default,
+
+            // where gems are searched for
+            'GEM_PATH' => implode(':', $paths),
+
+            // Add the new gembin dir to the PATH
+            'PATH' => sprintf('%s:%s', $bindir, $vars['PATH'])
+        ];
+    }
+
+    /**
+     * @param array $env
+     * @return array
+     */
+    private function getPackageManagerEnv(array $vars)
+    {
+        return [
             'BOWER_INTERACTIVE' => 'false',
             'BOWER_STRICT_SSL' => 'false',
 
@@ -271,42 +389,7 @@ class Resolver
             'COMPOSER_NO_INTERACTION' => '1',
 
             'NPM_CONFIG_STRICT_SSL' => 'false',
-
-            // wheres gems are installed
-            'GEM_HOME' => $vars['HOME'] . '.gem/local',
-
-            // where gems are searched for
-            'GEM_PATH' => $vars['HOME'] . '.gem/local'
-        ]);
-
-        if ($gemPath = exec('gem env gempath')) {
-            $vars['GEM_PATH'] = $vars['GEM_PATH'] . ':' . $gemPath;
-        }
-
-        // add package manager configuration for isolated builds
-        if (false) {
-        // if ($build->getRepository()->isIsolated()) {
-            $buildPath = $this->generateBuildPath($build->getId());
-            $vars = array_merge($vars, [
-                # DEFAULT = ???, version < 1.0.0
-                'BOWER_STORAGE__CACHE' => $buildPath . '-bower-cache',
-
-                # DEFAULT = ???, version >= 1.0.0
-                'BOWER_STORAGE__PACKAGES' => $buildPath . '-bower-cache',
-
-                # DEFAULT = $TEMP/bower
-                'BOWER_TMP' => $buildPath . '-bower',
-
-                # DEFAULT = $COMPOSER_HOME/cache
-                'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache',
-
-                # DEFAULT = $HOME/.npm
-                'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache',
-
-                'HOME' =>  $buildPath . '-home'
-            ]);
-        }
-
-        return $vars;
+        ];
     }
+
 }

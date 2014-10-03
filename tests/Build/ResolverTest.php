@@ -23,7 +23,9 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null
         ]);
 
-        $action = new Resolver($logger, $repo, 'ENV_PATH', 'ARCHIVE_PATH');
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+
+        $action = new Resolver($logger, $repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234');
         $this->assertNull($properties);
@@ -43,7 +45,9 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $action = new Resolver($logger, $repo, 'ENV_PATH', 'ARCHIVE_PATH');
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+
+        $action = new Resolver($logger, $repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234');
         $this->assertNull($properties);
@@ -93,7 +97,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $expectedEnv = [
             'HOME' => 'testdir/home/',
-            'PATH' => 'ENV_PATH',
+            'PATH' => 'testdir/home/gempath/here/bin:ENV_PATH',
             'HAL_BUILDID' => '1234',
             'HAL_COMMIT' => '5555',
             'HAL_GITREF' => 'master',
@@ -106,8 +110,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'COMPOSER_HOME' => 'testdir/home/',
             'COMPOSER_NO_INTERACTION' => '1',
             'NPM_CONFIG_STRICT_SSL' => 'false',
-            'GEM_HOME' => 'testdir/home/.gem/local',
-            'GEM_PATH' => 'testdir/home/.gem/local'
+            'GEM_HOME' => 'testdir/home/gempath/here',
+            'GEM_PATH' => 'testdir/home/gempath/here:anotherpath'
         ];
 
         $logger = new MemoryLogger;
@@ -115,12 +119,20 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $action = new Resolver($logger, $repo, 'ENV_PATH', 'ARCHIVE_PATH');
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getOutput' => 'testdir/home/gempath/here:anotherpath',
+            'isSuccessful' => true
+        ])->makePartial();
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
+
+        $action = new Resolver($logger, $repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234');
 
-        $properties['environmentVariables']['GEM_PATH'] = strtok($properties['environmentVariables']['GEM_PATH'], ':');
+        // $properties['environmentVariables']['GEM_PATH'] = strtok($properties['environmentVariables']['GEM_PATH'], ':');
         $this->assertSame($expectedEnv, $properties['environmentVariables']);
 
         unset($properties['environmentVariables']);
