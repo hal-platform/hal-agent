@@ -37,5 +37,6 @@ parameters:
         password: placeholder
         dbname: hal9000
 
+    email.from.name: 'HAL9000 - TEST'
     email.notify:
-        - 'ITTeamWebCore@quickenloans.com'
+        - 'hal@example.com'

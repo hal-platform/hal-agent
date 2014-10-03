@@ -95,7 +95,7 @@ services:
     emailer.message:
         class: 'Swift_Message'
         calls:
-            - ['setFrom', [%email.from%, 'HAL9000']]
+            - ['setFrom', [%email.from%, %email.from.name%]]
             - ['setReplyTo', [%email.reply%]]
             - ['setCc', [%email.notify%]]
             - ['setContentType', ['text/html']]

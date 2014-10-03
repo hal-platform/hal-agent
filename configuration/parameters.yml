@@ -3,6 +3,8 @@ parameters:
     email.notify:
         - 'hal@example.com'
     email.from: 'hal@example.com'
+    email.from.name: 'HAL9000'
+
     email.reply: 'hal@example.com'
 
     timeout.build: 600
