@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Logger;
+namespace QL\Hal\Agent\Testing;
 
 use ArrayAccess;
 use Psr\Log\AbstractLogger;

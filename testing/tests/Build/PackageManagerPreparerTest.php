@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\MemoryLogger;
+use QL\Hal\Agent\Testing\MemoryLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 
 class PackageManagerPreparerTest extends PHPUnit_Framework_TestCase

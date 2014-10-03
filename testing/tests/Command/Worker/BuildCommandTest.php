@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Command\Worker;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\MemoryLogger;
+use QL\Hal\Agent\Testing\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
