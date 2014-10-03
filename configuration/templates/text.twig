@@ -34,6 +34,14 @@ Description: {{ repository_description }}
 >> What code was built?
 {{ github }}
 
+{% if filesize.download %}Code size: {{ filesize.download }}
+{% endif %}
+{% if filesize.archive %}Build size: {{ filesize.archive }}
+{% endif %}
+{% if filesize.archive and filesize.tooBig %}Whoa! Your builds are kind of large.
+You should consider cleaning up some of your build artifacts. If we run out of memory, it'll be your fault.
+{% endif %}
+
 >> When was the {{ type }} initiated?
 Start: {{ time.start }}
 {% if time.end %}

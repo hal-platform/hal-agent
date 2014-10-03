@@ -57,7 +57,8 @@ class TemplateFormatter implements FormatterInterface
     {
         $context = array_merge($this->formatMasterRecord($master), [
             'title' => 'derp derp',
-            'logs' => $this->formatRecords($records)
+            'logs' => $this->formatRecords($records),
+            'filesize' => $this->findFileSizes($records)
         ]);
 
         $master['message'] = $this->twig->render($context);
@@ -215,6 +216,38 @@ class TemplateFormatter implements FormatterInterface
             'start' => $startTime,
             'end' => $endTime,
             'elapsed' => $elapsed
+        ];
+    }
+
+    /**
+     * Iterate through all messages and try to find archiveSize and downloadSize in the context data
+     * @param array $records
+     * @return array
+     */
+    private function findFileSizes(array $records)
+    {
+        $downloadSize = null;
+        $archiveSize = null;
+        $tooBig = false;
+
+        foreach ($records as $record) {
+            if (isset($record['context']['downloadSize'])) {
+                $downloadSize = $record['context']['downloadSize'];
+            }
+
+            if (isset($record['context']['archiveSize'])) {
+                $archiveSize = $record['context']['archiveSize'];
+                $size = (float) strtok($archiveSize, ' ');
+                $tooBig = $size > 50;
+            }
+
+            if ($downloadSize && $archiveSize) break;
+        }
+
+        return [
+            'download' => $downloadSize,
+            'archive' => $archiveSize,
+            'tooBig' => $tooBig
         ];
     }
 }

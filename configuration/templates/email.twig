@@ -80,6 +80,13 @@ Email on Acid - http://www.emailonacid.com/blog/details/C18/doctype_-_the_black_
             background: #888;
         }
 
+        .file-alert {
+            background: #f0ad4e;
+            color: white;
+            display: inline-block;
+            padding: 5px;
+        }
+
         /* Master and Log Tables */
         table.master-data {
             padding: 10px auto;
@@ -223,6 +230,20 @@ Email on Acid - http://www.emailonacid.com/blog/details/C18/doctype_-_the_black_
                                     {{ github }}
                                     <br><a href="{{ github_url ~ link.github }}">GitHub: View code</a>
                                 </p>
+
+                                {% if filesize.download %}
+                                    <p>
+                                        <strong>Code size:</strong> {{ filesize.download }}
+                                        {% if filesize.archive %}
+                                            <br><strong>Build size:</strong> {{ filesize.archive }}
+                                        {% endif %}
+                                    </p>
+                                    {% if filesize.archive and filesize.tooBig %}
+                                        <p class="file-alert">
+                                            <strong>Whoa! Your builds are kind of large.</strong>
+                                            <br>You should consider cleaning up some of your build artifacts. If we run out of memory, it'll be your fault.</p>
+                                    {% endif %}
+                                {% endif %}
                             </td>
                         </tr>
                         <tr>
