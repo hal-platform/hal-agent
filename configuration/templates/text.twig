@@ -25,7 +25,7 @@ Description: {{ repository_description }}
 
 {% if is_push %}
 >> Where was the code pushed?
-{server} in {environment}
+{{ server }} in {{ environment }}
 {% else %}
 >> Which environment is the {{ type }} for?
 {{ environment }}

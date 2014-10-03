@@ -144,7 +144,7 @@ class TemplateFormatter implements FormatterInterface
     {
         $data = $this->getJobProperties($master, $master['context']['push']);
 
-        $data['server'] = $master['context']['repository'];
+        $data['server'] = $master['context']['server'];
         $data['is_push'] = true;
         $data['type'] = 'push';
 
