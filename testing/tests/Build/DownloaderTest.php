@@ -13,6 +13,13 @@ use QL\Hal\Agent\Logger\MemoryLogger;
 
 class DownloaderTest extends PHPUnit_Framework_TestCase
 {
+    public $file;
+
+    public function setUp()
+    {
+        $this->file = FIXTURES_DIR . '/downloaded.file';
+    }
+
     public function testSuccess()
     {
         $logger = new MemoryLogger;
@@ -22,12 +29,13 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
 
         $action = new Downloader($logger, $api);
 
-        $success = $action('user', 'repo', 'ref', []);
+        $success = $action('user', 'repo', 'ref', $this->file);
         $this->assertTrue($success);
 
         $message = $logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Application code downloaded', $message[1]);
+        $this->assertSame('0.03 MB', $message[2]['downloadSize']);
     }
 
     public function testFailure()
@@ -39,7 +47,7 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
 
         $action = new Downloader($logger, $api);
 
-        $success = $action('user', 'repo', 'ref', 'php://memory');
+        $success = $action('user', 'repo', 'ref', $this->file);
         $this->assertFalse($success);
 
         $message = $logger[0];
@@ -48,6 +56,7 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame('user/repo', $message[2]['repository']);
         $this->assertSame('ref', $message[2]['reference']);
-        $this->assertSame('php://memory', $message[2]['downloadTarget']);
+        $this->assertSame($this->file, $message[2]['downloadTarget']);
+
     }
 }

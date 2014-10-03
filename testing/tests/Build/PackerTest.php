@@ -13,6 +13,13 @@ use QL\Hal\Agent\Logger\MemoryLogger;
 
 class PackerTest extends PHPUnit_Framework_TestCase
 {
+    public $file;
+
+    public function setUp()
+    {
+        $this->file = FIXTURES_DIR . '/archived.file';
+    }
+
     public function testSuccess()
     {
         $logger = new MemoryLogger;
@@ -29,12 +36,14 @@ class PackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Packer($logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('path', $this->file);
         $this->assertTrue($success);
+
 
         $message = $logger[0];
         $this->assertSame('info', $message[0]);
         $this->assertSame('Build archived', $message[1]);
+        $this->assertSame('0.08 MB', $message[2]['archiveSize']);
     }
 
     public function testFail()
@@ -53,7 +62,7 @@ class PackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Packer($logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('path', $this->file);
         $this->assertFalse($success);
 
         $message = $logger[0];

@@ -2,6 +2,7 @@
 <phpunit
         backupGlobals="false"
         backupStaticAttributes="false"
+        bootstrap="testing/bootstrap.php"
         cacheTokens="true"
         colors="true"
         convertErrorsToExceptions="true"
@@ -25,7 +26,7 @@
 
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory>src/</directory>
+            <directory>src</directory>
         </whitelist>
     </filter>
 
@@ -34,18 +35,12 @@
     </listeners>
 
     <logging>
-    <!--
-        <log type="coverage-html" target="phpunit/coverage" charset="UTF-8" highlight="true" lowUpperBound="98" highLowerBound="99"/>
-        <log type="coverage-clover" target="phpunit/clover.xml"/>
-        <log type="testdox-html" target="phpunit/testdox.html"/>
-        <log type="testdox-text" target="phpunit/testdox.txt"/>
-    -->
         <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
     </logging>
 
     <testsuites>
-        <testsuite name="HAL 9000 Agent">
-            <directory>tests/</directory>
+        <testsuite name="Unit Tests">
+            <directory>testing/tests</directory>
         </testsuite>
     </testsuites>
 </phpunit>
