@@ -97,6 +97,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $repository = new Repository;
         $repository->setGithubUser('user1');
         $repository->setGithubRepo('repo1');
+        $repository->setBuildTransformCmd('bin/build-transform');
         $repository->setPrePushCmd('bin/pre');
         $repository->setPostPushCmd('bin/post');
         $repository->setKey('repokey');
@@ -138,7 +139,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'archiveFile' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
             'buildPath' => 'testdir/hal9000-push-1234',
 
-            'buildCommand' => '',
+            'buildCommand' => 'bin/build-transform',
             'prePushCommand' => 'bin/pre',
             'postPushCommand' => 'bin/post',
             'artifacts' => [

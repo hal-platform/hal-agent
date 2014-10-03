@@ -139,7 +139,7 @@ class Resolver
             'archiveFile' => $this->generateBuildArchive($build->getId()),
             'buildPath' => $this->generatePushPath($push->getId()),
 
-            'buildCommand' => '',
+            'buildCommand' => $repository->getBuildTransformCmd(),
             'prePushCommand' => $repository->getPrePushCmd(),
             'postPushCommand' => $repository->getPostPushCmd(),
 
