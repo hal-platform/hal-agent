@@ -340,7 +340,7 @@ class Resolver
 
         $process->run();
 
-        if (!$process->isSuccessful() || !$gemPaths = $process->getOutput()) {
+        if (!$gemPaths = $process->getOutput()) {
             return [];
         }
 
