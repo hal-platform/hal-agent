@@ -157,6 +157,7 @@ class CreatePushCommand extends Command
         }
 
         $push = new Push;
+        $push->setCreated($this->clock->read());
         $push->setStatus('Waiting');
         $push->setBuild($build);
         $push->setDeployment($deployment);

@@ -190,6 +190,7 @@ HELP;
 
         $build = new Build;
         $build->setId($this->generateBuildId());
+        $build->setCreated($this->clock->read());
         $build->setStatus('Waiting');
         $build->setRepository($repository);
         $build->setEnvironment($environment);
