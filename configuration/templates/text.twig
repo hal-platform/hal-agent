@@ -39,7 +39,7 @@ Description: {{ repository_description }}
 {% if filesize.archive %}Build size: {{ filesize.archive }}
 {% endif %}
 {% if filesize.archive and filesize.tooBig %}Whoa! Your builds are kind of large.
-You should consider cleaning up some of your build artifacts. If we run out of space, it'll be your fault.
+You should consider cleaning up some of your build artifacts.
 {% endif %}
 
 >> When was the {{ type }} initiated?
