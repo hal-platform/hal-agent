@@ -7,7 +7,7 @@ parameters:
 
     email.reply: 'hal@example.com'
 
-    timeout.build: 600
+    timeout.build: 900
     timeout.push: 300
     timeout.push.serverCommand: 300
     timeout.push.build: 300
