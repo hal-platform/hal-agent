@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Github\ReferenceResolver;
+use QL\Hal\Agent\Helper\UniqueHelper;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
 use QL\Hal\Core\Entity\Repository\RepositoryRepository;
@@ -82,9 +83,9 @@ HELP;
     private $refResolver;
 
     /**
-     * @var string
+     * @var UniqueHelper
      */
-    private $version;
+    private $unique;
 
     /**
      * @param string $name
@@ -94,7 +95,7 @@ HELP;
      * @param EnvironmentRepository $environmentRepo
      * @param UserRepository $userRepo
      * @param ReferenceResolver $refResolver
-     * @param string $version
+     * @param UniqueHelper $unique
      */
     public function __construct(
         $name,
@@ -104,7 +105,7 @@ HELP;
         EnvironmentRepository $environmentRepo,
         UserRepository $userRepo,
         ReferenceResolver $refResolver,
-        $version
+        UniqueHelper $unique
     ) {
         parent::__construct($name);
 
@@ -114,7 +115,7 @@ HELP;
         $this->environmentRepo = $environmentRepo;
         $this->userRepo = $userRepo;
         $this->refResolver = $refResolver;
-        $this->version = $version;
+        $this->unique = $unique;
     }
 
     /**
@@ -197,7 +198,7 @@ HELP;
         }
 
         $build = new Build;
-        $build->setId($this->generateBuildId());
+        $build->setId($this->unique->generateBuildId());
         $build->setCreated($this->clock->read());
         $build->setStatus('Waiting');
         $build->setRepository($repository);
@@ -215,55 +216,5 @@ HELP;
         } else {
             $this->success($output, sprintf('Build created: %s', $build->getId()));
         }
-    }
-
-    /**
-     * @return string
-     */
-    private function generateBuildId()
-    {
-        $base58 = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
-
-        // YYDDD 365 - 99365
-        // For a consistent prefix that increments and can be used to easily find builds from a certain time set
-        $day = date('y') . str_pad(date('z'), 3, '0', STR_PAD_LEFT);
-
-        // 3364 - min 3 char
-        // 195112 - min 4 char
-        // 11316496 - min 5 char
-        // 656356768 - min 6 char
-
-        // 3 char = 191 748 uniq
-        // 4 char = 11 121 384 uniq
-        // 5 char = 645 040 272 uniq
-
-        // get a random number that will consistently hash to 4 chars
-        $rando = mt_rand(195112, 11316495);
-
-        return sprintf(
-            'b%d.%s%s',
-            $this->version,
-            $this->encode($day, $base58),
-            $this->encode($rando, $base58)
-        );
-    }
-
-    /**
-     * @param int $num
-     * @param string $alphabet
-     * @return string
-     */
-    function encode($num, $alphabet)
-    {
-        $alphabet = str_split($alphabet);
-        $base = count($alphabet);
-
-        $encoded = '';
-        while($num > 0) {
-            $encoded = $alphabet[$num % $base] . $encoded;
-            $num = floor($num / $base);
-        }
-
-        return $encoded;
     }
 }

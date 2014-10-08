@@ -11,3 +11,6 @@ parameters:
 
     application.major.version: '2'
     application.version: '%application.major.version%.0.0'
+
+    # base58
+    unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'

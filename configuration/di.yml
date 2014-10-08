@@ -87,7 +87,7 @@ services:
             - @environment.repo
             - @user.repo
             - @utility.referenceResolver
-            - %application.major.version%
+            - @utility.unique.helper
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
@@ -191,6 +191,10 @@ services:
     utility.exceptionHandler:
         class: 'QL\Hal\Agent\Helper\ExceptionHandlerSubscriber'
         arguments: [@logger.mcp]
+
+    utility.unique.helper:
+        class: 'QL\Hal\Agent\Helper\UniqueHelper'
+        arguments: [%application.major.version%, %unique.alphabet%]
 
     ####################################################################################################################
     # build actions

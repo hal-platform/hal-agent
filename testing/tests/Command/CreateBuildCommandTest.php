@@ -20,6 +20,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
     public $repoRepo;
     public $userRepo;
     public $resolver;
+    public $unique;
     public $clock;
 
     public $input;
@@ -32,6 +33,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Github\ReferenceResolver');
+        $this->unique = Mockery::mock('QL\Hal\Agent\Helper\UniqueHelper');
         $this->clock = new Clock('now', 'UTC');
 
         $this->output = new BufferedOutput;
@@ -57,7 +59,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             $this->envRepo,
             $this->userRepo,
             $this->resolver,
-            2
+            $this->unique
         );
 
         $command->run($this->input, $this->output);
@@ -81,7 +83,7 @@ OUTPUT;
 
         $this->input = new ArrayInput([
             'REPOSITORY_ID' => '1',
-            'ENVIRONMENT_ID' => '2',
+            'ENVIRONMENT_ID' => '$this->unique',
             'GIT_REFERENCE' => '3'
         ]);
 
@@ -93,7 +95,7 @@ OUTPUT;
             $this->envRepo,
             $this->userRepo,
             $this->resolver,
-            2
+            $this->unique
         );
 
         $command->run($this->input, $this->output);
