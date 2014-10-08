@@ -87,6 +87,7 @@ services:
             - @environment.repo
             - @user.repo
             - @utility.referenceResolver
+            - %application.major.version%
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:

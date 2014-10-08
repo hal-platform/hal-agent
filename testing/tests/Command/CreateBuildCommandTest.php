@@ -56,7 +56,8 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             $this->repoRepo,
             $this->envRepo,
             $this->userRepo,
-            $this->resolver
+            $this->resolver,
+            2
         );
 
         $command->run($this->input, $this->output);
@@ -91,7 +92,8 @@ OUTPUT;
             $this->repoRepo,
             $this->envRepo,
             $this->userRepo,
-            $this->resolver
+            $this->resolver,
+            2
         );
 
         $command->run($this->input, $this->output);

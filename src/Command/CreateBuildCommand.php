@@ -82,6 +82,11 @@ HELP;
     private $refResolver;
 
     /**
+     * @var string
+     */
+    private $version;
+
+    /**
      * @param string $name
      * @param EntityManager $entityManager
      * @param Clock $clock
@@ -89,6 +94,7 @@ HELP;
      * @param EnvironmentRepository $environmentRepo
      * @param UserRepository $userRepo
      * @param ReferenceResolver $refResolver
+     * @param string $version
      */
     public function __construct(
         $name,
@@ -97,7 +103,8 @@ HELP;
         RepositoryRepository $repoRepo,
         EnvironmentRepository $environmentRepo,
         UserRepository $userRepo,
-        ReferenceResolver $refResolver
+        ReferenceResolver $refResolver,
+        $version
     ) {
         parent::__construct($name);
 
@@ -107,6 +114,7 @@ HELP;
         $this->environmentRepo = $environmentRepo;
         $this->userRepo = $userRepo;
         $this->refResolver = $refResolver;
+        $this->version = $version;
     }
 
     /**
@@ -214,6 +222,48 @@ HELP;
      */
     private function generateBuildId()
     {
-        return substr(sha1(microtime(true) . mt_rand(10000, 90000)), 0, 20);
+        $base58 = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+
+        // YYDDD 365 - 99365
+        // For a consistent prefix that increments and can be used to easily find builds from a certain time set
+        $day = date('y') . str_pad(date('z'), 3, '0', STR_PAD_LEFT);
+
+        // 3364 - min 3 char
+        // 195112 - min 4 char
+        // 11316496 - min 5 char
+        // 656356768 - min 6 char
+
+        // 3 char = 191 748 uniq
+        // 4 char = 11 121 384 uniq
+        // 5 char = 645 040 272 uniq
+
+        // get a random number that will consistently hash to 4 chars
+        $rando = mt_rand(195112, 11316495);
+
+        return sprintf(
+            'b%d.%s%s',
+            $this->version,
+            $this->encode($day, $base58),
+            $this->encode($rando, $base58)
+        );
+    }
+
+    /**
+     * @param int $num
+     * @param string $alphabet
+     * @return string
+     */
+    function encode($num, $alphabet)
+    {
+        $alphabet = str_split($alphabet);
+        $base = count($alphabet);
+
+        $encoded = '';
+        while($num > 0) {
+            $encoded = $alphabet[$num % $base] . $encoded;
+            $num = floor($num / $base);
+        }
+
+        return $encoded;
     }
 }
