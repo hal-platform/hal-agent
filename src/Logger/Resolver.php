@@ -126,7 +126,7 @@ class Resolver
         if (substr($branch, 0, 4) === 'tag/') {
             return [
                 $base . '/releases/' . $branch,
-                'release' . substr($branch, 4)
+                'release ' . substr($branch, 4)
             ];
         }
 
