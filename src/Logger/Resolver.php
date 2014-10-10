@@ -122,6 +122,14 @@ class Resolver
             ];
         }
 
+        // pull request
+        if (substr($branch, 0, 4) === 'tag/') {
+            return [
+                $base . '/releases/' . $branch,
+                'release' . substr($branch, 4)
+            ];
+        }
+
         // branch
         return [
             $base . '/tree/' . $branch,
