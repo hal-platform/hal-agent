@@ -18,6 +18,8 @@ do
         BIN="$BIN $RAPID_CONFIG_FILE"
     elif [ "$var" = "--coverage" ] ; then
         BIN="$BIN $CI_CONFIG_FILE"
+    else
+        PARAMETERS="$PARAMETERS $var"
     fi
 
     if [[ "${var:0:2}" != "--" ]] ; then
