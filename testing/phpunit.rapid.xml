@@ -42,6 +42,12 @@
 
     </logging>
 
+    <php>
+        <ini name="display_errors" value="On" />
+        <ini name="error_reporting" value="32767" />
+        <ini name="memory_limit" value="1G" />
+    </php>
+
     <testsuites>
         <testsuite name="Unit Tests">
             <directory>tests</directory>
