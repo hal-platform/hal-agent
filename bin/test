@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 
+set -e
+
 DIR=$( cd "$( dirname "$0" )" && pwd )
-cd "$DIR/../"
 
 BIN="$DIR/../vendor/bin/phpunit"
 PARAMETERS=""
 NO_SUITE="--testsuite none"
+RAPID_CONFIG_FILE="--configuration $DIR/../testing/phpunit.rapid.xml"
+CI_CONFIG_FILE="--configuration $DIR/../testing/phpunit.ci.xml"
+
 STOP_SUITE=false
 
 for var in "$@"
 do
-    PARAMETERS="$PARAMETERS $var"
+    if [ "$var" = "--rapid" ] ; then
+        BIN="$BIN $RAPID_CONFIG_FILE"
+    elif [ "$var" = "--coverage" ] ; then
+        BIN="$BIN $CI_CONFIG_FILE"
+    fi
 
     if [[ "${var:0:2}" != "--" ]] ; then
         STOP_SUITE=true
