@@ -344,6 +344,7 @@ class Resolver
             return [];
         }
 
+        $gemPaths = trim($gemPaths);
         $default = null;
 
         /**
