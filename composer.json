@@ -17,6 +17,10 @@
     },
     "repositories": [
         {
+            "type": "vcs",
+            "url": "git@git:web-core/hal-core.git"
+        },
+        {
             "type": "composer",
             "url": "http://composer/"
         }
@@ -26,7 +30,7 @@
         "monolog/monolog": "1.9.*",
         "php-64bit": ">=5.4.0",
         "psr/log": "*",
-        "ql/hal-core": "2.3.0",
+        "ql/hal-core": "dev-master",
         "ql/mcp-core": "1.0.*",
         "ql/mcp-logger": "1.2.*",
         "swiftmailer/swiftmailer": "5.2.*",

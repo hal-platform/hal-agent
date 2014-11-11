@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "593922b0ec5e085f39a5edd1922be208",
+    "hash": "63ab8c478edca06f14d89d4d1685fff5",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -817,17 +817,11 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.3.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "22462451c2bc57408258e207f4178119f9535944"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "http://composer//dist/ql-hal-core-2.3.0-9c87ae.zip",
-                "reference": "22462451c2bc57408258e207f4178119f9535944",
-                "shasum": "6ed7e25e765451c1bb51116cca2682ca0a45631a"
+                "reference": "141d78e372b16037c4fa1a2e6133556dd548e403"
             },
             "require": {
                 "doctrine/orm": "~2.4",
@@ -837,7 +831,6 @@
                 "symfony/yaml": "*"
             },
             "require-dev": {
-                "phpmd/phpmd": "1.5.*",
                 "phpunit/phpunit": "*",
                 "squizlabs/php_codesniffer": "*",
                 "symfony/config": "*",
@@ -859,7 +852,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2014-10-01 18:35:04"
+            "time": "2014-11-11 16:52:47"
         },
         {
             "name": "ql/mcp-core",
@@ -2536,7 +2529,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "ql/hal-core": 20
+    },
     "prefer-stable": false,
     "platform": {
         "php-64bit": ">=5.4.0"
