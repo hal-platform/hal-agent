@@ -2,14 +2,14 @@
 /.archive/
 
 # recommended location for build artifacts
-/.phpunit/
+/.build/
 
 # doctrine proxy location
 /.doctrine/
 
 # unit testing artifacts
 /phpunit.xml
-/phpunit/
+/.phpunit/
 
 # compiled configuration, package manager installation
 /configuration/config.env.yml
