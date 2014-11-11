@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
+use QL\Hal\Agent\Helper\UniqueHelper;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\DeploymentRepository;
@@ -66,12 +67,18 @@ class CreatePushCommand extends Command
     private $userRepo;
 
     /**
+     * @var UniqueHelper
+     */
+    private $unique;
+
+    /**
      * @param string $name
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param BuildRepository $buildRepo
      * @param DeploymentRepository $deploymentRepo
      * @param UserRepository $userRepo
+     * @param UniqueHelper $unique
      */
     public function __construct(
         $name,
@@ -79,7 +86,8 @@ class CreatePushCommand extends Command
         Clock $clock,
         BuildRepository $buildRepo,
         DeploymentRepository $deploymentRepo,
-        UserRepository $userRepo
+        UserRepository $userRepo,
+        UniqueHelper $unique
     ) {
         parent::__construct($name);
 
@@ -88,6 +96,7 @@ class CreatePushCommand extends Command
         $this->buildRepo = $buildRepo;
         $this->deploymentRepo = $deploymentRepo;
         $this->userRepo = $userRepo;
+        $this->unique = $unique;
     }
 
     /**
@@ -157,6 +166,7 @@ class CreatePushCommand extends Command
         }
 
         $push = new Push;
+        $push->setId($this->unique->generatePushId());
         $push->setCreated($this->clock->read());
         $push->setStatus('Waiting');
         $push->setBuild($build);

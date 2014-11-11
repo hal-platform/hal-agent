@@ -129,6 +129,7 @@ services:
             - @build.repo
             - @deployment.repo
             - @user.repo
+            - @utility.unique.helper
     command.push.push:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
