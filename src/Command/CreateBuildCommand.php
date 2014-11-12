@@ -12,6 +12,7 @@ use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Github\ReferenceResolver;
 use QL\Hal\Agent\Helper\UniqueHelper;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
 use QL\Hal\Core\Entity\Repository\RepositoryRepository;
 use QL\Hal\Core\Entity\Repository\UserRepository;
@@ -63,6 +64,11 @@ HELP;
     private $clock;
 
     /**
+     * @var BuildRepository
+     */
+    private $buildRepo;
+
+    /**
      * @var RepositoryRepository
      */
     private $repoRepo;
@@ -91,6 +97,7 @@ HELP;
      * @param string $name
      * @param EntityManager $entityManager
      * @param Clock $clock
+     * @param BuildRepository $buildRepo
      * @param RepositoryRepository $repoRepo
      * @param EnvironmentRepository $environmentRepo
      * @param UserRepository $userRepo
@@ -101,6 +108,7 @@ HELP;
         $name,
         EntityManager $entityManager,
         Clock $clock,
+        BuildRepository $buildRepo,
         RepositoryRepository $repoRepo,
         EnvironmentRepository $environmentRepo,
         UserRepository $userRepo,
@@ -111,6 +119,7 @@ HELP;
 
         $this->entityManager = $entityManager;
         $this->clock = $clock;
+        $this->buildRepo = $buildRepo;
         $this->repoRepo = $repoRepo;
         $this->environmentRepo = $environmentRepo;
         $this->userRepo = $userRepo;
@@ -207,6 +216,8 @@ HELP;
         $build->setCommit($commitSha);
         $build->setBranch($ref);
 
+        $this->dupeCatcher($build);
+
         $this->entityManager->persist($build);
         $this->entityManager->flush();
 
@@ -215,6 +226,19 @@ HELP;
 
         } else {
             $this->success($output, sprintf('Build created: %s', $build->getId()));
+        }
+    }
+
+    /**
+     * @param Build $build
+     * @return null
+     */
+    private function dupeCatcher(Build $build)
+    {
+        $dupe = $this->buildRepo->findBy(['id' => [$build->getId()]]);
+        if ($dupe) {
+            $build->setId($this->unique->generateBuildId());
+            $this->dupeCatcher($build);
         }
     }
 }

@@ -13,6 +13,7 @@ use QL\Hal\Agent\Helper\UniqueHelper;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\DeploymentRepository;
+use QL\Hal\Core\Entity\Repository\PushRepository;
 use QL\Hal\Core\Entity\Repository\UserRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -62,6 +63,11 @@ class CreatePushCommand extends Command
     private $deploymentRepo;
 
     /**
+     * @var PushRepository
+     */
+    private $pushRepo;
+
+    /**
      * @var UserRepository
      */
     private $userRepo;
@@ -77,6 +83,7 @@ class CreatePushCommand extends Command
      * @param Clock $clock
      * @param BuildRepository $buildRepo
      * @param DeploymentRepository $deploymentRepo
+     * @param PushRepository $pushRepo
      * @param UserRepository $userRepo
      * @param UniqueHelper $unique
      */
@@ -86,6 +93,7 @@ class CreatePushCommand extends Command
         Clock $clock,
         BuildRepository $buildRepo,
         DeploymentRepository $deploymentRepo,
+        PushRepository $pushRepo,
         UserRepository $userRepo,
         UniqueHelper $unique
     ) {
@@ -95,6 +103,7 @@ class CreatePushCommand extends Command
         $this->clock = $clock;
         $this->buildRepo = $buildRepo;
         $this->deploymentRepo = $deploymentRepo;
+        $this->pushRepo = $pushRepo;
         $this->userRepo = $userRepo;
         $this->unique = $unique;
     }
@@ -173,6 +182,8 @@ class CreatePushCommand extends Command
         $push->setDeployment($deployment);
         $push->setUser($user);
 
+        $this->dupeCatcher($push);
+
         $this->entityManager->persist($push);
         $this->entityManager->flush();
 
@@ -183,4 +194,18 @@ class CreatePushCommand extends Command
             $this->success($output, sprintf('Push created: %s', $push->getId()));
         }
     }
+
+    /**
+     * @param Push $push
+     * @return null
+     */
+    private function dupeCatcher(Push $push)
+    {
+        $dupe = $this->pushRepo->findBy(['id' => [$push->getId()]]);
+        if ($dupe) {
+            $push->setId($this->unique->generatePushId());
+            $this->dupeCatcher($push);
+        }
+    }
+
 }

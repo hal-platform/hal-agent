@@ -83,6 +83,7 @@ services:
             - 'build:create'
             - @doctrine.em
             - @clock
+            - @build.repo
             - @repository.repo
             - @environment.repo
             - @user.repo
@@ -128,6 +129,7 @@ services:
             - @clock
             - @build.repo
             - @deployment.repo
+            - @push.repo
             - @user.repo
             - @utility.unique.helper
     command.push.push:
