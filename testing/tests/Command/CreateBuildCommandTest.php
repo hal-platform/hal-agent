@@ -16,6 +16,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
 {
     public $em;
+    public $buildRepo;
     public $envRepo;
     public $repoRepo;
     public $userRepo;
@@ -29,6 +30,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
+        $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
         $this->envRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\EnvironmentRepository');
         $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
@@ -55,6 +57,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             'derp:cmd',
             $this->em,
             $this->clock,
+            $this->buildRepo,
             $this->repoRepo,
             $this->envRepo,
             $this->userRepo,
@@ -91,6 +94,7 @@ OUTPUT;
             'derp:cmd',
             $this->em,
             $this->clock,
+            $this->buildRepo,
             $this->repoRepo,
             $this->envRepo,
             $this->userRepo,
