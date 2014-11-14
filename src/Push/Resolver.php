@@ -122,6 +122,9 @@ class Resolver
         $serverName = $deployment->getServer()->getName();
         if (!$hostname = $this->validateHostname($serverName)) {
             $this->logger->critical(sprintf('Cannot resolve hostname "%s"', $serverName));
+
+            // Revert hostname back to server name, and allow the push to continue.
+            $hostname = $serverName;
         }
 
         $properties = [
