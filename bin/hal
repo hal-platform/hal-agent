@@ -16,6 +16,6 @@ require_once $root . '/configuration/bootstrap.php';
 $di = getDi($root);
 
 ErrorHandler::register(E_ALL, false);
-ErrorHandler::setLogger($di->get('logger.mcp'), 'error');
+ErrorHandler::setLogger($di->get('logger.mcp'), 'critical');
 
 $di->get('application')->run();
