@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Push;
 
 use MCP\DataType\Time\Clock;
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository\PushRepository;
@@ -27,13 +27,12 @@ class Resolver
     /**
      * @var string
      */
-    const SUCCESS_FOUND = 'Found push: %s';
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -73,14 +72,14 @@ class Resolver
     private $homeDirectory;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param PushRepository $pushRepo
      * @param Clock $clock
      * @param string $sshUser
      * @param string $envPath
      * @param string $archivePath
      */
-    public function __construct(LoggerInterface $logger, PushRepository $pushRepo, Clock $clock, $sshUser, $envPath, $archivePath)
+    public function __construct(EventLogger $logger, PushRepository $pushRepo, Clock $clock, $sshUser, $envPath, $archivePath)
     {
         $this->logger = $logger;
         $this->pushRepo = $pushRepo;
@@ -93,25 +92,23 @@ class Resolver
     /**
      * @param string $pushId
      * @param string $method
-     * @return array|null
+     *
+     * @throws PushException
+     *
+     * @return array
      */
     public function __invoke($pushId, $method)
     {
         if (!$push = $this->pushRepo->find($pushId)) {
-            $this->logger->error(sprintf(self::ERR_NOT_FOUND, $pushId));
-            return null;
+            throw new PushException(sprintf(self::ERR_NOT_FOUND, $pushId));
         }
 
-        $this->logger->info(sprintf(self::SUCCESS_FOUND, $pushId));
-
         if ($push->getStatus() !== 'Waiting') {
-            $this->logger->error(sprintf(self::ERR_BAD_STATUS, $pushId, $push->getStatus()));
-            return null;
+            throw new PushException(sprintf(self::ERR_BAD_STATUS, $pushId, $push->getStatus()));
         }
 
         if ($this->hasConcurrentDeployment($push->getDeployment())) {
-            $this->logger->error(sprintf(self::ERR_CLOBBERING_TIME, $pushId));
-            return null;
+            throw new PushException(sprintf(self::ERR_CLOBBERING_TIME, $pushId));
         }
 
         $build = $push->getBuild();
@@ -121,7 +118,7 @@ class Resolver
         // validate remote hostname
         $serverName = $deployment->getServer()->getName();
         if (!$hostname = $this->validateHostname($serverName)) {
-            $this->logger->critical(sprintf('Cannot resolve hostname "%s"', $serverName));
+            $this->logger->failure(sprintf('Cannot resolve hostname "%s"', $serverName));
 
             // Revert hostname back to server name, and allow the push to continue.
             $hostname = $serverName;
@@ -166,7 +163,6 @@ class Resolver
 
         $properties['artifacts'] = $this->findPushArtifacts($properties);
 
-        $this->logger->info('Resolved push properties', $properties);
         return $properties;
     }
 
@@ -333,18 +329,15 @@ class Resolver
     private function validateHostname($hostname)
     {
         if (filter_var($hostname, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            $this->logger->info('Hostname appears to be an IP, skipping check.');
             return $hostname;
         }
 
         if ($hostname !== gethostbyname($hostname)) {
-            $this->logger->info(sprintf('Hostname "%s" resolved.', $hostname));
             return $hostname;
         }
 
         $hostname = sprintf('%s.rockfin.com', $hostname);
         if ($hostname !== gethostbyname($hostname)) {
-            $this->logger->info(sprintf('Hostname "%s" resolved.', $hostname));
             return $hostname;
         }
 

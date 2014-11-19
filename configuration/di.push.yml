@@ -1,0 +1,42 @@
+services:
+
+    push.resolver:
+        class: 'QL\Hal\Agent\Push\Resolver'
+        arguments:
+            - @logger.event
+            - @push.repo
+            - @clock
+            - %push.sshUser%
+            - %environment.path%
+            - %environment.archive%
+        calls:
+            - ['setBaseBuildDirectory', ['%environment.temp%']]
+            - ['setHomeDirectory', ['%environment.home%']]
+
+    push.unpacker:
+        class: 'QL\Hal\Agent\Push\Unpacker'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - @utility.filesystem
+            - @utility.yamlDumper
+            - %timeout.filepacking%
+    push.builder:
+        class: 'QL\Hal\Agent\Push\Builder'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.push.build%
+    push.pusher:
+        class: 'QL\Hal\Agent\Push\Pusher'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.push%
+    push.serverCommand:
+        class: 'QL\Hal\Agent\Push\ServerCommand'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %push.sshUser%
+            - %timeout.push.serverCommand%

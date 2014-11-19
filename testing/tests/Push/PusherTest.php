@@ -9,16 +9,21 @@ namespace QL\Hal\Agent\Push;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 
 class PusherTest extends PHPUnit_Framework_TestCase
 {
+    public $logger;
+
+    public function setUp()
+    {
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+    }
+
     public function testSuccess()
     {
-        $logger = new MemoryLogger;
-
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
+            'getCommandLine' => 'rsync',
             'getOutput' => 'test-output',
             'isSuccessful' => true
         ])->makePartial();
@@ -28,39 +33,47 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Pusher($logger, $builder, 20);
+        $this->logger
+            ->shouldReceive('success')
+            ->with(Mockery::any(), [
+                'command' => 'rsync',
+                'output' => 'test-output'
+            ])->once();
+
+        $action = new Pusher($this->logger, $builder, 20);
 
         $success = $action('build/path', 'sync/path', []);
         $this->assertTrue($success);
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Application code synced to server', $message[1]);
     }
 
     public function testFail()
     {
-        $logger = new MemoryLogger;
-
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
+            'getCommandLine' => 'deployscript',
             'getOutput' => 'test-output',
-            'getErrorOutput' => 'error-output',
+            'getErrorOutput' => 'test-error-output',
+            'getExitCode' => 9000,
             'isSuccessful' => false
         ])->makePartial();
+
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'deployscript',
+                'exitCode' => 9000,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Pusher($logger, $builder, 20);
+        $action = new Pusher($this->logger, $builder, 20);
 
         $success = $action('build/path', 'sync/path', []);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unable to finish syncing application code', $message[1]);
     }
 }

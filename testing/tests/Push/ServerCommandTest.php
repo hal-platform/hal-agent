@@ -9,16 +9,21 @@ namespace QL\Hal\Agent\Push;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 
 class ServerCommandTest extends PHPUnit_Framework_TestCase
 {
+    public $logger;
+
+    public function setUp()
+    {
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+    }
+
     public function testSuccess()
     {
-        $logger = new MemoryLogger;
-
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
+            'getCommandLine' => 'servercmd',
             'getOutput' => 'test-output',
             'isSuccessful' => true
         ])->makePartial();
@@ -28,23 +33,27 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new ServerCommand($logger, $builder, 'sshuser', 10);
+        $this->logger
+            ->shouldReceive('success')
+            ->with(Mockery::any(), [
+                'command' => 'servercmd',
+                'output' => 'test-output'
+            ])->once();
+
+        $action = new ServerCommand($this->logger, $builder, 'sshuser', 10);
 
         $success = $action('host', 'sync/path', 'env && pwd', ['derp' => 'derp1', 'derp2' => 'derp3']);
         $this->assertTrue($success);
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Server command executed', $message[1]);
     }
 
     public function testFail()
     {
-        $logger = new MemoryLogger;
-
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
+            'getCommandLine' => 'servercmd',
             'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
+            'getExitCode' => 500,
             'isSuccessful' => false
         ])->makePartial();
 
@@ -53,13 +62,18 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new ServerCommand($logger, $builder, 'sshuser', 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'servercmd',
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output',
+                'exitCode' => 500
+            ])->once();
+
+        $action = new ServerCommand($this->logger, $builder, 'sshuser', 10);
 
         $success = $action('host', 'sync/path', 'bin/cmd', []);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Server command executed with errors', $message[1]);
     }
 }

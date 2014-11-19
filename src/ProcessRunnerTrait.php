@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 
@@ -15,18 +15,18 @@ trait ProcessRunnerTrait
 {
     /**
      * @param Process $process
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param string $err
      * @param int $timeout
      *
      * @return boolean
      */
-    private function runProcess(Process $process, LoggerInterface $logger, $err, $timeout)
+    private function runProcess(Process $process, EventLogger $logger, $err, $timeout)
     {
         try {
             $process->run();
         } catch (ProcessTimedOutException $ex) {
-            $logger->critical($err, [
+            $logger->failure($err, [
                 'maxTimeout' => $timeout . ' seconds',
                 'output' => $process->getOutput()
             ]);

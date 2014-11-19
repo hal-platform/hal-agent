@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Push;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\ProcessUtils;
@@ -19,12 +19,11 @@ class ServerCommand
     /**
      * @var string
      */
-    const SUCCESS_COMMAND = 'Server command executed';
-    const ERR_COMMAND = 'Server command executed with errors';
+    const EVENT_MESSAGE = 'Run server command';
     const ERR_COMMAND_TIMEOUT = 'Server command took too long';
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -44,12 +43,12 @@ class ServerCommand
     private $commandTimeout;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
      * @param string $sshUser
      * @param int $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $sshUser, $commandTimeout)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $sshUser, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
@@ -66,13 +65,6 @@ class ServerCommand
      */
     public function __invoke($hostname, $remotePath, $serverCommand, array $env)
     {
-        $context = [
-            'hostname' => $hostname,
-            'remotePath' => $remotePath,
-            'serverCommand' => $serverCommand,
-            'environment' => $env
-        ];
-
         $serverCommand = $this->sanitizeCommand($serverCommand);
 
         // Add environment variables if possible
@@ -92,8 +84,6 @@ class ServerCommand
             sprintf('"%s"', $remoteCommand)
         ]);
 
-        $context = array_merge($context, ['fullCommand' => $command]);
-
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments([''])
@@ -106,16 +96,22 @@ class ServerCommand
             return false;
         }
 
-        // we always want the output
-        $context = array_merge($context, ['output' => $process->getOutput()]);
-
         if ($process->isSuccessful()) {
-            $this->logger->info(self::SUCCESS_COMMAND, $context);
+            $this->logger->success(self::EVENT_MESSAGE, [
+                'command' => $process->getCommandLine(),
+                'output' => $process->getOutput()
+            ]);
+
             return true;
         }
 
-        $context = array_merge($context, ['exitCode' => $process->getExitCode()]);
-        $this->logger->critical(self::ERR_COMMAND, $context);
+        $this->logger->failure(self::EVENT_MESSAGE, [
+            'command' => $process->getCommandLine(),
+            'exitCode' => $process->getExitCode(),
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput()
+        ]);
+
         return false;
     }
 

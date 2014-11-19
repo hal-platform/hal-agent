@@ -1,0 +1,119 @@
+services:
+
+    ####################################################################################################################
+    # lazy commands
+    ####################################################################################################################
+
+    lazy.command.build.create:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['build:create', 'command.build.create', @service_container]
+    lazy.command.build.build:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['build:build', 'command.build.build', @service_container]
+    lazy.command.build.remove:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['build:remove', 'command.build.remove', @service_container]
+
+    lazy.command.push.create:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['push:create', 'command.push.create', @service_container]
+    lazy.command.push.push:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['push:push', 'command.push.push', @service_container]
+
+    lazy.command.builds.list:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['builds:list', 'command.builds.list', @service_container]
+
+    lazy.command.worker.build:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['worker:build', 'command.worker.build', @service_container]
+    lazy.command.worker.push:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['worker:push', 'command.worker.push', @service_container]
+
+    ####################################################################################################################
+    # commands
+    ####################################################################################################################
+
+    command.build.create:
+        class: 'QL\Hal\Agent\Command\CreateBuildCommand'
+        arguments:
+            - 'build:create'
+            - @doctrine.em
+            - @clock
+            - @build.repo
+            - @repository.repo
+            - @environment.repo
+            - @user.repo
+            - @utility.referenceResolver
+            - @utility.unique.helper
+    command.build.build:
+        class: 'QL\Hal\Agent\Command\BuildCommand'
+        arguments:
+            - 'build:build'
+            - @logger.job
+            - @build.resolver
+            - @build.downloader
+            - @build.unpacker
+            - @build.builder
+            - @build.packer
+            - @utility.helper.downloadProgress
+            - @utility.process.builder= # = signifies a prototype service
+    command.build.remove:
+        class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
+        arguments:
+            - 'build:remove'
+            - @doctrine.em
+            - @build.repo
+            - @utility.filesystem
+            - %environment.archive%
+    command.builds.list:
+        class: 'QL\Hal\Agent\Command\ListBuildsCommand'
+        arguments:
+            - 'builds:list'
+            - @build.repo
+            - @repository.repo
+            - @environment.repo
+            - @utility.filesystem
+            - %environment.archive%
+    command.push.create:
+        class: 'QL\Hal\Agent\Command\CreatePushCommand'
+        arguments:
+            - 'push:create'
+            - @doctrine.em
+            - @clock
+            - @build.repo
+            - @deployment.repo
+            - @push.repo
+            - @user.repo
+            - @utility.unique.helper
+    command.push.push:
+        class: 'QL\Hal\Agent\Command\PushCommand'
+        arguments:
+            - 'push:push'
+            - @logger.job
+            - @push.resolver
+            - @push.unpacker
+            - @push.builder
+            - @push.pusher
+            - @push.serverCommand
+            - @utility.process.builder= # = signifies a prototype service
+    command.worker.build:
+        class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
+        arguments:
+            - 'worker:build'
+            - 'build:build'
+            - @build.repo
+            - @doctrine.em
+            - @utility.forker
+            - @logger.mcp
+    command.worker.push:
+        class: 'QL\Hal\Agent\Command\Worker\PushCommand'
+        arguments:
+            - 'worker:push'
+            - 'push:push'
+            - @push.repo
+            - @doctrine.em
+            - @utility.forker
+            - @logger.mcp

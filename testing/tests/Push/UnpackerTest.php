@@ -9,15 +9,20 @@ namespace QL\Hal\Agent\Push;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Yaml\Dumper;
 
 class UnpackerTest extends PHPUnit_Framework_TestCase
 {
+    public $logger;
+
+    public function setUp()
+    {
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+    }
+
     public function testSuccess()
     {
-        $logger = new MemoryLogger;
         $dumper = new Dumper;
         $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem', [
             'dumpFile' => null
@@ -25,7 +30,6 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getOutput' => 'test-output',
             'isSuccessful' => true
         ])->makePartial();
 
@@ -34,30 +38,25 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, $filesystem, $dumper, 10);
+
+        $action = new Unpacker($this->logger, $builder, $filesystem, $dumper, 10);
 
         $success = $action('archive', 'php://temp', []);
         $this->assertTrue($success);
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Build archive unpacked', $message[1]);
-
-        $message = $logger[1];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Push details written to application directory', $message[1]);
     }
 
     public function testFailUnpacking()
     {
-        $logger = new MemoryLogger;
         $dumper = new Dumper;
         $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem', [
             'dumpFile' => null
         ]);
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'getOutput' => 'test-output'
+            'getCommandLine' => 'tar',
+            'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
+            'getExitCode' => 500
         ])->makePartial();
 
         $process
@@ -75,19 +74,23 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, $filesystem, $dumper, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'tar',
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output',
+                'exitCode' => 500
+            ])->once();
+
+        $action = new Unpacker($this->logger, $builder, $filesystem, $dumper, 10);
 
         $success = $action('archive', 'php://temp', []);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unable to unpack repository archive', $message[1]);
     }
 
     public function testFailBuildArtifacts()
     {
-        $logger = new MemoryLogger;
         $dumper = new Dumper;
 
         $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
@@ -112,13 +115,13 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, $filesystem, $dumper, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->once();
+
+        $action = new Unpacker($this->logger, $builder, $filesystem, $dumper, 10);
 
         $success = $action('archive', 'php://temp', []);
         $this->assertFalse($success);
-
-        $message = $logger[1];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Push details could not be written: msg', $message[1]);
     }
 }

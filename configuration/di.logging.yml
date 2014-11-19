@@ -1,31 +1,31 @@
 services:
 
-    logger: @monolog
+    # logger: @monolog
+    logger:
+        class: 'Psr\Log\NullLogger'
 
-    monolog:
-        class: 'Monolog\Logger'
-        arguments: ['hal9000']
-        calls:
-            - ['pushHandler', [@monolog.handler.console]]
-            - ['pushHandler', [@monolog.handler.buffer]]
+    # monolog:
+    #     class: 'Monolog\Logger'
+    #     arguments: ['hal9000']
+    #     calls:
+    #         - ['pushHandler', [@monolog.console]]
+    # monolog.console:
+    #     class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
 
     ####################################################################################################################
-    # monolog handlers
+    # Logging
     ####################################################################################################################
 
-    monolog.handler.console:
-        class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
+    logger.job:
+        class: 'QL\Hal\Agent\Logger\JobLogger'
+        arguments:
+            - @doctrine.em
+            - @logger.event
+            - @clock
 
-    # custom buffer handler that can run a custom callback before close
-    monolog.handler.buffer:
-        class: 'QL\Hal\Agent\Logger\BufferHandler'
-        arguments: [@monolog.handler.agent]
-
-    monolog.handler.agent:
-        class: 'QL\Hal\Agent\Logger\AgentHandler'
-        calls:
-            - ['setLogger', ['mcp', @logger.mcp, @logger.template.text.formatter]]
-            - ['setLogger', ['email', @logger.email, @logger.template.email.formatter]]
+    logger.event:
+        class: 'QL\Hal\Agent\Logger\EventLogger'
+        arguments: [@doctrine.em]
 
     ####################################################################################################################
     # custom formatters and logging utils
@@ -40,20 +40,12 @@ services:
     logger.template.email.formatter:
         class: 'QL\Hal\Agent\Logger\TemplateFormatter'
         arguments: [@logger.normalizer, @logger.email.template]
-    logger.template.text.formatter:
-        class: 'QL\Hal\Agent\Logger\McpFormatter'
-        arguments: [@logger.normalizer, @logger.text.template]
 
     logger.email.template:
         class: 'Twig_Template'
         factory_service: 'logger.twig.environment'
         factory_method: 'loadTemplate'
         arguments: ['email.twig']
-    logger.text.template:
-        class: 'Twig_Template'
-        factory_service: 'logger.twig.environment'
-        factory_method: 'loadTemplate'
-        arguments: ['text.twig']
 
     logger.twig.environment:
         class: 'Twig_Environment'

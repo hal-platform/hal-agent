@@ -1,0 +1,40 @@
+services:
+    build.resolver:
+        class: 'QL\Hal\Agent\Build\Resolver'
+        arguments:
+            - @logger.event
+            - @build.repo
+            - @utility.process.builder= # = signifies a prototype service
+            - %environment.path%
+            - %environment.archive%
+        calls:
+            - ['setBaseBuildDirectory', ['%environment.temp%']]
+            - ['setHomeDirectory', ['%environment.home%']]
+    build.downloader:
+        class: 'QL\Hal\Agent\Build\Downloader'
+        arguments: [@logger.event, @github.archive]
+    build.unpacker:
+        class: 'QL\Hal\Agent\Build\Unpacker'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filepacking%
+    build.preparer:
+        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - %github.com.token%
+    build.builder:
+        class: 'QL\Hal\Agent\Build\Builder'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - @build.preparer
+            - %timeout.build%
+    build.packer:
+        class: 'QL\Hal\Agent\Build\Packer'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filepacking%

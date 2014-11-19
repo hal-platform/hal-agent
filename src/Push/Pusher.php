@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Push;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -18,12 +18,11 @@ class Pusher
     /**
      * @var string
      */
-    const SUCCESS_PUSH = 'Application code synced to server';
-    const ERR_PUSH = 'Unable to finish syncing application code';
+    const EVENT_MESSAGE = 'Code Sync';
     const ERR_PUSHING_TIMEOUT = 'Syncing code to server took too long';
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -38,11 +37,11 @@ class Pusher
     private $commandTimeout;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $commandTimeout)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
@@ -59,13 +58,6 @@ class Pusher
     {
         $command = $this->buildRsyncCommand($buildPath, $syncPath, $excludedFiles);
 
-        $context = [
-            'buildPath' => $buildPath,
-            'syncPath' => $syncPath,
-            'excludedFiles' => $excludedFiles,
-            'command' => implode(' ', $command)
-        ];
-
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments($command)
@@ -77,18 +69,22 @@ class Pusher
             return false;
         }
 
-        // we always want the output
-        $context = array_merge($context, ['output' => $process->getOutput()]);
-
         if ($process->isSuccessful()) {
-            $this->logger->info(self::SUCCESS_PUSH, $context);
+            $this->logger->success(self::EVENT_MESSAGE, [
+                'command' => $process->getCommandLine(),
+                'output' => $process->getOutput()
+            ]);
+
             return true;
         }
 
-        $errorContext = ['exitCode' => $process->getExitCode(), 'errorOutput' => $process->getErrorOutput()];
-        $context = array_merge($context, $errorContext);
+        $this->logger->failure(self::EVENT_MESSAGE, [
+            'command' => $process->getCommandLine(),
+            'exitCode' => $process->getExitCode(),
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput()
+        ]);
 
-        $this->logger->critical(self::ERR_PUSH, $context);
         return false;
     }
 
