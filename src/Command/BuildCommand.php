@@ -46,6 +46,11 @@ class BuildCommand extends Command
     ];
 
     /**
+     * @var JobLogger
+     */
+    private $logger;
+
+    /**
      * @var Resolver
      */
     private $resolver;
@@ -182,9 +187,9 @@ class BuildCommand extends Command
         // expected build statuses
         // Waiting, Building, Success, Error, Removed
 
-        $this->logger->setStage('build.start');
-
         $buildId = $input->getArgument('BUILD_ID');
+
+        $this->logger->setStage('build.start');
 
         if (!$properties = $this->resolve($output, $buildId)) {
             return $this->failure($output, 1);
@@ -263,8 +268,6 @@ class BuildCommand extends Command
      */
     private function status(OutputInterface $output, $message)
     {
-        // $this->log('notice', $message);
-
         $message = sprintf('<comment>%s</comment>', $message);
         $output->writeln($message);
     }

@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Command;
 
 use Exception;
-use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -16,8 +15,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class PushCommandTest extends PHPUnit_Framework_TestCase
 {
-    public $em;
-    public $clock;
+    public $logger;
     public $resolver;
     public $unpacker;
     public $builder;
@@ -30,8 +28,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->clock = new Clock('now', 'UTC');
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\JobLogger');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
         $this->builder = Mockery::mock('QL\Hal\Agent\Push\Builder');
@@ -53,10 +50,16 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturnNull();
 
+        $this->logger
+            ->shouldReceive('failure')
+            ->twice();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->once();
+
         $command = new PushCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->unpacker,
             $this->builder,
@@ -65,7 +68,9 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->processBuilder
         );
 
+        $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
+
         $expected = <<<'OUTPUT'
 Resolving push properties
 Push details could not be resolved.
@@ -100,11 +105,21 @@ OUTPUT;
             'getId' => 1234
         ]);
 
-        $this->em
-            ->shouldReceive('merge')
-            ->with($push);
-        $this->em
-            ->shouldReceive('flush');
+        $this->logger
+            ->shouldReceive('start')
+            ->once();
+        $this->logger
+            ->shouldReceive('success')
+            ->once();
+        $this->logger
+            ->shouldReceive('failure')
+            ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->twice();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->times(3);
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -146,8 +161,7 @@ OUTPUT;
 
         $command = new PushCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->unpacker,
             $this->builder,
@@ -156,7 +170,9 @@ OUTPUT;
             $this->processBuilder
         );
 
+        $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
+
         $expected = <<<'OUTPUT'
 Resolving push properties
 Unpacking build archive
@@ -196,11 +212,21 @@ OUTPUT;
             'getId' => 1234
         ]);
 
-        $this->em
-            ->shouldReceive('merge')
-            ->with($push);
-        $this->em
-            ->shouldReceive('flush');
+        $this->logger
+            ->shouldReceive('start')
+            ->once();
+        $this->logger
+            ->shouldReceive('success')
+            ->once();
+        $this->logger
+            ->shouldReceive('failure')
+            ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->twice();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->times(3);
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -242,8 +268,7 @@ OUTPUT;
 
         $command = new PushCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->unpacker,
             $this->builder,
@@ -252,7 +277,9 @@ OUTPUT;
             $this->processBuilder
         );
 
+        $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
+
         $expected = <<<'OUTPUT'
 Resolving push properties
 Unpacking build archive
@@ -291,20 +318,21 @@ OUTPUT;
             'getId' => 1234
         ]);
 
-        $push
-            ->shouldReceive('setEnd')
+        $this->logger
+            ->shouldReceive('start')
             ->once();
-        $push
-            ->shouldReceive('setStatus')
-            ->with('Error')
+        $this->logger
+            ->shouldReceive('success')
             ->once();
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($push);
-        $this->em
-            ->shouldReceive('flush')
+        $this->logger
+            ->shouldReceive('failure')
             ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->twice();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->times(3);
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -335,8 +363,7 @@ OUTPUT;
 
         $command = new PushCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->unpacker,
             $this->builder,
@@ -346,6 +373,7 @@ OUTPUT;
         );
 
         try {
+            $command->disableShutdownHandler();
             $command->run($this->input, $this->output);
         } catch (Exception $e) {}
 

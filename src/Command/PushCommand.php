@@ -7,9 +7,7 @@
 
 namespace QL\Hal\Agent\Command;
 
-use Doctrine\ORM\EntityManager;
-use MCP\DataType\Time\Clock;
-use QL\Hal\Agent\Logger\CommandLoggingTrait;
+use QL\Hal\Agent\Logger\JobLogger;
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
@@ -29,7 +27,6 @@ use Symfony\Component\Process\ProcessBuilder;
 class PushCommand extends Command
 {
     use CommandTrait;
-    use CommandLoggingTrait;
     use FormatterTrait;
 
     /**
@@ -47,14 +44,9 @@ class PushCommand extends Command
     ];
 
     /**
-     * @var EntityManager
+     * @var JobLogger
      */
-    private $entityManager;
-
-    /**
-     * @var Clock
-     */
-    private $clock;
+    private $logger;
 
     /**
      * @var Resolver
@@ -92,9 +84,13 @@ class PushCommand extends Command
     private $push;
 
     /**
+     * @var boolean
+     */
+    private $enableShutdownHandler;
+
+    /**
      * @param string $name
-     * @param EntityManager $entityManager
-     * @param Clock $clock
+     * @param JobLogger $logger
      * @param Resolver $resolver
      * @param Unpacker $unpacker
      * @param Builder $builder
@@ -104,8 +100,7 @@ class PushCommand extends Command
      */
     public function __construct(
         $name,
-        EntityManager $entityManager,
-        Clock $clock,
+        JobLogger $logger,
         Resolver $resolver,
         Unpacker $unpacker,
         Builder $builder,
@@ -115,8 +110,7 @@ class PushCommand extends Command
     ) {
         parent::__construct($name);
 
-        $this->entityManager = $entityManager;
-        $this->clock = $clock;
+        $this->logger = $logger;
 
         $this->resolver = $resolver;
         $this->unpacker = $unpacker;
@@ -126,6 +120,8 @@ class PushCommand extends Command
 
         $this->processBuilder = $processBuilder;
         $this->artifacts = [];
+
+        $this->enableShutdownHandler = true;
     }
 
     /**
@@ -139,6 +135,14 @@ class PushCommand extends Command
     public function __destruct()
     {
         $this->blowTheHatch();
+    }
+
+    /**
+     * @return null
+     */
+    public function disableShutdownHandler()
+    {
+        $this->enableShutdownHandler = false;
     }
 
     /**
@@ -182,10 +186,13 @@ class PushCommand extends Command
         $pushId = $input->getArgument('PUSH_ID');
         $method = $input->getArgument('METHOD');
 
+        $this->logger->setStage('push.start');
+
         if (!$properties = $this->resolve($output, $pushId, $method)) {
             return $this->failure($output, 1);
         }
 
+        // Set the push to in progress
         $this->prepare($output, $properties);
 
         if (!$this->unpack($output, $properties)) {
@@ -195,6 +202,8 @@ class PushCommand extends Command
         if (!$this->build($output, $properties)) {
             return $this->failure($output, 4);
         }
+
+        $this->logger->setStage('push.pushing');
 
         if (!$this->prepush($output, $properties)) {
             return $this->failure($output, 8);
@@ -207,6 +216,8 @@ class PushCommand extends Command
         if (!$this->postpush($output, $properties)) {
             return $this->failure($output, 32);
         }
+
+        $this->logger->setStage('push.end');
 
         // finish
         $this->success($output);
@@ -241,46 +252,15 @@ class PushCommand extends Command
      */
     private function finish(OutputInterface $output, $exitCode)
     {
-        if ($this->push) {
-            $status = ($exitCode === 0) ? 'Success' : 'Error';
-            $this->push->setStatus($status);
-
-            $this->push->setEnd($this->clock->read());
-            $this->entityManager->merge($this->push);
-            $this->entityManager->flush();
-
-            // Only send logs if the push was found
-            $type = ($exitCode === 0) ? 'success' : 'failure';
-
-            $this->logAndFlush($type, [
-                'push' => $this->push,
-                'pushId' => $this->push->getId(),
-                'pushExitCode' => $exitCode
-            ]);
+        if ($exitCode === 0) {
+            $this->logger->success();
+        } else {
+            $this->logger->failure();
         }
 
         $this->cleanup();
+
         return $exitCode;
-    }
-
-    /**
-     * @param string $status
-     * @param boolean $start
-     * @return null
-     */
-    private function setEntityStatus($status, $start = false)
-    {
-        if (!$this->push) {
-            return;
-        }
-
-        $this->push->setStatus($status);
-        if ($start) {
-            $this->push->setStart($this->clock->read());
-        }
-
-        $this->entityManager->merge($this->push);
-        $this->entityManager->flush();
     }
 
     /**
@@ -290,8 +270,6 @@ class PushCommand extends Command
      */
     private function status(OutputInterface $output, $message)
     {
-        $this->log('notice', $message);
-
         $message = sprintf('<comment>%s</comment>', $message);
         $output->writeln($message);
     }
@@ -315,13 +293,15 @@ class PushCommand extends Command
      */
     private function prepare(OutputInterface $output, array $properties)
     {
-        $this->push = $properties['push'];
+        $this->logger->start($properties['push']);
 
         // Set emergency handler in case of super fatal
-        $this->inCaseOfEmergency([$this, 'blowTheHatch']);
+        if ($this->enableShutdownHandler) {
+            register_shutdown_function([$this, 'blowTheHatch']);
+        }
 
-        // Update the push status asap so no other worker can pick it up
-        $this->setEntityStatus('Pushing', true);
+        $this->logger->event('success', sprintf('Found push: %s', $properties['push']->getId()));
+        $this->logger->event('info', 'Resolved push properties', $properties);
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];
@@ -427,15 +407,6 @@ class PushCommand extends Command
         $this->cleanup();
 
         // If we got to this point and the status is still "Pushing", something terrible has happened.
-        if ($this->push && $this->push->getStatus() === 'Pushing') {
-            $this->push->setEnd($this->clock->read());
-            $this->setEntityStatus('Error');
-
-            $this->logAndFlush('failure', [
-                'push' => $this->push,
-                'pushId' => $this->push->getId(),
-                'pushExitCode' => 9000
-            ]);
-        }
+        $this->logger->failure();
     }
 }
