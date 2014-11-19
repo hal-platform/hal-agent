@@ -9,13 +9,18 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 
 class UnpackerTest extends PHPUnit_Framework_TestCase
 {
+    public $logger;
+
+    public function setUp()
+    {
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+    }
+
     public function testSuccess()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
             'getOutput' => 'test-output',
@@ -27,29 +32,24 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('success')
+            ->with(Mockery::any())
+            ->once();
+
+        $action = new Unpacker($this->logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Application code unpacked', $message[1]);
-
-        $message = $logger[1];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Unpacked code located', $message[1]);
-
-        $message = $logger[2];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Unpacked code sanitized', $message[1]);
     }
 
     public function testMakeDirectoryFails()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'getCommandLine' => 'mkdir',
+            'getExitCode' => 127,
             'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
             'isSuccessful' => true
         ])->makePartial();
 
@@ -63,21 +63,28 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'mkdir',
+                'exitCode' => 127,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output',
+            ])->once();
+
+        $action = new Unpacker($this->logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unable to unpack code application code', $message[1]);
     }
 
     public function testUnpackingFails()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'getCommandLine' => 'tar',
+            'getExitCode' => 128,
             'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
             'isSuccessful' => false
         ])->makePartial();
 
@@ -94,21 +101,28 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'tar',
+                'exitCode' => 128,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output',
+            ])->once();
+
+        $action = new Unpacker($this->logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unable to unpack code application code', $message[1]);
     }
 
     public function testLocatingUnpackedArchiveFails()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'getOutput' => 'test-output'
+            'getCommandLine' => 'mv',
+            'getExitCode' => 128,
+            'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output'
         ])->makePartial();
 
         $process
@@ -131,22 +145,29 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'mv',
+                'exitCode' => 128,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
+
+        $action = new Unpacker($this->logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
-
-        $message = $logger[1];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unpacked code could not be located', $message[1]);
     }
 
     public function testSanitizingUnpackedArchiveFails()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getOutput' => 'test-output'
+            'getCommandLine' => 'mv',
+            'getExitCode' => 128,
+            'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output'
         ])->makePartial();
 
         $process
@@ -163,13 +184,18 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Unpacker($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'mv',
+                'exitCode' => 128,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
+
+        $action = new Unpacker($this->logger, $builder, 10);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
-
-        $message = $logger[2];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Unpacked code directory was not empty after sanitizing.', $message[1]);
     }
 }

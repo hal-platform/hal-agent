@@ -9,56 +9,47 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Repository;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * @expectedException QL\Hal\Agent\Build\BuildException
+     * @expectedExceptionMessage Build "1234" could not be found!
+     */
     public function testBuildNotFound()
     {
-        $logger = new MemoryLogger;
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
             'find' => null
         ]);
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
 
-        $action = new Resolver($logger, $repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234');
-        $this->assertNull($properties);
-
-        $message = $logger[0];
-        $this->assertSame('error', $message[0]);
-        $this->assertSame('Build "1234" could not be found!', $message[1]);
     }
 
+    /**
+     * @expectedException QL\Hal\Agent\Build\BuildException
+     * @expectedExceptionMessage Build "1234" has a status of "Poo"! It cannot be rebuilt.
+     */
     public function testBuildNotCorrectStatus()
     {
         $build = new Build;
         $build->setStatus('Poo');
 
-        $logger = new MemoryLogger;
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
             'find' => $build
         ]);
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
 
-        $action = new Resolver($logger, $repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
 
         $properties = $action('1234');
-        $this->assertNull($properties);
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Found build: 1234', $message[1]);
-
-        $message = $logger[1];
-        $this->assertSame('error', $message[0]);
-        $this->assertSame('Build "1234" has a status of "Poo"! It cannot be rebuilt.', $message[1]);
     }
 
     public function testSuccess()
@@ -114,7 +105,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'GEM_PATH' => 'testdir/home/gempath/here:anotherpath'
         ];
 
-        $logger = new MemoryLogger;
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
             'find' => $build
         ]);
@@ -127,12 +117,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
 
-        $action = new Resolver($logger, $repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234');
 
-        // $properties['environmentVariables']['GEM_PATH'] = strtok($properties['environmentVariables']['GEM_PATH'], ':');
         $this->assertSame($expectedEnv, $properties['environmentVariables']);
 
         unset($properties['environmentVariables']);

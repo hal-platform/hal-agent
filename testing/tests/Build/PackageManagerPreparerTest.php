@@ -18,7 +18,7 @@ class PackageManagerPreparerTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = new MemoryLogger;
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
     }
 
     public function testCorrectFileContentsAreWritten()
@@ -44,6 +44,12 @@ JSON;
                 return true;
             }));
 
+        $this->logger
+            ->shouldReceive('success')
+            ->with(Mockery::any(), [
+                'composerConfig' => '/composerhome/config.json'
+            ])->once();
+
         $preparer = new PackageManagerPreparer($this->logger, $filesystem, 'tokentoken');
 
         $env = [
@@ -52,7 +58,6 @@ JSON;
         ];
 
         $preparer($env);
-
 
         $this->assertSame($expectedComposer, $composer);
     }
@@ -65,6 +70,12 @@ JSON;
             ->shouldReceive('dumpFile')
             ->andThrow(new IOException('msg'));
 
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'composerConfig' => '/composerhome/config.json'
+            ])->once();
+
         $preparer = new PackageManagerPreparer($this->logger, $filesystem, 'tokentoken');
 
         $env = [
@@ -73,10 +84,6 @@ JSON;
         ];
 
         $preparer($env);
-
-        $message = $this->logger[0];
-        $this->assertSame('warning', $message[0]);
-        $this->assertSame('Composer configuration could not be written.', $message[1]);
     }
 
     public function testLoggedMessagesWhenConfigurationsFound()
@@ -90,9 +97,5 @@ JSON;
         ];
 
         $preparer($env);
-
-        $message = $this->logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Composer configuration found.', $message[1]);
     }
 }

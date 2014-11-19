@@ -9,20 +9,20 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 
 class PackerTest extends PHPUnit_Framework_TestCase
 {
     public $file;
+    public $logger;
 
     public function setUp()
     {
         $this->file = FIXTURES_DIR . '/archived.file';
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
     }
 
     public function testSuccess()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
@@ -34,24 +34,26 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Packer($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('success')
+            ->with(Mockery::any(), [
+                'size' => '0.08 MB',
+            ])->once();
+
+        $action = new Packer($this->logger, $builder, 10);
 
         $success = $action('path', $this->file);
         $this->assertTrue($success);
-
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Build archived', $message[1]);
-        $this->assertSame('0.08 MB', $message[2]['archiveSize']);
     }
 
     public function testFail()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
+            'getCommandLine' => './packer',
+            'getExitCode' => 9000,
             'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
             'isSuccessful' => false
         ])->makePartial();
 
@@ -60,14 +62,18 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Packer($logger, $builder, 10);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => './packer',
+                'exitCode' => 9000,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
+
+        $action = new Packer($this->logger, $builder, 10);
 
         $success = $action('path', $this->file);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Build archive did not pack correctly', $message[1]);
-        $this->assertSame('test-output', $message[2]['output']);
     }
 }

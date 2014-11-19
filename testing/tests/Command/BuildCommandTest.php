@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Command;
 
 use Exception;
-use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -16,8 +15,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
-    public $em;
-    public $clock;
+    public $logger;
     public $resolver;
     public $downloader;
     public $unpacker;
@@ -31,8 +29,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->clock = new Clock('now', 'UTC');
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\JobLogger');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Build\Resolver');
         $this->downloader = Mockery::mock('QL\Hal\Agent\Build\Downloader');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Build\Unpacker');
@@ -54,10 +51,16 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturnNull();
 
+        $this->logger
+            ->shouldReceive('failure')
+            ->twice();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->once();
+
         $command = new BuildCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->downloader,
             $this->unpacker,
@@ -67,7 +70,9 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             $this->processBuilder
         );
 
+        $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
+
         $expected = <<<'OUTPUT'
 Resolving build properties
 Build details could not be resolved.
@@ -95,12 +100,6 @@ OUTPUT;
                 'getKey' => null
             ])
         ]);
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($build);
-        $this->em
-            ->shouldReceive('flush');
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -141,10 +140,25 @@ OUTPUT;
             ->shouldReceive('getProcess->run')
             ->twice();
 
+        $this->logger
+            ->shouldReceive('start')
+            ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->twice();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->times(3);
+        $this->logger
+            ->shouldReceive('success')
+            ->once();
+        $this->logger
+            ->shouldReceive('failure')
+            ->once();
+
         $command = new BuildCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->downloader,
             $this->unpacker,
@@ -154,7 +168,9 @@ OUTPUT;
             $this->processBuilder
         );
 
+        $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
+
         $expected = <<<'OUTPUT'
 Resolving build properties
 Downloading github repository
@@ -184,21 +200,6 @@ OUTPUT;
             ])
         ]);
 
-        $build
-            ->shouldReceive('setEnd')
-            ->once();
-        $build
-            ->shouldReceive('setStatus')
-            ->with('Error')
-            ->once();
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($build);
-        $this->em
-            ->shouldReceive('flush')
-            ->once();
-
         $this->downloadProgress->shouldIgnoreMissing();
         $this->downloader->shouldReceive(['__invoke' => true]);
         // simulate an error
@@ -220,10 +221,13 @@ OUTPUT;
                 'artifacts' => []
             ]);
 
+        $this->logger
+            ->shouldReceive('failure')
+            ->once();
+
         $command = new BuildCommand(
             'cmd',
-            $this->em,
-            $this->clock,
+            $this->logger,
             $this->resolver,
             $this->downloader,
             $this->unpacker,
@@ -234,6 +238,7 @@ OUTPUT;
         );
 
         try {
+            $command->disableShutdownHandler();
             $command->run($this->input, $this->output);
         } catch (Exception $e) {}
 

@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Github\ArchiveApi;
 
 class Downloader
@@ -15,11 +15,10 @@ class Downloader
     /**
      * @var string
      */
-    const SUCCESS = 'Application code downloaded';
-    const ERR_FAILURE = 'Application code could not be downloaded';
+    const EVENT_MESSAGE = 'Download GitHub archive';
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -29,10 +28,10 @@ class Downloader
     private $github;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param ArchiveApi $github
      */
-    public function __construct(LoggerInterface $logger, ArchiveApi $github)
+    public function __construct(EventLogger $logger, ArchiveApi $github)
     {
         $this->logger = $logger;
         $this->github = $github;
@@ -47,23 +46,23 @@ class Downloader
      */
     public function __invoke($user, $repo, $ref, $target)
     {
-        $context = [
-            'repository' => sprintf('%s/%s', $user, $repo),
-            'reference' => $ref,
-            'downloadTarget' => $target
-        ];
-
         if ($isSuccessful = $this->github->download($user, $repo, $ref, $target)) {
 
             $size = filesize($target) / 1048576;
-            $context['downloadSize'] = sprintf('%s MB', round($size, 2));
 
-            $this->logger->info(self::SUCCESS, $context);
+            $this->logger->success(self::EVENT_MESSAGE, [
+                'size' => sprintf('%s MB', round($size, 2))
+            ]);
 
-        } else {
-            $this->logger->critical(self::ERR_FAILURE, $context);
+            return true;
         }
 
-        return $isSuccessful;
+        $this->logger->failure(self::EVENT_MESSAGE, [
+            'repository' => sprintf('%s/%s', $user, $repo),
+            'reference' => $ref,
+            'target' => $target
+        ]);
+
+        return false;
     }
 }

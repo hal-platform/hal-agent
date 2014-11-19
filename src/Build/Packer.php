@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -18,12 +18,11 @@ class Packer
     /**
      * @var string
      */
-    const SUCCESS_PACKED = 'Build archived';
-    const ERR_PACKED = 'Build archive did not pack correctly';
+    const EVENT_MESSAGE = 'Archive build';
     const ERR_PACKING_TIMEOUT = 'Archiving the build took too long';
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -38,11 +37,11 @@ class Packer
     private $commandTimeout;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
      * @param string $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $commandTimeout)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
@@ -56,11 +55,6 @@ class Packer
      */
     public function __invoke($buildPath, $targetFile)
     {
-        $context = [
-            'buildPath' => $buildPath,
-            'archive' => $targetFile
-        ];
-
         $cmd = ['tar', '-vczf', $targetFile, '.'];
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
@@ -75,18 +69,21 @@ class Packer
         if ($process->isSuccessful()) {
 
             $size = filesize($targetFile) / 1048576;
-            $context['archiveSize'] = sprintf('%s MB', round($size, 2));
 
-            $this->logger->info(self::SUCCESS_PACKED, $context);
+            $this->logger->success(self::EVENT_MESSAGE, [
+                'size' => sprintf('%s MB', round($size, 2))
+            ]);
+
             return true;
         }
 
-        $context = array_merge($context, [
+        $this->logger->failure(self::EVENT_MESSAGE, [
             'command' => $process->getCommandLine(),
             'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput()
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput()
         ]);
-        $this->logger->critical(self::ERR_PACKED, $context);
+
         return false;
     }
 }

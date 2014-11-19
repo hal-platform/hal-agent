@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -18,17 +18,15 @@ class Unpacker
     /**
      * @var string
      */
-    const SUCCESS_UNPACK = 'Application code unpacked';
-    const SUCCESS_LOCATED = 'Unpacked code located';
-    const SUCCESS_SANITIZED = 'Unpacked code sanitized';
+    const EVENT_MESSAGE = 'Unpack GitHub archive';
 
-    const ERR_UNPACK_FAILURE = 'Unable to unpack code application code';
-    const ERR_UNPACKING_TIMEOUT = 'Unpacking github code took too long';
-    const ERR_LOCATED = 'Unpacked code could not be located';
-    const ERR_SANITIZED = 'Unpacked code directory was not empty after sanitizing.';
+    const ERR_UNPACK_FAILURE = 'Unable to unpack GitHub archive';
+    const ERR_UNPACKING_TIMEOUT = 'Unpacking GitHub archive took too long';
+    const ERR_LOCATED = 'Unpacked GitHub archive could not be located';
+    const ERR_SANITIZED = 'Unpacked GitHub archive directory was not empty after sanitizing.';
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -38,11 +36,11 @@ class Unpacker
     private $processBuilder;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
      * @param string $commandTimeout
      */
-    public function __construct(LoggerInterface $logger, ProcessBuilder $processBuilder, $commandTimeout)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
@@ -56,32 +54,27 @@ class Unpacker
      */
     public function __invoke($archive, $buildPath)
     {
-        $context = [
-            'archive' => $archive,
-            'buildPath' => $buildPath
-        ];
-
-        if (!$this->unpackArchive($buildPath, $archive, $context)) {
+        if (!$this->unpackArchive($buildPath, $archive)) {
             return false;
         }
 
-        if (!$unpackedPath = $this->locateUnpackedArchive($buildPath, $context)) {
+        if (!$unpackedPath = $this->locateUnpackedArchive($buildPath)) {
             return false;
         }
 
-        if (!$this->sanitizeUnpackedArchive($unpackedPath, $context)) {
+        if (!$this->sanitizeUnpackedArchive($unpackedPath)) {
             return false;
         }
 
+        $this->logger->success(self::EVENT_MESSAGE);
         return true;
     }
 
     /**
      * @param string $buildPath
-     * @param array $context
      * @return string|null
      */
-    private function locateUnpackedArchive($buildPath, array $context)
+    private function locateUnpackedArchive($buildPath)
     {
         $cmd = ['find', $buildPath, '-type', 'd'];
         $process = $this->processBuilder
@@ -94,26 +87,24 @@ class Unpacker
         $process->run();
 
         if ($process->isSuccessful()) {
-            $this->logger->info(self::SUCCESS_LOCATED, $context);
             return strtok($process->getOutput(), "\n");
         }
 
-        $context = array_merge($context, [
+        $this->logger->failure(self::ERR_LOCATED, [
             'command' => $process->getCommandLine(),
             'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput()
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput()
         ]);
 
-        $this->logger->critical(self::ERR_LOCATED, $context);
         return null;
     }
 
     /**
      * @param string $unpackedPath
-     * @param array $context
      * @return boolean
      */
-    private function sanitizeUnpackedArchive($unpackedPath, array $context)
+    private function sanitizeUnpackedArchive($unpackedPath)
     {
         $process = $this->processBuilder
             ->setWorkingDirectory($unpackedPath)
@@ -123,7 +114,6 @@ class Unpacker
             ->setCommandLine('mv {,.[!.],..?}* ..');
 
         $process->run();
-
 
         // remove unpacked directory
         $cmd = ['rmdir', $unpackedPath];
@@ -135,30 +125,25 @@ class Unpacker
         $removalProcess->run();
 
         if ($removalProcess->isSuccessful()) {
-            $this->logger->info(self::SUCCESS_SANITIZED, $context);
             return true;
         }
 
-        $context = array_merge($context, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'removalCommand' => $removalProcess->getCommandLine(),
-            'removalExitCode' => $removalProcess->getExitCode(),
-            'removalOutput' => $removalProcess->getOutput()
+        $this->logger->failure(self::ERR_SANITIZED, [
+            'command' => $removalProcess->getCommandLine(),
+            'exitCode' => $removalProcess->getExitCode(),
+            'output' => $removalProcess->getOutput(),
+            'errorOutput' => $removalProcess->getErrorOutput()
         ]);
 
-        $this->logger->critical(self::ERR_SANITIZED, $context);
         return false;
     }
 
     /**
      * @param string $buildPath
      * @param string $archive
-     * @param array $context
      * @return boolean
      */
-    private function unpackArchive($buildPath, $archive, array $context)
+    private function unpackArchive($buildPath, $archive)
     {
         $makeCommand = ['mkdir', $buildPath];
         $unpackCommand = ['tar', '-vxzf', $archive, sprintf('--directory=%s', $buildPath)];
@@ -181,19 +166,19 @@ class Unpacker
             }
 
             if ($unpackProcess->isSuccessful()) {
-                $this->logger->info(self::SUCCESS_UNPACK, $context);
                 return true;
             }
         }
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;
-        $context = array_merge($context, [
+
+        $this->logger->failure(self::ERR_UNPACK_FAILURE, [
             'command' => $failedCommand->getCommandLine(),
             'exitCode' => $failedCommand->getExitCode(),
-            'output' => $failedCommand->getOutput()
+            'output' => $failedCommand->getOutput(),
+            'errorOutput' => $failedCommand->getErrorOutput()
         ]);
 
-        $this->logger->critical(self::ERR_UNPACK_FAILURE, $context);
         return false;
     }
 }

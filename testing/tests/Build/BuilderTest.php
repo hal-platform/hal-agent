@@ -9,23 +9,24 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\MemoryLogger;
 
 class BuilderTest extends PHPUnit_Framework_TestCase
 {
     public $preparer;
+    public $logger;
 
     public function setUp()
     {
         $this->preparer = Mockery::mock('QL\Hal\Agent\Build\PackageManagerPreparer', ['__invoke' => null]);
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
     }
 
     public function testSuccess()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
+            'getCommandLine' => 'deployscript',
             'isSuccessful' => true
         ])->makePartial();
 
@@ -34,24 +35,26 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder, $this->preparer, 5);
+        $this->logger
+            ->shouldReceive('success')
+            ->with(Mockery::any(), [
+                'command' => 'deployscript',
+                'output' => 'test-output'
+            ])->once();
+
+        $action = new Builder($this->logger, $builder, $this->preparer, 5);
 
         $success = $action('path', 'command', []);
         $this->assertTrue($success);
-
-        $message = $logger[0];
-        $this->assertSame('info', $message[0]);
-        $this->assertSame('Build command executed', $message[1]);
-        $this->assertSame('test-output', $message[2]['output']);
     }
 
     public function testFail()
     {
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
+            'getCommandLine' => 'deployscript',
             'isSuccessful' => false,
             'getExitCode' => 127
         ])->makePartial();
@@ -61,17 +64,19 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder, $this->preparer, 5);
+        $this->logger
+            ->shouldReceive('failure')
+            ->with(Mockery::any(), [
+                'command' => 'deployscript',
+                'exitCode' => 127,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
+
+        $action = new Builder($this->logger, $builder, $this->preparer, 5);
 
         $success = $action('path', 'command', []);
         $this->assertFalse($success);
-
-        $message = $logger[0];
-        $this->assertSame('critical', $message[0]);
-        $this->assertSame('Build command executed with errors', $message[1]);
-        $this->assertSame('test-output', $message[2]['output']);
-        $this->assertSame(127, $message[2]['exitCode']);
-        $this->assertSame('test-error-output', $message[2]['errorOutput']);
     }
 
     public function testBuildCommandIsParameterizedCorrectly()
@@ -91,9 +96,9 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             "end\nweird\t"
         ];
 
-        $logger = new MemoryLogger;
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
+            'getCommandLine' => null,
             'getOutput' => null,
             'isSuccessful' => true,
             'stop' => null
@@ -122,7 +127,11 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Builder($logger, $builder, $this->preparer, 5);
+        $this->logger
+            ->shouldReceive('success')
+            ->once();
+
+        $action = new Builder($this->logger, $builder, $this->preparer, 5);
         $success = $action('path', $command, []);
 
         $this->assertSame($expectedParameters, $actualParameters);

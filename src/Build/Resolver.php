@@ -7,7 +7,6 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Psr\Log\LoggerInterface;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Process\ProcessBuilder;
@@ -27,14 +26,8 @@ class Resolver
     /**
      * @var string
      */
-    const FOUND = 'Found build: %s';
     const ERR_NOT_FOUND = 'Build "%s" could not be found!';
     const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
 
     /**
      * @var BuildRepository
@@ -67,20 +60,13 @@ class Resolver
     private $homeDirectory;
 
     /**
-     * @param LoggerInterface $logger
      * @param BuildRepository $buildRepo
      * @param ProcessBuilder $processBuilder
      * @param string $envPath
      * @param string $archivePath
      */
-    public function __construct(
-        LoggerInterface $logger,
-        BuildRepository $buildRepo,
-        ProcessBuilder $processBuilder,
-        $envPath,
-        $archivePath
-    ) {
-        $this->logger = $logger;
+    public function __construct(BuildRepository $buildRepo, ProcessBuilder $processBuilder, $envPath, $archivePath)
+    {
         $this->buildRepo = $buildRepo;
         $this->processBuilder = $processBuilder;
         $this->envPath = $envPath;
@@ -89,20 +75,19 @@ class Resolver
 
     /**
      * @param string $buildId
+     *
+     * @throws BuildException
+     *
      * @return array|null
      */
     public function __invoke($buildId)
     {
         if (!$build = $this->buildRepo->find($buildId)) {
-            $this->logger->error(sprintf(self::ERR_NOT_FOUND, $buildId));
-            return null;
+            throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildId));
         }
 
-        $this->logger->info(sprintf(self::FOUND, $buildId));
-
         if ($build->getStatus() !== 'Waiting') {
-            $this->logger->error(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
-            return null;
+            throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
         }
 
         $properties = [
@@ -122,7 +107,6 @@ class Resolver
 
         $properties['artifacts'] = $this->findBuildArtifacts($properties);
 
-        $this->logger->info('Resolved build properties', $properties);
         return $properties;
     }
 

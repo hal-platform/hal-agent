@@ -7,15 +7,13 @@
 
 namespace QL\Hal\Agent\Command;
 
-use Doctrine\ORM\EntityManager;
-use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Build\Builder;
 use QL\Hal\Agent\Build\Downloader;
 use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
-use QL\Hal\Agent\Logger\CommandLoggingTrait;
+use QL\Hal\Agent\Logger\JobLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -31,7 +29,6 @@ use Symfony\Component\Process\ProcessBuilder;
 class BuildCommand extends Command
 {
     use CommandTrait;
-    use CommandLoggingTrait;
     use FormatterTrait;
 
     /**
@@ -47,16 +44,6 @@ class BuildCommand extends Command
         8 => 'Build command failed.',
         16 => 'Build archive could not be created.'
     ];
-
-    /**
-     * @var EntityManager
-     */
-    private $entityManager;
-
-    /**
-     * @var Clock
-     */
-    private $clock;
 
     /**
      * @var Resolver
@@ -99,14 +86,13 @@ class BuildCommand extends Command
     private $artifacts;
 
     /**
-     * @var Build|null
+     * @var boolean
      */
-    private $build;
+    private $enableShutdownHandler;
 
     /**
      * @param string $name
-     * @param EntityManager $entityManager
-     * @param Clock $clock
+     * @param JobLogger $logger
      * @param Resolver $resolver
      * @param Downloader $downloader
      * @param Builder $builder
@@ -116,8 +102,7 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
-        EntityManager $entityManager,
-        Clock $clock,
+        JobLogger $logger,
         Resolver $resolver,
         Downloader $downloader,
         Unpacker $unpacker,
@@ -128,8 +113,7 @@ class BuildCommand extends Command
     ) {
         parent::__construct($name);
 
-        $this->entityManager = $entityManager;
-        $this->clock = $clock;
+        $this->logger = $logger;
 
         $this->resolver = $resolver;
         $this->downloader = $downloader;
@@ -141,6 +125,8 @@ class BuildCommand extends Command
         $this->processBuilder = $processBuilder;
 
         $this->artifacts = [];
+
+        $this->enableShutdownHandler = true;
     }
 
     /**
@@ -154,6 +140,14 @@ class BuildCommand extends Command
     public function __destruct()
     {
         $this->blowTheHatch();
+    }
+
+    /**
+     * @return null
+     */
+    public function disableShutdownHandler()
+    {
+        $this->enableShutdownHandler = false;
     }
 
     /**
@@ -186,7 +180,9 @@ class BuildCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         // expected build statuses
-        // Waiting, Downloading, Building, Finished, Error
+        // Waiting, Building, Success, Error, Removed
+
+        $this->logger->setStage('build.start');
 
         $buildId = $input->getArgument('BUILD_ID');
 
@@ -194,6 +190,7 @@ class BuildCommand extends Command
             return $this->failure($output, 1);
         }
 
+        // Set the build to in progress
         $this->prepare($output, $properties);
 
         if (!$this->download($output, $properties)) {
@@ -204,9 +201,13 @@ class BuildCommand extends Command
             return $this->failure($output, 4);
         }
 
+        $this->logger->setStage('build.building');
+
         if (!$this->build($output, $properties)) {
             return $this->failure($output, 8);
         }
+
+        $this->logger->setStage('build.end');
 
         if (!$this->pack($output, $properties)) {
             return $this->failure($output, 16);
@@ -244,47 +245,15 @@ class BuildCommand extends Command
      */
     private function finish(OutputInterface $output, $exitCode)
     {
-        if ($this->build) {
-            $status = ($exitCode === 0) ? 'Success' : 'Error';
-            $this->build->setStatus($status);
-
-            $this->build->setEnd($this->clock->read());
-            $this->entityManager->merge($this->build);
-            $this->entityManager->flush();
-
-            // Only send logs if the build was found
-            $type = ($exitCode === 0) ? 'success' : 'failure';
-
-            $this->logAndFlush($type, [
-                'build' => $this->build,
-                'buildId' => $this->build->getId(),
-                'buildExitCode' => $exitCode
-            ]);
+        if ($exitCode === 0) {
+            $this->logger->success();
+        } else {
+            $this->logger->failure();
         }
 
         $this->cleanup();
 
         return $exitCode;
-    }
-
-    /**
-     * @param string $status
-     * @param boolean $start
-     * @return null
-     */
-    private function setEntityStatus($status, $start = false)
-    {
-        if (!$this->build) {
-            return;
-        }
-
-        $this->build->setStatus($status);
-        if ($start) {
-            $this->build->setStart($this->clock->read());
-        }
-
-        $this->entityManager->merge($this->build);
-        $this->entityManager->flush();
     }
 
     /**
@@ -294,7 +263,7 @@ class BuildCommand extends Command
      */
     private function status(OutputInterface $output, $message)
     {
-        $this->log('notice', $message);
+        // $this->log('notice', $message);
 
         $message = sprintf('<comment>%s</comment>', $message);
         $output->writeln($message);
@@ -318,13 +287,15 @@ class BuildCommand extends Command
      */
     private function prepare(OutputInterface $output, array $properties)
     {
-        $this->build = $properties['build'];
+        $this->logger->start($properties['build']);
 
         // Set emergency handler in case of super fatal
-        $this->inCaseOfEmergency([$this, 'blowTheHatch']);
+        if ($this->enableShutdownHandler) {
+            register_shutdown_function([$this, 'blowTheHatch']);
+        }
 
-        // Update the build status asap so no other worker can pick it up
-        $this->setEntityStatus('Building', true);
+        $this->logger->event('success', sprintf('Found build: %s', $properties['build']->getId()));
+        $this->logger->event('info', 'Resolved build properties', $properties);
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];
@@ -406,15 +377,6 @@ class BuildCommand extends Command
         $this->cleanup();
 
         // If we got to this point and the status is still "Building", something terrible has happened.
-        if ($this->build && $this->build->getStatus() === 'Building') {
-            $this->build->setEnd($this->clock->read());
-            $this->setEntityStatus('Error');
-
-            $this->logAndFlush('failure', [
-                'build' => $this->build,
-                'buildId' => $this->build->getId(),
-                'buildExitCode' => 9000
-            ]);
-        }
+        $this->logger->failure();
     }
 }

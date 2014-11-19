@@ -7,12 +7,14 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
 class PackageManagerPreparer
 {
+    const EVENT_MESSAGE = 'Write Composer configuration';
+
     /**
      * @var string
      */
@@ -35,7 +37,7 @@ class PackageManagerPreparer
 JSON;
 
     /**
-     * @var LoggerInterface
+     * @var EventLogger
      */
     private $logger;
 
@@ -50,11 +52,11 @@ JSON;
     private $githubAuthToken;
 
     /**
-     * @param LoggerInterface $logger
+     * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param string $githubAuthToken
      */
-    public function __construct(LoggerInterface $logger, Filesystem $filesystem, $githubAuthToken)
+    public function __construct(EventLogger $logger, Filesystem $filesystem, $githubAuthToken)
     {
         $this->logger = $logger;
         $this->filesystem = $filesystem;
@@ -78,20 +80,22 @@ JSON;
      */
     private function handleComposerConfiguration($filename)
     {
-        $context = ['composer-config' => $filename];
-
         if ($this->filesystem->exists($filename)) {
-            $this->logger->info('Composer configuration found.', $context);
             return;
         }
 
         $config = sprintf(self::COMPOSER_CONFIG_DEFAULT, $this->githubAuthToken);
         if ($this->write($filename, $config)) {
-            $this->logger->info('Composer configuration written successfully.', $context);
+            $this->logger->success(self::EVENT_MESSAGE, [
+                'composerConfig' => $filename
+            ]);
+
             return;
         }
 
-        $this->logger->warning('Composer configuration could not be written.', $context);
+        $this->logger->failure(self::EVENT_MESSAGE, [
+            'composerConfig' => $filename
+        ]);
     }
 
     /**
