@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Push;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Builder
@@ -74,26 +75,11 @@ class Builder
             return false;
         }
 
-        // we always want the output
-        $context = array_merge($context, ['output' => $process->getOutput()]);
-
         if ($process->isSuccessful()) {
-            $this->logger->success(self::EVENT_MESSAGE, [
-                'command' => $process->getCommandLine(),
-                'output' => $process->getOutput()
-            ]);
-
-            return true;
+            return $this->processSuccess($process);
         }
 
-        $this->logger->failure(self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
-
-        return false;
+        return $this->processFailure($process);
     }
 
     /**
@@ -112,5 +98,35 @@ class Builder
 
         // collapse array elements
         return array_values($parameters);
+    }
+
+    /**
+     * @param Process $process
+     * @return bool
+     */
+    private function processFailure(Process $process)
+    {
+        $this->logger->failure(self::EVENT_MESSAGE, [
+            'command' => $process->getCommandLine(),
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput(),
+            'exitCode' => $process->getExitCode()
+        ]);
+
+        return false;
+    }
+
+    /**
+     * @param Process $process
+     * @return bool
+     */
+    private function processSuccess(Process $process)
+    {
+        $this->logger->success(self::EVENT_MESSAGE, [
+            'command' => $process->getCommandLine(),
+            'output' => $process->getOutput()
+        ]);
+
+        return true;
     }
 }
