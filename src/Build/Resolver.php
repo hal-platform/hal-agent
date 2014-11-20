@@ -78,7 +78,7 @@ class Resolver
      *
      * @throws BuildException
      *
-     * @return array|null
+     * @return array
      */
     public function __invoke($buildId)
     {
