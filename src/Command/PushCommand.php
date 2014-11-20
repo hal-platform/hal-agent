@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Command;
 
-use QL\Hal\Agent\Logger\JobLogger;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
@@ -44,7 +44,7 @@ class PushCommand extends Command
     ];
 
     /**
-     * @var JobLogger
+     * @var EventLogger
      */
     private $logger;
 
@@ -90,7 +90,7 @@ class PushCommand extends Command
 
     /**
      * @param string $name
-     * @param JobLogger $logger
+     * @param EventLogger $logger
      * @param Resolver $resolver
      * @param Unpacker $unpacker
      * @param Builder $builder
@@ -100,7 +100,7 @@ class PushCommand extends Command
      */
     public function __construct(
         $name,
-        JobLogger $logger,
+        EventLogger $logger,
         Resolver $resolver,
         Unpacker $unpacker,
         Builder $builder,
@@ -203,7 +203,7 @@ class PushCommand extends Command
             return $this->failure($output, 4);
         }
 
-        $this->logger->setStage('push.pushing');
+        $this->logger->setStage('pushing');
 
         if (!$this->prepush($output, $properties)) {
             return $this->failure($output, 8);
@@ -217,7 +217,7 @@ class PushCommand extends Command
             return $this->failure($output, 32);
         }
 
-        $this->logger->setStage('push.end');
+        $this->logger->setStage('end');
 
         // finish
         $this->success($output);

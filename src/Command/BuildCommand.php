@@ -13,7 +13,7 @@ use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
-use QL\Hal\Agent\Logger\JobLogger;
+use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -46,7 +46,7 @@ class BuildCommand extends Command
     ];
 
     /**
-     * @var JobLogger
+     * @var EventLogger
      */
     private $logger;
 
@@ -97,7 +97,7 @@ class BuildCommand extends Command
 
     /**
      * @param string $name
-     * @param JobLogger $logger
+     * @param EventLogger $logger
      * @param Resolver $resolver
      * @param Downloader $downloader
      * @param Builder $builder
@@ -107,7 +107,7 @@ class BuildCommand extends Command
      */
     public function __construct(
         $name,
-        JobLogger $logger,
+        EventLogger $logger,
         Resolver $resolver,
         Downloader $downloader,
         Unpacker $unpacker,
@@ -206,13 +206,13 @@ class BuildCommand extends Command
             return $this->failure($output, 4);
         }
 
-        $this->logger->setStage('build.building');
+        $this->logger->setStage('building');
 
         if (!$this->build($output, $properties)) {
             return $this->failure($output, 8);
         }
 
-        $this->logger->setStage('build.end');
+        $this->logger->setStage('end');
 
         if (!$this->pack($output, $properties)) {
             return $this->failure($output, 16);

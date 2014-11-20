@@ -29,7 +29,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\JobLogger');
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Build\Resolver');
         $this->downloader = Mockery::mock('QL\Hal\Agent\Build\Downloader');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Build\Unpacker');

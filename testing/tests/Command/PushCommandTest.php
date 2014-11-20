@@ -28,7 +28,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\JobLogger');
+        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
         $this->builder = Mockery::mock('QL\Hal\Agent\Push\Builder');
