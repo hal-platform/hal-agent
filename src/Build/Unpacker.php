@@ -90,7 +90,7 @@ class Unpacker
             return strtok($process->getOutput(), "\n");
         }
 
-        $this->logger->failure(self::ERR_LOCATED, [
+        $this->logger->event('failure', self::ERR_LOCATED, [
             'command' => $process->getCommandLine(),
             'exitCode' => $process->getExitCode(),
             'output' => $process->getOutput(),
@@ -128,7 +128,7 @@ class Unpacker
             return true;
         }
 
-        $this->logger->failure(self::ERR_SANITIZED, [
+        $this->logger->event('failure', self::ERR_SANITIZED, [
             'command' => $removalProcess->getCommandLine(),
             'exitCode' => $removalProcess->getExitCode(),
             'output' => $removalProcess->getOutput(),
@@ -172,7 +172,7 @@ class Unpacker
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;
 
-        $this->logger->failure(self::ERR_UNPACK_FAILURE, [
+        $this->logger->event('failure', self::ERR_UNPACK_FAILURE, [
             'command' => $failedCommand->getCommandLine(),
             'exitCode' => $failedCommand->getExitCode(),
             'output' => $failedCommand->getOutput(),

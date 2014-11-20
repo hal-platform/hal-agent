@@ -50,14 +50,14 @@ class Downloader
 
             $size = filesize($target) / 1048576;
 
-            $this->logger->success(self::EVENT_MESSAGE, [
+            $this->logger->event('success', self::EVENT_MESSAGE, [
                 'size' => sprintf('%s MB', round($size, 2))
             ]);
 
             return true;
         }
 
-        $this->logger->failure(self::EVENT_MESSAGE, [
+        $this->logger->event('failure', self::EVENT_MESSAGE, [
             'repository' => sprintf('%s/%s', $user, $repo),
             'reference' => $ref,
             'target' => $target

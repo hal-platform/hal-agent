@@ -117,7 +117,7 @@ class Unpacker
             $this->filesystem->dumpFile($file, $yml);
 
         } catch(IOException $exception) {
-            $this->logger->failure(sprintf(self::ERR_PROPERTIES, $exception->getMessage()));
+            $this->logger->event('failure', sprintf(self::ERR_PROPERTIES, $exception->getMessage()));
             return false;
         }
 
@@ -158,7 +158,7 @@ class Unpacker
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;
 
-        $this->logger->failure(self::ERR_UNPACK_FAILURE, [
+        $this->logger->event('failure', self::ERR_UNPACK_FAILURE, [
             'command' => $failedCommand->getCommandLine(),
             'exitCode' => $failedCommand->getExitCode(),
             'output' => $failedCommand->getOutput(),

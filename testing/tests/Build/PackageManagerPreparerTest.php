@@ -45,8 +45,8 @@ JSON;
             }));
 
         $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
                 'composerConfig' => '/composerhome/config.json'
             ])->once();
 
@@ -71,8 +71,8 @@ JSON;
             ->andThrow(new IOException('msg'));
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'composerConfig' => '/composerhome/config.json'
             ])->once();
 

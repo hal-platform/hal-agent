@@ -34,8 +34,8 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
                 'command' => 'servercmd',
                 'output' => 'test-output'
             ])->once();
@@ -63,8 +63,8 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'servercmd',
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output',

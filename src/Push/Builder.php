@@ -106,7 +106,7 @@ class Builder
      */
     private function processFailure(Process $process)
     {
-        $this->logger->failure(self::EVENT_MESSAGE, [
+        $this->logger->event('failure', self::EVENT_MESSAGE, [
             'command' => $process->getCommandLine(),
             'output' => $process->getOutput(),
             'errorOutput' => $process->getErrorOutput(),
@@ -122,7 +122,7 @@ class Builder
      */
     private function processSuccess(Process $process)
     {
-        $this->logger->success(self::EVENT_MESSAGE, [
+        $this->logger->event('success', self::EVENT_MESSAGE, [
             'command' => $process->getCommandLine(),
             'output' => $process->getOutput()
         ]);

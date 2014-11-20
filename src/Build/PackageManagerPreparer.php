@@ -86,14 +86,14 @@ JSON;
 
         $config = sprintf(self::COMPOSER_CONFIG_DEFAULT, $this->githubAuthToken);
         if ($this->write($filename, $config)) {
-            $this->logger->success(self::EVENT_MESSAGE, [
+            $this->logger->event('success', self::EVENT_MESSAGE, [
                 'composerConfig' => $filename
             ]);
 
             return;
         }
 
-        $this->logger->failure(self::EVENT_MESSAGE, [
+        $this->logger->event('failure', self::EVENT_MESSAGE, [
             'composerConfig' => $filename
         ]);
     }

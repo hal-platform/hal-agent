@@ -34,8 +34,8 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
                 'command' => 'rsync',
                 'output' => 'test-output'
             ])->once();
@@ -58,8 +58,8 @@ class PusherTest extends PHPUnit_Framework_TestCase
         ])->makePartial();
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'deployscript',
                 'exitCode' => 9000,
                 'output' => 'test-output',

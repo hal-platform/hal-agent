@@ -118,7 +118,7 @@ class Resolver
         // validate remote hostname
         $serverName = $deployment->getServer()->getName();
         if (!$hostname = $this->validateHostname($serverName)) {
-            $this->logger->failure(sprintf('Cannot resolve hostname "%s"', $serverName));
+            $this->logger->event('failure', sprintf('Cannot resolve hostname "%s"', $serverName));
 
             // Revert hostname back to server name, and allow the push to continue.
             $hostname = $serverName;

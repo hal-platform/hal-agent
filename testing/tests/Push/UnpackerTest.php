@@ -75,8 +75,8 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'tar',
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output',
@@ -116,7 +116,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
+            ->shouldReceive('event')
             ->once();
 
         $action = new Unpacker($this->logger, $builder, $filesystem, $dumper, 10);

@@ -64,8 +64,8 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'mkdir',
                 'exitCode' => 127,
                 'output' => 'test-output',
@@ -102,8 +102,8 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'tar',
                 'exitCode' => 128,
                 'output' => 'test-output',
@@ -146,8 +146,8 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'mv',
                 'exitCode' => 128,
                 'output' => 'test-output',
@@ -185,8 +185,8 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'mv',
                 'exitCode' => 128,
                 'output' => 'test-output',

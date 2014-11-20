@@ -35,8 +35,8 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
                 'size' => '0.08 MB',
             ])->once();
 
@@ -63,8 +63,8 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => './packer',
                 'exitCode' => 9000,
                 'output' => 'test-output',

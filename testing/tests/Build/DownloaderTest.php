@@ -28,8 +28,8 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
                 'size' => '0.03 MB'
             ]) ->once();
 
@@ -46,8 +46,8 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'repository' => 'user/repo',
                 'reference' => 'ref',
                 'target' => $this->file

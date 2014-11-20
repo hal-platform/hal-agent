@@ -34,8 +34,8 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
                 'command' => 'deployscript',
                 'output' => 'test-output'
             ])->once();
@@ -58,8 +58,8 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         ])->makePartial();
 
         $this->logger
-            ->shouldReceive('failure')
-            ->with(Mockery::any(), [
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
                 'command' => 'deployscript',
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output',
@@ -128,7 +128,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('success');
+            ->shouldReceive('event');
 
         $action = new Builder($this->logger, $builder, 5);
         $success = $action('path', $command, []);
