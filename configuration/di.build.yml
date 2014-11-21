@@ -2,7 +2,6 @@ services:
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - @logger.event
             - @build.repo
             - @utility.process.builder= # = signifies a prototype service
             - %environment.path%

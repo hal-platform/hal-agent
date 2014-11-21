@@ -243,10 +243,10 @@
                         <td valign="top" class="stat">
                             <h4>Where can I see more information?</h4>
                             <p>
-                                <a href="{{ hal_url }}/repositories/{{ repository.id }}/status">HAL 9000: {{ repository.key }} status</a><br>
-                                <br><a href="{{ hal_url }}/build/{{ build.id }}">HAL 9000: build details</a>
+                                <a href="{{ hal_url }}repositories/{{ repository.id }}/status">HAL 9000: {{ repository.key }} status</a><br>
+                                <br><a href="{{ hal_url }}build/{{ build.id }}">HAL 9000: build details</a>
                                 {% if is_push %}
-                                    <br><a href="{{ hal_url }}/push/{{ push.id }}">HAL 9000: push details</a>
+                                    <br><a href="{{ hal_url }}push/{{ push.id }}">HAL 9000: push details</a>
                                 {% endif %}
                             </p>
                         </td>

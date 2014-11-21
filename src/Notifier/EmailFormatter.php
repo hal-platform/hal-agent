@@ -61,7 +61,7 @@ class EmailFormatter
         }
 
         $githubRepo = sprintf('%s/%s', $data['repository']->getGithubUser(), $data['repository']->getGithubRepo());
-        list($githubUrl, $githubHuman) = $this->getGithubStuff($githubRepo, $data['build']->getBranch(), $data['build']->getCommit());
+        list($githubUrl, $githubHuman) = $this->formatGithubRef($githubRepo, $data['build']->getBranch(), $data['build']->getCommit());
 
         $context = array_merge($data, [
             'title' => $title,
@@ -149,9 +149,10 @@ class EmailFormatter
      * @return string $repo
      * @return string $branch
      * @return string $commit
+     *
      * @return array
      */
-    private function formatGithubStuff($repo, $branch, $commit)
+    private function formatGithubRef($repo, $branch, $commit)
     {
         $base = $repo;
 

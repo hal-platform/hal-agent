@@ -66,7 +66,6 @@ class Unpacker
             return false;
         }
 
-        $this->logger->success(self::EVENT_MESSAGE);
         return true;
     }
 

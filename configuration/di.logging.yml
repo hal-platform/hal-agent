@@ -49,7 +49,7 @@ services:
         factory_method: 'loadTemplate'
         arguments: ['email.twig']
 
-    notifier.email.environment.:
+    notifier.email.environment:
         class: 'Twig_Environment'
         arguments: [@notifier.twig.loader]
         calls:
