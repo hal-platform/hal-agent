@@ -48,10 +48,10 @@ class Downloader
     {
         if ($isSuccessful = $this->github->download($user, $repo, $ref, $target)) {
 
-            $size = filesize($target) / 1048576;
-
+            $filesize = filesize($target);
+            $this->logger->keep('filesize', ['download' => $filesize]);
             $this->logger->event('success', self::EVENT_MESSAGE, [
-                'size' => sprintf('%s MB', round($size, 2))
+                'size' => sprintf('%s MB', round($filesize / 1048576, 2))
             ]);
 
             return true;

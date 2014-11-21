@@ -68,10 +68,11 @@ class Packer
 
         if ($process->isSuccessful()) {
 
-            $size = filesize($targetFile) / 1048576;
+            $filesize = filesize($targetFile);
 
+            $this->logger->keep('filesize', ['archive' => $filesize]);
             $this->logger->event('success', self::EVENT_MESSAGE, [
-                'size' => sprintf('%s MB', round($size, 2))
+                'size' => sprintf('%s MB', round($filesize / 1048576, 2))
             ]);
 
             return true;

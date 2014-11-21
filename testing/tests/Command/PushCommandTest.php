@@ -56,6 +56,9 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('setStage')
             ->once();
+        $this->logger
+            ->shouldReceive('addSubscription')
+            ->twice();
 
         $command = new PushCommand(
             'cmd',
@@ -120,6 +123,14 @@ OUTPUT;
         $this->logger
             ->shouldReceive('setStage')
             ->times(3);
+        $this->logger
+            ->shouldReceive('addSubscription')
+            ->with('push.failure', 'notifier.email')
+            ->once();
+        $this->logger
+            ->shouldReceive('addSubscription')
+            ->with('push.success', 'notifier.email')
+            ->once();
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -227,6 +238,9 @@ OUTPUT;
         $this->logger
             ->shouldReceive('setStage')
             ->times(3);
+        $this->logger
+            ->shouldReceive('addSubscription')
+            ->twice();
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -333,6 +347,9 @@ OUTPUT;
         $this->logger
             ->shouldReceive('setStage')
             ->times(3);
+        $this->logger
+            ->shouldReceive('addSubscription')
+            ->twice();
 
         $this->resolver
             ->shouldReceive('__invoke')

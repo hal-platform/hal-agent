@@ -31,7 +31,11 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event')
             ->with('success', Mockery::any(), [
                 'size' => '0.03 MB'
-            ]) ->once();
+            ])->once();
+        $this->logger
+            ->shouldReceive('keep')
+            ->with('filesize', ['download' => '29160'])
+            ->once();
 
         $action = new Downloader($this->logger, $api);
 

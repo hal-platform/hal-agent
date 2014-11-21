@@ -186,6 +186,10 @@ class PushCommand extends Command
         $pushId = $input->getArgument('PUSH_ID');
         $method = $input->getArgument('METHOD');
 
+        // Add subscriptions
+        $this->logger->addSubscription('push.success', 'notifier.email');
+        $this->logger->addSubscription('push.failure', 'notifier.email');
+
         $this->logger->setStage('push.start');
 
         if (!$properties = $this->resolve($output, $pushId, $method)) {
