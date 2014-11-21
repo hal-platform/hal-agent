@@ -8,17 +8,37 @@
 namespace QL\Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManager;
+use MCP\DataType\Time\Clock;
 use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\EventLog;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Type\EventEnumType;
+use QL\Hal\Core\Entity\Type\EventStatusEnumType;
 
+/**
+ * Handles starting and finishing jobs - e.g. Changing the status of a build or push.
+ *
+ * Event logs are automatically flushed and persisted when this logger saves the job.
+ */
 class EventLogger
 {
     /**
-     * @type string
+     * @type EntityManager
      */
-    private $currentStage;
+    private $entityManager;
+
+    /**
+     * @type EventFactory
+     */
+    private $factory;
+
+    /**
+     * @type Notifier
+     */
+    private $notifier;
+
+    /**
+     * @type Clock
+     */
+    private $clock;
 
     /**
      * @type Build|Push
@@ -26,77 +46,17 @@ class EventLogger
     private $entity;
 
     /**
-     * @type EntityManager
-     */
-    private $entityManager;
-
-    /**
-     * @type int
-     */
-    private $count;
-
-    /**
      * @param EntityManager $entityManager
+     * @param EventFactory $factory
+     * @param Notifier $notifier
+     * @param Clock $clock
      */
-    public function __construct(EntityManager $entityManager)
+    public function __construct(EntityManager $entityManager, EventFactory $factory, Notifier $notifier, Clock $clock)
     {
         $this->entityManager = $entityManager;
-
-        $this->currentStage = 'unknown';
-        $this->count = 0;
-    }
-
-    /**
-     * @param string $message
-     * @param array $context
-     *
-     * @return null
-     */
-    public function failure($message = '', array $context = [])
-    {
-        return $this->log('failure', $message, $context);
-    }
-
-    /**
-     * @param string $message
-     * @param array $context
-     *
-     * @return null
-     */
-    public function info($message = '', array $context = [])
-    {
-        return $this->log('info', $message, $context);
-    }
-
-    /**
-     * @param string $message
-     * @param array $context
-     *
-     * @return null
-     */
-    public function success($message = '', array $context = [])
-    {
-        return $this->log('success', $message, $context);
-    }
-
-    /**
-     * @param Build $build
-     *
-     * @return null
-     */
-    public function setBuild(Build $build)
-    {
-        $this->entity = $build;
-    }
-
-    /**
-     * @param Push $push
-     *
-     * @return null
-     */
-    public function setPush(Push $push)
-    {
-        $this->entity = $push;
+        $this->factory = $factory;
+        $this->notifier = $notifier;
+        $this->clock = $clock;
     }
 
     /**
@@ -106,68 +66,180 @@ class EventLogger
      */
     public function setStage($stage)
     {
-        $stages = EventEnumType::values();
-        if (!in_array($stage, $stages)) {
-            // error?
+        if (!$normalized = $this->normalizeStage($stage)) {
             return;
         }
 
-        $this->currentStage = $stage;
+        $this->factory->setStage($normalized);
+        $this->notifier->sendNotifications($normalized, $this->entity);
     }
 
     /**
-     * @param string $type
+     * @param string $stage
+     * @param string $service
+     *
+     * @return null
+     */
+    public function addSubscription($stage, $service)
+    {
+        if (!$normalized = $this->normalizeStage($stage)) {
+            return;
+        }
+
+        $this->notifier->addSubscription($normalized, $service);
+    }
+
+    /**
+     * @param string $status
      * @param string $message
      * @param array $context
      *
      * @return null
      */
-    private function log($type, $message = '', array $context = [])
+    public function event($status, $message = '', array $context = [])
     {
-        $log = new EventLog;
-        $log->setStatus($type);
-        $log->setEvent($this->currentStage);
-        $log->setOrder(++$this->count);
-
-        if ($message) {
-            $log->setMessage($message);
+        $statuses = EventStatusEnumType::values();
+        if (!in_array($status, $statuses)) {
+            // error?
+            return;
         }
 
-        $context = $this->sanitizeContext($context);
-        if ($context) {
-            $log->setData($context);
-        }
-
-        if ($this->entity instanceof Build) {
-            $log->setBuild($this->entity);
-
-        } elseif ($this->entity instanceof Push) {
-            $log->setPush($this->entity);
-        }
-
-        // persist
-        $this->entityManager->persist($log);
-
-        // flush?
+        $this->factory->$status($message, $context);
     }
 
     /**
-     * @param array $context
+     * @param string $key
+     * @param mixed $value
      *
-     * @return array
+     * @return null
      */
-    private function sanitizeContext(array $context)
+    public function keep($key, $value)
     {
-        foreach ($context as $key => $data) {
-            if (is_object($data)) {
-                if (method_exists($data, '__toString')) {
-                    $context[$key] = (string) $data;
-                } else {
-                    unset($context[$key]);
-                }
-            }
+        $this->notifier->keep($key, $value);
+    }
+
+    /**
+     * @param Build|Push $job
+     *
+     * @return null
+     */
+    public function start($job)
+    {
+        if ($job instanceof Build) {
+            $this->startBuild($job);
+
+        } elseif ($job instanceof Push) {
+            $this->startPush($job);
         }
 
-        return $context;
+        if ($this->entity) {
+            // immediately merge and flush
+            $this->entityManager->merge($this->entity);
+            $this->entityManager->flush();
+        }
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     *
+     * @return null
+     */
+    public function failure()
+    {
+        if ($this->isInProgress()) {
+            $this->entity->setStatus('Error');
+            $this->entity->setEnd($this->clock->read());
+            $this->entityManager->merge($this->entity);
+
+            $this->setStage('failure');
+        }
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     *
+     * @return null
+     */
+    public function success()
+    {
+        if ($this->isInProgress()) {
+            $this->entity->setStatus('Success');
+            $this->entity->setEnd($this->clock->read());
+            $this->entityManager->merge($this->entity);
+
+            $this->setStage('success');
+        }
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @return bool
+     */
+    private function isInProgress()
+    {
+        if (!$this->entity) {
+            return false;
+        }
+
+        if ($this->entity instanceof Build && $this->entity->getStatus() === 'Building') {
+            return true;
+        }
+
+
+        if ($this->entity instanceof Push && $this->entity->getStatus() === 'Pushing') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $stage
+     * @return string|null
+     */
+    private function normalizeStage($stage)
+    {
+        if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 5) === 'push.') {
+            return $stage;
+
+        } else if ($this->entity) {
+            $prefix = ($this->entity instanceof Build) ? 'build' : 'push';
+            return sprintf('%s.%s', $prefix, $stage);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param Build $build
+     *
+     * @return null
+     */
+    private function startBuild(Build $build)
+    {
+        $this->entity = $build;
+        $this->entity->setStatus('Building');
+        $this->entity->setStart($this->clock->read());
+
+        $this->factory->setBuild($build);
+    }
+
+    /**
+     * @param Push $push
+     *
+     * @return null
+     */
+    private function startPush(Push $push)
+    {
+        $this->entity = $push;
+        $this->entity->setStatus('Pushing');
+        $this->entity->setStart($this->clock->read());
+
+        $this->factory->setPush($push);
     }
 }

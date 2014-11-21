@@ -26,7 +26,7 @@ trait ProcessRunnerTrait
         try {
             $process->run();
         } catch (ProcessTimedOutException $ex) {
-            $logger->failure($err, [
+            $logger->event('failure', $err, [
                 'maxTimeout' => $timeout . ' seconds',
                 'output' => $process->getOutput()
             ]);
