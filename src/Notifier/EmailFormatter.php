@@ -33,7 +33,7 @@ class EmailFormatter
      *
      * @return string
      */
-    public function format($data);
+    public function format($data)
     {
         // expected data in data:
             // icon
@@ -53,7 +53,7 @@ class EmailFormatter
         // title
         if ($data['status'] !== null) {
             $type = ($entity instanceof Push) ? 'push' : 'build';
-            $status = ($data['status' === true) ? 'succeeded' : 'failed';
+            $status = ($data['status'] === true) ? 'succeeded' : 'failed';
             $title = sprintf('[%s] The %s %s', $data['icon'], $type, $status);
         } else {
             $type = ($entity instanceof Push) ? 'Push' : 'Build';
@@ -81,7 +81,7 @@ class EmailFormatter
 
             'filesize' => $this->findFileSizes($data),
             'time' => $this->formatTime($entity->getStart(), $entity->getEnd())
-        ];
+        ]);
 
         return $this->twig->render($context);
     }

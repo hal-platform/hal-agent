@@ -53,10 +53,7 @@ class EmailNotifier implements NotifierInterface
     }
 
     /**
-     * @param string $event
-     * @param array $data
-     *
-     * @return null
+     * {@inheritdoc}
      */
     public function send($event, array $data)
     {
@@ -102,7 +99,7 @@ class EmailNotifier implements NotifierInterface
         $email->setBody($message);
 
         if ($isHighPriority) {
-            $message->setPriority(1);
+            $email->setPriority(1);
         }
 
         $this->mailer->send($email);

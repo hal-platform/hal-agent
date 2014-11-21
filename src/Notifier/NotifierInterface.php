@@ -11,9 +11,9 @@ interface NotifierInterface
 {
     /**
      * @param string $event
-     * @param string $data
+     * @param array $data
      *
      * @return null
      */
-    public function send($event, $data);
+    public function send($event, array $data);
 }

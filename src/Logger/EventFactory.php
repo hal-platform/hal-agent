@@ -77,11 +77,6 @@ class EventFactory
     private $entityManager;
 
     /**
-     * @type int
-     */
-    private $count;
-
-    /**
      * @type EventLog[]
      */
     private $logs;
@@ -198,6 +193,7 @@ class EventFactory
         }
 
         // persist
+        $this->logs[] = $log;
         $this->entityManager->persist($log);
 
         // flush?
@@ -214,8 +210,10 @@ class EventFactory
             if (is_object($data)) {
                 if (method_exists($data, '__toString')) {
                     $context[$key] = (string) $data;
-                } elseif ($object instanceof JsonSerializable) {
-                    $context[$key] = json_encode($object, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+                } elseif ($data instanceof JsonSerializable) {
+                    $context[$key] = $data->jsonSerialize();
+
                 } else {
                     unset($context[$key]);
                 }

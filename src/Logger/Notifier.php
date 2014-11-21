@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Logger;
 
+use QL\Hal\Agent\Notifier\NotifierInterface;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Type\EventEnumType;
@@ -83,9 +84,10 @@ class Notifier
             // Skip undefined services
             if (!$this->di->has($service)) continue;
 
+            $notifier = $this->di->get($service, ContainerInterface::NULL_ON_INVALID_REFERENCE);
+
             // Skip invalid services
-            $notifier = $this->di->get($service);
-            if (!$service instanceof NotifierInterface) continue;
+            if (!$notifier instanceof NotifierInterface) continue;
 
             $notifier->send($event, $this->prepareData($event, $entity));
         }
@@ -126,11 +128,11 @@ class Notifier
         if ($entity instanceof Push) {
             $build = $entity->getBuild();
             $push = $entity;
-            $server = null;
+            $server = $push->getDeployment()->getServer();
         } else {
             $build = $entity;
             $push = null;
-            $server = $push->getDeployment()->getServer();
+            $server = null;
         }
 
         $repo = $build->getRepository();
