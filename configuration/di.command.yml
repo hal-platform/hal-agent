@@ -52,7 +52,7 @@ services:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - @logger.job
+            - @logger.event
             - @build.resolver
             - @build.downloader
             - @build.unpacker
@@ -92,7 +92,7 @@ services:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - @logger.job
+            - @logger.event
             - @push.resolver
             - @push.unpacker
             - @push.builder

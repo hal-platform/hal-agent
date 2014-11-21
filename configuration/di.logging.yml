@@ -16,47 +16,49 @@ services:
     # Logging
     ####################################################################################################################
 
-    logger.job:
-        class: 'QL\Hal\Agent\Logger\JobLogger'
-        arguments:
-            - @doctrine.em
-            - @logger.event
-            - @clock
-
     logger.event:
         class: 'QL\Hal\Agent\Logger\EventLogger'
+        arguments:
+            - @doctrine.em
+            - @logger.event.factory
+            - @logger.notifier
+            - @clock
+    logger.event.factory:
+        class: 'QL\Hal\Agent\Logger\EventFactory'
         arguments: [@doctrine.em]
 
+    logger.notifier:
+        class: 'QL\Hal\Agent\Logger\Notifier'
+        arguments: [@service_container]
+
     ####################################################################################################################
-    # custom formatters and logging utils
+    # custom notifiers
     ####################################################################################################################
 
-    logger.normalizer:
-        class: 'QL\Hal\Agent\Logger\Normalizer'
-        arguments: ['Y-m-d H:i:s']
-    logger.resolver:
-        class: 'QL\Hal\Agent\Logger\Resolver'
+    notifier.email:
+        class: 'QL\Hal\Agent\Notifier\EmailNotifier'
+        arguments: [@emailer, @emailer.message, @notifier.email.formatter]
 
-    logger.template.email.formatter:
-        class: 'QL\Hal\Agent\Logger\TemplateFormatter'
-        arguments: [@logger.normalizer, @logger.email.template]
+    notifier.email.formatter:
+        class: 'QL\Hal\Agent\Notifier\EmailFormatter'
+        arguments: [@notifier.email.template]
 
-    logger.email.template:
+    notifier.email.template:
         class: 'Twig_Template'
-        factory_service: 'logger.twig.environment'
+        factory_service: 'notifier.email.environment'
         factory_method: 'loadTemplate'
         arguments: ['email.twig']
 
-    logger.twig.environment:
+    notifier.email.environment.:
         class: 'Twig_Environment'
-        arguments: [@logger.twig.loader]
+        arguments: [@notifier.twig.loader]
         calls:
             - ['addGlobal', ['hal_url', %hal.baseurl%]]
             - ['addGlobal', ['github_url', %github.baseurl.site%]]
-    logger.twig.loader:
+    notifier.twig.loader:
         class: 'Twig_Loader_Filesystem'
-        arguments: [@logger.twig.loader.path]
-    logger.twig.loader.path:
+        arguments: [@notifier.twig.loader.path]
+    notifier.twig.loader.path:
         class: 'WUT'
         factory_class: 'QL\Hal\Agent\Helper\StringSmusher'
         factory_method: 'smush'
@@ -69,10 +71,6 @@ services:
     logger.mcp:
         class: 'MCP\Service\Logger\Logger'
         arguments: [@logger.mcp.service, @logger.mcp.factory]
-
-    logger.email:
-        class: 'QL\Hal\Agent\Logger\EmailLogger'
-        arguments: [@emailer, @emailer.message]
 
     ####################################################################################################################
     # email logger services
