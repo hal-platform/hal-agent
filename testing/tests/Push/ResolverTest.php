@@ -166,7 +166,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'source' => 'http://git/user1/repo1',
             'env' => 'envname',
             'user' => null,
-            'branch' => 'master',
+            'reference' => 'master',
             'commit' => '5555',
             'date' => '2015-03-15T08:00:00-04:00'
         ];

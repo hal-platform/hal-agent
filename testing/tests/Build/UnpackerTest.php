@@ -32,11 +32,6 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $this->logger
-            ->shouldReceive('success')
-            ->with(Mockery::any())
-            ->once();
-
         $action = new Unpacker($this->logger, $builder, 10);
 
         $success = $action('path', 'command', []);

@@ -152,7 +152,7 @@ class Resolver
                 ),
                 'env' => $build->getEnvironment()->getKey(),
                 'user' => $push->getUser() ? $push->getUser()->getHandle() : null,
-                'branch' => $build->getBranch(),
+                'reference' => $build->getBranch(),
                 'commit' => $build->getCommit(),
                 'date' => $this->clock->read()->format('c', 'America/Detroit')
             ],
