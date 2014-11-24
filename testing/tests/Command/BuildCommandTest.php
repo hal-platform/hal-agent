@@ -184,6 +184,7 @@ OUTPUT;
 
         $expected = <<<'OUTPUT'
 Resolving build properties
+Found build: 1234
 Downloading github repository
 Unpacking github repository
 Running build command

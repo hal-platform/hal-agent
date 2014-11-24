@@ -295,6 +295,7 @@ class BuildCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['build']);
+        $this->status($output, sprintf('Found build: %s', $properties['build']->getId()));
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {
