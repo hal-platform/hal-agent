@@ -308,8 +308,7 @@ class PushCommand extends Command
         unset($context['pushProperties']);
         unset($context['artifacts']);
 
-        $this->logger->event('success', sprintf('Found push: %s', $properties['push']->getId()));
-        $this->logger->event('info', 'Resolved push properties', $context);
+        $this->logger->event('success', 'Resolved push properties', $context);
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];

@@ -119,7 +119,7 @@ OUTPUT;
             ->once();
         $this->logger
             ->shouldReceive('event')
-            ->twice();
+            ->once();
         $this->logger
             ->shouldReceive('setStage')
             ->times(3);
@@ -234,7 +234,7 @@ OUTPUT;
             ->once();
         $this->logger
             ->shouldReceive('event')
-            ->twice();
+            ->once();
         $this->logger
             ->shouldReceive('setStage')
             ->times(3);
@@ -343,7 +343,7 @@ OUTPUT;
             ->once();
         $this->logger
             ->shouldReceive('event')
-            ->twice();
+            ->once();
         $this->logger
             ->shouldReceive('setStage')
             ->times(3);

@@ -206,20 +206,36 @@ class EventFactory
      */
     private function sanitizeContext(array $context)
     {
-        foreach ($context as $key => $data) {
+        $sanitized = [];
+
+        foreach ($context as $oldKey => $data) {
+            $key = $this->deCamelCase($oldKey);
+
             if (is_object($data)) {
                 if (method_exists($data, '__toString')) {
-                    $context[$key] = (string) $data;
+                    $sanitized[$key] = (string) $data;
 
                 } elseif ($data instanceof JsonSerializable) {
-                    $context[$key] = $data->jsonSerialize();
+                    $sanitized[$key] = $data->jsonSerialize();
 
-                } else {
-                    unset($context[$key]);
                 }
+            } else {
+                $sanitized[$key] = $data;
             }
         }
 
-        return $context;
+        return $sanitized;
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    private function deCamelCase($key)
+    {
+        $key = preg_replace('/([a-z])([A-Z])/', '$1 $2', $key);
+        $key = ucfirst($key);
+
+        return $key;
     }
 }

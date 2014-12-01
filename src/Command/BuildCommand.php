@@ -305,8 +305,7 @@ class BuildCommand extends Command
         $context = $properties;
         unset($context['artifacts']);
 
-        $this->logger->event('success', sprintf('Found build: %s', $properties['build']->getId()));
-        $this->logger->event('info', 'Resolved build properties', $properties);
+        $this->logger->event('success', 'Resolved build properties', $context);
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];

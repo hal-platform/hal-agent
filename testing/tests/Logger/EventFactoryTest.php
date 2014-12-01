@@ -135,9 +135,9 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
         ]);
 
         $expectedContext = [
-            'data' => 'testing',
-            'json' => ['json'=> 'data'],
-            'stringable' => 'test1234'
+            'Data' => 'testing',
+            'Json' => ['json'=> 'data'],
+            'Stringable' => 'test1234'
         ];
 
         $this->assertSame('testing message', $spy->getMessage());
