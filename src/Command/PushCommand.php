@@ -304,8 +304,12 @@ class PushCommand extends Command
             register_shutdown_function([$this, 'blowTheHatch']);
         }
 
+        $context = $properties;
+        unset($context['pushProperties']);
+        unset($context['artifacts']);
+
         $this->logger->event('success', sprintf('Found push: %s', $properties['push']->getId()));
-        $this->logger->event('info', 'Resolved push properties', $properties);
+        $this->logger->event('info', 'Resolved push properties', $context);
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];

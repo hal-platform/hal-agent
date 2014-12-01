@@ -302,6 +302,9 @@ class BuildCommand extends Command
             register_shutdown_function([$this, 'blowTheHatch']);
         }
 
+        $context = $properties;
+        unset($context['artifacts']);
+
         $this->logger->event('success', sprintf('Found build: %s', $properties['build']->getId()));
         $this->logger->event('info', 'Resolved build properties', $properties);
 

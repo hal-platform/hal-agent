@@ -30,6 +30,7 @@ class Resolver
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
+    const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
 
     /**
      * @var EventLogger
@@ -118,7 +119,7 @@ class Resolver
         // validate remote hostname
         $serverName = $deployment->getServer()->getName();
         if (!$hostname = $this->validateHostname($serverName)) {
-            $this->logger->event('failure', sprintf('Cannot resolve hostname "%s"', $serverName));
+            $this->logger->event('failure', sprintf(self::ERR_HOSTNAME_RESOLUTION, $serverName));
 
             // Revert hostname back to server name, and allow the push to continue.
             $hostname = $serverName;
