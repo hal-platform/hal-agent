@@ -35,7 +35,7 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
         $this->pushRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
         $this->clock = new Clock('now', 'UTC');
-        $this->unique = Mockery::mock('QL\Hal\Agent\Helper\UniqueHelper');
+        $this->unique = Mockery::mock('QL\Hal\Core\JobIdGenerator');
 
         $this->output = new BufferedOutput;
     }

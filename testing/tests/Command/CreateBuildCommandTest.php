@@ -35,7 +35,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\UserRepository');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Github\ReferenceResolver');
-        $this->unique = Mockery::mock('QL\Hal\Agent\Helper\UniqueHelper');
+        $this->unique = Mockery::mock('QL\Hal\Core\JobIdGenerator');
         $this->clock = new Clock('now', 'UTC');
 
         $this->output = new BufferedOutput;

@@ -10,12 +10,12 @@ namespace QL\Hal\Agent\Command;
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Github\ReferenceResolver;
-use QL\Hal\Agent\Helper\UniqueHelper;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\EnvironmentRepository;
 use QL\Hal\Core\Entity\Repository\RepositoryRepository;
 use QL\Hal\Core\Entity\Repository\UserRepository;
+use QL\Hal\Core\JobIdGenerator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -89,7 +89,7 @@ HELP;
     private $refResolver;
 
     /**
-     * @var UniqueHelper
+     * @var JobIdGenerator
      */
     private $unique;
 
@@ -102,7 +102,7 @@ HELP;
      * @param EnvironmentRepository $environmentRepo
      * @param UserRepository $userRepo
      * @param ReferenceResolver $refResolver
-     * @param UniqueHelper $unique
+     * @param JobIdGenerator $unique
      */
     public function __construct(
         $name,
@@ -113,7 +113,7 @@ HELP;
         EnvironmentRepository $environmentRepo,
         UserRepository $userRepo,
         ReferenceResolver $refResolver,
-        UniqueHelper $unique
+        JobIdGenerator $unique
     ) {
         parent::__construct($name);
 

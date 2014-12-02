@@ -47,7 +47,7 @@ services:
             - @environment.repo
             - @user.repo
             - @utility.referenceResolver
-            - @utility.unique.helper
+            - @utility.id.generator
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
@@ -87,7 +87,7 @@ services:
             - @deployment.repo
             - @push.repo
             - @user.repo
-            - @utility.unique.helper
+            - @utility.id.generator
     command.push.push:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:

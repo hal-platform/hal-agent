@@ -9,12 +9,12 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
-use QL\Hal\Agent\Helper\UniqueHelper;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use QL\Hal\Core\Entity\Repository\DeploymentRepository;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 use QL\Hal\Core\Entity\Repository\UserRepository;
+use QL\Hal\Core\JobIdGenerator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -73,7 +73,7 @@ class CreatePushCommand extends Command
     private $userRepo;
 
     /**
-     * @var UniqueHelper
+     * @var JobIdGenerator
      */
     private $unique;
 
@@ -85,7 +85,7 @@ class CreatePushCommand extends Command
      * @param DeploymentRepository $deploymentRepo
      * @param PushRepository $pushRepo
      * @param UserRepository $userRepo
-     * @param UniqueHelper $unique
+     * @param JobIdGenerator $unique
      */
     public function __construct(
         $name,
@@ -95,7 +95,7 @@ class CreatePushCommand extends Command
         DeploymentRepository $deploymentRepo,
         PushRepository $pushRepo,
         UserRepository $userRepo,
-        UniqueHelper $unique
+        JobIdGenerator $unique
     ) {
         parent::__construct($name);
 
