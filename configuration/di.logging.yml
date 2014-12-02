@@ -1,16 +1,7 @@
 services:
 
-    # logger: @monolog
     logger:
         class: 'Psr\Log\NullLogger'
-
-    # monolog:
-    #     class: 'Monolog\Logger'
-    #     arguments: ['hal9000']
-    #     calls:
-    #         - ['pushHandler', [@monolog.console]]
-    # monolog.console:
-    #     class: 'Symfony\Bridge\Monolog\Handler\ConsoleHandler'
 
     ####################################################################################################################
     # Logging

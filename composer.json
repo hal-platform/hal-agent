@@ -27,7 +27,6 @@
     ],
     "require": {
         "knplabs/github-api": "1.2.1",
-        "monolog/monolog": "1.9.*",
         "php-64bit": ">=5.4.0",
         "psr/log": "*",
         "ql/hal-core": "dev-master",
@@ -40,7 +39,6 @@
         "symfony/dependency-injection": "2.5.*",
         "symfony/event-dispatcher": "2.5.*",
         "symfony/filesystem": "2.5.*",
-        "symfony/monolog-bridge": "2.5.*",
         "symfony/process": "2.5.*",
         "twig/twig": "~1.15"
     },
