@@ -5,7 +5,7 @@ imports:
     - resource: di.build.yml
     - resource: di.push.yml
     - resource: di.logging.yml
-    - resource: parameters.yml
+    - resource: config.global.yml
     - resource: config.env.yml
 
 parameters:

@@ -65,6 +65,11 @@ class Resolver
     /**
      * @var string
      */
+    private $githubBaseUrl;
+
+    /**
+     * @var string
+     */
     private $buildDirectory;
 
     /**
@@ -79,15 +84,24 @@ class Resolver
      * @param string $sshUser
      * @param string $envPath
      * @param string $archivePath
+     * @param string $githubBaseUrl
      */
-    public function __construct(EventLogger $logger, PushRepository $pushRepo, Clock $clock, $sshUser, $envPath, $archivePath)
-    {
+    public function __construct(
+        EventLogger $logger,
+        PushRepository $pushRepo,
+        Clock $clock,
+        $sshUser,
+        $envPath,
+        $archivePath,
+        $githubBaseUrl
+    ) {
         $this->logger = $logger;
         $this->pushRepo = $pushRepo;
         $this->clock = $clock;
         $this->sshUser = $sshUser;
         $this->envPath = $envPath;
         $this->archivePath = $archivePath;
+        $this->githubBaseUrl = $githubBaseUrl;
     }
 
     /**
@@ -147,7 +161,8 @@ class Resolver
             'pushProperties' => [
                 'id' => $build->getId(),
                 'source' => sprintf(
-                    'http://git/%s/%s',
+                    '%s/%s/%s',
+                    rtrim($this->githubBaseUrl, '/'),
                     $repository->getGithubUser(),
                     $repository->getGithubRepo()
                 ),

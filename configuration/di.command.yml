@@ -95,6 +95,7 @@ services:
             - @logger.event
             - @push.resolver
             - @push.unpacker
+            - @push.delta
             - @push.builder
             - @push.pusher
             - @push.serverCommand

@@ -37,7 +37,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null
         ]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
 
         $properties = $action('1234', 'pushmethod');
     }
@@ -57,7 +57,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'findBy' => []
         ]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
 
         $properties = $action('1234', 'pushmethod');
     }
@@ -79,7 +79,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'findBy' => ['derp']
         ]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
 
         $properties = $action('1234', 'pushmethod');
     }
@@ -177,7 +177,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'findBy' => []
         ]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
         $action->setBaseBuildDirectory('testdir');
 
         $properties = $action('1234', 'pushmethod');
