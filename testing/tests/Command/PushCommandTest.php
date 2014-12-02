@@ -31,6 +31,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
+        $this->delta = Mockery::mock('QL\Hal\Agent\Push\CodeDelta');
         $this->builder = Mockery::mock('QL\Hal\Agent\Push\Builder');
         $this->pusher = Mockery::mock('QL\Hal\Agent\Push\Pusher');
         $this->command = Mockery::mock('QL\Hal\Agent\Push\ServerCommand');
@@ -65,6 +66,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->logger,
             $this->resolver,
             $this->unpacker,
+            $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
@@ -155,6 +157,9 @@ OUTPUT;
         $this->unpacker
             ->shouldReceive('__invoke')
             ->andReturn(true);
+        $this->delta
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -175,6 +180,7 @@ OUTPUT;
             $this->logger,
             $this->resolver,
             $this->unpacker,
+            $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
@@ -186,7 +192,9 @@ OUTPUT;
 
         $expected = <<<'OUTPUT'
 Resolving push properties
+Found push: 1234
 Unpacking build archive
+Reading previous push data
 Running build command
 Running pre-push command
 Pushing code to server
@@ -265,6 +273,9 @@ OUTPUT;
         $this->unpacker
             ->shouldReceive('__invoke')
             ->andReturn(true);
+        $this->delta
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -285,6 +296,7 @@ OUTPUT;
             $this->logger,
             $this->resolver,
             $this->unpacker,
+            $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
@@ -296,7 +308,9 @@ OUTPUT;
 
         $expected = <<<'OUTPUT'
 Resolving push properties
+Found push: 1234
 Unpacking build archive
+Reading previous push data
 Skipping build command
 Skipping pre-push command
 Pushing code to server
@@ -371,6 +385,7 @@ OUTPUT;
             ]);
 
         $this->unpacker->shouldReceive(['__invoke' => true]);
+        $this->delta->shouldReceive(['__invoke' => true]);
         $this->builder->shouldReceive(['__invoke' => true]);
         // simulate an error
         $this->command
@@ -383,6 +398,7 @@ OUTPUT;
             $this->logger,
             $this->resolver,
             $this->unpacker,
+            $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,

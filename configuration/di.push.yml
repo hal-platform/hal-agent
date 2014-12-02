@@ -20,7 +20,7 @@ services:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - @utility.filesystem
-            - @utility.yamlDumper
+            - @yaml.dumper
             - %timeout.filepacking%
 
     push.delta:
@@ -28,19 +28,24 @@ services:
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
+            - @yaml.parser
+            - @github.commits
             - %push.sshUser%
+
     push.builder:
         class: 'QL\Hal\Agent\Push\Builder'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push.build%
+
     push.pusher:
         class: 'QL\Hal\Agent\Push\Pusher'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push%
+
     push.serverCommand:
         class: 'QL\Hal\Agent\Push\ServerCommand'
         arguments:
@@ -48,3 +53,13 @@ services:
             - @utility.process.builder= # = signifies a prototype service
             - %push.sshUser%
             - %timeout.push.serverCommand%
+
+    # private services used only by push actions
+
+    yaml.dumper:
+        class: 'Symfony\Component\Yaml\Dumper'
+        calls:
+            - ['setIndentation', ['4']]
+
+    yaml.parser:
+        class: 'Symfony\Component\Yaml\Parser'

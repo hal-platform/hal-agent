@@ -67,10 +67,7 @@ services:
     utility.helper.downloadProgress:
         class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
         arguments: [@github.guzzleHttpClient]
-    utility.yamlDumper:
-        class: 'Symfony\Component\Yaml\Dumper'
-        calls:
-            - ['setIndentation', ['4']]
+
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
     utility.process.builder:
@@ -108,7 +105,7 @@ services:
         class: 'Github\Api\GitData\References'
         arguments: [@github.client]
     github.commits:
-        class: 'Github\Api\GitData\Commits'
+        class: 'Github\Api\Repository\Commits'
         arguments: [@github.client]
     github.pullRequests:
         class: 'Github\Api\PullRequest'

@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Push\Builder;
+use QL\Hal\Agent\Push\CodeDelta;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\ServerCommand;
@@ -59,6 +60,11 @@ class PushCommand extends Command
     private $unpacker;
 
     /**
+     * @var CodeDelta
+     */
+    private $delta;
+
+    /**
      * @var Builder
      */
     private $builder;
@@ -93,6 +99,7 @@ class PushCommand extends Command
      * @param EventLogger $logger
      * @param Resolver $resolver
      * @param Unpacker $unpacker
+     * @param CodeDelta $delta
      * @param Builder $builder
      * @param Pusher $pusher
      * @param ServerCommand $serverCommand
@@ -103,6 +110,7 @@ class PushCommand extends Command
         EventLogger $logger,
         Resolver $resolver,
         Unpacker $unpacker,
+        CodeDelta $delta,
         Builder $builder,
         Pusher $pusher,
         ServerCommand $serverCommand,
@@ -114,6 +122,7 @@ class PushCommand extends Command
 
         $this->resolver = $resolver;
         $this->unpacker = $unpacker;
+        $this->delta = $delta;
         $this->builder = $builder;
         $this->pusher = $pusher;
         $this->serverCommand = $serverCommand;
@@ -202,6 +211,8 @@ class PushCommand extends Command
         if (!$this->unpack($output, $properties)) {
             return $this->failure($output, 2);
         }
+
+        $this->delta($output, $properties);
 
         if (!$this->build($output, $properties)) {
             return $this->failure($output, 4);
@@ -298,6 +309,7 @@ class PushCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['push']);
+        $this->status($output, sprintf('Found push: %s', $properties['push']->getId()));
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {
@@ -325,6 +337,21 @@ class PushCommand extends Command
         return call_user_func_array($this->unpacker, [
             $properties['archiveFile'],
             $properties['buildPath'],
+            $properties['pushProperties']
+        ]);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function delta(OutputInterface $output, array $properties)
+    {
+        $this->status($output, 'Reading previous push data');
+        return call_user_func_array($this->delta, [
+            $properties['hostname'],
+            $properties['remotePath'],
             $properties['pushProperties']
         ]);
     }
