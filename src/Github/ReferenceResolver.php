@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Github\Api\GitData\Commits as CommitApi;
+use Github\Api\Repository\Commits as CommitApi;
 use Github\Api\GitData\References as ReferenceApi;
 use Github\Api\PullRequest as PullRequestApi;
 use Github\Exception\RuntimeException;
