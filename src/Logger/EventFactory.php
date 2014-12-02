@@ -211,22 +211,27 @@ class EventFactory
         foreach ($context as $oldKey => $data) {
             $key = $this->deCamelCase($oldKey);
 
-            $stringified = '';
             if (is_object($data)) {
                 if (method_exists($data, '__toString')) {
-                    $stringified = (string) $data;
+                    $data = (string) $data;
 
                 } elseif ($data instanceof JsonSerializable) {
-                    $stringified = $data->jsonSerialize();
-
+                    $data = $data->jsonSerialize();
+                } else {
+                    $data = '';
                 }
-            } else {
-                $stringified = $data;
+            } elseif (!is_array($data)) {
+                $data = (string) $data;
             }
 
-            // Only save non-empty context
-            if (strlen($stringified) > 0) {
-                $sanitized[$key] = $stringified;
+            // must be array or string at this point
+
+            if (is_string($data)) {
+                if (strlen($data) > 0) {
+                    $sanitized[$key] = $data;
+                }
+            } else {
+                $sanitized[$key] = $data;
             }
         }
 
