@@ -26,7 +26,7 @@ class CodeDelta
      */
     const EVENT_MESSAGE = 'Retrieve previous push information';
     const NO_CHANGE = 'No change. Code was redeployed.';
-    const YOU_GOT_DELTAED = 'Code change detected.';
+    const YOU_GOT_DELTAED = 'Code change found.';
 
     private static $spec = [
         'id',
@@ -111,11 +111,9 @@ class CodeDelta
             ->setWorkingDirectory(null)
             ->setArguments([''])
             ->getProcess();
-
         $process->setCommandLine($command);
 
         $process->run();
-
         if (!$process->isSuccessful()) {
             return false;
         }
@@ -184,12 +182,12 @@ class CodeDelta
         $context['githubComparisonURL'] = $this->nullable($comparison, 'permalink_url');
 
         if ($status === 'behind') {
-            $context['changeStatus'] = [
+            $context['commitStatus'] = [
                 'status' => $status,
                 'behind_by' => $this->nullable($comparison, 'behind_by')
             ];
         } elseif ($status === 'ahead') {
-            $context['changeStatus'] = [
+            $context['commitStatus'] = [
                 'status' => $status,
                 'ahead_by' => $this->nullable($comparison, 'ahead_by')
             ];
