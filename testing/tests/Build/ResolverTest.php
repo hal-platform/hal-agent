@@ -101,6 +101,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'COMPOSER_HOME' => 'testdir/home/',
             'COMPOSER_NO_INTERACTION' => '1',
             'NPM_CONFIG_STRICT_SSL' => 'false',
+            'NPM_CONFIG_COLOR' => 'always',
             'GEM_HOME' => 'testdir/home/gempath/here',
             'GEM_PATH' => 'testdir/home/gempath/here:anotherpath'
         ];
