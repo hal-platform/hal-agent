@@ -6,9 +6,7 @@ must first be built for the correct environment, a build ID obtained, and then t
 one or more servers or retrieved through the API for use elsewhere.
 
 Under normal operations, a user will interact with the build system through the HAL 9000 web application - this
-application will then be called in the background. It can also be interacted with through the HAL 9000 web API to
-allow for triggered builds and deploys from a CI server. It will also be possible to obtain a completed build as a
-package for deployment elsewhere (AWS, etc).
+application will then be called in the background.
 
 Table of Contents:
 * [Usage](#usage)
@@ -17,7 +15,6 @@ Table of Contents:
 * [Application scripting environment](#application-scripting-environment)
 * [Deployment](#deployment)
 * [Configuration](#configuration)
-* [Dependencies](#dependencies)
 * [Testing](#testing)
 
 ## Usage
@@ -125,21 +122,20 @@ HAL_GITREF       | Git reference (such as `master`)
 HAL_ENVIRONMENT  | Environment (such as `test`, `beta`, `prod`)
 HAL_REPO         | Hal name for the deployed application
 
-
 ### On Push
 
 A yaml file in the following format is written to the application directory during a push:
 
 ```yaml
-# filename: APPLICATION_ROOT/.hal9000.yml
+# filename: APPLICATION_ROOT/.hal9000.push.yml
 
-id: ''      # Build ID
-source: ''  # Full url of github repository
-env: ''     # Environment of the build
-user: ''    # Username of user that triggered the push
-branch: ''  # Git Reference
-commit: ''  # Git commit SHA
-date: ''    # ISO 8601 date
+id: ''         # Build ID
+source: ''     # Full url of github repository
+env: ''        # Environment of the build
+user: ''       # Username of user that triggered the push
+reference: ''  # Git Reference
+commit: ''     # Git commit SHA
+date: ''       # ISO 8601 date
 ```
 
 The following environment variables are available to application pre and post push scripts:
@@ -147,6 +143,7 @@ The following environment variables are available to application pre and post pu
 Variable         | Description
 ---------------- | -----------
 HAL_HOSTNAME     | Hostname of server
+HAL_PATH         | Full path of application on server
 HAL_BUILDID      | ID of the build
 HAL_COMMIT       | 40 character commit SHA
 HAL_GITREF       | Git reference (such as `master`)
@@ -173,28 +170,6 @@ github.com.token          | Github.com authentication token
 github.baseurl            | Github API url
 github.baseurl.site       | Github url
 hal.baseurl               | HAL 9000 Application url
-
-## Dependencies
-
-This application has a lot of dependencies. Here are a list of what they are used for.
-
-Package                        | Description
------------------------------- | -----------
-`knplabs/github-api`           | Download code from github and resolve git references.
-`monolog/monolog`              | Log handling
-`psr/log`                      | Logging standard
-`ql/hal-core`                  | Domain model
-`ql/mcp-core`                  | Core utilities
-`ql/mcp-logger`                | Logging to core logger
-`swiftmailer/swiftmailer`      | Emailer
-`symfony/config`               | Cascading configuration
-`symfony/console`              | The core of this application
-`symfony/debug`                | Convert errors to exceptions
-`symfony/dependency-injection` | Dependency injection and service container
-`symfony/event-dispatcher`     | Event dispatching for the console application
-`symfony/filesystem`           | Filesystem abstraction
-`symfony/monolog-bridge`       | Console output of log messages
-`symfony/process`              | System process abstraction
 
 ## Testing
 
