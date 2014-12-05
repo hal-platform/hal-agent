@@ -128,6 +128,24 @@ class PushCommand extends Command
 
         foreach ($pushes as $push) {
 
+            // Skip pushes without deployment target
+            if (!$push->getDeployment()) {
+
+                $push->setStatus('Error');
+                $this->entityManager->merge($push);
+                $this->entityManager->flush();
+
+                $message = sprintf(
+                    'Push ID %s error: It has no deployment target.',
+                    $push->getId()
+                );
+
+                $output->writeln($message);
+                $this->logger->info(sprintf('WORKER (Push) - %s', $message));
+
+                continue;
+            }
+
             // Every time the worker runs we need to ensure all deployments spawned are unique.
             // This helps prevent concurrent syncs.
             if ($this->hasConcurrentDeployment($push->getDeployment())) {

@@ -190,6 +190,58 @@ OUTPUT;
         $this->assertSame(0, $exitCode);
     }
 
+    public function testParentOutputWithPushWithoutDeployment()
+    {
+        $push1 = new Push;
+        $push1->setId('1234');
+
+        $this->pushRepo
+            ->shouldReceive('findBy')
+            ->andReturn([$push1]);
+
+        $this->application
+            ->shouldReceive('find')
+            ->andReturn($this->command);
+
+        // fork
+        $this->forker
+            ->shouldReceive('fork')
+            ->never();
+
+        // parent never resets connection
+        $this->em
+            ->shouldReceive('getConnection')
+            ->never();
+        $this->em
+            ->shouldReceive('merge')
+            ->with($push1)
+            ->once();
+        $this->em
+            ->shouldReceive('flush')
+            ->once();
+
+        $command = new PushCommand(
+            'cmd',
+            'push-cmd',
+            $this->pushRepo,
+            $this->em,
+            $this->forker,
+            $this->logger
+        );
+        $command->setApplication($this->application);
+        $exitCode = $command->run($this->input, $this->output);
+
+        $expected = <<<'OUTPUT'
+Waiting pushes: 1
+Starting push workers
+Push ID 1234 error: It has no deployment target.
+All waiting pushes have been started.
+
+OUTPUT;
+        $this->assertSame($expected, $this->output->fetch());
+        $this->assertSame(0, $exitCode);
+    }
+
     public function testParentOutputWithForkFailure()
     {
         $deploy1 = new Deployment;
