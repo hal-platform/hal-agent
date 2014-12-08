@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Push;
 use Github\Api\Repository\Commits as CommitApi;
 use Github\Exception\RuntimeException;
 use QL\Hal\Agent\Logger\EventLogger;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
@@ -110,10 +111,16 @@ class CodeDelta
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments([''])
+            ->setTimeout(15)
             ->getProcess();
         $process->setCommandLine($command);
 
-        $process->run();
+        try {
+            $process->run();
+        } catch (ProcessTimedOutException $ex) {
+            return false;
+        }
+
         if (!$process->isSuccessful()) {
             return false;
         }
