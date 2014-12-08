@@ -734,17 +734,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.4.0",
+            "version": "2.4.1",
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "f4c2aa76f375033b070850542618925735f85b85"
+                "reference": "2e4cb955c69718fdd58983d739a0f1b02044271c"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.4.0-ea6e77.zip",
-                "reference": "f4c2aa76f375033b070850542618925735f85b85",
-                "shasum": "34e643a89b4543b9e008ce27f471f7e256bdf70b"
+                "url": "http://composer/dist/ql-hal-core-2.4.1-ead14c.zip",
+                "reference": "2e4cb955c69718fdd58983d739a0f1b02044271c",
+                "shasum": "844921c6e0b57e9c25ffc7b2581c3189a61b3c0c"
             },
             "require": {
                 "doctrine/orm": "~2.4",
@@ -775,7 +775,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2014-12-02 20:10:14"
+            "time": "2014-12-05 21:23:50"
         },
         {
             "name": "ql/mcp-core",
