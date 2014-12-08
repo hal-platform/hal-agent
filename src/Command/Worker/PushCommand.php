@@ -167,7 +167,7 @@ class PushCommand extends Command
                 // child
 
                 // re-seed random generator
-                mt_srand($pid);
+                mt_srand();
 
                 // reconnect db so the child has its own connection
                 $connection = $this->entityManager->getConnection();

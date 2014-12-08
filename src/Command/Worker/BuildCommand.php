@@ -125,6 +125,9 @@ class BuildCommand extends Command
             } elseif ($pid === 0) {
                 // child
 
+                // re-seed random generator
+                mt_srand();
+
                 // reconnect db so the child has its own connection
                 $connection = $this->entityManager->getConnection();
                 $connection->close();
