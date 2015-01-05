@@ -180,6 +180,7 @@ class CreatePushCommand extends Command
         $push->setStatus('Waiting');
         $push->setBuild($build);
         $push->setDeployment($deployment);
+        $push->setRepository($build->getRepository());
         $push->setUser($user);
 
         $this->dupeCatcher($push);
