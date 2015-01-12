@@ -126,6 +126,10 @@ environment: ''
 # Optional. The default is the application root.
 dist: ''
 
+# Files or directories to exclude from push
+# Optional. The default is the "config/database.ini" and "data/".
+exclude: ''
+
 # Command to install dependencies, compile application
 # Can be a single command, or list of commands.
 build: ''
@@ -153,6 +157,9 @@ build:
     - 'bin/compile'
 
 post_push: 'bin/set-permissions'
+exclude:
+    - 'config/database.ini'
+    - 'data/'
 ```
 
 ### On Build

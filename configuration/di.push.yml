@@ -14,6 +14,12 @@ services:
             - ['setBaseBuildDirectory', ['%environment.temp%']]
             - ['setHomeDirectory', ['%environment.home%']]
 
+    push.mover:
+        class: 'QL\Hal\Agent\Push\Mover'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+
     push.unpacker:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
@@ -22,6 +28,13 @@ services:
             - @utility.filesystem
             - @yaml.dumper
             - %timeout.filepacking%
+
+    push.configuration.reader:
+        class: 'QL\Hal\Agent\Push\ConfigurationReader'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - @yaml.parser
 
     push.delta:
         class: 'QL\Hal\Agent\Push\CodeDelta'

@@ -17,23 +17,23 @@ class Builder
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Run build command';
     const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var int
+     * @type int
      */
     private $commandTimeout;
 
@@ -51,35 +51,37 @@ class Builder
 
     /**
      * @param string $buildPath
-     * @param string $command
+     * @param array $commands
      * @param array $env
      * @return boolean
      */
-    public function __invoke($buildPath, $command, array $env)
+    public function __invoke($buildPath, array $commands, array $env)
     {
-        $context = [
-            'buildPath' => $buildPath,
-            'buildCommand' => $command
-        ];
+        foreach ($commands as $command) {
+            $command = $this->sanitizeCommand($command);
 
-        $command = $this->sanitizeCommand($command);
+            $process = $this->processBuilder
+                ->setWorkingDirectory($buildPath)
+                ->setArguments($command)
+                ->addEnvironmentVariables($env)
+                ->setTimeout($this->commandTimeout)
+                ->getProcess();
 
-        $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($command)
-            ->addEnvironmentVariables($env)
-            ->setTimeout($this->commandTimeout)
-            ->getProcess();
+            if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
+                return false;
+            }
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
-            return false;
+            if (!$process->isSuccessful()) {
+                // Return immediately if one of the commands fails
+                return $this->processFailure($process);
+            }
+
+            // record build output
+            $this->processSuccess($process);
         }
 
-        if ($process->isSuccessful()) {
-            return $this->processSuccess($process);
-        }
-
-        return $this->processFailure($process);
+        // all good
+        return true;
     }
 
     /**

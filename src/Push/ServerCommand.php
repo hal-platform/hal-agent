@@ -18,28 +18,28 @@ class ServerCommand
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Run server command';
     const ERR_COMMAND_TIMEOUT = 'Server command took too long';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var string
+     * @type string
      */
     private $sshUser;
 
     /**
-     * @var int
+     * @type int
      */
     private $commandTimeout;
 
@@ -60,48 +60,55 @@ class ServerCommand
     /**
      * @param string $hostname
      * @param string $remotePath
-     * @param string $serverCommand
+     * @param array $commands
      * @param array $env
      * @return boolean
      */
-    public function __invoke($hostname, $remotePath, $serverCommand, array $env)
+    public function __invoke($hostname, $remotePath, array $commands, array $env)
     {
-        $serverCommand = $this->sanitizeCommand($serverCommand);
+        foreach ($commands as $command) {
+            $serverCommand = $this->sanitizeCommand($command);
 
-        // Add environment variables if possible
-        if ($envSetters = $this->formatEnvSetters($env)) {
-            $serverCommand = implode(' ', [$envSetters, $serverCommand]);
+            // Add environment variables if possible
+            if ($envSetters = $this->formatEnvSetters($env)) {
+                $serverCommand = implode(' ', [$envSetters, $serverCommand]);
+            }
+
+            // move to the application directory before command is executed
+            $remoteCommand = implode(' && ', [
+                sprintf('cd %s', $remotePath),
+                $serverCommand
+            ]);
+
+            $command = implode(' ', [
+                'ssh',
+                sprintf('%s@%s', $this->sshUser, $hostname),
+                sprintf('"%s"', $remoteCommand)
+            ]);
+
+            $process = $this->processBuilder
+                ->setWorkingDirectory(null)
+                ->setArguments([''])
+                ->setTimeout($this->commandTimeout)
+                ->getProcess();
+
+            $process->setCommandLine($command);
+
+            if (!$this->runProcess($process, $this->logger, self::ERR_COMMAND_TIMEOUT, $this->commandTimeout)) {
+                return false;
+            }
+
+            if (!$process->isSuccessful()) {
+                // Return immediately if one of the commands fails
+                return $this->processFailure($process);
+            }
+
+            // record build output
+            $this->processSuccess($process);
         }
 
-        // move to the application directory before command is executed
-        $remoteCommand = implode(' && ', [
-            sprintf('cd %s', $remotePath),
-            $serverCommand
-        ]);
-
-        $command = implode(' ', [
-            'ssh',
-            sprintf('%s@%s', $this->sshUser, $hostname),
-            sprintf('"%s"', $remoteCommand)
-        ]);
-
-        $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments([''])
-            ->setTimeout($this->commandTimeout)
-            ->getProcess();
-
-        $process->setCommandLine($command);
-
-        if (!$this->runProcess($process, $this->logger, self::ERR_COMMAND_TIMEOUT, $this->commandTimeout)) {
-            return false;
-        }
-
-        if ($process->isSuccessful()) {
-            return $this->processSuccess($process);
-        }
-
-        return $this->processFailure($process);
+        // all good
+        return true;
     }
 
     /**

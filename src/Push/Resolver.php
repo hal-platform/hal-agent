@@ -139,24 +139,46 @@ class Resolver
             $hostname = $serverName;
         }
 
+        // prepare default commands
+        $transformCommand = [];
+        if ($command = $repository->getBuildTransformCmd()) {
+            $transformCommand[] = $command;
+        }
+        $preCommand = [];
+        if ($command = $repository->getPrePushCmd()) {
+            $preCommand[] = $command;
+        }
+        $postCommand = [];
+        if ($command = $repository->getPostPushCmd()) {
+            $postCommand[] = $command;
+        }
+
         $properties = [
             'push' => $push,
             'method' => $method,
             'hostname' => $hostname,
             'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
             'remotePath' => $deployment->getPath(),
-            'excludedFiles' => [
-                // could easily make this an application-specific setting
-                'config/database.ini',
-                'data/'
+
+            // default, overwritten by hal9000.yml
+            'configuration' => [
+                'environment' => 'global',
+                'build' => [],
+                'build_transform' => $transformCommand,
+                'pre_push' => $preCommand,
+                'post_push' => $postCommand,
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ]
             ],
 
-            'archiveFile' => $this->generateBuildArchive($build->getId()),
-            'buildPath' => $this->generatePushPath($push->getId()),
-
-            'buildCommand' => $repository->getBuildTransformCmd(),
-            'prePushCommand' => $repository->getPrePushCmd(),
-            'postPushCommand' => $repository->getPostPushCmd(),
+            'location' => [
+                'path' => $this->generatePushPath($push->getId()),
+                'archive' => $this->generateBuildArchive($build->getId()),
+                'tempArchive' => $this->generateTempBuildArchive($push->getId())
+            ],
 
             'pushProperties' => [
                 'id' => $build->getId(),
@@ -218,12 +240,13 @@ class Resolver
     private function findPushArtifacts(array $properties)
     {
         return [
-            $properties['buildPath']
+            $properties['location']['tempArchive'],
+            $properties['location']['path']
         ];
     }
 
     /**
-     *  Generate a target for the github repository archive.
+     *  Generate a target for the build archive.
      *
      *  @param string $id
      *  @return string
@@ -236,6 +259,17 @@ class Resolver
             DIRECTORY_SEPARATOR,
             sprintf(self::FS_ARCHIVE_PREFIX, $id)
         );
+    }
+
+    /**
+     *  Generate a temporary target for the build archive.
+     *
+     *  @param string $id
+     *  @return string
+     */
+    private function generateTempBuildArchive($id)
+    {
+        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_PREFIX, $id);
     }
 
     /**

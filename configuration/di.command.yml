@@ -96,12 +96,14 @@ services:
             - 'push:push'
             - @logger.event
             - @push.resolver
+            - @push.mover
             - @push.unpacker
+            - @push.configuration.reader
             - @push.delta
             - @push.builder
             - @push.pusher
             - @push.serverCommand
-            - @utility.process.builder= # = signifies a prototype service
+            - @utility.filesystem
     command.worker.build:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
