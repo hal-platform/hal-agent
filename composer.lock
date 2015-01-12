@@ -738,20 +738,28 @@
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "6160ea78adfeb44f40ed453ed5a2c29cd1114b72"
+                "reference": "c8cbd47ca38a1dd875b3923711886460037aa3a3"
+            },
+            "archive": {
+                "exclude": [
+                    ".gitignore",
+                    "/bin",
+                    "/phpunit.xml.dist",
+                    "/tests"
+                ]
             },
             "require": {
                 "doctrine/orm": "~2.4",
                 "php-64bit": ">=5.4.0",
                 "ql/mcp-core": "*",
-                "ql/mcp-corp-account": "*@RC",
-                "symfony/yaml": "*"
+                "ql/mcp-corp-account": "0.2.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "*",
-                "squizlabs/php_codesniffer": "*",
+                "robmorgan/phinx": "~0.4",
                 "symfony/config": "*",
-                "symfony/dependency-injection": "*"
+                "symfony/dependency-injection": "*",
+                "symfony/yaml": "*"
             },
             "type": "library",
             "autoload": {
@@ -769,7 +777,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2014-12-30 21:38:43"
+            "time": "2015-01-09 14:42:17"
         },
         {
             "name": "ql/mcp-core",
@@ -835,17 +843,17 @@
         },
         {
             "name": "ql/mcp-corp-account",
-            "version": "0.2.0",
+            "version": "0.2.1",
             "source": {
                 "type": "git",
                 "url": "git@git:mcp/mcp-corp-account.git",
-                "reference": "0.2.0"
+                "reference": "7630f05fd71caf515800e9d0a324c75467167576"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer//dist/ql-mcp-corp-account-0.2.0-ab11a0.zip",
-                "reference": "0.2.0",
-                "shasum": "654645d3f46b341cefce4013887d539eb300b496"
+                "url": "http://composer/dist/ql-mcp-corp-account-0.2.1-58b4ab.zip",
+                "reference": "7630f05fd71caf515800e9d0a324c75467167576",
+                "shasum": "b31e8626bc78329f3a583856fe5adcbaf854ef2e"
             },
             "require": {
                 "php": ">=5.4.0",
@@ -875,7 +883,7 @@
             ],
             "description": "Handles authenticating a username/password to Quicken Loans' corporate set of usernames and passwords. Note that this will NOT work for any public facing websites (yet). This will only work for internal QL applications.",
             "homepage": "http://git/mnagi/mcp-corp-account",
-            "time": "2013-11-05 22:35:26"
+            "time": "2013-11-07 19:22:46"
         },
         {
             "name": "ql/mcp-logger",
@@ -1377,53 +1385,6 @@
             "description": "Symfony Process Component",
             "homepage": "http://symfony.com",
             "time": "2014-11-04 14:29:39"
-        },
-        {
-            "name": "symfony/yaml",
-            "version": "v2.6.0",
-            "target-dir": "Symfony/Component/Yaml",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/Yaml.git",
-                "reference": "51c845cf3e4bfc182d1d5c05ed1c7338361d86f8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Yaml/zipball/51c845cf3e4bfc182d1d5c05ed1c7338361d86f8",
-                "reference": "51c845cf3e4bfc182d1d5c05ed1c7338361d86f8",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.6-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Symfony\\Component\\Yaml\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Symfony Community",
-                    "homepage": "http://symfony.com/contributors"
-                },
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                }
-            ],
-            "description": "Symfony Yaml Component",
-            "homepage": "http://symfony.com",
-            "time": "2014-11-20 13:24:23"
         },
         {
             "name": "twig/twig",
@@ -2345,6 +2306,53 @@
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
             "time": "2014-03-07 15:35:33"
+        },
+        {
+            "name": "symfony/yaml",
+            "version": "v2.6.0",
+            "target-dir": "Symfony/Component/Yaml",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/Yaml.git",
+                "reference": "51c845cf3e4bfc182d1d5c05ed1c7338361d86f8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/Yaml/zipball/51c845cf3e4bfc182d1d5c05ed1c7338361d86f8",
+                "reference": "51c845cf3e4bfc182d1d5c05ed1c7338361d86f8",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.6-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\Yaml\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "http://symfony.com/contributors"
+                },
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                }
+            ],
+            "description": "Symfony Yaml Component",
+            "homepage": "http://symfony.com",
+            "time": "2014-11-20 13:24:23"
         }
     ],
     "aliases": [],
@@ -2353,6 +2361,7 @@
         "ql/hal-core": 20
     },
     "prefer-stable": false,
+    "prefer-lowest": false,
     "platform": {
         "php-64bit": ">=5.4.0"
     },
