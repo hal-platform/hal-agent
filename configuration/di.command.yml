@@ -59,6 +59,7 @@ services:
             - @build.configuration.reader
             - @build.builder
             - @build.packer
+            - @build.mover
             - @utility.helper.downloadProgress
             - @utility.process.builder= # = signifies a prototype service
     command.build.remove:

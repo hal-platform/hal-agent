@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Command;
 use QL\Hal\Agent\Build\Builder;
 use QL\Hal\Agent\Build\ConfigurationReader;
 use QL\Hal\Agent\Build\Downloader;
+use QL\Hal\Agent\Build\Mover;
 use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
@@ -84,6 +85,11 @@ class BuildCommand extends Command
     private $packer;
 
     /**
+     * @type Mover
+     */
+    private $mover;
+
+    /**
      * @type DownloadProgressHelper
      */
     private $progress;
@@ -112,6 +118,7 @@ class BuildCommand extends Command
      * @param ConfigurationReader $reader
      * @param Builder $builder
      * @param Packer $packer
+     * @param Mover $mover
      * @param DownloadProgressHelper $progress
      * @param ProcessBuilder $processBuilder
      */
@@ -124,6 +131,7 @@ class BuildCommand extends Command
         ConfigurationReader $reader,
         Builder $builder,
         Packer $packer,
+        Mover $mover,
         DownloadProgressHelper $progress,
         ProcessBuilder $processBuilder
     ) {
@@ -137,6 +145,7 @@ class BuildCommand extends Command
         $this->reader = $reader;
         $this->builder = $builder;
         $this->packer = $packer;
+        $this->mover = $mover;
 
         $this->progress = $progress;
         $this->processBuilder = $processBuilder;
@@ -244,9 +253,9 @@ class BuildCommand extends Command
         }
 
         // move to archive
-        // if (!$this->move($output, $properties)) {
-        //     return $this->failure($output, 64);
-        // }
+        if (!$this->move($output, $properties)) {
+            return $this->failure($output, 64);
+        }
 
         $this->success($output);
     }
@@ -438,10 +447,9 @@ class BuildCommand extends Command
     private function move(OutputInterface $output, array $properties)
     {
         $this->status($output, 'Moving build to archive');
-        return true;
 
         $mover = $this->mover;
-        // return $mover($properties['location']['tempArchive'], $properties['location']['archive']);
+        return $mover($properties['location']['tempArchive'], $properties['location']['archive']);
     }
 
     /**

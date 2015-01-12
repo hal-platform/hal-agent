@@ -68,7 +68,6 @@ class Packer
         $distPath = ltrim($distPath, DIRECTORY_SEPARATOR);
         $wholePath = rtrim($buildPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $distPath;
 
-        $this->logger->event('info', 'wtf', ['whole' => $wholePath]);
         if (!$distPath || !$this->filesystem->exists($wholePath)) {
             $this->logger->event('failure', self::ERR_DIST_NOT_FOUND, [
                 'path' => $distPath
