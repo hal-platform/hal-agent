@@ -17,11 +17,14 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
     public $resolver;
+    public $mover;
     public $unpacker;
+    public $reader;
     public $builder;
     public $pusher;
     public $command;
-    public $processBuilder;
+
+    public $filesystem;
 
     public $input;
     public $output;
@@ -30,12 +33,14 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
+        $this->mover = Mockery::mock('QL\Hal\Agent\Push\Mover');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
+        $this->reader = Mockery::mock('QL\Hal\Agent\Push\ConfigurationReader');
         $this->delta = Mockery::mock('QL\Hal\Agent\Push\CodeDelta');
         $this->builder = Mockery::mock('QL\Hal\Agent\Push\Builder');
         $this->pusher = Mockery::mock('QL\Hal\Agent\Push\Pusher');
         $this->command = Mockery::mock('QL\Hal\Agent\Push\ServerCommand');
-        $this->processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
 
         $this->output = new BufferedOutput;
     }
@@ -65,12 +70,14 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             'cmd',
             $this->logger,
             $this->resolver,
+            $this->mover,
             $this->unpacker,
+            $this->reader,
             $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
-            $this->processBuilder
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -138,23 +145,50 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn([
                 'push' => $push,
-                'buildPath' => 'path/dir',
-                'archiveFile' => 'path/file',
+
+                'configuration' => [
+                    'environment' => 'global',
+                    'build' => [],
+                    'build_transform' => [
+                        'bin/cmd'
+                    ],
+                    'pre_push' => [
+                        'bin/cmd'
+                    ],
+                    'post_push' => [
+                        'bin/cmd'
+                    ],
+                    'dist' => '.',
+                    'exclude' => [
+                        'config/database.ini',
+                        'data/'
+                    ]
+                ],
+
+                'location' => [
+                    'path' => 'path/dir',
+                    'archive' => 'path/file',
+                    'tempArchive' => 'path/file2',
+                ],
+
                 'pushProperties' => [],
-                'buildCommand' => 'bin/build-cmd',
-                'prePushCommand' => 'bin/cmd',
-                'postPushCommand' => 'bin/cmd',
                 'hostname' => 'localhost',
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
                 'serverEnvironmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
-                'excludedFiles' => [],
                 'artifacts' => [
-                    'path/dir'
+                    'path/dir',
+                    'path/file2'
                 ]
             ]);
+        $this->mover
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->unpacker
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->reader
             ->shouldReceive('__invoke')
             ->andReturn(true);
         $this->delta
@@ -171,20 +205,22 @@ OUTPUT;
             ->andReturn(true);
 
         // cleanup
-        $this->processBuilder
-            ->shouldReceive('getProcess->run')
-            ->once();
+        $this->filesystem
+            ->shouldReceive('remove')
+            ->twice();
 
         $command = new PushCommand(
             'cmd',
             $this->logger,
             $this->resolver,
+            $this->mover,
             $this->unpacker,
+            $this->reader,
             $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
-            $this->processBuilder
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -193,7 +229,9 @@ OUTPUT;
         $expected = <<<'OUTPUT'
 Resolving push properties
 Found push: 1234
+Moving archive to local storage
 Unpacking build archive
+Reading .hal9000.yml
 Reading previous push data
 Running build command
 Running pre-push command
@@ -254,23 +292,41 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn([
                 'push' => $push,
-                'buildPath' => 'path/dir',
-                'archiveFile' => 'path/file',
+
+                'configuration' => [
+                    'environment' => 'global',
+                    'build' => [],
+                    'build_transform' => [],
+                    'pre_push' => [],
+                    'post_push' => [],
+                    'dist' => '.',
+                    'exclude' => []
+                ],
+
+                'location' => [
+                    'path' => 'path/dir',
+                    'archive' => 'path/file',
+                    'tempArchive' => 'path/file2',
+                ],
+
                 'pushProperties' => [],
-                'buildCommand' => '',
-                'prePushCommand' => '',
-                'postPushCommand' => '',
                 'hostname' => 'localhost',
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
                 'serverEnvironmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
-                'excludedFiles' => [],
                 'artifacts' => [
-                    'path/dir'
+                    'path/dir',
+                    'path/file2'
                 ]
             ]);
+        $this->mover
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->unpacker
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->reader
             ->shouldReceive('__invoke')
             ->andReturn(true);
         $this->delta
@@ -287,20 +343,22 @@ OUTPUT;
             ->andReturn(true);
 
         // cleanup
-        $this->processBuilder
-            ->shouldReceive('getProcess->run')
-            ->once();
+        $this->filesystem
+            ->shouldReceive('remove')
+            ->twice();
 
         $command = new PushCommand(
             'cmd',
             $this->logger,
             $this->resolver,
+            $this->mover,
             $this->unpacker,
+            $this->reader,
             $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
-            $this->processBuilder
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -309,7 +367,9 @@ OUTPUT;
         $expected = <<<'OUTPUT'
 Resolving push properties
 Found push: 1234
+Moving archive to local storage
 Unpacking build archive
+Reading .hal9000.yml
 Reading previous push data
 Skipping build command
 Skipping pre-push command
@@ -320,7 +380,6 @@ Success!
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
     }
-
 
     public function testEmergencyErrorHandling()
     {
@@ -369,22 +428,35 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn([
                 'push' => $push,
-                'buildPath' => 'path/dir',
-                'archiveFile' => 'path/file',
+
+                'configuration' => [
+                    'environment' => 'global',
+                    'build' => [],
+                    'build_transform' => [],
+                    'pre_push' => [],
+                    'post_push' => [],
+                    'dist' => '.',
+                    'exclude' => []
+                ],
+
+                'location' => [
+                    'path' => 'path/dir',
+                    'archive' => 'path/file',
+                    'tempArchive' => 'path/file2',
+                ],
+
                 'pushProperties' => [],
-                'buildCommand' => '',
-                'prePushCommand' => '',
-                'postPushCommand' => '',
                 'hostname' => 'localhost',
                 'remotePath' => 'path/dir',
                 'environmentVariables' => [],
                 'serverEnvironmentVariables' => [],
                 'syncPath' => 'user@localhost:path/dir',
-                'excludedFiles' => [],
                 'artifacts' => []
             ]);
 
+        $this->mover->shouldReceive(['__invoke' => true]);
         $this->unpacker->shouldReceive(['__invoke' => true]);
+        $this->reader->shouldReceive(['__invoke' => true]);
         $this->delta->shouldReceive(['__invoke' => true]);
         $this->builder->shouldReceive(['__invoke' => true]);
         // simulate an error
@@ -397,12 +469,14 @@ OUTPUT;
             'cmd',
             $this->logger,
             $this->resolver,
+            $this->mover,
             $this->unpacker,
+            $this->reader,
             $this->delta,
             $this->builder,
             $this->pusher,
             $this->command,
-            $this->processBuilder
+            $this->filesystem
         );
 
         try {

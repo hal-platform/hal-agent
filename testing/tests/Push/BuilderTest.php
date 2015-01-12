@@ -42,7 +42,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new Builder($this->logger, $builder, 5);
 
-        $success = $action('path', 'command', []);
+        $success = $action('path', ['command'], []);
         $this->assertTrue($success);
     }
 
@@ -73,7 +73,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new Builder($this->logger, $builder, 5);
 
-        $success = $action('path', 'command', []);
+        $success = $action('path', ['command'], []);
         $this->assertFalse($success);
     }
 
@@ -131,8 +131,50 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event');
 
         $action = new Builder($this->logger, $builder, 5);
-        $success = $action('path', $command, []);
+        $success = $action('path', [$command], []);
 
         $this->assertSame($expectedParameters, $actualParameters);
+    }
+
+    public function testBuildMultipleCommands()
+    {
+        $commands = [
+            'derp1',
+            'derp2'
+        ];
+
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getCommandLine' => 'deployscript',
+            'getOutput' => 'test-output',
+            'isSuccessful' => true,
+            'stop' => null
+        ]);
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $builder
+            ->shouldReceive('setWorkingDirectory')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setArguments')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('addEnvironmentVariables')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setTimeout')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->twice();
+
+        $action = new Builder($this->logger, $builder, 5);
+        $success = $action('path', $commands, []);
+
+        $this->assertSame($success, true);
     }
 }

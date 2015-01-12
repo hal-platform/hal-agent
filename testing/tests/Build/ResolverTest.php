@@ -73,16 +73,37 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $expected = [
             'build' => $build,
-            'buildCommand' => 'derp',
-            'buildFile' => 'testdir/hal9000-build-1234.tar.gz',
-            'buildPath' => 'testdir/hal9000-build-1234',
-            'archiveFile' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
-            'githubUser' => 'user1',
-            'githubRepo' => 'repo1',
-            'githubReference' => '5555',
+
+            'configuration' => [
+                'environment' => 'global',
+                'build' => [
+                    'derp'
+                ],
+                'build_transform' => [],
+                'pre_push' => [],
+                'post_push' => [],
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ]
+            ],
+
+            'location' => [
+                'download' => 'testdir/hal9000-download-1234.tar.gz',
+                'path' => 'testdir/hal9000-build-1234',
+                'archive' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-1234.tar.gz'
+            ],
+            'github' => [
+                'user' => 'user1',
+                'repo' => 'repo1',
+                'reference' => '5555',
+            ],
             'artifacts' => [
-                'testdir/hal9000-build-1234.tar.gz',
-                'testdir/hal9000-build-1234'
+                'testdir/hal9000-download-1234.tar.gz',
+                'testdir/hal9000-build-1234',
+                'testdir/hal9000-1234.tar.gz'
             ]
         ];
 

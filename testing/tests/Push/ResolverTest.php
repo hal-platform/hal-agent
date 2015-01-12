@@ -123,18 +123,34 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'hostname' => '127.0.0.1',
             'syncPath' => 'sshuser@127.0.0.1:/herp/derp',
             'remotePath' => '/herp/derp',
-            'excludedFiles' => [
-                'config/database.ini',
-                'data/'
+
+            'configuration' => [
+                'environment' => 'global',
+                'build' => [],
+                'build_transform' => [
+                    'bin/build-transform'
+                ],
+                'pre_push' => [
+                    'bin/pre'
+                ],
+                'post_push' => [
+                    'bin/post'
+                ],
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ]
             ],
 
-            'archiveFile' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
-            'buildPath' => 'testdir/hal9000-push-1234',
+            'location' => [
+                'path' => 'testdir/hal9000-push-1234',
+                'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
+                'tempArchive' => 'testdir/hal9000-1234.tar.gz'
+            ],
 
-            'buildCommand' => 'bin/build-transform',
-            'prePushCommand' => 'bin/pre',
-            'postPushCommand' => 'bin/post',
             'artifacts' => [
+                'testdir/hal9000-1234.tar.gz',
                 'testdir/hal9000-push-1234'
             ]
         ];

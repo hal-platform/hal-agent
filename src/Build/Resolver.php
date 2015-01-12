@@ -113,7 +113,7 @@ class Resolver
             ],
 
             'location' => [
-                'build' => $this->generateRepositoryDownload($build->getId()),
+                'download' => $this->generateRepositoryDownload($build->getId()),
                 'path' => $this->generateBuildPath($build->getId()),
                 'archive' => $this->generateBuildArchive($build->getId()),
                 'tempArchive' => $this->generateTempBuildArchive($build->getId())
@@ -169,7 +169,7 @@ class Resolver
     private function findBuildArtifacts(array $properties)
     {
         $artifacts = [
-            $properties['location']['build'],
+            $properties['location']['download'],
             $properties['location']['path'],
             $properties['location']['tempArchive']
         ];

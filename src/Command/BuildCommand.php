@@ -358,7 +358,7 @@ class BuildCommand extends Command
             $properties['github']['user'],
             $properties['github']['repo'],
             $properties['github']['reference'],
-            $properties['location']['build']
+            $properties['location']['download']
         );
     }
 
@@ -373,7 +373,7 @@ class BuildCommand extends Command
 
         $unpacker = $this->unpacker;
         return $unpacker(
-            $properties['location']['build'],
+            $properties['location']['download'],
             $properties['location']['path']
         );
     }

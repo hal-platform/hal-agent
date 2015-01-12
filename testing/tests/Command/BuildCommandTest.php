@@ -19,10 +19,12 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public $resolver;
     public $downloader;
     public $unpacker;
+    public $reader;
     public $builder;
     public $packer;
+    public $mover;
     public $downloadProgress;
-    public $processBuilder;
+    public $filesystem;
 
     public $input;
     public $output;
@@ -33,10 +35,12 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->resolver = Mockery::mock('QL\Hal\Agent\Build\Resolver');
         $this->downloader = Mockery::mock('QL\Hal\Agent\Build\Downloader');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Build\Unpacker');
+        $this->reader = Mockery::mock('QL\Hal\Agent\Build\ConfigurationReader');
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\Builder');
         $this->packer = Mockery::mock('QL\Hal\Agent\Build\Packer');
+        $this->mover = Mockery::mock('QL\Hal\Agent\Build\Mover');
         $this->downloadProgress = Mockery::mock('QL\Hal\Agent\Helper\DownloadProgressHelper');
-        $this->processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $this->filesystem = Mockery::mock('Symfony\Component\FileSystem\Filesystem');
 
         $this->output = new BufferedOutput;
     }
@@ -67,10 +71,12 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             $this->resolver,
             $this->downloader,
             $this->unpacker,
+            $this->reader,
             $this->builder,
             $this->packer,
+            $this->mover,
             $this->downloadProgress,
-            $this->processBuilder
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -108,17 +114,28 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn([
                 'build'  => $build,
-                'archiveFile' => 'path/file',
-                'buildPath' => 'path/dir',
-                'githubUser' => 'user1',
-                'githubRepo' => 'repo1',
-                'githubReference' => 'master',
-                'buildCommand' => 'bin/build',
+                'location' => [
+                    'download' => 'path/file',
+                    'path' => 'path/dir',
+                    'archive' => 'path/file2',
+                    'tempArchive' => 'path/file3'
+                ],
+                'github' => [
+                    'user' => 'user1',
+                    'repo' => 'repo1',
+                    'reference' => 'master'
+                ],
+                'configuration' => [
+                    'build' => [
+                        'bin/build'
+                    ],
+                    'dist' => '.'
+                ],
                 'environmentVariables' => [],
-                'buildFile' => 'path/file',
                 'artifacts' => [
                     'path/dir',
-                    'path/file'
+                    'path/file',
+                    'path/file3'
                 ]
             ]);
 
@@ -131,17 +148,23 @@ OUTPUT;
         $this->unpacker
             ->shouldReceive('__invoke')
             ->andReturn(true);
+        $this->reader
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(true);
         $this->packer
             ->shouldReceive('__invoke')
             ->andReturn(true);
+        $this->mover
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
 
         // cleanup
-        $this->processBuilder
-            ->shouldReceive('getProcess->run')
-            ->twice();
+        $this->filesystem
+            ->shouldReceive('remove')
+            ->times(3);
 
         $this->logger
             ->shouldReceive('start')
@@ -173,10 +196,12 @@ OUTPUT;
             $this->resolver,
             $this->downloader,
             $this->unpacker,
+            $this->reader,
             $this->builder,
             $this->packer,
+            $this->mover,
             $this->downloadProgress,
-            $this->processBuilder
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -187,8 +212,10 @@ Resolving build properties
 Found build: 1234
 Downloading github repository
 Unpacking github repository
+Reading .hal9000.yml
 Running build command
 Packing build into archive
+Moving build to archive
 Success!
 
 OUTPUT;
@@ -246,10 +273,12 @@ OUTPUT;
             $this->resolver,
             $this->downloader,
             $this->unpacker,
+            $this->reader,
             $this->builder,
             $this->packer,
+            $this->mover,
             $this->downloadProgress,
-            $this->processBuilder
+            $this->filesystem
         );
 
         try {
