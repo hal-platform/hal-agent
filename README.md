@@ -13,6 +13,9 @@ Table of Contents:
 * [Available Commands](#available-commands)
 * [Worker Commands](#worker-commands)
 * [Application scripting environment](#application-scripting-environment)
+    * [.hal9000.yml](#hal9000yml)
+    * [On Build](#on-build)
+    * [On Push](#on-push)
 * [Deployment](#deployment)
 * [Configuration](#configuration)
 * [Testing](#testing)
@@ -109,6 +112,48 @@ Command            | Description
 `bin/worker-push`  | Bash script for pushes
 
 ## Application scripting environment
+
+### .hal9000.yml
+
+A `.hal9000.yml` yaml file can be placed into the project repository to enable commands and other options for projects.
+
+```yaml
+# Environment to use to build application.
+# Optional. The default is "global"
+environment: ''
+
+# Directory of build dist to archive, relative to application root.
+# Optional. The default is the application root.
+dist: ''
+
+# Command to install dependencies, compile application
+# Can be a single command, or list of commands.
+build: ''
+
+# Command to transform build before push
+# Can be a single command, or list of commands.
+build_transform: ''
+
+# Command to run on target server, before push
+# Can be a single command, or list of commands.
+pre_push: ''
+
+# Command to run on target server, after push
+# Can be a single command, or list of commands.
+post_push: ''
+```
+
+Example:
+
+```yaml
+build:
+    - 'bin/composer install --no-dev --no-interaction --ansi --optimize-autoloader'
+    - 'npm install --production --color=always'
+    - 'bundle install --frozen'
+    - 'bin/compile'
+
+post_push: 'bin/set-permissions'
+```
 
 ### On Build
 
