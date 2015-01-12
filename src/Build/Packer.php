@@ -16,23 +16,23 @@ class Packer
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Archive build';
     const ERR_PACKING_TIMEOUT = 'Archiving the build took too long';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var string
+     * @type string
      */
     private $commandTimeout;
 

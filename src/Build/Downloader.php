@@ -13,17 +13,17 @@ use QL\Hal\Agent\Github\ArchiveApi;
 class Downloader
 {
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Download GitHub archive';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ArchiveApi
+     * @type ArchiveApi
      */
     private $github;
 

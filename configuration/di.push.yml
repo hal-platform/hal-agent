@@ -60,6 +60,3 @@ services:
         class: 'Symfony\Component\Yaml\Dumper'
         calls:
             - ['setIndentation', ['4']]
-
-    yaml.parser:
-        class: 'Symfony\Component\Yaml\Parser'

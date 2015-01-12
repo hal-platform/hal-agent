@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Command;
 
 use QL\Hal\Agent\Build\Builder;
+use QL\Hal\Agent\Build\ConfigurationReader;
 use QL\Hal\Agent\Build\Downloader;
 use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
@@ -34,64 +35,71 @@ class BuildCommand extends Command
     /**
      * A list of all possible exit codes of this command
      *
-     * @var array
+     * @type array
      */
     private static $codes = [
         0 => 'Success!',
         1 => 'Build details could not be resolved.',
         2 => 'Repository archive could not be downloaded.',
         4 => 'Repository archive could not be unpacked.',
-        8 => 'Build command failed.',
-        16 => 'Build archive could not be created.'
+        8 => '.hal9000.yml configuration was invalid and could not be read.',
+        16 => 'Build command failed.',
+        32 => 'Build archive could not be created.',
+        64 => 'Build could not be moved to archive.'
     ];
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var Resolver
+     * @type Resolver
      */
     private $resolver;
 
     /**
-     * @var Downloader
+     * @type Downloader
      */
     private $downloader;
 
     /**
-     * @var Unpacker
+     * @type Unpacker
      */
     private $unpacker;
 
     /**
-     * @var Builder
+     * @type ConfigurationReader
+     */
+    private $reader;
+
+    /**
+     * @type Builder
      */
     private $builder;
 
     /**
-     * @var Packer
+     * @type Packer
      */
     private $packer;
 
     /**
-     * @var DownloadProgressHelper
+     * @type DownloadProgressHelper
      */
     private $progress;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var string[]
+     * @type string[]
      */
     private $artifacts;
 
     /**
-     * @var boolean
+     * @type boolean
      */
     private $enableShutdownHandler;
 
@@ -100,6 +108,8 @@ class BuildCommand extends Command
      * @param EventLogger $logger
      * @param Resolver $resolver
      * @param Downloader $downloader
+     * @param Unpacker $unpacker
+     * @param ConfigurationReader $reader
      * @param Builder $builder
      * @param Packer $packer
      * @param DownloadProgressHelper $progress
@@ -111,6 +121,7 @@ class BuildCommand extends Command
         Resolver $resolver,
         Downloader $downloader,
         Unpacker $unpacker,
+        ConfigurationReader $reader,
         Builder $builder,
         Packer $packer,
         DownloadProgressHelper $progress,
@@ -123,6 +134,7 @@ class BuildCommand extends Command
         $this->resolver = $resolver;
         $this->downloader = $downloader;
         $this->unpacker = $unpacker;
+        $this->reader = $reader;
         $this->builder = $builder;
         $this->packer = $packer;
 
@@ -202,25 +214,39 @@ class BuildCommand extends Command
         // Set the build to in progress
         $this->prepare($output, $properties);
 
+        // download
         if (!$this->download($output, $properties)) {
             return $this->failure($output, 2);
         }
 
+        // unpack
         if (!$this->unpack($output, $properties)) {
             return $this->failure($output, 4);
         }
 
+        // read .hal9000.yml
+        if (!$this->read($output, $properties)) {
+            return $this->failure($output, 8);
+        }
+
         $this->logger->setStage('building');
 
+        // build
         if (!$this->build($output, $properties)) {
-            return $this->failure($output, 8);
+            return $this->failure($output, 16);
         }
 
         $this->logger->setStage('end');
 
+        // pack
         if (!$this->pack($output, $properties)) {
-            return $this->failure($output, 16);
+            return $this->failure($output, 32);
         }
+
+        // move to archive
+        // if (!$this->move($output, $properties)) {
+        //     return $this->failure($output, 64);
+        // }
 
         $this->success($output);
     }
@@ -284,7 +310,9 @@ class BuildCommand extends Command
     private function resolve(OutputInterface $output, $buildId)
     {
         $this->status($output, 'Resolving build properties');
-        return call_user_func($this->resolver, $buildId);
+
+        $resolver = $this->resolver;
+        return $resolver($buildId);
     }
 
     /**
@@ -321,12 +349,14 @@ class BuildCommand extends Command
         $this->progress->enableDownloadProgress($output);
 
         $this->status($output, 'Downloading github repository');
-        return call_user_func_array($this->downloader, [
+
+        $downloader = $this->downloader;
+        return $downloader(
             $properties['githubUser'],
             $properties['githubRepo'],
             $properties['githubReference'],
-            $properties['buildFile']
-        ]);
+            $properties['location']['build']
+        );
     }
 
     /**
@@ -337,10 +367,27 @@ class BuildCommand extends Command
     private function unpack(OutputInterface $output, array $properties)
     {
         $this->status($output, 'Unpacking github repository');
-        return call_user_func(
-            $this->unpacker,
-            $properties['buildFile'],
-            $properties['buildPath']
+
+        $unpacker = $this->unpacker;
+        return $unpacker(
+            $properties['location']['build'],
+            $properties['location']['path']
+        );
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function read(OutputInterface $output, array &$properties)
+    {
+        $this->status($output, 'Reading .hal9000.yml');
+
+        $reader = $this->reader;
+        return $reader(
+            $properties['location']['path'],
+            $properties['configuration']
         );
     }
 
@@ -351,17 +398,19 @@ class BuildCommand extends Command
      */
     private function build(OutputInterface $output, array $properties)
     {
-        if (!$properties['buildCommand']) {
+        if (!$properties['configuration']['build']) {
             $this->status($output, 'Skipping build command');
             return true;
         }
 
         $this->status($output, 'Running build command');
-        return call_user_func_array($this->builder, [
-            $properties['buildPath'],
-            $properties['buildCommand'],
+
+        $builder = $this->builder;
+        return $builder(
+            $properties['location']['path'],
+            $properties['configuration']['build'],
             $properties['environmentVariables']
-        ]);
+        );
     }
 
     /**
@@ -372,11 +421,23 @@ class BuildCommand extends Command
     private function pack(OutputInterface $output, array $properties)
     {
         $this->status($output, 'Packing build into archive');
-        return call_user_func(
-            $this->packer,
-            $properties['buildPath'],
-            $properties['archiveFile']
-        );
+
+        $packer = $this->packer;
+        return $packer($properties['location']['path'], $properties['location']['archive']);
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     * @return boolean
+     */
+    private function move(OutputInterface $output, array $properties)
+    {
+        $this->status($output, 'Moving build to archive');
+        return true;
+
+        $mover = $this->mover;
+        // return $mover($properties['location']['tempArchive'], $properties['location']['archive']);
     }
 
     /**

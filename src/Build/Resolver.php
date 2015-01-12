@@ -17,45 +17,45 @@ use Symfony\Component\Process\ProcessBuilder;
 class Resolver
 {
     /**
-     * @var string
+     * @type string
      */
     const FS_DIRECTORY_PREFIX = 'hal9000-build-%s';
-    const FS_BUILD_PREFIX = 'hal9000-build-%s.tar.gz';
-    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
+    const FS_BUILD_PREFIX = 'hal9000-%s.tar.gz';
+    const FS_ARCHIVE_PREFIX = 'hal9000-build-%s.tar.gz';
 
     /**
-     * @var string
+     * @type string
      */
     const ERR_NOT_FOUND = 'Build "%s" could not be found!';
     const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
 
     /**
-     * @var BuildRepository
+     * @type BuildRepository
      */
     private $buildRepo;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var string
+     * @type string
      */
     private $envPath;
 
     /**
-     * @var string
+     * @type string
      */
     private $archivePath;
 
     /**
-     * @var string
+     * @type string
      */
     private $buildDirectory;
 
     /**
-     * @var string
+     * @type string
      */
     private $homeDirectory;
 
@@ -90,13 +90,30 @@ class Resolver
             throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
         }
 
+        $commands = [];
+        if ($command = $build->getRepository()->getBuildCmd()) {
+            $commands[] = $command;
+        }
+
         $properties = [
             'build' => $build,
-            'buildCommand' => $build->getRepository()->getBuildCmd(),
 
-            'buildFile' => $this->generateRepositoryDownload($build->getId()),
-            'buildPath' => $this->generateBuildPath($build->getId()),
-            'archiveFile' => $this->generateBuildArchive($build->getId()),
+            // default, overwritten by hal9000.yml
+            'configuration' => [
+                'environment' => 'global',
+                'build' => $commands,
+                'build_transform' => [],
+                'pre_push' => [],
+                'post_push' => [],
+                'dist' => '.'
+            ],
+
+            'location' => [
+                'build' => $this->generateRepositoryDownload($build->getId()),
+                'path' => $this->generateBuildPath($build->getId()),
+                'archive' => $this->generateBuildArchive($build->getId()),
+                'tempArchive' => $this->generateTempBuildArchive($build->getId())
+            ],
 
             'githubUser' => $build->getRepository()->getGithubUser(),
             'githubRepo' => $build->getRepository()->getGithubRepo(),
@@ -146,8 +163,9 @@ class Resolver
     private function findBuildArtifacts(array $properties)
     {
         $artifacts = [
-            $properties['buildFile'],
-            $properties['buildPath']
+            $properties['location']['build'],
+            $properties['location']['path'],
+            $properties['location']['tempArchive']
         ];
 
         $caches = [
@@ -210,6 +228,17 @@ class Resolver
             DIRECTORY_SEPARATOR,
             sprintf(self::FS_ARCHIVE_PREFIX, $id)
         );
+    }
+
+    /**
+     *  Generate a temporary target for the github repository archive.
+     *
+     *  @param string $id
+     *  @return string
+     */
+    private function generateTempBuildArchive($id)
+    {
+        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_PREFIX, $id);
     }
 
     /**

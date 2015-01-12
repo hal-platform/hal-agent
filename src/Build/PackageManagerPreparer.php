@@ -16,14 +16,14 @@ class PackageManagerPreparer
     const EVENT_MESSAGE = 'Write Composer configuration';
 
     /**
-     * @var string
+     * @type string
      */
     const COMPOSER_CONFIG_FS = '%s/config.json';
 
     /**
      * $COMPOSER_HOME/config.json
      *
-     * @var string
+     * @type string
      */
     const COMPOSER_CONFIG_DEFAULT = <<<'JSON'
 {
@@ -37,17 +37,17 @@ class PackageManagerPreparer
 JSON;
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var Filesystem
+     * @type Filesystem
      */
     private $filesystem;
 
     /**
-     * @var string
+     * @type string
      */
     private $githubAuthToken;
 

@@ -16,7 +16,7 @@ class Unpacker
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Unpack GitHub archive';
 
@@ -26,12 +26,12 @@ class Unpacker
     const ERR_SANITIZED = 'Unpacked GitHub archive directory was not empty after sanitizing.';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 

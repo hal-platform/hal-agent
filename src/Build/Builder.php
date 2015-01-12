@@ -17,25 +17,25 @@ class Builder
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Run build command';
     const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var PackageManagerPreparer
+     * @type PackageManagerPreparer
      */
     private $preparer;
 
     /**
      * Time (in seconds) to wait for the build to process before aborting
      *
-     * @var int
+     * @type int
      */
     private $commandTimeout;
 
@@ -55,33 +55,42 @@ class Builder
 
     /**
      * @param string $buildPath
-     * @param string $command
+     * @param array $commands
      * @param array $env
      * @return boolean
      */
-    public function __invoke($buildPath, $command, array $env)
+    public function __invoke($buildPath, array $commands, array $env)
     {
-        $command = $this->sanitizeCommand($command);
+        foreach ($commands as $command) {
+            $command = $this->sanitizeCommand($command);
 
-        $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($command)
-            ->addEnvironmentVariables($env)
-            ->setTimeout($this->commandTimeout)
-            ->getProcess();
+            $process = $this->processBuilder
+                ->setWorkingDirectory($buildPath)
+                ->setArguments($command)
+                ->addEnvironmentVariables($env)
+                ->setTimeout($this->commandTimeout)
+                ->getProcess();
 
-        // prepare package manager configuration
-        call_user_func($this->preparer, $env);
+            // prepare package manager configuration
+            call_user_func($this->preparer, $env);
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
-            return false;
+            if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
+                // command timed out, bomb out
+                return false;
+            }
+
+            if ($process->isSuccessful()) {
+                // record build output
+                $this->processSuccess($process);
+                continue;
+            }
+
+            // Return immediately if one of the commands fails
+            return $this->processFailure($process);
         }
 
-        if ($process->isSuccessful()) {
-            return $this->processSuccess($process);
-        }
-
-        return $this->processFailure($process);
+        // all good
+        return true;
     }
 
     /**
