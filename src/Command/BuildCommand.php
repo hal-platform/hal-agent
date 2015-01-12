@@ -352,9 +352,9 @@ class BuildCommand extends Command
 
         $downloader = $this->downloader;
         return $downloader(
-            $properties['githubUser'],
-            $properties['githubRepo'],
-            $properties['githubReference'],
+            $properties['github']['user'],
+            $properties['github']['repo'],
+            $properties['github']['reference'],
             $properties['location']['build']
         );
     }
@@ -423,7 +423,11 @@ class BuildCommand extends Command
         $this->status($output, 'Packing build into archive');
 
         $packer = $this->packer;
-        return $packer($properties['location']['path'], $properties['location']['archive']);
+        return $packer(
+            $properties['location']['path'],
+            $properties['configuration']['dist'],
+            $properties['location']['tempArchive']
+        );
     }
 
     /**

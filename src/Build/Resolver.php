@@ -115,9 +115,11 @@ class Resolver
                 'tempArchive' => $this->generateTempBuildArchive($build->getId())
             ],
 
-            'githubUser' => $build->getRepository()->getGithubUser(),
-            'githubRepo' => $build->getRepository()->getGithubRepo(),
-            'githubReference' => $build->getCommit(),
+            'github' => [
+                'user' => $build->getRepository()->getGithubUser(),
+                'repo' => $build->getRepository()->getGithubRepo(),
+                'reference' => $build->getCommit()
+            ],
 
             'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
         ];

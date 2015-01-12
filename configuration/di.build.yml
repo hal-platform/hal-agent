@@ -42,5 +42,6 @@ services:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
             - @logger.event
+            - @utility.filesystem
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filepacking%
