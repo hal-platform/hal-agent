@@ -20,8 +20,8 @@ class Resolver
      * @type string
      */
     const FS_DIRECTORY_PREFIX = 'hal9000-build-%s';
-    const FS_BUILD_PREFIX = 'hal9000-%s.tar.gz';
-    const FS_ARCHIVE_PREFIX = 'hal9000-build-%s.tar.gz';
+    const FS_BUILD_PREFIX = 'hal9000-download-%s.tar.gz';
+    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
 
     /**
      * @type string
@@ -105,7 +105,11 @@ class Resolver
                 'build_transform' => [],
                 'pre_push' => [],
                 'post_push' => [],
-                'dist' => '.'
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ]
             ],
 
             'location' => [
@@ -217,7 +221,7 @@ class Resolver
     }
 
     /**
-     *  Generate a target for the github repository archive.
+     *  Generate a target for the build archive.
      *
      *  @param string $id
      *  @return string
@@ -233,7 +237,7 @@ class Resolver
     }
 
     /**
-     *  Generate a temporary target for the github repository archive.
+     *  Generate a temporary target for the build archive.
      *
      *  @param string $id
      *  @return string

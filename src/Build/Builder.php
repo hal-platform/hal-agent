@@ -79,14 +79,13 @@ class Builder
                 return false;
             }
 
-            if ($process->isSuccessful()) {
-                // record build output
-                $this->processSuccess($process);
-                continue;
+            if (!$process->isSuccessful()) {
+                // Return immediately if one of the commands fails
+                return $this->processFailure($process);
             }
 
-            // Return immediately if one of the commands fails
-            return $this->processFailure($process);
+            // record build output
+            $this->processSuccess($process);
         }
 
         // all good

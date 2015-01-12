@@ -98,13 +98,15 @@ class ConfigurationReader
             $config['dist'] = (string) $yaml['dist'];
         }
 
-        $config['build'] = $this->validateCommands($yaml, 'build', $context);
-        $config['build_transform'] = $this->validateCommands($yaml, 'build_transform', $context);
-        $config['pre_push'] = $this->validateCommands($yaml, 'pre_push', $context);
-        $config['post_push'] = $this->validateCommands($yaml, 'post_push', $context);
+        $config['exclude'] = $this->validateList($yaml, 'exclude', $context);
+        $config['build'] = $this->validateList($yaml, 'build', $context);
+        $config['build_transform'] = $this->validateList($yaml, 'build_transform', $context);
+        $config['pre_push'] = $this->validateList($yaml, 'pre_push', $context);
+        $config['post_push'] = $this->validateList($yaml, 'post_push', $context);
 
-        // If any of the commands are null, an error occured.
+        // If any of the lists are null, an error occured.
         if (
+            $config['exclude'] === null ||
             $config['build'] === null ||
             $config['build_transform'] === null ||
             $config['pre_push'] === null ||
@@ -125,7 +127,7 @@ class ConfigurationReader
      *
      * @return array|null
      */
-    private function validateCommands(array $yaml, $key, array $context)
+    private function validateList(array $yaml, $key, array $context)
     {
         if (!array_key_exists($key, $yaml)) {
             return [];

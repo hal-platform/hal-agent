@@ -26,24 +26,24 @@ class Mover
     }
 
     /**
-     * @param string $tempArchive
-     * @param string $archive
+     * @param string $from
+     * @param string $to
      *
      * @return bool
      */
-    public function __invoke($tempArchive, $archive)
+    public function __invoke($from, $to)
     {
         try {
-            $this->filesystem->copy($tempArchive, $archive, true);
+            $this->filesystem->copy($from, $to, true);
         } catch (IOException $e) {
-            $this->logger->event('failure', self::EVENT_MESSAGE, [
+            $this->logger->event('failure', static::EVENT_MESSAGE, [
                 'error' => $e->getMessage()
             ]);
 
             return false;
         }
 
-        $this->logger->event('success', self::EVENT_MESSAGE);
+        $this->logger->event('success', static::EVENT_MESSAGE);
         return true;
     }
 }
