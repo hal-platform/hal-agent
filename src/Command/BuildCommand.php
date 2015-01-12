@@ -21,7 +21,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Build an application for a particular environment.
@@ -95,9 +96,9 @@ class BuildCommand extends Command
     private $progress;
 
     /**
-     * @type ProcessBuilder
+     * @type Filesystem
      */
-    private $processBuilder;
+    private $filesystem;
 
     /**
      * @type string[]
@@ -120,7 +121,7 @@ class BuildCommand extends Command
      * @param Packer $packer
      * @param Mover $mover
      * @param DownloadProgressHelper $progress
-     * @param ProcessBuilder $processBuilder
+     * @param Filesystem $filesystem
      */
     public function __construct(
         $name,
@@ -133,7 +134,7 @@ class BuildCommand extends Command
         Packer $packer,
         Mover $mover,
         DownloadProgressHelper $progress,
-        ProcessBuilder $processBuilder
+        Filesystem $filesystem
     ) {
         parent::__construct($name);
 
@@ -148,7 +149,7 @@ class BuildCommand extends Command
         $this->mover = $mover;
 
         $this->progress = $progress;
-        $this->processBuilder = $processBuilder;
+        $this->filesystem = $filesystem;
 
         $this->artifacts = [];
 
@@ -265,21 +266,14 @@ class BuildCommand extends Command
      */
     private function cleanup()
     {
-        $this->processBuilder->setPrefix(['rm', '-rf']);
-
-        $poppers = 0;
-        while ($this->artifacts && $poppers < 10) {
-            # while loops make me paranoid, ok?
-            $poppers++;
-
-            $path = array_pop($this->artifacts);
-            $process = $this->processBuilder
-                ->setWorkingDirectory(null)
-                ->setArguments([$path])
-                ->getProcess();
-
-            $process->run();
+        foreach ($this->artifacts as $artifact) {
+            try {
+                $this->filesystem->remove($artifact);
+            } catch (IOException $e) {}
         }
+
+        // Clear artifacts
+        $this->artifacts = [];
     }
 
     /**

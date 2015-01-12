@@ -61,7 +61,7 @@ services:
             - @build.packer
             - @build.mover
             - @utility.helper.downloadProgress
-            - @utility.process.builder= # = signifies a prototype service
+            - @utility.filesystem
     command.build.remove:
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
