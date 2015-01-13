@@ -141,6 +141,43 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $this->assertSame(false, $result);
     }
 
+    public function testTooManyCommandsIsFailure()
+    {
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->andReturn(true);
+        $this->parser
+            ->shouldReceive('parse')
+            ->andReturn([
+                'exclude' => ['excluded_dir'],
+                'build' => [
+                    'cmd1',
+                    'cmd2',
+                    'cmd3',
+                    'cmd4',
+                    'cmd5',
+                    'cmd6',
+                    'cmd7',
+                    'cmd8',
+                    'cmd9',
+                    'cmd10',
+                    'cmd11',
+                ],
+            ]);
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', 'Too many commands specified for "build". Must be less than 10.', Mockery::any())
+            ->once();
+
+        $closure = function() {return 'file';};
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $closure);
+
+        $default = [];
+        $result = $reader('path', $default);
+
+        $this->assertSame(false, $result);
+    }
+
     public function testFileIsParsed()
     {
         $this->filesystem

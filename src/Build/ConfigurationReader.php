@@ -17,6 +17,7 @@ class ConfigurationReader
     const FOUND = 'Found .hal9000.yml configuration';
     const ERR_INVALID_YAML = '.hal9000.yml was invalid';
     const ERR_INVALID_KEY = '.hal9000.yml configuration key "%s" is invalid';
+    const ERR_TOO_MANY_COOKS = 'Too many commands specified for "%s". Must be less than 10.';
 
     /**
      * @type string
@@ -148,6 +149,13 @@ class ConfigurationReader
         $commands = $yaml[$key];
         if (!is_array($commands)) {
             $commands = [$commands];
+        }
+
+
+        // # of commands must be <=10
+        if (count($commands) > 10) {
+            $this->logger->event('failure', sprintf(self::ERR_TOO_MANY_COOKS, $key), $context);
+            return null;
         }
 
         $sanitized = [];
