@@ -39,15 +39,31 @@ class ConfigurationReader
     private $parser;
 
     /**
+     * @type callable
+     */
+    private $fileLoader;
+
+    /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param Parser $parser
+     * @param callable $fileLoader
      */
-    public function __construct(EventLogger $logger, Filesystem $filesystem, Parser $parser)
-    {
+    public function __construct(
+        EventLogger $logger,
+        Filesystem $filesystem,
+        Parser $parser,
+        callable $fileLoader = null
+    ) {
         $this->logger = $logger;
         $this->filesystem = $filesystem;
         $this->parser = $parser;
+
+        if ($fileLoader === null) {
+            $fileLoader = $this->getDefaultFileLoader();
+        }
+
+        $this->fileLoader = $fileLoader;
     }
 
     /**
@@ -64,7 +80,7 @@ class ConfigurationReader
             return true;
         }
 
-        $file = file_get_contents($configFile);
+        $file = call_user_func($this->fileLoader, $configFile);
         $context = ['file' => $file];
 
         try {
@@ -72,10 +88,6 @@ class ConfigurationReader
         } catch (ParseException $e) {
             $this->logger->event('failure', self::ERR_INVALID_YAML);
             return false;
-        }
-
-        if (array_key_exists('environment', $yaml) && $yaml['environment']) {
-            $config['environment'] = $yaml['environment'];
         }
 
         // load environment
@@ -154,5 +166,10 @@ class ConfigurationReader
         }
 
         return $sanitized;
+    }
+
+    private function getDefaultFileLoader()
+    {
+        return 'file_get_contents';
     }
 }
