@@ -162,6 +162,8 @@ exclude:
     - 'data/'
 ```
 
+Please note, currently the only system or container supported is "global". In addition, the total commands in each command list for each step must be less than 10.
+
 ### On Build
 
 During the build process, The following environment variables are available to application build scripts:
