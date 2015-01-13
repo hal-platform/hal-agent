@@ -436,6 +436,7 @@ class PushCommand extends Command
 
         $builder = $this->builder;
         return $builder(
+            $properties['configuration']['system'],
             $properties['location']['path'],
             $properties['configuration']['build_transform'],
             $properties['environmentVariables']

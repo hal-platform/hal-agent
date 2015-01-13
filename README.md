@@ -120,7 +120,7 @@ A `.hal9000.yml` yaml file can be placed into the project repository to enable c
 ```yaml
 # Environment to use to build application.
 # Optional. The default is "global"
-environment: ''
+system: ''
 
 # Directory of build dist to archive, relative to application root.
 # Optional. The default is the application root.

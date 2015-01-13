@@ -410,6 +410,7 @@ class BuildCommand extends Command
 
         $builder = $this->builder;
         return $builder(
+            $properties['configuration']['system'],
             $properties['location']['path'],
             $properties['configuration']['build'],
             $properties['environmentVariables']

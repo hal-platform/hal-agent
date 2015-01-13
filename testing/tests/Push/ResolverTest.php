@@ -125,7 +125,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'remotePath' => '/herp/derp',
 
             'configuration' => [
-                'environment' => 'global',
+                'system' => 'global',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
                 'build' => [],
                 'build_transform' => [
                     'bin/build-transform'
@@ -135,11 +140,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 ],
                 'post_push' => [
                     'bin/post'
-                ],
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
                 ]
             ],
 

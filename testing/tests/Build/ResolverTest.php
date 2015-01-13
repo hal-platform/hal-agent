@@ -75,18 +75,19 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'build' => $build,
 
             'configuration' => [
-                'environment' => 'global',
+                'system' => 'global',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
+
                 'build' => [
                     'derp'
                 ],
                 'build_transform' => [],
                 'pre_push' => [],
-                'post_push' => [],
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ]
+                'post_push' => []
             ],
 
             'location' => [

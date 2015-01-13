@@ -42,7 +42,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new Builder($this->logger, $builder, 5);
 
-        $success = $action('path', ['command'], []);
+        $success = $action('global', 'path', ['command'], []);
         $this->assertTrue($success);
     }
 
@@ -73,7 +73,22 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new Builder($this->logger, $builder, 5);
 
-        $success = $action('path', ['command'], []);
+        $success = $action('global', 'path', ['command'], []);
+        $this->assertFalse($success);
+    }
+
+    public function testFailIfUnknownSystem()
+    {
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', 'Invalid build environment specified')
+            ->once();
+
+        $action = new Builder($this->logger, $builder, 5);
+
+        $success = $action('bad_system', 'path', ['command'], []);
         $this->assertFalse($success);
     }
 
@@ -131,7 +146,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event');
 
         $action = new Builder($this->logger, $builder, 5);
-        $success = $action('path', [$command], []);
+        $success = $action('global', 'path', [$command], []);
 
         $this->assertSame($expectedParameters, $actualParameters);
     }
@@ -173,7 +188,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->twice();
 
         $action = new Builder($this->logger, $builder, 5);
-        $success = $action('path', $commands, []);
+        $success = $action('global', 'path', $commands, []);
 
         $this->assertSame($success, true);
     }

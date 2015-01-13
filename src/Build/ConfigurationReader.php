@@ -90,14 +90,14 @@ class ConfigurationReader
             return false;
         }
 
-        // load environment
-        if (array_key_exists('environment', $yaml) && $yaml['environment']) {
-            if (!is_scalar($yaml['environment'])) {
-                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'environment'), $context);
+        // load system
+        if (array_key_exists('system', $yaml) && $yaml['system']) {
+            if (!is_scalar($yaml['system'])) {
+                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'system'), $context);
                 return false;
             }
 
-            $config['environment'] = (string) $yaml['environment'];
+            $config['system'] = (string) $yaml['system'];
         }
 
         // load dist

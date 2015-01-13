@@ -65,7 +65,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $this->assertSame(false, $result);
     }
 
-    public function testBadEnvironmentIsFailure()
+    public function testBadSystemIsFailure()
     {
         $this->filesystem
             ->shouldReceive('exists')
@@ -73,11 +73,11 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $this->parser
             ->shouldReceive('parse')
             ->andReturn([
-                'environment' => ['bad_array']
+                'system' => ['bad_array']
             ]);
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', '.hal9000.yml configuration key "environment" is invalid', Mockery::any())
+            ->with('failure', '.hal9000.yml configuration key "system" is invalid', Mockery::any())
             ->once();
 
         $closure = function() {return 'file';};
@@ -149,7 +149,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $this->parser
             ->shouldReceive('parse')
             ->andReturn([
-                'environment' => 'node0.11.5',
+                'system' => 'node0.11.5',
                 'dist' => 'subdir',
                 'exclude' => ['excluded_dir'],
                 'build' => [],
@@ -166,7 +166,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
 
         $default = [];
         $config = [
-            'environment' => 'node0.11.5',
+            'system' => 'node0.11.5',
             'dist' => 'subdir',
             'exclude' => ['excluded_dir'],
             'build' => [],

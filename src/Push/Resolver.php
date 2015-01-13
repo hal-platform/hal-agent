@@ -8,16 +8,20 @@
 namespace QL\Hal\Agent\Push;
 
 use MCP\DataType\Time\Clock;
+use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository\PushRepository;
+
 
 /**
  * Resolve push properties from user and environment input
  */
 class Resolver
 {
+    use DefaultConfigHelperTrait;
+
     /**
      * @var string
      */
@@ -139,20 +143,6 @@ class Resolver
             $hostname = $serverName;
         }
 
-        // prepare default commands
-        $transformCommand = [];
-        if ($command = $repository->getBuildTransformCmd()) {
-            $transformCommand[] = $command;
-        }
-        $preCommand = [];
-        if ($command = $repository->getPrePushCmd()) {
-            $preCommand[] = $command;
-        }
-        $postCommand = [];
-        if ($command = $repository->getPostPushCmd()) {
-            $postCommand[] = $command;
-        }
-
         $properties = [
             'push' => $push,
             'method' => $method,
@@ -160,19 +150,8 @@ class Resolver
             'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
             'remotePath' => $deployment->getPath(),
 
-            // default, overwritten by hal9000.yml
-            'configuration' => [
-                'environment' => 'global',
-                'build' => [],
-                'build_transform' => $transformCommand,
-                'pre_push' => $preCommand,
-                'post_push' => $postCommand,
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ]
-            ],
+            // default, overwritten by .hal9000.yml
+            'configuration' => $this->buildDefaultConfiguration($repository),
 
             'location' => [
                 'path' => $this->generatePushPath($push->getId()),

@@ -20,6 +20,7 @@ class Builder
      * @type string
      */
     const EVENT_MESSAGE = 'Run build command';
+    const ERR_INVALID_SYSTEM = 'Invalid build environment specified';
     const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
@@ -50,13 +51,20 @@ class Builder
     }
 
     /**
+     * @param string $system
      * @param string $buildPath
      * @param array $commands
      * @param array $env
+     *
      * @return boolean
      */
-    public function __invoke($buildPath, array $commands, array $env)
+    public function __invoke($system, $buildPath, array $commands, array $env)
     {
+        if ($system !== 'global') {
+            $this->logger->event('failure', self::ERR_INVALID_SYSTEM);
+            return false;
+        }
+
         foreach ($commands as $command) {
             $command = $this->sanitizeCommand($command);
 
@@ -86,6 +94,7 @@ class Builder
 
     /**
      * @var string $command
+     *
      * @return string
      */
     private function sanitizeCommand($command)
@@ -104,6 +113,7 @@ class Builder
 
     /**
      * @param Process $process
+     *
      * @return bool
      */
     private function processFailure(Process $process)
@@ -120,6 +130,7 @@ class Builder
 
     /**
      * @param Process $process
+     *
      * @return bool
      */
     private function processSuccess(Process $process)

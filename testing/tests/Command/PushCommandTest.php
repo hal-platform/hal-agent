@@ -147,7 +147,7 @@ OUTPUT;
                 'push' => $push,
 
                 'configuration' => [
-                    'environment' => 'global',
+                    'system' => 'global',
                     'build' => [],
                     'build_transform' => [
                         'bin/cmd'
@@ -294,7 +294,7 @@ OUTPUT;
                 'push' => $push,
 
                 'configuration' => [
-                    'environment' => 'global',
+                    'system' => 'global',
                     'build' => [],
                     'build_transform' => [],
                     'pre_push' => [],
@@ -430,7 +430,7 @@ OUTPUT;
                 'push' => $push,
 
                 'configuration' => [
-                    'environment' => 'global',
+                    'system' => 'global',
                     'build' => [],
                     'build_transform' => [],
                     'pre_push' => [],

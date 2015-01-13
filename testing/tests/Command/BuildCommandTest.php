@@ -129,6 +129,7 @@ OUTPUT;
                     'build' => [
                         'bin/build'
                     ],
+                    'system' => 'global',
                     'dist' => '.'
                 ],
                 'environmentVariables' => [],
@@ -252,11 +253,20 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn([
                 'build'  => $build,
-                'buildPath' => 'path/dir',
-                'githubUser' => 'user1',
-                'githubRepo' => 'repo1',
-                'githubReference' => 'master',
-                'buildFile' => 'path/file',
+
+                'configuration' => [
+                    'system' => 'global',
+                ],
+                'location' => [
+                    'download' => 'path/file',
+                    'path' => 'path/dir',
+                ],
+                'github' => [
+                    'user' => 'user1',
+                    'repo' => 'repo1',
+                    'reference' => 'master'
+                ],
+
                 'artifacts' => []
             ]);
 

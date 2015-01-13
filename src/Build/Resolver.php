@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Build;
 
+use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 use Symfony\Component\Process\ProcessBuilder;
@@ -16,6 +17,8 @@ use Symfony\Component\Process\ProcessBuilder;
  */
 class Resolver
 {
+    use DefaultConfigHelperTrait;
+
     /**
      * @type string
      */
@@ -90,27 +93,11 @@ class Resolver
             throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
         }
 
-        $commands = [];
-        if ($command = $build->getRepository()->getBuildCmd()) {
-            $commands[] = $command;
-        }
-
         $properties = [
             'build' => $build,
 
-            // default, overwritten by hal9000.yml
-            'configuration' => [
-                'environment' => 'global',
-                'build' => $commands,
-                'build_transform' => [],
-                'pre_push' => [],
-                'post_push' => [],
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ]
-            ],
+            // default, overwritten by .hal9000.yml
+            'configuration' => $this->buildDefaultConfiguration($build->getRepository()),
 
             'location' => [
                 'download' => $this->generateRepositoryDownload($build->getId()),
