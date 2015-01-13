@@ -23,13 +23,13 @@ class Resolver
     use DefaultConfigHelperTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const FS_DIRECTORY_PREFIX = 'hal9000-push-%s';
     const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
 
     /**
-     * @var string
+     * @type string
      */
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
@@ -37,47 +37,47 @@ class Resolver
     const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var PushRepository
+     * @type PushRepository
      */
     private $pushRepo;
 
     /**
-     * @var Clock
+     * @type Clock
      */
     private $clock;
 
     /**
-     * @var string
+     * @type string
      */
     private $sshUser;
 
     /**
-     * @var string
+     * @type string
      */
     private $envPath;
 
     /**
-     * @var string
+     * @type string
      */
     private $archivePath;
 
     /**
-     * @var string
+     * @type string
      */
     private $githubBaseUrl;
 
     /**
-     * @var string
+     * @type string
      */
     private $buildDirectory;
 
     /**
-     * @var string
+     * @type string
      */
     private $homeDirectory;
 
@@ -189,7 +189,8 @@ class Resolver
      * If none is provided the system temporary directory is used.
      *
      * @param string $directory
-     *  @return null
+     *
+     * @return null
      */
     public function setBaseBuildDirectory($directory)
     {
@@ -202,8 +203,9 @@ class Resolver
      *
      * If none is provided a common location within the shared build directory is used.
      *
-     *  @param string $directory
-     *  @return string
+     * @param string $directory
+     *
+     * @return string
      */
     public function setHomeDirectory($directory)
     {
@@ -214,6 +216,7 @@ class Resolver
      * Find the push artifacts that must be cleaned up after push.
      *
      * @param array $properties
+     *
      * @return array
      */
     private function findPushArtifacts(array $properties)
@@ -225,10 +228,11 @@ class Resolver
     }
 
     /**
-     *  Generate a target for the build archive.
+     * Generate a target for the build archive.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     *
+     * @return string
      */
     private function generateBuildArchive($id)
     {
@@ -255,6 +259,7 @@ class Resolver
      * @param Build $build
      * @param Deployment $deployment
      * @param string $hostname
+     *
      * @return array
      */
     private function generateBuildEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
@@ -271,6 +276,7 @@ class Resolver
      * @param Build $build
      * @param Deployment $deployment
      * @param string $hostname
+     *
      * @return array
      */
     private function generateServerEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
@@ -290,10 +296,11 @@ class Resolver
     }
 
     /**
-     *  Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
+     * Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
      *
-     *  @param string $suffix
-     *  @return string
+     * @param string $suffix
+     *
+     * @return string
      */
     private function generateHomePath($suffix = '')
     {
@@ -307,10 +314,11 @@ class Resolver
     }
 
     /**
-     *  Generate a target for the build path.
+     * Generate a target for the build path.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     *
+     * @return string
      */
     private function generatePushPath($id)
     {
@@ -318,8 +326,9 @@ class Resolver
     }
 
     /**
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     *
+     * @return string
      */
     private function getBuildDirectory()
     {
@@ -337,6 +346,7 @@ class Resolver
      * to ever hit successfully because the child workers fork so quickly.
      *
      * @param Deployment $deployment
+     *
      * @return boolean
      */
     private function hasConcurrentDeployment(Deployment $deployment)
@@ -350,10 +360,11 @@ class Resolver
     }
 
     /**
-     *  Validate a hostname
+     * Validate a hostname
      *
-     *  @param string $hostname
-     *  @return string|null
+     * @param string $hostname
+     *
+     * @return string|null
      */
     private function validateHostname($hostname)
     {

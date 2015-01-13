@@ -17,23 +17,23 @@ class Pusher
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Code Sync';
     const ERR_PUSHING_TIMEOUT = 'Syncing code to server took too long';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var int
+     * @type int
      */
     private $commandTimeout;
 
@@ -53,6 +53,7 @@ class Pusher
      * @param string $buildPath
      * @param string $syncPath
      * @param array $excludedFiles
+     *
      * @return boolean
      */
     public function __invoke($buildPath, $syncPath, array $excludedFiles)
@@ -81,6 +82,7 @@ class Pusher
      * @param string $buildPath
      * @param string $syncPath
      * @param string[] $excludedFiles
+     *
      * @return string[]
      */
     private function buildRsyncCommand($buildPath, $syncPath, array $excludedFiles)
@@ -109,6 +111,7 @@ class Pusher
 
     /**
      * @param Process $process
+     *
      * @return bool
      */
     private function processFailure(Process $process)
@@ -125,6 +128,7 @@ class Pusher
 
     /**
      * @param Process $process
+     *
      * @return bool
      */
     private function processSuccess(Process $process)

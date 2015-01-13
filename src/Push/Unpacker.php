@@ -19,7 +19,7 @@ class Unpacker
     use ProcessRunnerTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Unpack build archive';
 
@@ -28,32 +28,32 @@ class Unpacker
     const ERR_PROPERTIES = 'Push details could not be written: %s';
 
     /**
-     * @var string
+     * @type string
      */
     const FS_DETAILS_FILE = '.hal9000.push.yml';
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var Filesystem
+     * @type Filesystem
      */
     private $filesystem;
 
     /**
-     * @var Dumper
+     * @type Dumper
      */
     private $dumper;
 
     /**
-     * @var string
+     * @type string
      */
     private $commandTimeout;
 
@@ -82,6 +82,7 @@ class Unpacker
      * @param string $archive
      * @param string $buildPath
      * @param array $properties
+     *
      * @return boolean
      */
     public function __invoke($archive, $buildPath, array $properties)
@@ -100,6 +101,7 @@ class Unpacker
     /**
      * @param string $buildPath
      * @param array $properties
+     *
      * @return boolean
      */
     private function addBuildDetails($buildPath, array $properties)
@@ -127,6 +129,7 @@ class Unpacker
     /**
      * @param string $buildPath
      * @param string $archive
+     *
      * @return boolean
      */
     private function unpackArchive($buildPath, $archive)

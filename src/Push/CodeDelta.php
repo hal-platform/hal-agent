@@ -18,12 +18,12 @@ use Symfony\Component\Yaml\Parser;
 class CodeDelta
 {
     /**
-     * @var string
+     * @type string
      */
     const FS_DETAILS_FILE = '.hal9000.push.yml';
 
     /**
-     * @var string
+     * @type string
      */
     const EVENT_MESSAGE = 'Retrieve previous push information';
     const NO_CHANGE = 'No change. Code was redeployed.';
@@ -40,27 +40,27 @@ class CodeDelta
     ];
 
     /**
-     * @var EventLogger
+     * @type EventLogger
      */
     private $logger;
 
     /**
-     * @var ProcessBuilder
+     * @type ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @var Parser
+     * @type Parser
      */
     private $parser;
 
     /**
-     * @var CommitApi
+     * @type CommitApi
      */
     private $commitApi;
 
     /**
-     * @var string
+     * @type string
      */
     private $sshUser;
 
@@ -90,6 +90,7 @@ class CodeDelta
      * @param string $hostname
      * @param string $remotePath
      * @param array $pushProperties
+     *
      * @return boolean
      */
     public function __invoke($hostname, $remotePath, array $pushProperties)

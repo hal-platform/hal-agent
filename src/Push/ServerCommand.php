@@ -62,6 +62,7 @@ class ServerCommand
      * @param string $remotePath
      * @param array $commands
      * @param array $env
+     *
      * @return boolean
      */
     public function __invoke($hostname, $remotePath, array $commands, array $env)
@@ -112,7 +113,8 @@ class ServerCommand
     }
 
     /**
-     * @var array $env
+     * @param array $env
+     *
      * @return string
      */
     private function formatEnvSetters(array $env)
@@ -126,7 +128,8 @@ class ServerCommand
     }
 
     /**
-     * @var string $command
+     * @param string $command
+     *
      * @return string
      */
     private function sanitizeCommand($command)
@@ -148,6 +151,7 @@ class ServerCommand
 
     /**
      * @param Process $process
+     *
      * @return bool
      */
     private function processFailure(Process $process)
@@ -164,6 +168,7 @@ class ServerCommand
 
     /**
      * @param Process $process
+     *
      * @return bool
      */
     private function processSuccess(Process $process)
