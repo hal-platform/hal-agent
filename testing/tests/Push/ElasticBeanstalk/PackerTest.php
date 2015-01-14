@@ -5,25 +5,52 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
-class PusherTest extends PHPUnit_Framework_TestCase
+class PackerTest extends PHPUnit_Framework_TestCase
 {
+    public $file;
     public $logger;
 
     public function setUp()
     {
+        $this->file = FIXTURES_DIR . '/push.zip';
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+    }
+
+    public function testFailCommand()
+    {
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getCommandLine' => 'deployscript',
+            'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
+            'isSuccessful' => false
+        ])->makePartial();
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), Mockery::any())
+            ->once();
+
+        $packer = new Packer($this->logger, $builder, 5);
+        $success = $packer('path', $this->file);
+        $this->assertSame(false, $success);
     }
 
     public function testSuccess()
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getCommandLine' => 'rsync',
+            'run' => null,
+            'getCommandLine' => 'deployscript',
             'getOutput' => 'test-output',
             'isSuccessful' => true
         ])->makePartial();
@@ -35,45 +62,12 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
         $this->logger
             ->shouldReceive('event')
-            ->with('success', Mockery::any(), [
-                'command' => 'rsync',
-                'output' => 'test-output'
-            ])->once();
+            ->with('success', Mockery::any(), Mockery::any())
+            ->once();
 
-        $action = new Pusher($this->logger, $builder, 20);
-
-        $success = $action('build/path', 'sync/path', []);
-        $this->assertTrue($success);
+        $packer = new Packer($this->logger, $builder, 5);
+        $success = $packer('path', $this->file);
+        $this->assertSame(true, $success);
     }
 
-    public function testFail()
-    {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getCommandLine' => 'deployscript',
-            'getOutput' => 'test-output',
-            'getErrorOutput' => 'test-error-output',
-            'getExitCode' => 9000,
-            'isSuccessful' => false
-        ])->makePartial();
-
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', Mockery::any(), [
-                'command' => 'deployscript',
-                'exitCode' => 9000,
-                'output' => 'test-output',
-                'errorOutput' => 'test-error-output'
-            ])->once();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
-
-        $action = new Pusher($this->logger, $builder, 20);
-
-        $success = $action('build/path', 'sync/path', []);
-        $this->assertFalse($success);
-    }
 }

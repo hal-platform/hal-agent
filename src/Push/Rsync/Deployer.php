@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push\Rsync
+namespace QL\Hal\Agent\Push\Rsync;
 
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
@@ -166,7 +166,7 @@ class Deployer implements DeployerInterface
             $properties[self::TYPE]['hostname'],
             $properties[self::TYPE]['remotePath'],
             $properties['configuration']['pre_push'],
-            $properties['serverEnvironmentVariables']
+            $properties[self::TYPE]['environmentVariables']
         );
     }
 
@@ -208,7 +208,7 @@ class Deployer implements DeployerInterface
             $properties[self::TYPE]['hostname'],
             $properties[self::TYPE]['remotePath'],
             $properties['configuration']['post_push'],
-            $properties['serverEnvironmentVariables']
+            $properties[self::TYPE]['environmentVariables']
         );
     }
 

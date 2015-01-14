@@ -83,6 +83,7 @@ class Uploader
         // Error out if object already exists
         if ($this->s3->doesObjectExist($this->s3BuildsBucket, $s3version)) {
             $this->logger->event('failure', self::ERR_ALREADY_EXISTS, $context);
+            return false;
         }
 
         try {
@@ -133,7 +134,7 @@ class Uploader
                 'waiter.max_attempts' => self::WAITER_ATTEMPTS
             ]);
 
-        } catch (RuntimeException $e) {
+        } catch (AwsExceptionInterface $e) {
             $context = array_merge($context, [
                 'wait time' => sprintf('%d seconds', self::WAITER_INTERVAL * self::WAITER_ATTEMPTS),
                 'error' => $e->getMessage()

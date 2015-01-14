@@ -48,7 +48,13 @@ class PackerTest extends PHPUnit_Framework_TestCase
 
         $this->filesystem
             ->shouldReceive('exists')
-            ->andReturn(true);
+            ->andReturn(true)
+            ->twice();
+
+        $this->filesystem
+            ->shouldReceive('copy')
+            ->with('path/.hal9000.yml', 'path/subdir/.hal9000.yml', true)
+            ->once();
 
         $action = new Packer($this->logger, $this->filesystem, $builder, 10);
 
@@ -83,7 +89,12 @@ class PackerTest extends PHPUnit_Framework_TestCase
 
         $this->filesystem
             ->shouldReceive('exists')
-            ->andReturn(true);
+            ->andReturn(true)
+            ->once();
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->andReturn(false)
+            ->once();
 
         $action = new Packer($this->logger, $this->filesystem, $builder, 10);
 

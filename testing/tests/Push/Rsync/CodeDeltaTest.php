@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace QL\Hal\Agent\Push\Rsync;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;

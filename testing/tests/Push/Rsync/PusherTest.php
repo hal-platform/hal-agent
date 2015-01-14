@@ -5,12 +5,12 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace QL\Hal\Agent\Push\Rsync;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
-class ServerCommandTest extends PHPUnit_Framework_TestCase
+class PusherTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
 
@@ -23,7 +23,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getCommandLine' => 'servercmd',
+            'getCommandLine' => 'rsync',
             'getOutput' => 'test-output',
             'isSuccessful' => true
         ])->makePartial();
@@ -36,13 +36,13 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('success', Mockery::any(), [
-                'command' => 'servercmd',
+                'command' => 'rsync',
                 'output' => 'test-output'
             ])->once();
 
-        $action = new ServerCommand($this->logger, $builder, 'sshuser', 10);
+        $action = new Pusher($this->logger, $builder, 20);
 
-        $success = $action('host', 'sync/path', ['env && pwd'], ['derp' => 'derp1', 'derp2' => 'derp3']);
+        $success = $action('build/path', 'sync/path', []);
         $this->assertTrue($success);
     }
 
@@ -50,30 +50,30 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getCommandLine' => 'servercmd',
+            'getCommandLine' => 'deployscript',
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
-            'getExitCode' => 500,
+            'getExitCode' => 9000,
             'isSuccessful' => false
         ])->makePartial();
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
+                'command' => 'deployscript',
+                'exitCode' => 9000,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', Mockery::any(), [
-                'command' => 'servercmd',
-                'output' => 'test-output',
-                'errorOutput' => 'test-error-output',
-                'exitCode' => 500
-            ])->once();
+        $action = new Pusher($this->logger, $builder, 20);
 
-        $action = new ServerCommand($this->logger, $builder, 'sshuser', 10);
-
-        $success = $action('host', 'sync/path', ['bin/cmd'], []);
+        $success = $action('build/path', 'sync/path', []);
         $this->assertFalse($success);
     }
 }

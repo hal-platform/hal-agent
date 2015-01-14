@@ -152,7 +152,7 @@ class Pusher
                 'waiter.max_attempts' => self::WAITER_ATTEMPTS
             ]);
 
-        } catch (RuntimeException $e) {
+        } catch (AwsExceptionInterface $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::ERR_WAITING, $context);
             return false;

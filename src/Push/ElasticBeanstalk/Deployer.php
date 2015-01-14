@@ -83,7 +83,7 @@ class Deployer implements DeployerInterface
         $this->status($output, self::STATUS);
 
         // sanity check
-        if (!isset($properties['self::TYPE'])) {
+        if (!isset($properties[self::TYPE])) {
             return 200;
         }
 
@@ -139,8 +139,8 @@ class Deployer implements DeployerInterface
 
         $health = $this->health;
         $health = $health(
-            $properties['self::TYPE']['application'],
-            $properties['self::TYPE']['environment']
+            $properties[self::TYPE]['application'],
+            $properties[self::TYPE]['environment']
         );
 
         if ($health['status'] !== 'Ready') {
@@ -244,8 +244,8 @@ class Deployer implements DeployerInterface
 
         $pusher = $this->pusher;
         return $pusher(
-            $properties['self::TYPE']['application'],
-            $properties['self::TYPE']['environment'],
+            $properties[self::TYPE]['application'],
+            $properties[self::TYPE]['environment'],
             $s3version,
             $build->getId(),
             $push->getId(),

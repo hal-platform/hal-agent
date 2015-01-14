@@ -39,7 +39,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
 
-        $properties = $action('1234', 'pushmethod');
+        $properties = $action('1234');
     }
 
     /**
@@ -59,7 +59,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
 
-        $properties = $action('1234', 'pushmethod');
+        $properties = $action('1234');
     }
 
     /**
@@ -81,7 +81,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
 
-        $properties = $action('1234', 'pushmethod');
+        $properties = $action('1234');
     }
 
     public function testSuccess()
@@ -108,6 +108,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $server->setName('127.0.0.1');
 
         $deployment = new Deployment;
+        $deployment->setType('rsync');
         $deployment->setPath('/herp/derp');
         $deployment->setServer($server);
 
@@ -118,12 +119,23 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $push->setDeployment($deployment);
 
         $expected = [
-            'push' => $push,
-            'method' => 'pushmethod',
-            'hostname' => '127.0.0.1',
-            'syncPath' => 'sshuser@127.0.0.1:/herp/derp',
-            'remotePath' => '/herp/derp',
+            'method' => 'rsync',
 
+            'rsync' => [
+                'hostname' => '127.0.0.1',
+                'syncPath' => 'sshuser@127.0.0.1:/herp/derp',
+                'remotePath' => '/herp/derp',
+
+                'environmentVariables' => [
+                    'HAL_HOSTNAME' => '127.0.0.1',
+                    'HAL_PATH' => '/herp/derp',
+                    'HAL_BUILDID' => '8956',
+                    'HAL_COMMIT' => '5555',
+                    'HAL_GITREF' => 'master',
+                    'HAL_ENVIRONMENT' => 'envname',
+                    'HAL_REPO' => 'repokey'
+                ]
+            ],
             'configuration' => [
                 'system' => 'global',
                 'dist' => '.',
@@ -146,45 +158,37 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
-                'tempArchive' => 'testdir/hal9000-1234.tar.gz'
+                'tempArchive' => 'testdir/hal9000-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-1234.zip'
+            ],
+
+            'environmentVariables' => [
+                'HOME' => 'testdir/home/',
+                'PATH' => 'ENV_PATH',
+                'HAL_HOSTNAME' => '127.0.0.1',
+                'HAL_PATH' => '/herp/derp',
+                'HAL_BUILDID' => '8956',
+                'HAL_COMMIT' => '5555',
+                'HAL_GITREF' => 'master',
+                'HAL_ENVIRONMENT' => 'envname',
+                'HAL_REPO' => 'repokey'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-1234.tar.gz',
+                'testdir/hal9000-1234.zip',
                 'testdir/hal9000-push-1234'
+            ],
+
+            'pushProperties' => [
+                'id' => '8956',
+                'source' => 'http://git/user1/repo1',
+                'env' => 'envname',
+                'user' => null,
+                'reference' => 'master',
+                'commit' => '5555',
+                'date' => '2015-03-15T08:00:00-04:00'
             ]
-        ];
-
-        $expectedEnv = [
-            'HOME' => 'testdir/home/',
-            'PATH' => 'ENV_PATH',
-            'HAL_HOSTNAME' => '127.0.0.1',
-            'HAL_PATH' => '/herp/derp',
-            'HAL_BUILDID' => '8956',
-            'HAL_COMMIT' => '5555',
-            'HAL_GITREF' => 'master',
-            'HAL_ENVIRONMENT' => 'envname',
-            'HAL_REPO' => 'repokey'
-        ];
-
-        $expectedServerEnv = [
-            'HAL_HOSTNAME' => '127.0.0.1',
-            'HAL_PATH' => '/herp/derp',
-            'HAL_BUILDID' => '8956',
-            'HAL_COMMIT' => '5555',
-            'HAL_GITREF' => 'master',
-            'HAL_ENVIRONMENT' => 'envname',
-            'HAL_REPO' => 'repokey'
-        ];
-
-        $expectedPushProperties = [
-            'id' => '8956',
-            'source' => 'http://git/user1/repo1',
-            'env' => 'envname',
-            'user' => null,
-            'reference' => 'master',
-            'commit' => '5555',
-            'date' => '2015-03-15T08:00:00-04:00'
         ];
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
@@ -196,15 +200,14 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
         $action->setBaseBuildDirectory('testdir');
 
-        $properties = $action('1234', 'pushmethod');
+        $properties = $action('1234');
 
-        $this->assertSame($expectedEnv, $properties['environmentVariables']);
-        $this->assertSame($expectedServerEnv, $properties['serverEnvironmentVariables']);
-        $this->assertSame($expectedPushProperties, $properties['pushProperties']);
-
-        unset($properties['environmentVariables']);
-        unset($properties['serverEnvironmentVariables']);
-        unset($properties['pushProperties']);
-        $this->assertSame($expected, $properties);
+        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
+        $this->assertSame($expected['method'], $properties['method']);
+        $this->assertSame($expected['configuration'], $properties['configuration']);
+        $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
+        $this->assertSame($expected['location'], $properties['location']);
+        $this->assertSame($expected['artifacts'], $properties['artifacts']);
+        $this->assertSame($expected['rsync'], $properties['rsync']);
     }
 }
