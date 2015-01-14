@@ -40,3 +40,10 @@ parameters:
     email.from.name: 'HAL9000 - TEST'
     email.notify:
         - 'hal@example.com'
+
+    aws.region: ''
+    aws.s3.builds: ''
+
+
+    aws.credentials.key: ''
+    aws.credentials.secret: ''

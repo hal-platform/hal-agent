@@ -36,3 +36,14 @@ parameters:
         user: placeholder
         password: placeholder
         dbname: hal9000
+
+
+
+
+
+    aws.region: ''
+    aws.s3.builds: ''
+
+
+    aws.credentials.key: ''
+    aws.credentials.secret: ''

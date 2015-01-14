@@ -139,7 +139,7 @@ services:
         arguments: [@aws.credentials.cache.source]
     aws.credentials.cache.source:
         # class: 'Doctrine\Common\Cache\FilesystemCache'
-        # arguments: [%aws.credentials.cache.path%]
+        # arguments: ['/tmp/cache']
         class: 'Doctrine\Common\Cache\ArrayCache'
 
     aws.ebs:
@@ -147,7 +147,7 @@ services:
         factory: ['Aws\ElasticBeanstalk\ElasticBeanstalkClient', 'factory']
         arguments:
             -
-                # credentials.cache: @aws.credentials.cache
+                credentials.cache: @aws.credentials.cache
                 region: %aws.region%
                 key: %aws.credentials.key%
                 secret: %aws.credentials.secret%
