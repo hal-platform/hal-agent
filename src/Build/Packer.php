@@ -22,6 +22,7 @@ class Packer
     const EVENT_MESSAGE = 'Archive build';
     const ERR_PACKING_TIMEOUT = 'Archiving the build took too long';
     const ERR_DIST_NOT_FOUND = 'Distribution directory not found';
+    const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';
 
     /**
      * @type EventLogger
@@ -65,18 +66,26 @@ class Packer
      */
     public function __invoke($buildPath, $distPath, $targetFile)
     {
-        // @todo prevent dist from being outside build dir
-        // @todo move .hal9000.yml file to dist if present
-
-        $distPath = ltrim($distPath, DIRECTORY_SEPARATOR);
+        $distPath = trim($distPath, DIRECTORY_SEPARATOR);
         $wholePath = rtrim($buildPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $distPath;
 
-        if (!$distPath || !$this->filesystem->exists($wholePath)) {
-            $this->logger->event('failure', self::ERR_DIST_NOT_FOUND, [
-                'path' => $distPath
-            ]);
-
+        // Do not allow dir traversal. Dist path must be within build dir
+        if (stripos($wholePath, '../') !== false) {
+            $this->logger->event('failure', self::ERR_DIST_NOT_VALID, ['path' => $distPath]);
             return false;
+        }
+
+        // dist does not exist
+        if (!$distPath || !$this->filesystem->exists($wholePath)) {
+            $this->logger->event('failure', self::ERR_DIST_NOT_FOUND, ['path' => $distPath]);
+            return false;
+        }
+
+        // move .hal9000.yml file to dist if present
+        $halSource = $buildPath . DIRECTORY_SEPARATOR . '.hal9000.yml';
+        $halTarget = $wholePath . DIRECTORY_SEPARATOR . '.hal9000.yml';
+        if ($this->filesystem->exists($halSource)) {
+            $this->filesystem->copy($halSource, $halTarget, true);
         }
 
         $cmd = ['tar', '-vczf', $targetFile, $distPath];
