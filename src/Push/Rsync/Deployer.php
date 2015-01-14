@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace QL\Hal\Agent\Push\Rsync
 
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
@@ -14,6 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Deployer implements DeployerInterface
 {
+    const TYPE = 'rsync';
     const STATUS = 'Deploying push by rsync';
 
     /**
@@ -70,7 +71,7 @@ class Deployer implements DeployerInterface
         $this->status($output, self::STATUS);
 
         // sanity check
-        if (!isset($properties['rsync'])) {
+        if (!isset($properties[self::TYPE])) {
             return 100;
         }
 
@@ -115,8 +116,8 @@ class Deployer implements DeployerInterface
 
         $delta = $this->delta;
         return $delta(
-            $properties['rsync']['hostname'],
-            $properties['rsync']['remotePath'],
+            $properties[self::TYPE]['hostname'],
+            $properties[self::TYPE]['remotePath'],
             $properties['pushProperties']
         );
     }
@@ -162,8 +163,8 @@ class Deployer implements DeployerInterface
 
         $prepush = $this->serverCommand;
         return $prepush(
-            $properties['rsync']['hostname'],
-            $properties['rsync']['remotePath'],
+            $properties[self::TYPE]['hostname'],
+            $properties[self::TYPE]['remotePath'],
             $properties['configuration']['pre_push'],
             $properties['serverEnvironmentVariables']
         );
@@ -182,7 +183,7 @@ class Deployer implements DeployerInterface
         $pusher = $this->pusher;
         return $pusher(
             $properties['location']['path'],
-            $properties['rsync']['syncPath'],
+            $properties[self::TYPE]['syncPath'],
             $properties['configuration']['exclude']
         );
     }
@@ -204,8 +205,8 @@ class Deployer implements DeployerInterface
 
         $postpush = $this->serverCommand;
         return $postpush(
-            $properties['rsync']['hostname'],
-            $properties['rsync']['remotePath'],
+            $properties[self::TYPE]['hostname'],
+            $properties[self::TYPE]['remotePath'],
             $properties['configuration']['post_push'],
             $properties['serverEnvironmentVariables']
         );

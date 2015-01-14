@@ -14,6 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Deployer implements DeployerInterface
 {
+    const TYPE = 'elasticbeanstalk';
     const STATUS = 'Deploying push by EBS';
 
     const SKIP_PRE_PUSH = 'Skipping pre-push commands for AWS deployment';
@@ -82,7 +83,7 @@ class Deployer implements DeployerInterface
         $this->status($output, self::STATUS);
 
         // sanity check
-        if (!isset($properties['elasticbeanstalk'])) {
+        if (!isset($properties['self::TYPE'])) {
             return 200;
         }
 
@@ -138,8 +139,8 @@ class Deployer implements DeployerInterface
 
         $health = $this->health;
         $health = $health(
-            $properties['elasticbeanstalk']['application'],
-            $properties['elasticbeanstalk']['environment']
+            $properties['self::TYPE']['application'],
+            $properties['self::TYPE']['environment']
         );
 
         if ($health['status'] !== 'Ready') {
@@ -243,8 +244,8 @@ class Deployer implements DeployerInterface
 
         $pusher = $this->pusher;
         return $pusher(
-            $properties['elasticbeanstalk']['application'],
-            $properties['elasticbeanstalk']['environment'],
+            $properties['self::TYPE']['application'],
+            $properties['self::TYPE']['environment'],
             $s3version,
             $build->getId(),
             $push->getId(),

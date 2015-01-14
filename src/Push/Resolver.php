@@ -12,6 +12,7 @@ use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
+use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 
 /**
@@ -139,9 +140,7 @@ class Resolver
         $repository = $build->getRepository();
         $deployment = $push->getDeployment();
 
-        // @todo load dynamically from deployment
-        // $method = 'rsync';
-        $method = ($push->getDeployment()->getId() == 9) ? 'elasticbeanstalk' : 'rsync';
+        $method = $push->getDeployment()->getType();
 
         $properties = [
             'push' => $push,
@@ -185,7 +184,7 @@ class Resolver
             $remotePath = $properties[self::DEPLOYMENT_RSYNC]['remotePath'];
 
         } elseif ($method === self::DEPLOYMENT_ELASTICBEANSTALK) {
-            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($deployment);
+            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($repository, $deployment);
         }
 
         // add env for build environment
@@ -227,16 +226,16 @@ class Resolver
     }
 
     /**
+     * @param Repository $repository
      * @param Deployment $deployment
      *
      * @return array
      */
-    private function buildElasticBeanstalkProperties(Deployment $deployment)
+    private function buildElasticBeanstalkProperties(Repository $repository, Deployment $deployment)
     {
-        $derp = explode(':', $deployment->getPath());
         return [
-            'application' => $derp[0],
-            'environment' => $derp[1]
+            'application' => $repository->getEbsName(),
+            'environment' => $deployment->getEbsEnvironment()
         ];
     }
 
