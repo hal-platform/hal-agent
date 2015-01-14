@@ -98,7 +98,7 @@ class ConfigurationReader
                 return false;
             }
 
-            $config['system'] = (string) $yaml['system'];
+            $config['system'] = (string) trim($yaml['system']);
         }
 
         // load dist
@@ -108,7 +108,7 @@ class ConfigurationReader
                 return false;
             }
 
-            $config['dist'] = (string) $yaml['dist'];
+            $config['dist'] = (string) trim($yaml['dist']);
         }
 
         $config['exclude'] = $this->validateList($yaml, 'exclude', $context);
@@ -169,7 +169,7 @@ class ConfigurationReader
             }
 
             if ($command) {
-                $sanitized[] = $command;
+                $sanitized[] = trim($command);
             }
         }
 
