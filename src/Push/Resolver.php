@@ -14,7 +14,6 @@ use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 
-
 /**
  * Resolve push properties from user and environment input
  */
@@ -25,8 +24,15 @@ class Resolver
     /**
      * @type string
      */
+    const DEPLOYMENT_RSYNC = 'rsync';
+    const DEPLOYMENT_ELASTICBEANSTALK = 'elasticbeanstalk';
+
+    /**
+     * @type string
+     */
     const FS_DIRECTORY_PREFIX = 'hal9000-push-%s';
-    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
+    const FS_ARCHIVE = 'hal9000-%s.tar.gz';
+    const FS_ARCHIVE_ZIP = 'hal9000-%s.zip';
 
     /**
      * @type string
@@ -110,13 +116,12 @@ class Resolver
 
     /**
      * @param string $pushId
-     * @param string $method
      *
      * @throws PushException
      *
      * @return array
      */
-    public function __invoke($pushId, $method)
+    public function __invoke($pushId)
     {
         if (!$push = $this->pushRepo->find($pushId)) {
             throw new PushException(sprintf(self::ERR_NOT_FOUND, $pushId));
@@ -134,21 +139,13 @@ class Resolver
         $repository = $build->getRepository();
         $deployment = $push->getDeployment();
 
-        // validate remote hostname
-        $serverName = $deployment->getServer()->getName();
-        if (!$hostname = $this->validateHostname($serverName)) {
-            $this->logger->event('failure', sprintf(self::ERR_HOSTNAME_RESOLUTION, $serverName));
-
-            // Revert hostname back to server name, and allow the push to continue.
-            $hostname = $serverName;
-        }
+        // @todo load dynamically from deployment
+        // $method = 'rsync';
+        $method = ($push->getDeployment()->getId() == 9) ? 'elasticbeanstalk' : 'rsync';
 
         $properties = [
             'push' => $push,
             'method' => $method,
-            'hostname' => $hostname,
-            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
-            'remotePath' => $deployment->getPath(),
 
             // default, overwritten by .hal9000.yml
             'configuration' => $this->buildDefaultConfiguration($repository),
@@ -156,7 +153,8 @@ class Resolver
             'location' => [
                 'path' => $this->generatePushPath($push->getId()),
                 'archive' => $this->generateBuildArchive($build->getId()),
-                'tempArchive' => $this->generateTempBuildArchive($push->getId())
+                'tempArchive' => $this->generateTempBuildArchive($push->getId()),
+                'tempZipArchive' => $this->generateTempZipArchive($push->getId()),
             ],
 
             'pushProperties' => [
@@ -172,12 +170,28 @@ class Resolver
                 'reference' => $build->getBranch(),
                 'commit' => $build->getCommit(),
                 'date' => $this->clock->read()->format('c', 'America/Detroit')
-            ],
-
-            'environmentVariables' => $this->generateBuildEnvironmentVariables($build, $deployment, $hostname),
-            'serverEnvironmentVariables' => $this->generateServerEnvironmentVariables($build, $deployment, $hostname),
+            ]
         ];
 
+        // default to blank
+        $hostname = $remotePath = '';
+
+        // Add deployment type specific properties
+        if ($method === self::DEPLOYMENT_RSYNC) {
+            $properties[self::DEPLOYMENT_RSYNC] = $this->buildRsyncProperties($build, $deployment);
+
+            // add internal server/paths
+            $hostname = $properties[self::DEPLOYMENT_RSYNC]['hostname'];
+            $remotePath = $properties[self::DEPLOYMENT_RSYNC]['remotePath'];
+
+        } elseif ($method === self::DEPLOYMENT_ELASTICBEANSTALK) {
+            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($deployment);
+        }
+
+        // add env for build environment
+        $properties['environmentVariables'] = $this->buildBuildEnvironmentVariables($build, $hostname, $remotePath);
+
+        // add artifacts to delete
         $properties['artifacts'] = $this->findPushArtifacts($properties);
 
         return $properties;
@@ -213,6 +227,85 @@ class Resolver
     }
 
     /**
+     * @param Deployment $deployment
+     *
+     * @return array
+     */
+    private function buildElasticBeanstalkProperties(Deployment $deployment)
+    {
+        $derp = explode(':', $deployment->getPath());
+        return [
+            'application' => $derp[0],
+            'environment' => $derp[1]
+        ];
+    }
+
+    /**
+     * @param Build $build
+     * @param Deployment $deployment
+     *
+     * @return array
+     */
+    private function buildRsyncProperties(Build $build, Deployment $deployment)
+    {
+        // validate remote hostname
+        $serverName = $deployment->getServer()->getName();
+        if (!$hostname = $this->validateHostname($serverName)) {
+            $this->logger->event('failure', sprintf(self::ERR_HOSTNAME_RESOLUTION, $serverName));
+
+            // Revert hostname back to server name, and allow the push to continue.
+            $hostname = $serverName;
+        }
+
+        return [
+            'hostname' => $hostname,
+            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
+            'remotePath' => $deployment->getPath(),
+            'environmentVariables' => $this->buildServerEnvironmentVariables($build, $hostname, $deployment->getPath())
+        ];
+    }
+
+    /**
+     * @param Build $build
+     * @param string $hostname
+     * @param string $remotePath
+     *
+     * @return array
+     */
+    private function buildBuildEnvironmentVariables(Build $build, $hostname, $remotePath)
+    {
+        $vars = [
+            'HOME' => $this->generateHomePath($build->getRepository()->getId()),
+            'PATH' => $this->envPath
+        ];
+
+        return array_merge($vars, $this->buildServerEnvironmentVariables($build, $hostname, $remotePath));
+    }
+
+    /**
+     * @param Build $build
+     * @param string $hostname
+     * @param string $remotePath
+     *
+     * @return array
+     */
+    private function buildServerEnvironmentVariables(Build $build, $hostname, $remotePath)
+    {
+        $vars = [
+            'HAL_HOSTNAME' => $hostname,
+            'HAL_PATH' => $remotePath,
+
+            'HAL_BUILDID' => $build->getId(),
+            'HAL_COMMIT' => $build->getCommit(),
+            'HAL_GITREF' => $build->getBranch(),
+            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
+            'HAL_REPO' => $build->getRepository()->getKey()
+        ];
+
+        return $vars;
+    }
+
+    /**
      * Find the push artifacts that must be cleaned up after push.
      *
      * @param array $properties
@@ -223,6 +316,7 @@ class Resolver
     {
         return [
             $properties['location']['tempArchive'],
+            $properties['location']['tempZipArchive'],
             $properties['location']['path']
         ];
     }
@@ -230,69 +324,42 @@ class Resolver
     /**
      * Generate a target for the build archive.
      *
-     * @param string $id
+     * @param string $buildId
      *
      * @return string
      */
-    private function generateBuildArchive($id)
+    private function generateBuildArchive($buildId)
     {
         return sprintf(
             '%s%s%s',
             rtrim($this->archivePath, '/'),
             DIRECTORY_SEPARATOR,
-            sprintf(self::FS_ARCHIVE_PREFIX, $id)
+            sprintf(self::FS_ARCHIVE, $buildId)
         );
     }
 
     /**
-     *  Generate a temporary target for the build archive.
+     * Generate a temporary target for the build archive.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $pushId
+     *
+     * @return string
      */
-    private function generateTempBuildArchive($id)
+    private function generateTempBuildArchive($pushId)
     {
-        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_PREFIX, $id);
+        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE, $pushId);
     }
 
     /**
-     * @param Build $build
-     * @param Deployment $deployment
-     * @param string $hostname
+     * Generate a temporary target for the zip archive (Used for EBS Deployments)
      *
-     * @return array
-     */
-    private function generateBuildEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
-    {
-        $vars = [
-            'HOME' => $this->generateHomePath($build->getRepository()->getId()),
-            'PATH' => $this->envPath
-        ];
-
-        return array_merge($vars, $this->generateServerEnvironmentVariables($build, $deployment, $hostname));
-    }
-
-    /**
-     * @param Build $build
-     * @param Deployment $deployment
-     * @param string $hostname
+     * @param string $pushId
      *
-     * @return array
+     * @return string
      */
-    private function generateServerEnvironmentVariables(Build $build, Deployment $deployment, $hostname)
+    private function generateTempZipArchive($pushId)
     {
-        $vars = [
-            'HAL_HOSTNAME' => $hostname,
-            'HAL_PATH' => $deployment->getPath(),
-
-            'HAL_BUILDID' => $build->getId(),
-            'HAL_COMMIT' => $build->getCommit(),
-            'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_REPO' => $build->getRepository()->getKey()
-        ];
-
-        return $vars;
+        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_ZIP, $pushId);
     }
 
     /**

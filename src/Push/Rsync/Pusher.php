@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace QL\Hal\Agent\Push\Rsync;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
@@ -19,8 +19,8 @@ class Pusher
     /**
      * @type string
      */
-    const EVENT_MESSAGE = 'Code Sync';
-    const ERR_PUSHING_TIMEOUT = 'Syncing code to server took too long';
+    const EVENT_MESSAGE = 'Code Deployment';
+    const ERR_PUSHING_TIMEOUT = 'Deploying code to server took too long';
 
     /**
      * @type EventLogger

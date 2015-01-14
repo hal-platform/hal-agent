@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace QL\Hal\Agent\Push\Rsync;
 
 use Github\Api\Repository\Commits as CommitApi;
 use Github\Exception\RuntimeException;

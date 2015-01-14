@@ -129,3 +129,35 @@ services:
             -
                 curl.options:
                     progress: true
+
+    ####################################################################################################################
+    # aws
+    ####################################################################################################################
+
+    aws.credentials.cache:
+        class: 'Guzzle\Cache\DoctrineCacheAdapter'
+        arguments: [@aws.credentials.cache.source]
+    aws.credentials.cache.source:
+        # class: 'Doctrine\Common\Cache\FilesystemCache'
+        # arguments: [%aws.credentials.cache.path%]
+        class: 'Doctrine\Common\Cache\ArrayCache'
+
+    aws.ebs:
+        class: 'Aws\ElasticBeanstalk\ElasticBeanstalkClient'
+        factory: ['Aws\ElasticBeanstalk\ElasticBeanstalkClient', 'factory']
+        arguments:
+            -
+                # credentials.cache: @aws.credentials.cache
+                region: %aws.region%
+                key: %aws.credentials.key%
+                secret: %aws.credentials.secret%
+
+    aws.s3:
+        class: 'Aws\S3\S3Client'
+        factory: ['Aws\S3\S3Client', 'factory']
+        arguments:
+            -
+                # credentials.cache: @aws.credentials.cache
+                region: %aws.region%
+                key: %aws.credentials.key%
+                secret: %aws.credentials.secret%

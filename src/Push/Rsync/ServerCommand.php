@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace QL\Hal\Agent\Push\Rsync;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;

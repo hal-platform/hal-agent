@@ -99,10 +99,7 @@ services:
             - @push.mover
             - @push.unpacker
             - @push.configuration.reader
-            - @push.delta
-            - @push.builder
-            - @push.pusher
-            - @push.serverCommand
+            - @push.deployer
             - @utility.filesystem
     command.worker.build:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'

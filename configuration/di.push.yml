@@ -36,8 +36,71 @@ services:
             - @utility.filesystem
             - @yaml.parser
 
-    push.delta:
-        class: 'QL\Hal\Agent\Push\CodeDelta'
+    push.builder:
+        class: 'QL\Hal\Agent\Push\Builder'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.push.build%
+    push.deployer:
+        class: 'QL\Hal\Agent\Push\DelegatingDeployer'
+        arguments:
+            - @logger.event
+            - @service_container
+            -
+                rsync: push.rsync.deployer
+                elasticbeanstalk: push.elasticbeanstalk.deployer
+
+    # elastic beanstalk
+
+    push.elasticbeanstalk.deployer:
+        class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Deployer'
+        arguments:
+            - @logger.event
+            - @push.elasticbeanstalk.healthchecker
+            - @push.builder
+            - @push.elasticbeanstalk.packer
+            - @push.elasticbeanstalk.uploader
+            - @push.elasticbeanstalk.pusher
+
+    push.elasticbeanstalk.healthchecker:
+        class: 'QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
+        arguments: [@aws.ebs]
+
+    push.elasticbeanstalk.packer:
+        class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Packer'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.push%
+
+    push.elasticbeanstalk.uploader:
+        class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Uploader'
+        arguments:
+            - @logger.event
+            - @aws.s3
+            - %aws.s3.builds%
+
+    push.elasticbeanstalk.pusher:
+        class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Pusher'
+        arguments:
+            - @logger.event
+            - @aws.ebs
+            - %aws.s3.builds%
+
+    # rsync
+
+    push.rsync.deployer:
+        class: 'QL\Hal\Agent\Push\Rsync\Deployer'
+        arguments:
+            - @logger.event
+            - @push.rsync.delta
+            - @push.builder
+            - @push.rsync.serverCommand
+            - @push.rsync.pusher
+
+    push.rsync.delta:
+        class: 'QL\Hal\Agent\Push\Rsync\CodeDelta'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
@@ -45,22 +108,15 @@ services:
             - @github.commits
             - %push.sshUser%
 
-    push.builder:
-        class: 'QL\Hal\Agent\Push\Builder'
-        arguments:
-            - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.push.build%
-
-    push.pusher:
-        class: 'QL\Hal\Agent\Push\Pusher'
+    push.rsync.pusher:
+        class: 'QL\Hal\Agent\Push\Rsync\Pusher'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push%
 
-    push.serverCommand:
-        class: 'QL\Hal\Agent\Push\ServerCommand'
+    push.rsync.serverCommand:
+        class: 'QL\Hal\Agent\Push\Rsync\ServerCommand'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service

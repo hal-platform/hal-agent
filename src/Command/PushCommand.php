@@ -8,13 +8,11 @@
 namespace QL\Hal\Agent\Command;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Push\Builder;
-use QL\Hal\Agent\Push\CodeDelta;
 use QL\Hal\Agent\Push\ConfigurationReader;
+use QL\Hal\Agent\Push\DelegatingDeployer;
 use QL\Hal\Agent\Push\Mover;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
-use QL\Hal\Agent\Push\ServerCommand;
 use QL\Hal\Agent\Push\Unpacker;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Command\Command;
@@ -41,13 +39,23 @@ class PushCommand extends Command
     private static $codes = [
         0 => 'Success!',
         1 => 'Push details could not be resolved.',
-        2 => 'Build archive could not be copied to local storage',
-        4 => 'Build archive could not be unpacked.',
-        8 => '.hal9000.yml configuration was invalid and could not be read.',
-        16 => 'Build transform command failed.',
-        32 => 'Pre push command failed.',
-        64 => 'Push failed.',
-        128 => 'Post push command failed.'
+        2 => 'Build archive could not be copied to local storage.',
+        3 => 'Build archive could not be unpacked.',
+        4 => '.hal9000.yml configuration was invalid and could not be read.',
+        5 => 'Deployment failed.',
+
+        100 => 'Required properties for rsync are missing.',
+        101 => 'Build transform command failed.',
+        102 => 'Pre push command failed.',
+        103 => 'Rsync push failed.',
+        104 => 'Post push command failed.',
+
+        200 => 'Required properties for EBS are missing.',
+        201 => 'Elastic Beanstalk environment is not ready.',
+        202 => 'Build transform command failed.',
+        203 => 'Build could not be packed for S3.',
+        204 => 'Upload to S3 failed.',
+        205 => 'Deploying application to EBS failed.'
     ];
 
     /**
@@ -76,24 +84,9 @@ class PushCommand extends Command
     private $reader;
 
     /**
-     * @type CodeDelta
+     * @type DelegatingDeployer
      */
-    private $delta;
-
-    /**
-     * @type Builder
-     */
-    private $builder;
-
-    /**
-     * @type Pusher
-     */
-    private $pusher;
-
-    /**
-     * @type ServerCommand
-     */
-    private $serverCommand;
+    private $deployer;
 
     /**
      * @type Filesystem
@@ -117,10 +110,7 @@ class PushCommand extends Command
      * @param Mover $mover
      * @param Unpacker $unpacker
      * @param ConfigurationReader $reader
-     * @param CodeDelta $delta
-     * @param Builder $builder
-     * @param Pusher $pusher
-     * @param ServerCommand $serverCommand
+     * @param DelegatingDeployer $deployer
      * @param Filesystem $filesystem
      */
     public function __construct(
@@ -130,10 +120,7 @@ class PushCommand extends Command
         Mover $mover,
         Unpacker $unpacker,
         ConfigurationReader $reader,
-        CodeDelta $delta,
-        Builder $builder,
-        Pusher $pusher,
-        ServerCommand $serverCommand,
+        DelegatingDeployer $deployer,
         Filesystem $filesystem
     ) {
         parent::__construct($name);
@@ -144,10 +131,7 @@ class PushCommand extends Command
         $this->mover = $mover;
         $this->reader = $reader;
         $this->unpacker = $unpacker;
-        $this->delta = $delta;
-        $this->builder = $builder;
-        $this->pusher = $pusher;
-        $this->serverCommand = $serverCommand;
+        $this->deployer = $deployer;
 
         $this->filesystem = $filesystem;
         $this->artifacts = [];
@@ -177,7 +161,7 @@ class PushCommand extends Command
     }
 
     /**
-     *  Configure the command
+     * Configure the command
      */
     protected function configure()
     {
@@ -187,12 +171,6 @@ class PushCommand extends Command
                 'PUSH_ID',
                 InputArgument::REQUIRED,
                 'The ID of the push to deploy.'
-            )
-            ->addArgument(
-                'METHOD',
-                InputArgument::OPTIONAL,
-                'The deployment method to use.',
-                'rsync'
             );
 
         $help = ['<fg=cyan>Exit codes:</fg=cyan>'];
@@ -203,11 +181,12 @@ class PushCommand extends Command
     }
 
     /**
-     *  Run the command
+     * Run the command
      *
-     *  @param InputInterface $input
-     *  @param OutputInterface $output
-     *  @return null
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     *
+     * @return null
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -215,7 +194,6 @@ class PushCommand extends Command
         // Waiting, Pushing, Error, Success
 
         $pushId = $input->getArgument('PUSH_ID');
-        $method = $input->getArgument('METHOD');
 
         // Add subscriptions
         $this->logger->addSubscription('push.success', 'notifier.email');
@@ -223,7 +201,7 @@ class PushCommand extends Command
 
         $this->logger->setStage('push.start');
 
-        if (!$properties = $this->resolve($output, $pushId, $method)) {
+        if (!$properties = $this->resolve($output, $pushId)) {
             return $this->failure($output, 1);
         }
 
@@ -237,37 +215,17 @@ class PushCommand extends Command
 
         // unpack
         if (!$this->unpack($output, $properties)) {
-            return $this->failure($output, 4);
+            return $this->failure($output, 3);
         }
 
         // read hal9000.yml
         if (!$this->read($output, $properties)) {
-            return $this->failure($output, 8);
+            return $this->failure($output, 4);
         }
 
-        // record code delta
-        $this->delta($output, $properties);
-
-        // run build transform commands
-        if (!$this->build($output, $properties)) {
-            return $this->failure($output, 16);
-        }
-
-        $this->logger->setStage('pushing');
-
-        // run pre push commands
-        if (!$this->prepush($output, $properties)) {
-            return $this->failure($output, 32);
-        }
-
-        // sync code
-        if (!$this->push($output, $properties)) {
-            return $this->failure($output, 64);
-        }
-
-        // run post push commands
-        if (!$this->postpush($output, $properties)) {
-            return $this->failure($output, 128);
+        // deploy
+        if (!$this->deploy($output, $properties)) {
+            return $this->failure($output, $this->deployer->getExitCode());
         }
 
         $this->logger->setStage('end');
@@ -294,6 +252,7 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param int $exitCode
+     *
      * @return null
      */
     private function finish(OutputInterface $output, $exitCode)
@@ -312,6 +271,7 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param string $message
+     *
      * @return null
      */
     private function status(OutputInterface $output, $message)
@@ -323,18 +283,21 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param string $pushId
-     * @param string $method
+     *
      * @return array|null
      */
-    private function resolve(OutputInterface $output, $pushId, $method)
+    private function resolve(OutputInterface $output, $pushId)
     {
         $this->status($output, 'Resolving push properties');
-        return call_user_func($this->resolver, $pushId, $method);
+
+        $resolver = $this->resolver;
+        return $resolver($pushId);
     }
 
     /**
      * @param OutputInterface $output
      * @param array $properties
+     *
      * @return null
      */
     private function prepare(OutputInterface $output, array $properties)
@@ -360,6 +323,7 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param array $properties
+     *
      * @return boolean
      */
     private function move(OutputInterface $output, array $properties)
@@ -373,6 +337,7 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param array $properties
+     *
      * @return boolean
      */
     private function unpack(OutputInterface $output, array $properties)
@@ -390,6 +355,7 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param array $properties
+     *
      * @return boolean
      */
     private function read(OutputInterface $output, array &$properties)
@@ -406,104 +372,15 @@ class PushCommand extends Command
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
-    private function delta(OutputInterface $output, array $properties)
+    private function deploy(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Reading previous push data');
+        $this->status($output, 'Deploying application');
 
-        $delta = $this->delta;
-        return $delta(
-            $properties['hostname'],
-            $properties['remotePath'],
-            $properties['pushProperties']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     * @return boolean
-     */
-    private function build(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['build_transform']) {
-            $this->status($output, 'Skipping build command');
-            return true;
-        }
-
-        $this->status($output, 'Running build command');
-
-        $builder = $this->builder;
-        return $builder(
-            $properties['configuration']['system'],
-            $properties['location']['path'],
-            $properties['configuration']['build_transform'],
-            $properties['environmentVariables']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     * @return boolean
-     */
-    private function prepush(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['pre_push']) {
-            $this->status($output, 'Skipping pre-push command');
-            return true;
-        }
-
-        $this->status($output, 'Running pre-push command');
-
-        $prepush = $this->serverCommand;
-        return $prepush(
-            $properties['hostname'],
-            $properties['remotePath'],
-            $properties['configuration']['pre_push'],
-            $properties['serverEnvironmentVariables']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     * @return boolean
-     */
-    private function push(OutputInterface $output, array $properties)
-    {
-        $this->status($output, 'Pushing code to server');
-
-        $push = $this->pusher;
-        return $push(
-            $properties['location']['path'],
-            $properties['syncPath'],
-            $properties['configuration']['exclude']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     * @return boolean
-     */
-    private function postpush(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['post_push']) {
-            $this->status($output, 'Skipping post-push command');
-            return true;
-        }
-
-        $this->status($output, 'Running post-push command');
-
-        $postpush = $this->serverCommand;
-        return $postpush(
-            $properties['hostname'],
-            $properties['remotePath'],
-            $properties['configuration']['post_push'],
-            $properties['serverEnvironmentVariables']
-        );
+        $deployer = $this->deployer;
+        return $deployer($output, $properties['method'], $properties);
     }
 
     /**
