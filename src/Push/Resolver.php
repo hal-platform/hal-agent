@@ -14,6 +14,7 @@ use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Repository\PushRepository;
+use QL\Hal\Core\Entity\Server;
 
 /**
  * Resolve push properties from user and environment input
@@ -139,8 +140,9 @@ class Resolver
         $build = $push->getBuild();
         $repository = $build->getRepository();
         $deployment = $push->getDeployment();
+        $server = $deployment->getServer();
 
-        $method = $push->getDeployment()->getType();
+        $method = $server->getType();
 
         $properties = [
             'push' => $push,
@@ -177,14 +179,14 @@ class Resolver
 
         // Add deployment type specific properties
         if ($method === self::DEPLOYMENT_RSYNC) {
-            $properties[self::DEPLOYMENT_RSYNC] = $this->buildRsyncProperties($build, $deployment);
+            $properties[self::DEPLOYMENT_RSYNC] = $this->buildRsyncProperties($build, $deployment, $server);
 
             // add internal server/paths
             $hostname = $properties[self::DEPLOYMENT_RSYNC]['hostname'];
             $remotePath = $properties[self::DEPLOYMENT_RSYNC]['remotePath'];
 
         } elseif ($method === self::DEPLOYMENT_ELASTICBEANSTALK) {
-            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($repository, $deployment);
+            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($repository, $server);
         }
 
         // add env for build environment
@@ -227,28 +229,29 @@ class Resolver
 
     /**
      * @param Repository $repository
-     * @param Deployment $deployment
+     * @param Server $server
      *
      * @return array
      */
-    private function buildElasticBeanstalkProperties(Repository $repository, Deployment $deployment)
+    private function buildElasticBeanstalkProperties(Repository $repository, Server $server)
     {
         return [
             'application' => $repository->getEbsName(),
-            'environment' => $deployment->getEbsEnvironment()
+            'environment' => $server->getName()
         ];
     }
 
     /**
      * @param Build $build
      * @param Deployment $deployment
+     * @param Server $server
      *
      * @return array
      */
-    private function buildRsyncProperties(Build $build, Deployment $deployment)
+    private function buildRsyncProperties(Build $build, Deployment $deployment, Server $server)
     {
         // validate remote hostname
-        $serverName = $deployment->getServer()->getName();
+        $serverName = $server->getName();
         if (!$hostname = $this->validateHostname($serverName)) {
             $this->logger->event('failure', sprintf(self::ERR_HOSTNAME_RESOLUTION, $serverName));
 

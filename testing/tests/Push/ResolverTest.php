@@ -84,7 +84,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
     }
 
-    public function testSuccess()
+    public function testRsyncSuccess()
     {
         $repository = new Repository;
         $repository->setGithubUser('user1');
@@ -106,9 +106,9 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $server = new Server;
         $server->setName('127.0.0.1');
+        $server->setType('rsync');
 
         $deployment = new Deployment;
-        $deployment->setType('rsync');
         $deployment->setPath('/herp/derp');
         $deployment->setServer($server);
 
@@ -209,5 +209,121 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected['location'], $properties['location']);
         $this->assertSame($expected['artifacts'], $properties['artifacts']);
         $this->assertSame($expected['rsync'], $properties['rsync']);
+    }
+
+    public function testElasticBeanstalkSuccess()
+    {
+        $repository = new Repository;
+        $repository->setGithubUser('user1');
+        $repository->setGithubRepo('repo1');
+        $repository->setBuildTransformCmd('bin/build-transform');
+        $repository->setPrePushCmd('bin/pre');
+        $repository->setPostPushCmd('bin/post');
+        $repository->setKey('repokey');
+        $repository->setEbsName('ebs_name');
+
+        $environment = new Environment;
+        $environment->setKey('envname');
+
+        $build = new Build;
+        $build->setId('8956');
+        $build->setBranch('master');
+        $build->setCommit('5555');
+        $build->setRepository($repository);
+        $build->setEnvironment($environment);
+
+        $server = new Server;
+        $server->setName('e-ididid');
+        $server->setType('elasticbeanstalk');
+
+        $deployment = new Deployment;
+        $deployment->setServer($server);
+
+        $push = new Push;
+        $push->setId('1234');
+        $push->setStatus('Waiting');
+        $push->setBuild($build);
+        $push->setDeployment($deployment);
+
+        $expected = [
+            'method' => 'elasticbeanstalk',
+
+            'elasticbeanstalk' => [
+                'application' => 'ebs_name',
+                'environment' => 'e-ididid'
+            ],
+            'configuration' => [
+                'system' => 'global',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
+                'build' => [],
+                'build_transform' => [
+                    'bin/build-transform'
+                ],
+                'pre_push' => [
+                    'bin/pre'
+                ],
+                'post_push' => [
+                    'bin/post'
+                ]
+            ],
+
+            'location' => [
+                'path' => 'testdir/hal9000-push-1234',
+                'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
+                'tempArchive' => 'testdir/hal9000-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-1234.zip'
+            ],
+
+            'environmentVariables' => [
+                'HOME' => 'testdir/home/',
+                'PATH' => 'ENV_PATH',
+                'HAL_HOSTNAME' => '',
+                'HAL_PATH' => '',
+                'HAL_BUILDID' => '8956',
+                'HAL_COMMIT' => '5555',
+                'HAL_GITREF' => 'master',
+                'HAL_ENVIRONMENT' => 'envname',
+                'HAL_REPO' => 'repokey'
+            ],
+
+            'artifacts' => [
+                'testdir/hal9000-1234.tar.gz',
+                'testdir/hal9000-1234.zip',
+                'testdir/hal9000-push-1234'
+            ],
+
+            'pushProperties' => [
+                'id' => '8956',
+                'source' => 'http://git/user1/repo1',
+                'env' => 'envname',
+                'user' => null,
+                'reference' => 'master',
+                'commit' => '5555',
+                'date' => '2015-03-15T08:00:00-04:00'
+            ]
+        ];
+
+        $clock = new Clock('2015-03-15 12:00:00', 'UTC');
+        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
+            'find' => $push,
+            'findBy' => []
+        ]);
+
+        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
+        $action->setBaseBuildDirectory('testdir');
+
+        $properties = $action('1234');
+
+        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
+        $this->assertSame($expected['method'], $properties['method']);
+        $this->assertSame($expected['configuration'], $properties['configuration']);
+        $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
+        $this->assertSame($expected['location'], $properties['location']);
+        $this->assertSame($expected['artifacts'], $properties['artifacts']);
+        $this->assertSame($expected['elasticbeanstalk'], $properties['elasticbeanstalk']);
     }
 }
