@@ -84,6 +84,39 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
     }
 
+    /**
+     * @expectedException QL\Hal\Agent\Push\PushException
+     * @expectedExceptionMessage Cannot deploy to EBS. AWS has not been configured.
+     */
+    public function testElasticBeanstalkSanityCheckFails()
+    {
+        $environment = new Environment;
+        $server = new Server;
+        $deployment = new Deployment;
+        $repo = new Repository;
+
+        $build = new Build;
+        $push = new Push;
+
+        $push->setStatus('Waiting');
+        $push->setRepository($repo);
+        $push->setDeployment($deployment);
+        $push->setBuild($build);
+
+        $server->setType('elasticbeanstalk');
+        $deployment->setServer($server);
+
+        $clock = new Clock('2015-03-15 12:00:00', 'UTC');
+        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
+            'find' => $push,
+            'findBy' => []
+        ]);
+
+        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
+
+        $properties = $action('1234');
+    }
+
     public function testRsyncSuccess()
     {
         $repository = new Repository;
@@ -117,6 +150,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $push->setStatus('Waiting');
         $push->setBuild($build);
         $push->setDeployment($deployment);
+        $push->setRepository($repository);
 
         $expected = [
             'method' => 'rsync',
@@ -244,6 +278,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $push->setStatus('Waiting');
         $push->setBuild($build);
         $push->setDeployment($deployment);
+        $push->setRepository($repository);
 
         $expected = [
             'method' => 'elasticbeanstalk',
@@ -315,6 +350,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
         $action->setBaseBuildDirectory('testdir');
+        $action->setAwsCredentials('key', 'secret');
 
         $properties = $action('1234');
 

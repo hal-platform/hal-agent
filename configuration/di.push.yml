@@ -11,8 +11,9 @@ services:
             - %environment.archive%
             - %github.baseurl.site%
         calls:
-            - ['setBaseBuildDirectory', ['%environment.temp%']]
-            - ['setHomeDirectory', ['%environment.home%']]
+            - ['setBaseBuildDirectory', [%environment.temp%]]
+            - ['setHomeDirectory', [%environment.home%]]
+            - ['setAwsCredentials', [%aws.credentials.key%, %aws.credentials.secret%]]
 
     push.mover:
         class: 'QL\Hal\Agent\Push\Mover'

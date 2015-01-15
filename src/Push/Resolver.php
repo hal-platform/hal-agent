@@ -42,6 +42,7 @@ class Resolver
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
+    const ERR_EBS_NOPE = 'Cannot deploy to EBS. AWS has not been configured.';
     const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
 
     /**
@@ -88,6 +89,16 @@ class Resolver
      * @type string
      */
     private $homeDirectory;
+
+    /**
+     * @type string|null
+     */
+    private $awsKey;
+
+    /**
+     * @type string|null
+     */
+    private $awsSecret;
 
     /**
      * @param EventLogger $logger
@@ -138,11 +149,13 @@ class Resolver
         }
 
         $build = $push->getBuild();
-        $repository = $build->getRepository();
+        $repository = $push->getRepository();
         $deployment = $push->getDeployment();
         $server = $deployment->getServer();
 
         $method = $server->getType();
+
+        $this->validateEBS($method);
 
         $properties = [
             'push' => $push,
@@ -220,11 +233,27 @@ class Resolver
      *
      * @param string $directory
      *
-     * @return string
+     * @return null
      */
     public function setHomeDirectory($directory)
     {
         $this->homeDirectory = $directory;
+    }
+
+    /**
+     * Set the aws credentials.
+     *
+     * Not actually used. Just sanity checked when a push is trying to deploy to EBS.
+     *
+     * @param string $awsKey
+     * @param string $awsSecret
+     *
+     * @return null
+     */
+    public function setAwsCredentials($awsKey, $awsSecret)
+    {
+        $this->awsKey = $awsKey;
+        $this->awsSecret = $awsSecret;
     }
 
     /**
@@ -451,5 +480,21 @@ class Resolver
         }
 
         return null;
+    }
+
+    /**
+     * Sanity check to make sure AWS keys have been configured.
+     *
+     * @param string $method
+     *
+     * @throws PushException
+     *
+     * @return null
+     */
+    private function validateEBS($method)
+    {
+        if ($method === self::DEPLOYMENT_ELASTICBEANSTALK && !$this->awsKey && !$this->awsSecret) {
+            throw new PushException(self::ERR_EBS_NOPE);
+        }
     }
 }
