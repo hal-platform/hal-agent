@@ -199,7 +199,7 @@ class Resolver
             $remotePath = $properties[self::DEPLOYMENT_RSYNC]['remotePath'];
 
         } elseif ($method === self::DEPLOYMENT_ELASTICBEANSTALK) {
-            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($repository, $server);
+            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($repository, $deployment);
         }
 
         // add env for build environment
@@ -258,15 +258,15 @@ class Resolver
 
     /**
      * @param Repository $repository
-     * @param Server $server
+     * @param Deployment $deployment
      *
      * @return array
      */
-    private function buildElasticBeanstalkProperties(Repository $repository, Server $server)
+    private function buildElasticBeanstalkProperties(Repository $repository, Deployment $deployment)
     {
         return [
             'application' => $repository->getEbsName(),
-            'environment' => $server->getName()
+            'environment' => $deployment->getEbsEnvironment()
         ];
     }
 

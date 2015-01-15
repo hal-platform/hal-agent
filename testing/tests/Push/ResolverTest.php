@@ -267,11 +267,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $build->setEnvironment($environment);
 
         $server = new Server;
-        $server->setName('e-ididid');
         $server->setType('elasticbeanstalk');
 
         $deployment = new Deployment;
         $deployment->setServer($server);
+        $deployment->setEbsEnvironment('e-ididid');
 
         $push = new Push;
         $push->setId('1234');
