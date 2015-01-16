@@ -86,7 +86,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     /**
      * @expectedException QL\Hal\Agent\Push\PushException
-     * @expectedExceptionMessage Cannot deploy to EBS. AWS has not been configured.
+     * @expectedExceptionMessage Cannot deploy to EB. AWS has not been configured.
      */
     public function testElasticBeanstalkSanityCheckFails()
     {
@@ -254,7 +254,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $repository->setPrePushCmd('bin/pre');
         $repository->setPostPushCmd('bin/post');
         $repository->setKey('repokey');
-        $repository->setEbsName('ebs_name');
+        $repository->setEbName('eb_name');
 
         $environment = new Environment;
         $environment->setKey('envname');
@@ -271,7 +271,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $deployment = new Deployment;
         $deployment->setServer($server);
-        $deployment->setEbsEnvironment('e-ididid');
+        $deployment->setEbEnvironment('e-ididid');
 
         $push = new Push;
         $push->setId('1234');
@@ -284,7 +284,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'method' => 'elasticbeanstalk',
 
             'elasticbeanstalk' => [
-                'application' => 'ebs_name',
+                'application' => 'eb_name',
                 'environment' => 'e-ididid'
             ],
             'configuration' => [

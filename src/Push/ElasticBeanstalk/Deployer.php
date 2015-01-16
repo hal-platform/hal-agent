@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Deployer implements DeployerInterface
 {
     const TYPE = 'elasticbeanstalk';
-    const STATUS = 'Deploying push by EBS';
+    const STATUS = 'Deploying push by EB';
 
     const SKIP_PRE_PUSH = 'Skipping pre-push commands for AWS deployment';
     const SKIP_POST_PUSH = 'Skipping post-push commands for AWS deployment';
@@ -230,7 +230,7 @@ class Deployer implements DeployerInterface
      */
     private function push(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Deploying version to EBS');
+        $this->status($output, 'Deploying version to EB');
 
         $push = $properties['push'];
         $build = $properties['push']->getBuild();

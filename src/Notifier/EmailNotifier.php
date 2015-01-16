@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Notifier;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Type\EventEnumType;
+use QL\Hal\Core\Entity\Type\ServerEnumType;
 use Swift_Mailer;
 use Swift_Message;
 
@@ -72,7 +73,15 @@ class EmailNotifier implements NotifierInterface
         }
 
         if ($data['push'] instanceof Push) {
-            $subject = sprintf(self::PUSH_MESSAGE, $data['icon'], $data['repository']->getKey(), $data['environment']->getKey(), $data['server']->getName());
+            $target = $data['server']->getName();
+            if ($data['server']->getType() === ServerEnumType::TYPE_EB) {
+                $target = sprintf('EB:%s', $data['deployment']->getEbEnvironment());
+
+            } elseif ($data['server']->getType() === ServerEnumType::TYPE_EC2) {
+                $target = sprintf('EC2:%s', $data['deployment']->getEc2Pool());
+            }
+
+            $subject = sprintf(self::PUSH_MESSAGE, $data['icon'], $data['repository']->getKey(), $data['environment']->getKey(), $target);
         } else {
             $subject = sprintf(self::BUILD_MESSAGE, $data['icon'], $data['repository']->getKey(), $data['environment']->getKey());
         }

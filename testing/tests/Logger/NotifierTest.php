@@ -125,6 +125,7 @@ class NotifierTest extends PHPUnit_Framework_TestCase
             'push' => $push,
             'repository' => $repo,
             'environment' => $env,
+            'deployment' => $deployment,
             'server' => $server
         ];
 
@@ -132,7 +133,14 @@ class NotifierTest extends PHPUnit_Framework_TestCase
         $notifier->addSubscription('push.success', 'service');
         $notifier->sendNotifications('push.success', $push);
 
-        $this->assertSame($expectedContext, $spy);
+        $this->assertSame($expectedContext['event'], $spy['event']);
+        $this->assertSame($expectedContext['status'], $spy['status']);
+        $this->assertSame($expectedContext['build'], $spy['build']);
+        $this->assertSame($expectedContext['push'], $spy['push']);
+        $this->assertSame($expectedContext['repository'], $spy['repository']);
+        $this->assertSame($expectedContext['environment'], $spy['environment']);
+        $this->assertSame($expectedContext['deployment'], $spy['deployment']);
+        $this->assertSame($expectedContext['server'], $spy['server']);
     }
 
 }

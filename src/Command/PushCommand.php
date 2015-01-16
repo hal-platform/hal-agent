@@ -50,12 +50,12 @@ class PushCommand extends Command
         103 => 'Rsync push failed.',
         104 => 'Post push command failed.',
 
-        200 => 'Required properties for EBS are missing.',
+        200 => 'Required properties for EB are missing.',
         201 => 'Elastic Beanstalk environment is not ready.',
         202 => 'Build transform command failed.',
         203 => 'Build could not be packed for S3.',
         204 => 'Upload to S3 failed.',
-        205 => 'Deploying application to EBS failed.'
+        205 => 'Deploying application to EB failed.'
     ];
 
     /**

@@ -25,7 +25,7 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
         $this->formatter = Mockery::mock('QL\Hal\Agent\Notifier\EmailFormatter');
     }
 
-    public function testSuccessfulPush()
+    public function testSuccessfulRsyncPush()
     {
         $this->formatter
             ->shouldReceive('format')
@@ -49,7 +49,7 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
                 'getEmail' => 'test@example.com'
             ]),
             'environment' => Mockery::mock('QL\Hal\Core\Entity\Environment', ['getKey' => 'envkey']),
-            'server' => Mockery::mock('QL\Hal\Core\Entity\Server', ['getName' => 'servername']),
+            'server' => Mockery::mock('QL\Hal\Core\Entity\Server', ['getName' => 'servername', 'getType' => 'rsync']),
             'push' => Mockery::mock('QL\Hal\Core\Entity\Push')
         ];
 

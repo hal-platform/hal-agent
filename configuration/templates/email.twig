@@ -189,7 +189,16 @@
                         <tr>
                             <td valign="top" class="stat">
                                 <h4>Where was the code pushed?</h4>
-                                <p>{{ server.name }} in {{ environment.key }}</p>
+                                <p>
+                                    {% if server.type == 'elasticbeanstalk' %}
+                                        Elastic Beanstalk ({{ deployment.ebEnvironment }}) in {{ environment.key }}
+                                    {% elseif server.type == 'ec2' %}
+                                        {{ server.name }} in {{ environment.key }}
+                                        EC2 ({{ deployment.ec2Pool }}) in {{ environment.key }}
+                                    {% else %}
+                                        {{ server.name }} in {{ environment.key }}
+                                    {% endif %}
+                                </p>
                             </td>
                         </tr>
                     {% else %}

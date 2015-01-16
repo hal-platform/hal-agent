@@ -37,14 +37,14 @@ class HealthChecker
     /**
      * @type ElasticBeanstalkClient
      */
-    private $ebs;
+    private $eb;
 
     /**
-     * @param ElasticBeanstalkClient $ebs
+     * @param ElasticBeanstalkClient $eb
      */
-    public function __construct(ElasticBeanstalkClient $ebs)
+    public function __construct(ElasticBeanstalkClient $eb)
     {
-        $this->ebs = $ebs;
+        $this->eb = $eb;
     }
 
     /**
@@ -55,7 +55,7 @@ class HealthChecker
      */
     public function __invoke($applicationName, $environmentId)
     {
-        $environments = $this->ebs->describeEnvironments([
+        $environments = $this->eb->describeEnvironments([
             'ApplicationName' => $applicationName,
             'EnvironmentIds' => [$environmentId]
         ]);

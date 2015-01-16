@@ -32,7 +32,7 @@ class Pusher
     /**
      * @type ElasticBeanstalkClient
      */
-    private $ebs;
+    private $eb;
 
     /**
      * @type string
@@ -41,13 +41,13 @@ class Pusher
 
     /**
      * @param EventLogger $logger
-     * @param ElasticBeanstalkClient $ebs
+     * @param ElasticBeanstalkClient $eb
      * @param string $s3BuildsBucket
      */
-    public function __construct(EventLogger $logger, ElasticBeanstalkClient $ebs, $s3BuildsBucket)
+    public function __construct(EventLogger $logger, ElasticBeanstalkClient $eb, $s3BuildsBucket)
     {
         $this->logger = $logger;
-        $this->ebs = $ebs;
+        $this->eb = $eb;
         $this->s3BuildsBucket = $s3BuildsBucket;
     }
 
@@ -77,7 +77,7 @@ class Pusher
 
         try {
             # create version
-            $this->ebs->createApplicationVersion([
+            $this->eb->createApplicationVersion([
                 'ApplicationName' => $awsApplication,
                 'VersionLabel' => $pushId,
                 'Description' => "Build $buildId, Env $environmentKey",
@@ -88,7 +88,7 @@ class Pusher
             ]);
 
             # update environment
-            $this->ebs->updateEnvironment([
+            $this->eb->updateEnvironment([
                 'EnvironmentId' => $awsEnvironment,
                 'VersionLabel' => $pushId
             ]);
@@ -121,7 +121,7 @@ class Pusher
      */
     private function doesVersionAlreadyExist($awsApplication, $pushId, $s3version, array $context)
     {
-        $versions = $this->ebs->describeApplicationVersions([
+        $versions = $this->eb->describeApplicationVersions([
             'ApplicationName' => $awsApplication,
             'VersionLabels' => [$pushId]
         ]);
@@ -145,7 +145,7 @@ class Pusher
     private function wait($awsApplication, $awsEnvironment, $context)
     {
         try {
-            $this->ebs->waitUntilEnvironmentReady([
+            $this->eb->waitUntilEnvironmentReady([
                 'ApplicationName' => $awsApplication,
                 'EnvironmentIds' => [$awsEnvironment],
                 'waiter.interval' => self::WAITER_INTERVAL,

@@ -15,6 +15,7 @@ use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 use QL\Hal\Core\Entity\Server;
+use QL\Hal\Core\Entity\Type\ServerEnumType;
 
 /**
  * Resolve push properties from user and environment input
@@ -22,12 +23,6 @@ use QL\Hal\Core\Entity\Server;
 class Resolver
 {
     use DefaultConfigHelperTrait;
-
-    /**
-     * @type string
-     */
-    const DEPLOYMENT_RSYNC = 'rsync';
-    const DEPLOYMENT_ELASTICBEANSTALK = 'elasticbeanstalk';
 
     /**
      * @type string
@@ -42,8 +37,10 @@ class Resolver
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
-    const ERR_EBS_NOPE = 'Cannot deploy to EBS. AWS has not been configured.';
     const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
+
+    const ERR_EB_NOPE = 'Cannot deploy to EB. AWS has not been configured.';
+    const ERR_EC2_NOPE = 'Cannot deploy to EC2. AWS has not been configured.';
 
     /**
      * @type EventLogger
@@ -155,7 +152,7 @@ class Resolver
 
         $method = $server->getType();
 
-        $this->validateEBS($method);
+        $this->validateAWSConfiguration($method);
 
         $properties = [
             'push' => $push,
@@ -191,15 +188,15 @@ class Resolver
         $hostname = $remotePath = '';
 
         // Add deployment type specific properties
-        if ($method === self::DEPLOYMENT_RSYNC) {
-            $properties[self::DEPLOYMENT_RSYNC] = $this->buildRsyncProperties($build, $deployment, $server);
+        if ($method === ServerEnumType::TYPE_RSYNC) {
+            $properties[ServerEnumType::TYPE_RSYNC] = $this->buildRsyncProperties($build, $deployment, $server);
 
             // add internal server/paths
-            $hostname = $properties[self::DEPLOYMENT_RSYNC]['hostname'];
-            $remotePath = $properties[self::DEPLOYMENT_RSYNC]['remotePath'];
+            $hostname = $properties[ServerEnumType::TYPE_RSYNC]['hostname'];
+            $remotePath = $properties[ServerEnumType::TYPE_RSYNC]['remotePath'];
 
-        } elseif ($method === self::DEPLOYMENT_ELASTICBEANSTALK) {
-            $properties[self::DEPLOYMENT_ELASTICBEANSTALK] = $this->buildElasticBeanstalkProperties($repository, $deployment);
+        } elseif ($method === ServerEnumType::TYPE_EB) {
+            $properties[ServerEnumType::TYPE_EB] = $this->buildElasticBeanstalkProperties($repository, $deployment);
         }
 
         // add env for build environment
@@ -265,8 +262,8 @@ class Resolver
     private function buildElasticBeanstalkProperties(Repository $repository, Deployment $deployment)
     {
         return [
-            'application' => $repository->getEbsName(),
-            'environment' => $deployment->getEbsEnvironment()
+            'application' => $repository->getEbName(),
+            'environment' => $deployment->getEbEnvironment()
         ];
     }
 
@@ -491,10 +488,18 @@ class Resolver
      *
      * @return null
      */
-    private function validateEBS($method)
+    private function validateAWSConfiguration($method)
     {
-        if ($method === self::DEPLOYMENT_ELASTICBEANSTALK && !$this->awsKey && !$this->awsSecret) {
-            throw new PushException(self::ERR_EBS_NOPE);
+        if ($this->awsKey && $this->awsSecret) {
+            return;
+        }
+
+        if ($method === ServerEnumType::TYPE_EB) {
+            throw new PushException(self::ERR_EB_NOPE);
+        }
+
+        if ($method === ServerEnumType::TYPE_EC2) {
+            throw new PushException(self::ERR_EC2_NOPE);
         }
     }
 }

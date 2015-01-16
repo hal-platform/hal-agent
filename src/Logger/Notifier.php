@@ -128,10 +128,12 @@ class Notifier
         if ($entity instanceof Push) {
             $build = $entity->getBuild();
             $push = $entity;
-            $server = $push->getDeployment()->getServer();
+            $deployment = $push->getDeployment();
+            $server = $deployment->getServer();
         } else {
             $build = $entity;
             $push = null;
+            $deployment = null;
             $server = null;
         }
 
@@ -145,6 +147,7 @@ class Notifier
             'push' => $push,
             'repository' => $repo,
             'environment' => $env,
+            'deployment' => $deployment,
             'server' => $server
         ]);
     }

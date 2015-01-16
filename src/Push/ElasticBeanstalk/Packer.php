@@ -62,7 +62,7 @@ class Packer
      */
     public function __invoke($buildPath, $targetFile)
     {
-        $cmd = ['zip', '--recurse-paths', $targetFile, $buildPath];
+        $cmd = ['zip', '--recurse-paths', $targetFile, '.'];
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
             ->setArguments($cmd)
