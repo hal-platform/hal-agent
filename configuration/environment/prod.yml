@@ -43,7 +43,7 @@ parameters:
 
     aws.region: ''
     aws.s3.builds: ''
-    aws.ec2.user: ''
+    aws.ec2.user: 'ec2-user'
 
 
     aws.credentials.key: ''
