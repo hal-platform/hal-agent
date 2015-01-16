@@ -51,6 +51,7 @@ services:
             -
                 rsync: push.rsync.deployer
                 elasticbeanstalk: push.elasticbeanstalk.deployer
+                ec2: push.ec2.deployer
 
     # elastic beanstalk
 

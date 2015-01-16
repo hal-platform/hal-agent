@@ -24,6 +24,8 @@ use Aws\Ec2\Ec2Client;
 
 class InstanceFinder
 {
+    const RUNNING = 16;
+
     const TAG_NAME_FOR_POOL = 'hal_pool';
 
     /**
@@ -65,22 +67,22 @@ class InstanceFinder
     {
         $tagQuery = sprintf('tag:%s', self::TAG_NAME_FOR_POOL);
         $filters = [
-            $tagQuery => $pool
+            ['Name' => $tagQuery, 'Values' => [$pool]]
         ];
 
         // only add state filter if it is valid
         if ($state && in_array($state, self::$instanceStates, true)) {
-            $filters['instance-state-code'] = $state;
+            $filters[] = ['Name' => 'instance-state-code', 'Values' => [$state]];
         }
 
         $reservations = $this->ec2->describeInstances([
-            'filter' => $filters
+            'Filters' => $filters
         ]);
 
         $reservations = $reservations['Reservations'];
 
         // well thats weird
-        if (count($reservations) > 1) {
+        if (count($reservations) !== 1) {
             return [];
         }
 

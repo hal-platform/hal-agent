@@ -113,7 +113,8 @@ class Deployer implements DeployerInterface
 
         $finder = $this->finder;
         $instances = $finder(
-            $properties[ServerEnumType::TYPE_EC2]['pool']
+            $properties[ServerEnumType::TYPE_EC2]['pool'],
+            InstanceFinder::RUNNING
         );
 
         if (!$instances) {

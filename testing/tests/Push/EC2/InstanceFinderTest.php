@@ -24,9 +24,9 @@ class InstanceFinderTest extends PHPUnit_Framework_TestCase
         $this->ec2
             ->shouldReceive('describeInstances')
             ->with([
-                'filter' => [
-                    'tag:hal_pool' => 'pool-name',
-                    'instance-state-code' => 16,
+                'Filters' => [
+                    ['Name' => 'tag:hal_pool', 'Values' => ['pool-name']],
+                    ['Name' => 'instance-state-code', 'Values' => [16]],
                 ]
             ])
             ->andReturn(['Reservations' => [
@@ -53,9 +53,8 @@ class InstanceFinderTest extends PHPUnit_Framework_TestCase
         $this->ec2
             ->shouldReceive('describeInstances')
             ->with([
-                'filter' => [
-                    'tag:hal_pool' => 'pool-name',
-                    'instance-state-code' => 16,
+                'Filters' => [
+                    ['Name' => 'tag:hal_pool', 'Values' => ['pool-name']]
                 ]
             ])
             ->andReturn(['Reservations' => [
@@ -64,7 +63,7 @@ class InstanceFinderTest extends PHPUnit_Framework_TestCase
             ]]);
 
         $finder = new InstanceFinder($this->ec2);
-        $actual = $finder('pool-name', 16);
+        $actual = $finder('pool-name');
 
         $this->assertSame([], $actual);
     }
