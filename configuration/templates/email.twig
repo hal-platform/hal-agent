@@ -193,7 +193,6 @@
                                     {% if server.type == 'elasticbeanstalk' %}
                                         Elastic Beanstalk ({{ deployment.ebEnvironment }}) in {{ environment.key }}
                                     {% elseif server.type == 'ec2' %}
-                                        {{ server.name }} in {{ environment.key }}
                                         EC2 ({{ deployment.ec2Pool }}) in {{ environment.key }}
                                     {% else %}
                                         {{ server.name }} in {{ environment.key }}
