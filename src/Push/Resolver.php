@@ -197,6 +197,9 @@ class Resolver
 
         } elseif ($method === ServerEnumType::TYPE_EB) {
             $properties[ServerEnumType::TYPE_EB] = $this->buildElasticBeanstalkProperties($repository, $deployment);
+
+        } elseif ($method === ServerEnumType::TYPE_EC2) {
+            $properties[ServerEnumType::TYPE_EC2] = $this->buildEc2Properties($deployment);
         }
 
         // add env for build environment
@@ -240,7 +243,7 @@ class Resolver
     /**
      * Set the aws credentials.
      *
-     * Not actually used. Just sanity checked when a push is trying to deploy to EBS.
+     * Not actually used. Just sanity checked when a push is trying to deploy to EB.
      *
      * @param string $awsKey
      * @param string $awsSecret
@@ -251,6 +254,20 @@ class Resolver
     {
         $this->awsKey = $awsKey;
         $this->awsSecret = $awsSecret;
+    }
+
+    /**
+     * @param Repository $repository
+     * @param Deployment $deployment
+     *
+     * @return array
+     */
+    private function buildEc2Properties(Deployment $deployment)
+    {
+        return [
+            'pool' => $deployment->getEc2Pool(),
+            'remotePath' => $deployment->getPath()
+        ];
     }
 
     /**
@@ -379,7 +396,7 @@ class Resolver
     }
 
     /**
-     * Generate a temporary target for the zip archive (Used for EBS Deployments)
+     * Generate a temporary target for the zip archive (Used for EB Deployments)
      *
      * @param string $pushId
      *

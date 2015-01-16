@@ -55,7 +55,12 @@ class PushCommand extends Command
         202 => 'Build transform command failed.',
         203 => 'Build could not be packed for S3.',
         204 => 'Upload to S3 failed.',
-        205 => 'Deploying application to EB failed.'
+        205 => 'Deploying application to EB failed.',
+
+        300 => 'Required properties for EC2 are missing.',
+        301 => 'No EC2 instances found.',
+        302 => 'Build transform command failed.',
+        303 => 'EC2 push failed.',
     ];
 
     /**

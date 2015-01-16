@@ -10,15 +10,15 @@ namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Core\Entity\Type\ServerEnumType;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Deployer implements DeployerInterface
 {
-    const TYPE = 'elasticbeanstalk';
     const STATUS = 'Deploying push by EB';
 
-    const SKIP_PRE_PUSH = 'Skipping pre-push commands for AWS deployment';
-    const SKIP_POST_PUSH = 'Skipping post-push commands for AWS deployment';
+    const SKIP_PRE_PUSH = 'Skipping pre-push commands for EB deployment';
+    const SKIP_POST_PUSH = 'Skipping post-push commands for EBdeployment';
     const ERR_ENVIRONMENT_HEALTH = 'Elastic Beanstalk environment is not ready';
 
     /**
@@ -83,7 +83,7 @@ class Deployer implements DeployerInterface
         $this->status($output, self::STATUS);
 
         // sanity check
-        if (!isset($properties[self::TYPE])) {
+        if (!isset($properties[ServerEnumType::TYPE_EB])) {
             return 200;
         }
 
@@ -139,8 +139,8 @@ class Deployer implements DeployerInterface
 
         $health = $this->health;
         $health = $health(
-            $properties[self::TYPE]['application'],
-            $properties[self::TYPE]['environment']
+            $properties[ServerEnumType::TYPE_EB]['application'],
+            $properties[ServerEnumType::TYPE_EB]['environment']
         );
 
         if ($health['status'] !== 'Ready') {
@@ -244,8 +244,8 @@ class Deployer implements DeployerInterface
 
         $pusher = $this->pusher;
         return $pusher(
-            $properties[self::TYPE]['application'],
-            $properties[self::TYPE]['environment'],
+            $properties[ServerEnumType::TYPE_EB]['application'],
+            $properties[ServerEnumType::TYPE_EB]['environment'],
             $s3version,
             $build->getId(),
             $push->getId(),

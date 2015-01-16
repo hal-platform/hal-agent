@@ -124,6 +124,27 @@ services:
             - %push.sshUser%
             - %timeout.push.serverCommand%
 
+    # ec2
+    push.ec2.deployer:
+        class: 'QL\Hal\Agent\Push\EC2\Deployer'
+        arguments:
+            - @logger.event
+            - @push.ec2.instance.finder
+            - @push.builder
+            - @push.ec2.pusher
+
+    push.ec2.instance.finder:
+        class: 'QL\Hal\Agent\Push\EC2\InstanceFinder'
+        arguments: [@aws.ec2]
+
+    push.ec2.pusher:
+        class: 'QL\Hal\Agent\Push\EC2\Pusher'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %aws.ec2.user%
+            - %timeout.push.ec2%
+
     # private services used only by push actions
 
     yaml.dumper:

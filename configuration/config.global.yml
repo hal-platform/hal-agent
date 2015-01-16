@@ -11,6 +11,7 @@ parameters:
     timeout.push: 300
     timeout.push.serverCommand: 300
     timeout.push.build: 300
+    timeout.push.ec2: 300
 
     timeout.filepacking: 120
 
@@ -18,6 +19,7 @@ parameters:
 
     aws.region: ''
     aws.s3.builds: ''
+    aws.ec2.user: ''
 
     aws.credentials.key: ''
     aws.credentials.secret: ''

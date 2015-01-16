@@ -10,11 +10,11 @@ namespace QL\Hal\Agent\Push\Rsync;
 use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Core\Entity\Type\ServerEnumType;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Deployer implements DeployerInterface
 {
-    const TYPE = 'rsync';
     const STATUS = 'Deploying push by rsync';
 
     /**
@@ -71,7 +71,7 @@ class Deployer implements DeployerInterface
         $this->status($output, self::STATUS);
 
         // sanity check
-        if (!isset($properties[self::TYPE])) {
+        if (!isset($properties[ServerEnumType::TYPE_RSYNC])) {
             return 100;
         }
 
@@ -116,8 +116,8 @@ class Deployer implements DeployerInterface
 
         $delta = $this->delta;
         return $delta(
-            $properties[self::TYPE]['hostname'],
-            $properties[self::TYPE]['remotePath'],
+            $properties[ServerEnumType::TYPE_RSYNC]['hostname'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['pushProperties']
         );
     }
@@ -163,10 +163,10 @@ class Deployer implements DeployerInterface
 
         $prepush = $this->serverCommand;
         return $prepush(
-            $properties[self::TYPE]['hostname'],
-            $properties[self::TYPE]['remotePath'],
+            $properties[ServerEnumType::TYPE_RSYNC]['hostname'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['pre_push'],
-            $properties[self::TYPE]['environmentVariables']
+            $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']
         );
     }
 
@@ -183,7 +183,7 @@ class Deployer implements DeployerInterface
         $pusher = $this->pusher;
         return $pusher(
             $properties['location']['path'],
-            $properties[self::TYPE]['syncPath'],
+            $properties[ServerEnumType::TYPE_RSYNC]['syncPath'],
             $properties['configuration']['exclude']
         );
     }
@@ -205,10 +205,10 @@ class Deployer implements DeployerInterface
 
         $postpush = $this->serverCommand;
         return $postpush(
-            $properties[self::TYPE]['hostname'],
-            $properties[self::TYPE]['remotePath'],
+            $properties[ServerEnumType::TYPE_RSYNC]['hostname'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['post_push'],
-            $properties[self::TYPE]['environmentVariables']
+            $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']
         );
     }
 
