@@ -43,6 +43,7 @@
         "symfony/event-dispatcher": "2.6.*",
         "symfony/filesystem": "2.6.*",
         "symfony/process": "2.6.*",
+        "symfony/yaml": "2.6.*",
         "twig/twig": "~1.15"
     },
     "require-dev": {
