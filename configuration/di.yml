@@ -142,7 +142,7 @@ services:
         # arguments: ['/tmp/cache']
         class: 'Doctrine\Common\Cache\ArrayCache'
 
-    aws.ebs:
+    aws.eb:
         class: 'Aws\ElasticBeanstalk\ElasticBeanstalkClient'
         factory: ['Aws\ElasticBeanstalk\ElasticBeanstalkClient', 'factory']
         arguments:

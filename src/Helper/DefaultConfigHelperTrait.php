@@ -19,7 +19,7 @@ trait DefaultConfigHelperTrait
     private function buildDefaultConfiguration(Repository $repository)
     {
         return [
-            'system' => 'global',
+            'system' => 'unix',
             'dist' => '.',
             'exclude' => [
                 'config/database.ini',

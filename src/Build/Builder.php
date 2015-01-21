@@ -64,7 +64,7 @@ class Builder
      */
     public function __invoke($system, $buildPath, array $commands, array $env)
     {
-        if ($system !== 'global') {
+        if ($system !== 'unix') {
             $this->logger->event('failure', self::ERR_INVALID_SYSTEM);
             return false;
         }

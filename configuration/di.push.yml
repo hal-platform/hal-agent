@@ -67,7 +67,7 @@ services:
 
     push.elasticbeanstalk.healthchecker:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
-        arguments: [@aws.ebs]
+        arguments: [@aws.eb]
 
     push.elasticbeanstalk.packer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Packer'
@@ -87,7 +87,7 @@ services:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Pusher'
         arguments:
             - @logger.event
-            - @aws.ebs
+            - @aws.eb
             - %aws.s3.builds%
 
     # rsync
