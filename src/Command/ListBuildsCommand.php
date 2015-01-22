@@ -237,6 +237,9 @@ class ListBuildsCommand extends Command
             $criteria->andWhere(Criteria::expr()->eq('environment', $env));
         }
 
+        // clone criteria for use in paginator
+        $pagerCriteria = clone $criteria;
+
         if ($older) {
             $date = explode('-', $older);
             if (count($date) !== 3) {
@@ -244,7 +247,11 @@ class ListBuildsCommand extends Command
             }
 
             list($y, $m, $d) = $date;
-            $criteria->andWhere(Criteria::expr()->lt('created', new TimePoint($y, $m, $d, 0, 0, 0, self::TIMEZONE)));
+            $tp = new TimePoint($y, $m, $d, 0, 0, 0, self::TIMEZONE);
+            $tpFormatted = $tp->format('Y-m-d H:i:s', 'UTC');
+
+            $criteria->andWhere(Criteria::expr()->lt('created', $tp));
+            $pagerCriteria->andWhere(Criteria::expr()->lt('created', $tpFormatted));
         }
 
         // run the query
@@ -262,7 +269,7 @@ class ListBuildsCommand extends Command
         } else {
 
             $builder = $this->buildRepo->createQueryBuilder('build');
-            $builder->addCriteria($criteria);
+            $builder->addCriteria($pagerCriteria);
 
             $paginator = new Paginator($builder);
             $totalCount = count($paginator);
