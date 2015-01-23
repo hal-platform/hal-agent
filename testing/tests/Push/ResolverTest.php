@@ -171,7 +171,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 ]
             ],
             'configuration' => [
-                'system' => 'global',
+                'system' => 'unix',
                 'dist' => '.',
                 'exclude' => [
                     'config/database.ini',
@@ -288,7 +288,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'environment' => 'e-ididid'
             ],
             'configuration' => [
-                'system' => 'global',
+                'system' => 'unix',
                 'dist' => '.',
                 'exclude' => [
                     'config/database.ini',
@@ -406,7 +406,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'remotePath' => '/ec2/path/var/www'
             ],
             'configuration' => [
-                'system' => 'global',
+                'system' => 'unix',
                 'dist' => '.',
                 'exclude' => [
                     'config/database.ini',

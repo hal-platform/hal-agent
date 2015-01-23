@@ -42,7 +42,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new Builder($this->logger, $builder, 5);
 
-        $success = $action('global', 'path', ['command'], []);
+        $success = $action('unix', 'path', ['command'], []);
         $this->assertTrue($success);
     }
 
@@ -73,7 +73,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new Builder($this->logger, $builder, 5);
 
-        $success = $action('global', 'path', ['command'], []);
+        $success = $action('unix', 'path', ['command'], []);
         $this->assertFalse($success);
     }
 
@@ -146,7 +146,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event');
 
         $action = new Builder($this->logger, $builder, 5);
-        $success = $action('global', 'path', [$command], []);
+        $success = $action('unix', 'path', [$command], []);
 
         $this->assertSame($expectedParameters, $actualParameters);
     }
@@ -188,7 +188,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->twice();
 
         $action = new Builder($this->logger, $builder, 5);
-        $success = $action('global', 'path', $commands, []);
+        $success = $action('unix', 'path', $commands, []);
 
         $this->assertSame($success, true);
     }
