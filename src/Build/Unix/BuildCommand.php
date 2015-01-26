@@ -5,14 +5,14 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
-class Builder
+class BuildCommand
 {
     use ProcessRunnerTrait;
 
@@ -20,7 +20,6 @@ class Builder
      * @type string
      */
     const EVENT_MESSAGE = 'Run build command';
-    const ERR_INVALID_SYSTEM = 'Invalid build environment specified';
     const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
@@ -29,9 +28,9 @@ class Builder
     private $logger;
 
     /**
-     * @type PackageManagerPreparer
+     * @type ProcessBuilder
      */
-    private $preparer;
+    private $processBuilder;
 
     /**
      * Time (in seconds) to wait for the build to process before aborting
@@ -43,32 +42,24 @@ class Builder
     /**
      * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
-     * @param PackageManagerPreparer $preparer
      * @param int $commandTimeout
      */
-    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, PackageManagerPreparer $preparer, $commandTimeout)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
-        $this->preparer = $preparer;
         $this->commandTimeout = $commandTimeout;
     }
 
     /**
-     * @param string $system
      * @param string $buildPath
      * @param array $commands
      * @param array $env
      *
      * @return boolean
      */
-    public function __invoke($system, $buildPath, array $commands, array $env)
+    public function __invoke($buildPath, array $commands, array $env)
     {
-        if ($system !== 'unix') {
-            $this->logger->event('failure', self::ERR_INVALID_SYSTEM);
-            return false;
-        }
-
         foreach ($commands as $command) {
             $command = $this->sanitizeCommand($command);
 
@@ -78,9 +69,6 @@ class Builder
                 ->addEnvironmentVariables($env)
                 ->setTimeout($this->commandTimeout)
                 ->getProcess();
-
-            // prepare package manager configuration
-            call_user_func($this->preparer, $env);
 
             if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
                 // command timed out, bomb out

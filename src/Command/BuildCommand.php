@@ -7,8 +7,8 @@
 
 namespace QL\Hal\Agent\Command;
 
-use QL\Hal\Agent\Build\Builder;
 use QL\Hal\Agent\Build\ConfigurationReader;
+use QL\Hal\Agent\Build\DelegatingBuilder;
 use QL\Hal\Agent\Build\Downloader;
 use QL\Hal\Agent\Build\Mover;
 use QL\Hal\Agent\Build\Packer;
@@ -43,11 +43,18 @@ class BuildCommand extends Command
         0 => 'Success!',
         1 => 'Build details could not be resolved.',
         2 => 'Repository archive could not be downloaded.',
-        4 => 'Repository archive could not be unpacked.',
-        8 => '.hal9000.yml configuration was invalid and could not be read.',
-        16 => 'Build command failed.',
-        32 => 'Build archive could not be created.',
-        64 => 'Build could not be moved to archive.'
+        3 => 'Repository archive could not be unpacked.',
+        4 => '.hal9000.yml configuration was invalid and could not be read.',
+        5 => 'Build archive could not be created.',
+        6 => 'Build could not be moved to archive.',
+
+        100 => 'Required properties for unix are missing.',
+        101 => 'Preparing package manager configuration failed.',
+        102 => 'Build command failed',
+
+        200 => 'Required properties for unix are missing.',
+        201 => 'Preparing package manager configuration failed.',
+        202 => 'Build command failed',
     ];
 
     /**
@@ -76,7 +83,7 @@ class BuildCommand extends Command
     private $reader;
 
     /**
-     * @type Builder
+     * @type DelegatingBuilder
      */
     private $builder;
 
@@ -117,7 +124,7 @@ class BuildCommand extends Command
      * @param Downloader $downloader
      * @param Unpacker $unpacker
      * @param ConfigurationReader $reader
-     * @param Builder $builder
+     * @param DelegatingBuilder $builder
      * @param Packer $packer
      * @param Mover $mover
      * @param DownloadProgressHelper $progress
@@ -130,7 +137,7 @@ class BuildCommand extends Command
         Downloader $downloader,
         Unpacker $unpacker,
         ConfigurationReader $reader,
-        Builder $builder,
+        DelegatingBuilder $builder,
         Packer $packer,
         Mover $mover,
         DownloadProgressHelper $progress,
@@ -231,31 +238,29 @@ class BuildCommand extends Command
 
         // unpack
         if (!$this->unpack($output, $properties)) {
-            return $this->failure($output, 4);
+            return $this->failure($output, 3);
         }
 
         // read .hal9000.yml
         if (!$this->read($output, $properties)) {
-            return $this->failure($output, 8);
+            return $this->failure($output, 4);
         }
-
-        $this->logger->setStage('building');
 
         // build
         if (!$this->build($output, $properties)) {
-            return $this->failure($output, 16);
+            return $this->failure($output, $this->builder->getExitCode());
         }
 
         $this->logger->setStage('end');
 
         // pack
         if (!$this->pack($output, $properties)) {
-            return $this->failure($output, 32);
+            return $this->failure($output, 5);
         }
 
         // move to archive
         if (!$this->move($output, $properties)) {
-            return $this->failure($output, 64);
+            return $this->failure($output, 6);
         }
 
         $this->success($output);
@@ -409,12 +414,7 @@ class BuildCommand extends Command
         $this->status($output, 'Running build command');
 
         $builder = $this->builder;
-        return $builder(
-            $properties['configuration']['system'],
-            $properties['location']['path'],
-            $properties['configuration']['build'],
-            $properties['environmentVariables']
-        );
+        return $builder($output, $properties['configuration']['system'], $properties);
     }
 
     /**

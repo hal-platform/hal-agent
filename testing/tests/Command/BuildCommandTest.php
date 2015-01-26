@@ -36,7 +36,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->downloader = Mockery::mock('QL\Hal\Agent\Build\Downloader');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Build\Unpacker');
         $this->reader = Mockery::mock('QL\Hal\Agent\Build\ConfigurationReader');
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\Builder');
+        $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
         $this->packer = Mockery::mock('QL\Hal\Agent\Build\Packer');
         $this->mover = Mockery::mock('QL\Hal\Agent\Build\Mover');
         $this->downloadProgress = Mockery::mock('QL\Hal\Agent\Helper\DownloadProgressHelper');
@@ -114,6 +114,7 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn([
                 'build'  => $build,
+                'system' => 'unix',
                 'location' => [
                     'download' => 'path/file',
                     'path' => 'path/dir',
@@ -175,7 +176,7 @@ OUTPUT;
             ->once();
         $this->logger
             ->shouldReceive('setStage')
-            ->times(3);
+            ->times(2);
         $this->logger
             ->shouldReceive('success')
             ->once();

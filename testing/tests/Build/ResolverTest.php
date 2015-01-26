@@ -105,27 +105,26 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'testdir/hal9000-download-1234.tar.gz',
                 'testdir/hal9000-build-1234',
                 'testdir/hal9000-1234.tar.gz'
+            ],
+            'environmentVariables' => [
+                'HOME' => 'testdir/home/',
+                'PATH' => 'testdir/home/gempath/here/bin:ENV_PATH',
+                'HAL_BUILDID' => '1234',
+                'HAL_COMMIT' => '5555',
+                'HAL_GITREF' => 'master',
+                'HAL_ENVIRONMENT' => 'envkey',
+                'HAL_REPO' => 'repokey',
+
+                // package manager configuration
+                'BOWER_INTERACTIVE' => 'false',
+                'BOWER_STRICT_SSL' => 'false',
+                'COMPOSER_HOME' => 'testdir/home/',
+                'COMPOSER_NO_INTERACTION' => '1',
+                'NPM_CONFIG_STRICT_SSL' => 'false',
+                'NPM_CONFIG_COLOR' => 'always',
+                'GEM_HOME' => 'testdir/home/gempath/here',
+                'GEM_PATH' => 'testdir/home/gempath/here:anotherpath'
             ]
-        ];
-
-        $expectedEnv = [
-            'HOME' => 'testdir/home/',
-            'PATH' => 'testdir/home/gempath/here/bin:ENV_PATH',
-            'HAL_BUILDID' => '1234',
-            'HAL_COMMIT' => '5555',
-            'HAL_GITREF' => 'master',
-            'HAL_ENVIRONMENT' => 'envkey',
-            'HAL_REPO' => 'repokey',
-
-            // package manager configuration
-            'BOWER_INTERACTIVE' => 'false',
-            'BOWER_STRICT_SSL' => 'false',
-            'COMPOSER_HOME' => 'testdir/home/',
-            'COMPOSER_NO_INTERACTION' => '1',
-            'NPM_CONFIG_STRICT_SSL' => 'false',
-            'NPM_CONFIG_COLOR' => 'always',
-            'GEM_HOME' => 'testdir/home/gempath/here',
-            'GEM_PATH' => 'testdir/home/gempath/here:anotherpath'
         ];
 
         $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
@@ -145,9 +144,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $properties = $action('1234');
 
-        $this->assertSame($expectedEnv, $properties['environmentVariables']);
+        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
+        $this->assertSame($expected['configuration'], $properties['configuration']);
+        $this->assertSame($expected['location'], $properties['location']);
+        $this->assertSame($expected['artifacts'], $properties['artifacts']);
+        $this->assertSame($expected['github'], $properties['github']);
 
-        unset($properties['environmentVariables']);
-        $this->assertSame($expected, $properties);
+
     }
 }

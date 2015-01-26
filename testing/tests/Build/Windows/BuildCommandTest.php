@@ -5,19 +5,18 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace QL\Hal\Agent\Build\Windows;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
-class BuilderTest extends PHPUnit_Framework_TestCase
+class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
     public $preparer;
     public $logger;
 
     public function setUp()
     {
-        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\PackageManagerPreparer', ['__invoke' => null]);
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
     }
 
@@ -42,9 +41,9 @@ class BuilderTest extends PHPUnit_Framework_TestCase
                 'output' => 'test-output'
             ])->once();
 
-        $action = new Builder($this->logger, $builder, $this->preparer, 5);
+        $action = new BuildCommand($this->logger, $builder, 5);
 
-        $success = $action('unix', 'path', ['command'], []);
+        $success = $action('path', ['command'], []);
         $this->assertTrue($success);
     }
 
@@ -73,24 +72,9 @@ class BuilderTest extends PHPUnit_Framework_TestCase
                 'errorOutput' => 'test-error-output'
             ])->once();
 
-        $action = new Builder($this->logger, $builder, $this->preparer, 5);
+        $action = new BuildCommand($this->logger, $builder, 5);
 
-        $success = $action('unix', 'path', ['command'], []);
-        $this->assertFalse($success);
-    }
-
-    public function testFailIfUnknownSystem()
-    {
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
-
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', 'Invalid build environment specified')
-            ->once();
-
-        $action = new Builder($this->logger, $builder, $this->preparer, 5);
-
-        $success = $action('bad_system', 'path', ['command'], []);
+        $success = $action('path', ['command'], []);
         $this->assertFalse($success);
     }
 
@@ -146,8 +130,8 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event')
             ->once();
 
-        $action = new Builder($this->logger, $builder, $this->preparer, 5);
-        $success = $action('unix', 'path', [$command], []);
+        $action = new BuildCommand($this->logger, $builder, 5);
+        $success = $action('path', [$command], []);
 
         $this->assertSame($expectedParameters, $actualParameters);
     }
@@ -189,8 +173,8 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event')
             ->twice();
 
-        $action = new Builder($this->logger, $builder, $this->preparer, 5);
-        $success = $action('unix', 'path', $commands, []);
+        $action = new BuildCommand($this->logger, $builder, 5);
+        $success = $action('path', $commands, []);
 
         $this->assertSame(true, $success);
     }

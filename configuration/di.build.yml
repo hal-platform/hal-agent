@@ -25,19 +25,14 @@ services:
             - @utility.filesystem
             - @yaml.parser
 
-    build.preparer:
-        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
-        arguments:
-            - @logger.event
-            - @utility.filesystem
-            - %github.com.token%
     build.builder:
-        class: 'QL\Hal\Agent\Build\Builder'
+        class: 'QL\Hal\Agent\Build\DelegatingBuilder'
         arguments:
             - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - @build.preparer
-            - %timeout.build%
+            - @service_container
+            -
+                unix: build.unix.builder
+                windows: build.windows.builder
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
@@ -50,3 +45,46 @@ services:
         arguments:
             - @logger.event
             - @utility.filesystem
+
+    # unix
+    build.unix.builder:
+        class: 'QL\Hal\Agent\Build\Unix\Builder'
+        arguments:
+            - @logger.event
+            - @build.unix.preparer
+            - @build.unix.builder.command
+
+    build.unix.preparer:
+        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - %github.com.token%
+    build.unix.builder.command:
+        class: 'QL\Hal\Agent\Build\Unix\BuildCommand'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.build%
+
+    # windows
+    build.windows.builder:
+        class: 'QL\Hal\Agent\Build\Windows\Builder'
+        arguments:
+            - @logger.event
+            - @build.windows.preparer
+            - @build.windows.builder.command
+
+    build.windows.preparer:
+        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - %github.com.token%
+    build.windows.builder.command:
+        class: 'QL\Hal\Agent\Build\Windows\BuildCommand'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.build%
+

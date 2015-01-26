@@ -96,6 +96,9 @@ class Resolver
         $properties = [
             'build' => $build,
 
+            'unix' => [],
+            'windows' => [],
+
             // default, overwritten by .hal9000.yml
             'configuration' => $this->buildDefaultConfiguration($build->getRepository()),
 
