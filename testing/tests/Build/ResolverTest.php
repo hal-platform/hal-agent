@@ -118,7 +118,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 // package manager configuration
                 'BOWER_INTERACTIVE' => 'false',
                 'BOWER_STRICT_SSL' => 'false',
-                'COMPOSER_HOME' => 'testdir/home/',
+                'COMPOSER_HOME' => 'testdir/home/.composer',
                 'COMPOSER_NO_INTERACTION' => '1',
                 'NPM_CONFIG_STRICT_SSL' => 'false',
                 'NPM_CONFIG_COLOR' => 'always',
