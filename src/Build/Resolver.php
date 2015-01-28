@@ -140,7 +140,7 @@ class Resolver
      * If none is provided the system temporary directory is used.
      *
      * @param string $directory
-     *  @return null
+     * @return null
      */
     public function setBaseBuildDirectory($directory)
     {
@@ -153,8 +153,8 @@ class Resolver
      *
      * If none is provided a common location within the shared build directory is used.
      *
-     *  @param string $directory
-     *  @return string
+     * @param string $directory
+     * @return string
      */
     public function setHomeDirectory($directory)
     {
@@ -200,10 +200,10 @@ class Resolver
     }
 
     /**
-     *  Generate a target for the build archive.
+     * Generate a target for the build archive.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     * @return string
      */
     private function generateRepositoryDownload($id)
     {
@@ -211,10 +211,10 @@ class Resolver
     }
 
     /**
-     *  Generate a target for the build path.
+     * Generate a target for the build path.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     * @return string
      */
     private function generateBuildPath($id)
     {
@@ -222,10 +222,10 @@ class Resolver
     }
 
     /**
-     *  Generate a target for the build archive.
+     * Generate a target for the build archive.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     * @return string
      */
     private function generateBuildArchive($id)
     {
@@ -238,10 +238,10 @@ class Resolver
     }
 
     /**
-     *  Generate a temporary target for the build archive.
+     * Generate a temporary target for the build archive.
      *
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     * @return string
      */
     private function generateTempBuildArchive($id)
     {
@@ -249,10 +249,10 @@ class Resolver
     }
 
     /**
-     *  Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
+     * Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
      *
-     *  @param string $suffix
-     *  @return string
+     * @param string $suffix
+     * @return string
      */
     private function generateHomePath($suffix = '')
     {
@@ -266,8 +266,8 @@ class Resolver
     }
 
     /**
-     *  @param string $id
-     *  @return string
+     * @param string $id
+     * @return string
      */
     private function getBuildDirectory()
     {
