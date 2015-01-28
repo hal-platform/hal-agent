@@ -108,7 +108,7 @@ class Exporter
         $command = sprintf('if [ -d %1$s ]; then rm -r %1$s; fi; mkdir -p %1$s', $remotePath);
 
         $remoter = $this->remoter;
-        if ($response = $remoter($buildServer, $command, [], false, false)) {
+        if ($response = $remoter($buildServer, $command, [], false)) {
             return true;
         }
 

@@ -33,9 +33,9 @@ class Cleaner
      */
     public function __invoke($buildServer, $remotePath)
     {
-        $rmdir = sprintf('rm -r %s', $remotePath);
+        $rmdir = sprintf('rm -r "%s"', $remotePath);
 
         $remoter = $this->remoter;
-        return $remoter($buildServer, $rmdir, [], false, false);
+        return $remoter($buildServer, $rmdir, [], false);
     }
 }

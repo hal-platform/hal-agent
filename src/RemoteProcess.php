@@ -67,16 +67,19 @@ class RemoteProcess
     }
 
     /**
+     * Note:
+     * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
+     *
      * @param string $remoteServer
      * @param string $command
      * @param array $env
+     * @param string $prefixCommand
      *
-     * @param bool $isCommandEscaped
      * @param bool $isLoggingEnabled
      *
      * @return boolean
      */
-    public function __invoke($remoteServer, $command, array $env, $isCommandEscaped = true, $isLoggingEnabled = true)
+    public function __invoke($remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null)
     {
         // No session exists yet
         if ($this->session === null) {
@@ -88,7 +91,10 @@ class RemoteProcess
             return false;
         }
 
-        $remoteCommand = $this->sanitizeCommand($command, $isCommandEscaped);
+        $remoteCommand = $command;
+        if ($prefixCommand) {
+            $remoteCommand = $prefixCommand . ' ' . $command;
+        }
 
         // Add environment variables if possible
         if ($envSetters = $this->formatEnvSetters($env)) {
@@ -139,6 +145,30 @@ class RemoteProcess
     }
 
     /**
+     * @param string $command
+     *
+     * @return string
+     */
+    public function sanitize($command)
+    {
+        // parameterize the command
+        $parameters = explode(' ', $command);
+
+        // remove empty parameters
+        $parameters = array_filter($parameters, function($v) {
+            return (trim($v) !== '');
+        });
+
+        // manually escape user supplied command
+        $parameters = array_map(function($v) {
+            return ProcessUtils::escapeArgument($v);
+        }, $parameters);
+
+        // Combine user command back into string
+        return implode(' ', $parameters);
+    }
+
+    /**
      * @param string $remoteServer
      *
      * @return Net_SSH2|null
@@ -178,30 +208,5 @@ class RemoteProcess
         }
 
         return implode(' ', $envSetters);
-    }
-
-    /**
-     * @param string $command
-     * @param bool $isCommandEscaped
-     *
-     * @return string
-     */
-    private function sanitizeCommand($command, $isCommandEscaped)
-    {
-        // parameterize the command
-        $parameters = explode(' ', $command);
-
-        // remove empty parameters
-        $parameters = array_filter($parameters, function($v) {
-            return (trim($v) !== '');
-        });
-
-        if ($isCommandEscaped) {
-            // manually escape user supplied command
-            $parameters = array_map(['Symfony\Component\Process\ProcessUtils', 'escapeArgument'], $parameters);
-        }
-
-        // Combine user command back into string
-        return implode(' ', $parameters);
     }
 }
