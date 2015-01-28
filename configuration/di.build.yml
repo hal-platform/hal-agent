@@ -126,4 +126,4 @@ services:
             - @logger.event
             - %build.remoteUser%
             - %ssh.keyPath%
-            - %timeout.filetransfer%
+            - %timeout.standard%

@@ -47,6 +47,11 @@ class RemoteProcess
     private $session;
 
     /**
+     * @type string
+     */
+    private $lastOutput;
+
+    /**
      * @param EventLogger $logger
      * @param string $remoteUser
      * @param string $sshKeyPath
@@ -64,6 +69,7 @@ class RemoteProcess
         $this->commandTimeout = $commandTimeout;
 
         $this->session = null;
+        $this->lastOutput = '';
     }
 
     /**
@@ -81,6 +87,8 @@ class RemoteProcess
      */
     public function __invoke($remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null)
     {
+        $this->lastOutput = '';
+
         // No session exists yet
         if ($this->session === null) {
             $this->session = $this->createSession($remoteServer);
@@ -103,6 +111,7 @@ class RemoteProcess
 
         $this->session->setTimeout($this->commandTimeout);
         $output = $this->session->exec($remoteCommand);
+        $this->lastOutput = $output;
 
         // timed out
         if ($this->session->isTimeout()) {
@@ -166,6 +175,14 @@ class RemoteProcess
 
         // Combine user command back into string
         return implode(' ', $parameters);
+    }
+
+    /**
+     * @return string
+     */
+    public function getLastOutput()
+    {
+        return $this->lastOutput;
     }
 
     /**

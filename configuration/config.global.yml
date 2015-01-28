@@ -10,11 +10,12 @@ parameters:
     timeout.build: 900
     timeout.push: 300
 
-    timeout.build.serverCommand: 300
-    timeout.push.serverCommand: 300
     timeout.push.build: 300
     timeout.push.ec2: 300
 
+    timeout.push.serverCommand: 120
+
+    timeout.standard: 20
     timeout.filepacking: 120
     timeout.filetransfer: 120
 

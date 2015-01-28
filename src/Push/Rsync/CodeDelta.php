@@ -10,8 +10,7 @@ namespace QL\Hal\Agent\Push\Rsync;
 use Github\Api\Repository\Commits as CommitApi;
 use Github\Exception\RuntimeException;
 use QL\Hal\Agent\Logger\EventLogger;
-use Symfony\Component\Process\Exception\ProcessTimedOutException;
-use Symfony\Component\Process\ProcessBuilder;
+use QL\Hal\Agent\RemoteProcess;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 
@@ -45,9 +44,9 @@ class CodeDelta
     private $logger;
 
     /**
-     * @type ProcessBuilder
+     * @type RemoteProcess
      */
-    private $processBuilder;
+    private $remoter;
 
     /**
      * @type Parser
@@ -66,67 +65,43 @@ class CodeDelta
 
     /**
      * @param EventLogger $logger
-     * @param ProcessBuilder $processBuilder
+     * @param RemoteProcess $remoter
      * @param Parser $parser
      * @param CommitApi $commitApi
      * @param string $sshUser
      */
     public function __construct(
         EventLogger $logger,
-        ProcessBuilder $processBuilder,
+        RemoteProcess $remoter,
         Parser $parser,
-        CommitApi $commitApi,
-        $sshUser
+        CommitApi $commitApi
     ) {
         $this->logger = $logger;
-        $this->processBuilder = $processBuilder;
+        $this->remoter = $remoter;
         $this->parser = $parser;
         $this->commitApi = $commitApi;
-
-        $this->sshUser = $sshUser;
     }
 
     /**
-     * @param string $hostname
+     * @param string $remoteServer
      * @param string $remotePath
      * @param array $pushProperties
      *
      * @return boolean
      */
-    public function __invoke($hostname, $remotePath, array $pushProperties)
+    public function __invoke($remoteServer, $remotePath, array $pushProperties)
     {
-        $serverCommand = 'cat ' . self::FS_DETAILS_FILE;
+        $command = 'cat ' . self::FS_DETAILS_FILE;
 
         // move to the application directory before command is executed
-        $remoteCommand = implode(' && ', [
-            sprintf('cd %s', $remotePath),
-            $serverCommand
-        ]);
+        $chdir = sprintf('cd "%s" &&', $remotePath);
 
-        $command = implode(' ', [
-            'ssh',
-            sprintf('%s@%s', $this->sshUser, $hostname),
-            sprintf('"%s"', $remoteCommand)
-        ]);
-
-        $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments([''])
-            ->setTimeout(15)
-            ->getProcess();
-        $process->setCommandLine($command);
-
-        try {
-            $process->run();
-        } catch (ProcessTimedOutException $ex) {
+        $remoter = $this->remoter;
+        if (!$response = $remoter($remoteServer, $command, [], false, $chdir)) {
             return false;
         }
 
-        if (!$process->isSuccessful()) {
-            return false;
-        }
-
-        if (!$parsed = $this->parseYaml($process->getOutput())) {
+        if (!$parsed = $this->parseYaml($remoter->getLastOutput())) {
             return false;
         }
 
