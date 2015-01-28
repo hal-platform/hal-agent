@@ -79,9 +79,8 @@ class RemoteProcess
      * @param string $remoteServer
      * @param string $command
      * @param array $env
-     * @param string $prefixCommand
-     *
      * @param bool $isLoggingEnabled
+     * @param string $prefixCommand
      *
      * @return boolean
      */

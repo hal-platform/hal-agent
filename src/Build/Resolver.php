@@ -406,7 +406,7 @@ class Resolver
             'BOWER_INTERACTIVE' => 'false',
             'BOWER_STRICT_SSL' => 'false',
 
-            'COMPOSER_HOME' => sprintf('%s/%s', trim($vars['HOME'], DIRECTORY_SEPARATOR), '.composer'),
+            'COMPOSER_HOME' => sprintf('%s/%s', rtrim($vars['HOME'], DIRECTORY_SEPARATOR), '.composer'),
             'COMPOSER_NO_INTERACTION' => '1',
 
             'NPM_CONFIG_STRICT_SSL' => 'false',
