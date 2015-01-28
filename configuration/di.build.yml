@@ -97,7 +97,6 @@ services:
     build.windows.builder:
         class: 'QL\Hal\Agent\Build\Windows\Builder'
         arguments:
-            - @logger.event
             - @build.windows.build.remoter
 
     build.windows.importer:

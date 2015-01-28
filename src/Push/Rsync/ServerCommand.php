@@ -34,13 +34,11 @@ class ServerCommand
      */
     public function __invoke($remoteServer, $remotePath, array $commands, array $env)
     {
-        $chdir = sprintf('cd "%s"', $remotePath);
+        $chdir = sprintf('cd "%s" &&', $remotePath);
 
         $remoter = $this->remoter;
-        $remoter($chdir, [], false, false);
-
         foreach ($commands as $command) {
-            $command = $remoter->sanitize($command);
+            // $command = $remoter->sanitize($command);
             if (!$response = $remoter($remoteServer, $command, $env, true, $chdir)) {
                 return false;
             }

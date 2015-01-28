@@ -7,7 +7,6 @@
 
 namespace QL\Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\RemoteProcess;
 
 /**
@@ -18,28 +17,15 @@ use QL\Hal\Agent\RemoteProcess;
 class Builder
 {
     /**
-     * @type string
-     */
-    const EVENT_MESSAGE = 'Run build command';
-    const ERR_BUILDING_TIMEOUT = 'Build command took too long';
-
-    /**
-     * @type EventLogger
-     */
-    private $logger;
-
-    /**
      * @type RemoteProcess
      */
     private $remoter;
 
     /**
-     * @param EventLogger $logger
      * @param RemoteProcess $remoter
      */
-    public function __construct(EventLogger $logger, RemoteProcess $remoter)
+    public function __construct(RemoteProcess $remoter)
     {
-        $this->logger = $logger;
         $this->remoter = $remoter;
     }
 
@@ -57,7 +43,7 @@ class Builder
 
         $remoter = $this->remoter;
         foreach ($commands as $command) {
-            $command = $remoter->sanitize($command);
+            // $command = $remoter->sanitize($command);
             if (!$response = $remoter($remoteServer, $command, $env, true, $chdir)) {
                 return false;
             }
