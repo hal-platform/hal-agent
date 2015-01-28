@@ -5,11 +5,11 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\RemoteProcess;
 
-class ServerCommand
+class Cleaner
 {
     /**
      * @type RemoteProcess
@@ -17,6 +17,7 @@ class ServerCommand
     private $remoter;
 
     /**
+     * @param EventLogger $logger
      * @param RemoteProcess $remoter
      */
     public function __construct(RemoteProcess $remoter)
@@ -25,27 +26,16 @@ class ServerCommand
     }
 
     /**
-     * @param string $remoteServer
+     * @param string $buildServer
      * @param string $remotePath
-     * @param array $commands
-     * @param array $env
      *
-     * @return boolean
+     * @return bool
      */
-    public function __invoke($remoteServer, $remotePath, array $commands, array $env)
+    public function __invoke($buildServer, $remotePath)
     {
-        $chdir = sprintf('cd %s', $remotePath);
+        $rmdir = sprintf('rm -r %s', $remotePath);
 
         $remoter = $this->remoter;
-        $remoter($chdir, [], false, false);
-
-        foreach ($commands as $command) {
-            if (!$response = $remoter($remoteServer, $command, $env)) {
-                return false;
-            }
-        }
-
-        // all good
-        return true;
+        return $remoter($buildServer, $rmdir, [], false, false);
     }
 }

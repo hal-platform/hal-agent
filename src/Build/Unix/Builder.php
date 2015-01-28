@@ -7,15 +7,20 @@
 
 namespace QL\Hal\Agent\Build\Unix;
 
-use QL\Hal\Agent\Build\BuilderInterface;
-use QL\Hal\Agent\Build\PackageManagerPreparer;
 use QL\Hal\Agent\Logger\EventLogger;
-use Symfony\Component\Console\Output\OutputInterface;
+use QL\Hal\Agent\ProcessRunnerTrait;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
-class Builder implements BuilderInterface
+class Builder
 {
-    const STATUS = 'Building on unix';
-    const TYPE_UNIX = 'unix';
+    use ProcessRunnerTrait;
+
+    /**
+     * @type string
+     */
+    const EVENT_MESSAGE = 'Run build command';
+    const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
      * @type EventLogger
@@ -23,108 +28,114 @@ class Builder implements BuilderInterface
     private $logger;
 
     /**
-     * @type PackageManagerPreparer
+     * @type ProcessBuilder
      */
-    private $preparer;
+    private $processBuilder;
 
     /**
-     * @type BuildCommand
+     * Time (in seconds) to wait for the build to process before aborting
+     *
+     * @type int
      */
-    private $builder;
+    private $commandTimeout;
 
     /**
      * @param EventLogger $logger
-     * @param PackageManagerPreparer $preparer
-     * @param builder $builder
+     * @param ProcessBuilder $processBuilder
+     * @param int $commandTimeout
      */
-    public function __construct(
-        EventLogger $logger,
-        PackageManagerPreparer $preparer,
-        BuildCommand $builder
-    ) {
-        $this->logger = $logger;
-        $this->preparer = $preparer;
-        $this->builder = $builder;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __invoke(OutputInterface $output, array $properties)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $commandTimeout)
     {
-        $this->status($output, self::STATUS);
-
-        // sanity check
-        if (!isset($properties[self::TYPE_UNIX])) {
-            return 100;
-        }
-
-        $this->logger->setStage('building');
-
-        // set package manager config
-        if (!$this->prepare($output, $properties)) {
-            return 101;
-        }
-
-        // run build
-        if (!$this->build($output, $properties)) {
-            return 102;
-        }
-
-        // success
-        return 0;
+        $this->logger = $logger;
+        $this->processBuilder = $processBuilder;
+        $this->commandTimeout = $commandTimeout;
     }
 
     /**
-     * @param OutputInterface $output
-     * @param array $properties
+     * @param string $buildPath
+     * @param array $commands
+     * @param array $env
      *
      * @return boolean
      */
-    private function prepare(OutputInterface $output, array $properties)
+    public function __invoke($buildPath, array $commands, array $env)
     {
-        $this->status($output, 'Preparing package manager configuration');
+        foreach ($commands as $command) {
+            $command = $this->sanitizeCommand($command);
 
-        $preparer = $this->preparer;
-        $preparer(
-            $properties['environmentVariables']
-        );
+            $process = $this->processBuilder
+                ->setWorkingDirectory($buildPath)
+                ->setArguments($command)
+                ->addEnvironmentVariables($env)
+                ->setTimeout($this->commandTimeout)
+                ->getProcess();
 
+            if (!$this->runProcess($process, $this->logger, self::ERR_BUILDING_TIMEOUT, $this->commandTimeout)) {
+                // command timed out, bomb out
+                return false;
+            }
+
+            if (!$process->isSuccessful()) {
+                // Return immediately if one of the commands fails
+                return $this->processFailure($process);
+            }
+
+            // record build output
+            $this->processSuccess($process);
+        }
+
+        // all good
         return true;
     }
 
     /**
-     * @param OutputInterface $output
-     * @param array $properties
+     * @param string $command
      *
-     * @return boolean
+     * @return string
      */
-    private function build(OutputInterface $output, array $properties)
+    private function sanitizeCommand($command)
     {
-        if (!$properties['configuration']['build']) {
-            $this->status($output, 'Skipping build command');
-            return true;
-        }
+        // parameterize the command
+        $parameters = explode(' ', $command);
 
-        $this->status($output, 'Running build command');
+        // remove empty parameters
+        $parameters = array_filter($parameters, function($v) {
+            return (trim($v) !== '');
+        });
 
-        $builder = $this->builder;
-        return $builder(
-            $properties['location']['path'],
-            $properties['configuration']['build'],
-            $properties['environmentVariables']
-        );
+        // collapse array elements
+        return array_values($parameters);
     }
 
     /**
-     * @param OutputInterface $output
-     * @param string $message
+     * @param Process $process
      *
-     * @return null
+     * @return bool
      */
-    private function status(OutputInterface $output, $message)
+    private function processFailure(Process $process)
     {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
+        $this->logger->event('failure', self::EVENT_MESSAGE, [
+            'command' => $process->getCommandLine(),
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput(),
+            'exitCode' => $process->getExitCode()
+        ]);
+
+        return false;
+    }
+
+    /**
+     * @param Process $process
+     *
+     * @return bool
+     */
+    private function processSuccess(Process $process)
+    {
+        $this->logger->event('success', self::EVENT_MESSAGE, [
+            'command' => $process->getCommandLine(),
+            'output' => $process->getOutput()
+        ]);
+
+        return true;
     }
 }

@@ -7,15 +7,21 @@
 
 namespace QL\Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\Build\BuilderInterface;
-use QL\Hal\Agent\Build\PackageManagerPreparer;
 use QL\Hal\Agent\Logger\EventLogger;
-use Symfony\Component\Console\Output\OutputInterface;
+use QL\Hal\Agent\RemoteProcess;
 
-class Builder implements BuilderInterface
+/**
+ * C:\Windows\Microsoft.NET\Framework\v2.0.50727\MSBuild.exe
+ * C:\Windows\Microsoft.NET\Framework\v3.5\MSBuild.exe
+ * C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe
+ */
+class Builder
 {
-    const STATUS = 'Building on windows';
-    const TYPE_WINDOWS = 'windows';
+    /**
+     * @type string
+     */
+    const EVENT_MESSAGE = 'Run build command';
+    const ERR_BUILDING_TIMEOUT = 'Build command took too long';
 
     /**
      * @type EventLogger
@@ -23,108 +29,42 @@ class Builder implements BuilderInterface
     private $logger;
 
     /**
-     * @type PackageManagerPreparer
+     * @type RemoteProcess
      */
-    private $preparer;
-
-    /**
-     * @type BuildCommand
-     */
-    private $builder;
+    private $remoter;
 
     /**
      * @param EventLogger $logger
-     * @param PackageManagerPreparer $preparer
-     * @param BuildCommand $builder
+     * @param RemoteProcess $remoter
      */
-    public function __construct(
-        EventLogger $logger,
-        PackageManagerPreparer $preparer,
-        BuildCommand $builder
-    ) {
+    public function __construct(EventLogger $logger, RemoteProcess $remoter)
+    {
         $this->logger = $logger;
-        $this->preparer = $preparer;
-        $this->builder = $builder;
+        $this->remoter = $remoter;
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function __invoke(OutputInterface $output, array $properties)
-    {
-        $this->status($output, self::STATUS);
-
-        // sanity check
-        if (!isset($properties[self::TYPE_WINDOWS])) {
-            return 200;
-        }
-
-        $this->logger->setStage('building');
-
-        // set package manager config
-        if (!$this->prepare($output, $properties)) {
-            return 201;
-        }
-
-        // run build
-        if (!$this->build($output, $properties)) {
-            return 202;
-        }
-
-        // success
-        return 0;
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
+     * @param string $remoteServer
+     * @param string $remotePath
+     * @param array $commands
+     * @param array $env
      *
      * @return boolean
      */
-    private function prepare(OutputInterface $output, array $properties)
+    public function __invoke($remoteServer, $remotePath, array $commands, array $env)
     {
-        $this->status($output, 'Preparing package manager configuration');
+        $chdir = sprintf('cd "%s"', $remotePath);
 
-        $preparer = $this->preparer;
-        $preparer(
-            $properties['environmentVariables']
-        );
+        $remoter = $this->remoter;
+        $remoter($chdir, [], false, false);
 
+        foreach ($commands as $command) {
+            if (!$response = $remoter($remoteServer, $command, $env)) {
+                return false;
+            }
+        }
+
+        // all good
         return true;
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     *
-     * @return boolean
-     */
-    private function build(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['build']) {
-            $this->status($output, 'Skipping build command');
-            return true;
-        }
-
-        $this->status($output, 'Running build command');
-
-        $builder = $this->builder;
-        return $builder(
-            $properties['location']['path'],
-            $properties['configuration']['build'],
-            $properties['environmentVariables']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
     }
 }

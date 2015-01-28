@@ -22,7 +22,9 @@ parameters:
     environment.archive: '/builds/hal9000test'
 
     # user used to SSH and RSYNC to target servers
-    push.sshUser: ''
+    build.remoteUser: ''
+    push.remoteUser: ''
+    ssh.keyPath: ''
 
     # Core logger service hostname
     # Only required in standalone installations

@@ -50,11 +50,14 @@ class BuildCommand extends Command
 
         100 => 'Required properties for unix are missing.',
         101 => 'Preparing package manager configuration failed.',
-        102 => 'Build command failed',
+        102 => 'Build command failed.',
 
-        200 => 'Required properties for unix are missing.',
-        201 => 'Preparing package manager configuration failed.',
-        202 => 'Build command failed',
+        200 => 'Required properties for windows are missing.',
+        201 => 'Could not connect to build server.',
+        202 => 'Exporting files to build server failed.',
+        203 => 'Preparing package manager configuration failed.',
+        204 => 'Build command failed.',
+        205 => 'Importing files from build server failed.',
     ];
 
     /**
@@ -407,11 +410,11 @@ class BuildCommand extends Command
     private function build(OutputInterface $output, array $properties)
     {
         if (!$properties['configuration']['build']) {
-            $this->status($output, 'Skipping build command');
+            $this->status($output, 'Skipping building');
             return true;
         }
 
-        $this->status($output, 'Running build command');
+        $this->status($output, 'Building');
 
         $builder = $this->builder;
         return $builder($output, $properties['configuration']['system'], $properties);

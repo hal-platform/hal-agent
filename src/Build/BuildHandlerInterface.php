@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Symfony\Component\Console\Output\OutputInterface;
 
-interface BuilderInterface
+interface BuildHandlerInterface
 {
     /**
      * @param OutputInterface $output

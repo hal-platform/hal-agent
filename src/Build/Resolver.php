@@ -7,6 +7,8 @@
 
 namespace QL\Hal\Agent\Build;
 
+use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
+use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
@@ -96,9 +98,6 @@ class Resolver
         $properties = [
             'build' => $build,
 
-            'unix' => [],
-            'windows' => [],
-
             // default, overwritten by .hal9000.yml
             'configuration' => $this->buildDefaultConfiguration($build->getRepository()),
 
@@ -114,11 +113,23 @@ class Resolver
                 'repo' => $build->getRepository()->getGithubRepo(),
                 'reference' => $build->getCommit()
             ],
-
-            'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
         ];
 
         $properties['artifacts'] = $this->findBuildArtifacts($properties);
+
+        // system-specific configuration
+        $properties[UnixBuildHandler::SERVER_TYPE] = [
+            'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
+        ];
+
+        $properties[WindowsBuildHandler::SERVER_TYPE] = [
+            'remotePath' => sprintf('/cygdrive/c/builds/%s', $build->getId()),
+            'buildServer' => 'windows',
+            'environmentVariables' => $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables']
+        ];
+
+        unset($properties[WindowsBuildHandler::SERVER_TYPE]['environmentVariables']['HOME']);
+        unset($properties[WindowsBuildHandler::SERVER_TYPE]['environmentVariables']['PATH']);
 
         return $properties;
     }
@@ -220,7 +231,7 @@ class Resolver
     {
         return sprintf(
             '%s%s%s',
-            rtrim($this->archivePath, '/'),
+            rtrim($this->archivePath, DIRECTORY_SEPARATOR),
             DIRECTORY_SEPARATOR,
             sprintf(self::FS_ARCHIVE_PREFIX, $id)
         );

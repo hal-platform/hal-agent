@@ -6,7 +6,7 @@ services:
             - @logger.event
             - @push.repo
             - @clock
-            - %push.sshUser%
+            - %push.remoteUser%
             - %environment.path%
             - %environment.archive%
             - %github.baseurl.site%
@@ -90,6 +90,15 @@ services:
             - @aws.eb
             - %aws.s3.builds%
 
+    # shared
+    push.remoteProcess:
+        class: 'QL\Hal\Agent\RemoteProcess'
+        arguments:
+            - @logger.event
+            - @utility.process.builder= # = signifies a prototype service
+            - %push.remoteUser%
+            - %timeout.push.serverCommand%
+
     # rsync
 
     push.rsync.deployer:
@@ -108,7 +117,7 @@ services:
             - @utility.process.builder= # = signifies a prototype service
             - @yaml.parser
             - @github.commits
-            - %push.sshUser%
+            - %push.remoteUser%
 
     push.rsync.pusher:
         class: 'QL\Hal\Agent\Push\Rsync\Pusher'
@@ -120,9 +129,14 @@ services:
     push.rsync.serverCommand:
         class: 'QL\Hal\Agent\Push\Rsync\ServerCommand'
         arguments:
+            - @push.rsync.standard.remoter
+
+    push.rsync.standard.remoter:
+        class: 'QL\Hal\Agent\RemoteProcess'
+        arguments:
             - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %push.sshUser%
+            - %push.remoteUser%
+            - %ssh.keyPath%
             - %timeout.push.serverCommand%
 
     # ec2

@@ -31,8 +31,8 @@ services:
             - @logger.event
             - @service_container
             -
-                unix: build.unix.builder
-                windows: build.windows.builder
+                unix: build.unix.handler
+                windows: build.windows.handler
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
@@ -47,12 +47,12 @@ services:
             - @utility.filesystem
 
     # unix
-    build.unix.builder:
-        class: 'QL\Hal\Agent\Build\Unix\Builder'
+    build.unix.handler:
+        class: 'QL\Hal\Agent\Build\Unix\UnixBuildHandler'
         arguments:
             - @logger.event
             - @build.unix.preparer
-            - @build.unix.builder.command
+            - @build.unix.builder
 
     build.unix.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
@@ -60,20 +60,23 @@ services:
             - @logger.event
             - @utility.filesystem
             - %github.com.token%
-    build.unix.builder.command:
-        class: 'QL\Hal\Agent\Build\Unix\BuildCommand'
+    build.unix.builder:
+        class: 'QL\Hal\Agent\Build\Unix\Builder'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.build%
 
     # windows
-    build.windows.builder:
-        class: 'QL\Hal\Agent\Build\Windows\Builder'
+    build.windows.handler:
+        class: 'QL\Hal\Agent\Build\Windows\WindowsBuildHandler'
         arguments:
             - @logger.event
             - @build.windows.preparer
-            - @build.windows.builder.command
+            - @build.windows.exporter
+            - @build.windows.builder
+            - @build.windows.importer
+            - @build.windows.cleaner
 
     build.windows.preparer:
         class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
@@ -81,10 +84,46 @@ services:
             - @logger.event
             - @utility.filesystem
             - %github.com.token%
-    build.windows.builder.command:
-        class: 'QL\Hal\Agent\Build\Windows\BuildCommand'
+
+    build.windows.exporter:
+        class: 'QL\Hal\Agent\Build\Windows\Exporter'
+        arguments:
+            - @logger.event
+            - @build.windows.standard.remoter
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filetransfer%
+            - %build.remoteUser%
+
+    build.windows.builder:
+        class: 'QL\Hal\Agent\Build\Windows\Builder'
+        arguments:
+            - @logger.event
+            - @build.windows.build.remoter
+
+    build.windows.importer:
+        class: 'QL\Hal\Agent\Build\Windows\Importer'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
-            - %timeout.build%
+            - %timeout.filetransfer%
+            - %build.remoteUser%
 
+    build.windows.cleaner:
+        class: 'QL\Hal\Agent\Build\Windows\Cleaner'
+        arguments:
+            - @build.windows.standard.remoter
+
+    build.windows.build.remoter:
+        class: 'QL\Hal\Agent\RemoteProcess'
+        arguments:
+            - @logger.event
+            - %build.remoteUser%
+            - %ssh.keyPath%
+            - %timeout.build%
+    build.windows.standard.remoter:
+        class: 'QL\Hal\Agent\RemoteProcess'
+        arguments:
+            - @logger.event
+            - %build.remoteUser%
+            - %ssh.keyPath%
+            - %timeout.filetransfer%
