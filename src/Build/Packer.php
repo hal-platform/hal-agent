@@ -82,15 +82,20 @@ class Packer
         }
 
         // move .hal9000.yml file to dist if present
-        $halSource = $buildPath . DIRECTORY_SEPARATOR . '.hal9000.yml';
-        $halTarget = $wholePath . DIRECTORY_SEPARATOR . '.hal9000.yml';
+        $halSource = $buildPath . '/.hal9000.yml';
+        $halTarget = $wholePath . '/.hal9000.yml';
         if ($this->filesystem->exists($halSource)) {
             $this->filesystem->copy($halSource, $halTarget, true);
         }
 
-        $cmd = ['tar', '-vczf', $targetFile, $distPath];
+        $workingPath = $buildPath;
+        if ($distPath !== '.') {
+            $workingPath = $wholePath;
+        }
+
+        $cmd = ['tar', '-vczf', $targetFile, '.'];
         $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
+            ->setWorkingDirectory($workingPath)
             ->setArguments($cmd)
             ->setTimeout($this->commandTimeout)
             ->getProcess();

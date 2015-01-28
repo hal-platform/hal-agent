@@ -225,6 +225,25 @@ github.baseurl            | Github API url
 github.baseurl.site       | Github url
 hal.baseurl               | HAL 9000 Application url
 
+### Windows Agent Preparation
+
+1. Enable SSH and SCP on windows agent
+    - Cygwin, CopSSH, etc
+2. Install **Windows 8 & .NET Framwork SDK**
+    - Ensure MsBuild.exe is installed for the following versions:
+        - `2.0.50727`
+        - `3.5`
+        - `4.0.30319`
+3. Install **Microsoft Visual Studio 2010 Shell Redistributable Package**
+4. Install **Microsoft Visual Studio 2013 Shell Redistributable Package**
+5. Install **nuget** to `C:\Program Files (x86)\Nuget`.
+6. Update path in `.bashrc`
+```
+export PATH="$PATH:$PROGRAMFILES/Nuget"
+export PATH="$PATH:$PROGRAMFILES/IIS/Microsoft Web Deploy V3"
+export PATH="$PATH:$WINDIR/System32/WindowsPowerShell/v1.0"
+```
+
 ## Testing
 
 The porcelain commands can be used to create and build entities in a single process:

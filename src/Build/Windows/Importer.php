@@ -91,6 +91,7 @@ class Importer
     private function transferFiles($buildPath, $buildServer, $remotePath)
     {
         $from = sprintf('%s@%s:%s', $this->remoteUser, $buildServer, $remotePath);
+        $from = sprintf('%s/.', rtrim($from, '/'));
         $to = '.';
 
         $cmd = ['scp', '-r', $from, $to];
