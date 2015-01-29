@@ -27,6 +27,7 @@ class Resolver
     const FS_DIRECTORY_PREFIX = 'hal9000-build-%s';
     const FS_BUILD_PREFIX = 'hal9000-download-%s.tar.gz';
     const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
+    const FS_DEFAULT_WINDOWS_BUILD_DIR = '$HOME/builds';
 
     /**
      * @type string
@@ -58,6 +59,11 @@ class Resolver
      * @type string
      */
     private $buildDirectory;
+
+    /**
+     * @type string
+     */
+    private $windowsBuildDirectory;
 
     /**
      * @type string
@@ -123,7 +129,7 @@ class Resolver
         ];
 
         $properties[WindowsBuildHandler::SERVER_TYPE] = [
-            'remotePath' => sprintf('/cygdrive/c/builds/%s', $build->getId()),
+            'remotePath' => $this->generateWindowsBuildPath($build->getId()),
             'buildServer' => 'windows',
             'environmentVariables' => $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables']
         ];
@@ -145,6 +151,19 @@ class Resolver
     public function setBaseBuildDirectory($directory)
     {
         $this->buildDirectory = $directory;
+    }
+
+    /**
+     * Set the base directory in which temporary build artifacts are stored on windows build servers.
+     *
+     * If none is provided the system temporary directory is used.
+     *
+     * @param string $directory
+     * @return null
+     */
+    public function setWindowsBaseBuildDirectory($directory)
+    {
+        $this->windowsBuildDirectory = $directory;
     }
 
     /**
@@ -222,6 +241,17 @@ class Resolver
     }
 
     /**
+     * Generate a target for the windows build path.
+     *
+     * @param string $id
+     * @return string
+     */
+    private function generateWindowsBuildPath($id)
+    {
+        return $this->getWindowsBuildDirectory() . sprintf(self::FS_DIRECTORY_PREFIX, $id);
+    }
+
+    /**
      * Generate a target for the build archive.
      *
      * @param string $id
@@ -266,7 +296,6 @@ class Resolver
     }
 
     /**
-     * @param string $id
      * @return string
      */
     private function getBuildDirectory()
@@ -276,6 +305,19 @@ class Resolver
         }
 
         return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    }
+
+
+    /**
+     * @return string
+     */
+    private function getWindowsBuildDirectory()
+    {
+        if (!$this->windowsBuildDirectory) {
+            $this->windowsBuildDirectory = self::FS_DEFAULT_WINDOWS_BUILD_DIR;
+        }
+
+        return rtrim($this->windowsBuildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
     /**

@@ -9,6 +9,8 @@ services:
         calls:
             - ['setBaseBuildDirectory', ['%environment.temp%']]
             - ['setHomeDirectory', ['%environment.home%']]
+            - ['setWindowsBaseBuildDirectory', ['%environment.temp.windows%']]
+
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments: [@logger.event, @github.archive]

@@ -105,7 +105,7 @@ class RemoteProcess
 
         // Add environment variables if possible
         if ($envSetters = $this->formatEnvSetters($env)) {
-            $remoteCommand = implode(';', [$envSetters, $remoteCommand]);
+            $remoteCommand = implode(' && ', [$envSetters, $remoteCommand]);
         }
 
         $this->session->setTimeout($this->commandTimeout);
@@ -220,7 +220,7 @@ class RemoteProcess
     {
         $envSetters = [];
         foreach ($env as $property => $value) {
-            $envSetters[] = sprintf('%s=%s', $property, ProcessUtils::escapeArgument($value));
+            $envSetters[] = sprintf('export %s=%s', $property, ProcessUtils::escapeArgument($value));
         }
 
         return implode(' ', $envSetters);

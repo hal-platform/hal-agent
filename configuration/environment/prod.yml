@@ -18,6 +18,10 @@ parameters:
     # Leave this empty to use the system temporary directory
     environment.temp: '/var/spool/hal9000'
 
+    # temporary storage for windows build artifacts
+    # Leave this empty to use a subdirectory in the remote users HOME
+    environment.temp.windows: ''
+
     # file path to store permanent archives of builds
     environment.archive: '/builds/hal9000'
 

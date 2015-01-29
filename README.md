@@ -119,7 +119,7 @@ A `.hal9000.yml` yaml file can be placed into the project repository to enable c
 
 ```yaml
 # Environment to use to build application.
-# Optional. The default is "global"
+# Optional. The default is "unix"
 system: ''
 
 # Directory of build dist to archive, relative to application root.
@@ -207,7 +207,7 @@ HAL_REPO         | Hal name for the deployed application
 ## Deployment
 
 `bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.
-For development deployments, create a `config.env.yml` using `config.env.yml.dist` as a prototype.
+For development deployments, create a `config.env.yml` using `environment/dev.yml` as a prototype.
 
 ### Configuration
 
@@ -216,16 +216,18 @@ Key                       | Description
 email.notify              | A list of secondary email addresses to notify
 environment.archive       | Path to permanent archive directory for successful builds
 environment.temp          | Path to temporary build directory
+environment.temp.windows  | Path to temporary build directory on windows server
 environment.path          | System PATH
 environment.home          | System HOME
-push.sshUser              | Username used to ssh to servers for syncing code
+push.remoteUser           | Username used to ssh to servers for syncing code
+build.remoteUser          | Username used to ssh to build server for syncing code (windows only)
 github.token              | Github Enterprise authentication token
 github.com.token          | Github.com authentication token
 github.baseurl            | Github API url
 github.baseurl.site       | Github url
 hal.baseurl               | HAL 9000 Application url
 
-### Windows Agent Preparation
+### Windows Build Server Preparation
 
 1. Enable SSH and SCP on windows agent
     - Cygwin, CopSSH, etc
@@ -237,12 +239,13 @@ hal.baseurl               | HAL 9000 Application url
 3. Install **Microsoft Visual Studio 2010 Shell Redistributable Package**
 4. Install **Microsoft Visual Studio 2013 Shell Redistributable Package**
 5. Install **nuget** to `C:\Program Files (x86)\Nuget`.
-6. Update path in `.bashrc`
-```
-export PATH="$PATH:$PROGRAMFILES/Nuget"
-export PATH="$PATH:$PROGRAMFILES/IIS/Microsoft Web Deploy V3"
-export PATH="$PATH:$WINDIR/System32/WindowsPowerShell/v1.0"
-```
+7. Create `C:\builds` directory.
+6. Update path in `.bashrc` for build user:
+   ```
+   export PATH="$PATH:$PROGRAMFILES/Nuget"
+   export PATH="$PATH:$PROGRAMFILES/IIS/Microsoft Web Deploy V3"
+   export PATH="$PATH:$WINDIR/System32/WindowsPowerShell/v1.0"
+   ```
 
 ## Testing
 
