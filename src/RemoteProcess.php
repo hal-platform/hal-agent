@@ -81,12 +81,15 @@ class RemoteProcess
      * @param array $env
      * @param bool $isLoggingEnabled
      * @param string $prefixCommand
+     * @param string $customMessage
      *
      * @return boolean
      */
-    public function __invoke($remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null)
+    public function __invoke($remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
     {
         $this->lastOutput = '';
+
+        $message = $customMessage ?: self::EVENT_MESSAGE;
 
         // No session exists yet
         if ($this->session === null) {
@@ -115,7 +118,7 @@ class RemoteProcess
         // timed out
         if ($this->session->isTimeout()) {
             if ($isLoggingEnabled) {
-                $this->logger->event('failure', self::EVENT_MESSAGE, [
+                $this->logger->event('failure', self::ERR_COMMAND_TIMEOUT, [
                     'command' => $command,
                     'output' => $output,
                     'errorOutput' => $this->session->getStdError(),
@@ -129,7 +132,7 @@ class RemoteProcess
         // bad exit
         if ($this->session->getExitStatus() !== 0) {
             if ($isLoggingEnabled) {
-                $this->logger->event('failure', self::EVENT_MESSAGE, [
+                $this->logger->event('failure', $message, [
                     'command' =>$command,
                     'output' => $output,
                     'errorOutput' => $this->session->getStdError(),
@@ -142,7 +145,7 @@ class RemoteProcess
 
         // log if enabled
         if ($isLoggingEnabled) {
-            $this->logger->event('success', self::EVENT_MESSAGE, [
+            $this->logger->event('success', $message, [
                 'command' => $command,
                 'output' => $output
             ]);

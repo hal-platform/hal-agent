@@ -16,6 +16,8 @@ use QL\Hal\Agent\RemoteProcess;
  */
 class Builder
 {
+    const EVENT_MESSAGE = 'Run Windows Build Command';
+
     /**
      * @type RemoteProcess
      */
@@ -44,7 +46,7 @@ class Builder
         $remoter = $this->remoter;
         foreach ($commands as $command) {
             // $command = $remoter->sanitize($command);
-            if (!$response = $remoter($remoteServer, $command, $env, true, $chdir)) {
+            if (!$response = $remoter($remoteServer, $command, $env, true, $chdir, self::EVENT_MESSAGE)) {
                 return false;
             }
         }

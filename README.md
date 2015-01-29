@@ -113,6 +113,20 @@ Command            | Description
 
 ## Application scripting environment
 
+### Build systems and deployment types
+
+This agent supports the following:
+
+Build Systems:
+    - `unix` (Locally run)
+    - `windows` (Remotely run)
+Deployment Types:
+    - Rsync
+    - EC2 (Autoscaling, rsync)
+    - Elastic Beanstalk
+
+Please note: For Rsync deployments "server commands" are skipped (Both pre-push and post-push).
+
 ### .hal9000.yml
 
 A `.hal9000.yml` yaml file can be placed into the project repository to enable commands and other options for projects.
@@ -232,7 +246,7 @@ hal.baseurl               | HAL 9000 Application url
 1. Enable SSH and SCP on windows agent
     - Cygwin, CopSSH, etc
 2. Install **Windows 8 & .NET Framwork SDK**
-    - Ensure MsBuild.exe is installed for the following versions:
+    - Ensure `MsBuild.exe` is installed for the following versions:
         - `2.0.50727`
         - `3.5`
         - `4.0.30319`
