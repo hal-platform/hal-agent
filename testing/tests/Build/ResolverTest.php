@@ -144,7 +144,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $properties = $action('1234');
 
-        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
         $this->assertSame($expected['configuration'], $properties['configuration']);
         $this->assertSame($expected['location'], $properties['location']);
         $this->assertSame($expected['artifacts'], $properties['artifacts']);

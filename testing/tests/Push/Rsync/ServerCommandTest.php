@@ -12,68 +12,59 @@ use PHPUnit_Framework_TestCase;
 
 class ServerCommandTest extends PHPUnit_Framework_TestCase
 {
-    public $logger;
+    public $remoter;
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->remoter = Mockery::mock('QL\Hal\Agent\RemoteProcess');
     }
 
     public function testSuccess()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getCommandLine' => 'servercmd',
-            'getOutput' => 'test-output',
-            'isSuccessful' => true
-        ])->makePartial();
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
-
-        $this->logger
-            ->shouldReceive('event')
-            ->with('success', Mockery::any(), [
-                'command' => 'servercmd',
-                'output' => 'test-output'
-            ])->once();
-
-        $action = new ServerCommand($this->logger, $builder, 'sshuser', 10);
-
-        $success = $action('host', 'sync/path', ['env && pwd'], ['derp' => 'derp1', 'derp2' => 'derp3']);
+        $serverCommand = new ServerCommand($this->remoter);
+        $success = $serverCommand('server', 'path', ['command'], []);
         $this->assertTrue($success);
     }
 
     public function testFail()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getCommandLine' => 'servercmd',
-            'getOutput' => 'test-output',
-            'getErrorOutput' => 'test-error-output',
-            'getExitCode' => 500,
-            'isSuccessful' => false
-        ])->makePartial();
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->andReturn(false);
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
-
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', Mockery::any(), [
-                'command' => 'servercmd',
-                'output' => 'test-output',
-                'errorOutput' => 'test-error-output',
-                'exitCode' => 500
-            ])->once();
-
-        $action = new ServerCommand($this->logger, $builder, 'sshuser', 10);
-
-        $success = $action('host', 'sync/path', ['bin/cmd'], []);
+        $serverCommand = new ServerCommand($this->remoter);
+        $success = $serverCommand('server', 'path', ['command'], []);
         $this->assertFalse($success);
+    }
+
+    public function testMultipleCommandsAreRun()
+    {
+        $commands = [
+            'command1',
+            'command2'
+        ];
+
+        $env = [];
+        $prefixCommand = 'cd "path" &&';
+
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->with('server', 'command1', $env, true, $prefixCommand)
+            ->andReturn(true)
+            ->once();
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->with('server', 'command2', $env, true, $prefixCommand)
+            ->andReturn(false)
+            ->once();
+
+        $serverCommand = new ServerCommand($this->remoter);
+        $success = $serverCommand('server', 'path', $commands, $env);
+
+        $this->assertSame(false, $success);
     }
 }

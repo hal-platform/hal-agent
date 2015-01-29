@@ -9,120 +9,173 @@ namespace QL\Hal\Agent\Build\Unix;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use Symfony\Component\Console\Output\BufferedOutput;
 
 class BuilderTest extends PHPUnit_Framework_TestCase
 {
-    public $output;
-    public $logger;
-
     public $preparer;
-    public $builder;
+    public $logger;
 
     public function setUp()
     {
-        $this->output = new BufferedOutput;
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-
-        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\PackageManagerPreparer', ['__invoke' => null]);
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\Unix\BuildCommand', ['__invoke' => null]);
     }
 
     public function testSuccess()
     {
-        $properties = [
-            'unix' => [],
-            'configuration' => [
-                'system' => 'unix',
-                'build' => ['cmd1'],
-            ],
-            'location' => [
-                'path' => ''
-            ],
-            'environmentVariables' => []
-        ];
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getOutput' => 'test-output',
+            'getCommandLine' => 'deployscript',
+            'isSuccessful' => true
+        ])->makePartial();
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
 
         $this->logger
-            ->shouldReceive('setStage')
-            ->with('building')
-            ->once();
+            ->shouldReceive('event')
+            ->with('success', Mockery::any(), [
+                'command' => 'deployscript',
+                'output' => 'test-output'
+            ])->once();
 
-        $this->preparer
-            ->shouldReceive('__invoke')
-            ->andReturn(true)
-            ->once();
+        $action = new Builder($this->logger, $builder, 5);
 
-        // non-essential commands
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(true)
-            ->once();
-
-        $builder = new Builder($this->logger, $this->preparer, $this->builder);
-        $actual = $builder($this->output, $properties);
-
-        $this->assertSame(0, $actual);
-
-        $expected = <<<'OUTPUT'
-Building on unix
-Preparing package manager configuration
-Running build command
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $success = $action('path', ['command'], []);
+        $this->assertTrue($success);
     }
 
-    public function testFailSanityCheck()
+    public function testFail()
     {
-        $properties = [
-            'configuration' => [
-                'system' => 'unix',
-                'build' => ['cmd1'],
-            ],
-            'location' => [
-                'path' => ''
-            ],
-            'environmentVariables' => []
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getOutput' => 'test-output',
+            'getErrorOutput' => 'test-error-output',
+            'getCommandLine' => 'deployscript',
+            'isSuccessful' => false,
+            'getExitCode' => 127
+        ])->makePartial();
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
+                'command' => 'deployscript',
+                'exitCode' => 127,
+                'output' => 'test-output',
+                'errorOutput' => 'test-error-output'
+            ])->once();
+
+        $action = new Builder($this->logger, $builder, 5);
+
+        $success = $action('path', ['command'], []);
+        $this->assertFalse($success);
+    }
+
+    public function testBuilderIsParameterizedCorrectly()
+    {
+        $command = "bin/deploy --production && env > text.txt && bin/cmd 0  false         end\nweird\t";
+        $expectedParameters = [
+            'bin/deploy',
+            '--production',
+            '&&',
+            'env',
+            '>',
+            'text.txt',
+            '&&',
+            'bin/cmd',
+            '0',
+            'false',
+            "end\nweird\t"
         ];
+
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getCommandLine' => null,
+            'getOutput' => null,
+            'isSuccessful' => true,
+            'stop' => null
+        ]);
+
+        $actualParameters = null;
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $builder
+            ->shouldReceive('setWorkingDirectory')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setArguments')
+            ->with(Mockery::on(function($v) use (&$actualParameters) {
+                $actualParameters = $v;
+                return true;
+            }))
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('addEnvironmentVariables')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setTimeout')
+            ->with(5)
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->once();
+
+        $action = new Builder($this->logger, $builder, 5);
+        $success = $action('path', [$command], []);
+
+        $this->assertSame($expectedParameters, $actualParameters);
+    }
+
+    public function testMultipleCommandsAreRun()
+    {
+        $commands = [
+            'command1',
+            'command2'
+        ];
+
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getCommandLine' => null,
+            'getOutput' => null,
+            'isSuccessful' => true,
+            'stop' => null
+        ]);
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
-
-        $builder = new Builder($this->logger, $this->preparer, $this->builder);
-        $actual = $builder($this->output, $properties);
-        $this->assertSame(100, $actual);
-    }
-
-    public function testFailOnBuild()
-    {
-        $properties = [
-            'unix' => [],
-            'configuration' => [
-                'system' => 'unix',
-                'build' => ['cmd1'],
-            ],
-            'location' => [
-                'path' => ''
-            ],
-            'environmentVariables' => []
-        ];
+        $builder
+            ->shouldReceive('setWorkingDirectory')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setArguments')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('addEnvironmentVariables')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('setTimeout')
+            ->andReturn(Mockery::self());
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process)
+            ->twice();
 
         $this->logger
-            ->shouldReceive('setStage')
-            ->with('building')
-            ->once();
+            ->shouldReceive('event')
+            ->twice();
 
-        $this->preparer
-            ->shouldReceive('__invoke')
-            ->andReturn(true)
-            ->once();
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(false)
-            ->once();
+        $action = new Builder($this->logger, $builder, 5);
+        $success = $action('path', $commands, []);
 
-        $builder = new Builder($this->logger, $this->preparer, $this->builder);
-        $actual = $builder($this->output, $properties);
-        $this->assertSame(102, $actual);
+        $this->assertSame(true, $success);
     }
-
 }

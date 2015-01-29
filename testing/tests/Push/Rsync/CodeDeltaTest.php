@@ -13,28 +13,21 @@ use PHPUnit_Framework_TestCase;
 class CodeDeltaTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
+    public $remoter;
+    public $commitApi;
     public $parser;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->remoter = Mockery::mock('QL\Hal\Agent\RemoteProcess', ['__invoke' => false]);
         $this->commitApi = Mockery::mock('Github\Api\Repository\Commits');
         $this->parser = Mockery::mock('Symfony\Component\Yaml\Parser');
     }
 
     public function testCommandNotSuccessfulReturnsFalse()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'isSuccessful' => false
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
-
-        $action = new CodeDelta($this->logger, $builder, $this->parser, $this->commitApi, 'sshuser');
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
         $success = $action('hostname', 'path', []);
 
         $this->assertFalse($success);
@@ -42,23 +35,15 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
 
     public function testOutputNotParseableReturnsFalse()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getOutput' => 'test-output',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
-
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->andReturn('bad-yaml');
         $this->parser
             ->shouldReceive('parse')
-            ->with('test-output')
-            ->andReturnNull();
+            ->with('bad-yaml')
+            ->andReturn('bad-yaml');
 
-        $action = new CodeDelta($this->logger, $builder, $this->parser, $this->commitApi, 'sshuser');
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
         $success = $action('hostname', 'path', []);
 
         $this->assertFalse($success);
@@ -66,16 +51,12 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
 
     public function testSourceNotParseableReturnsDefaultContext()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getOutput' => 'test-output',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->andReturn('test-output');
 
         $this->logger
             ->shouldReceive('event')
@@ -104,7 +85,7 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('test-output')
             ->andReturn($old);
 
-        $action = new CodeDelta($this->logger, $builder, $this->parser, $this->commitApi, 'sshuser');
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
         $success = $action('hostname', 'path', $new);
 
         $this->assertTrue($success);
@@ -112,16 +93,12 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
 
     public function testCodeRedeployedMessage()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getOutput' => 'test-output',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->andReturn('test-output');
 
         $this->logger
             ->shouldReceive('event')
@@ -149,24 +126,20 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('test-output')
             ->andReturn($old);
 
-        $action = new CodeDelta($this->logger, $builder, $this->parser, $this->commitApi, 'sshuser');
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
         $success = $action('hostname', 'path', $new);
 
         $this->assertTrue($success);
     }
 
-    public function testSourceNotParseableReturnsFullContext()
+    public function testSourceParseableReturnsFullContext()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
-            'getOutput' => 'test-output',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
-            ->andReturn($process);
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->andReturn('test-output');
 
         $this->commitApi
             ->shouldReceive('compare')
@@ -211,7 +184,7 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('test-output')
             ->andReturn($old);
 
-        $action = new CodeDelta($this->logger, $builder, $this->parser, $this->commitApi, 'sshuser');
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
         $success = $action('hostname', 'path', $new);
 
         $this->assertTrue($success);

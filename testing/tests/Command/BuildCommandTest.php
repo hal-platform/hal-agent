@@ -215,7 +215,7 @@ Found build: 1234
 Downloading github repository
 Unpacking github repository
 Reading .hal9000.yml
-Running build command
+Building
 Packing build into archive
 Moving build to archive
 Success!

@@ -9,11 +9,6 @@ namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\RemoteProcess;
 
-/**
- * C:\Windows\Microsoft.NET\Framework\v2.0.50727\MSBuild.exe
- * C:\Windows\Microsoft.NET\Framework\v3.5\MSBuild.exe
- * C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe
- */
 class Builder
 {
     const EVENT_MESSAGE = 'Run Windows Build Command';
