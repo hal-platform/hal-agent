@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\Build\BuildHandlerInterface;
-use QL\Hal\Agent\Build\PackageManagerPreparer;
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -21,11 +20,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
      * @type EventLogger
      */
     private $logger;
-
-    /**
-     * @type PackageManagerPreparer
-     */
-    private $preparer;
 
     /**
      * @type Exporter
@@ -59,9 +53,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
 
     /**
      * @param EventLogger $logger
-     * @param SSHFactory $ssh
-     *
-     * @param PackageManagerPreparer $preparer
      * @param Exporter $exporter
      * @param Builder $builder
      * @param Importer $importer
@@ -69,7 +60,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
      */
     public function __construct(
         EventLogger $logger,
-        PackageManagerPreparer $preparer,
         Exporter $exporter,
         Builder $builder,
         Importer $importer,
@@ -77,7 +67,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
     ) {
         $this->logger = $logger;
 
-        $this->preparer = $preparer;
         $this->exporter = $exporter;
         $this->builder = $builder;
         $this->importer = $importer;
@@ -146,18 +135,13 @@ class WindowsBuildHandler implements BuildHandlerInterface
             return $this->bombout($output, 201);
         }
 
-        // set package manager config
-        if (!$this->prepare($output, $properties)) {
+        // run build
+        if (!$this->build($output, $properties)) {
             return $this->bombout($output, 202);
         }
 
-        // run build
-        if (!$this->build($output, $properties)) {
-            return $this->bombout($output, 203);
-        }
-
         if (!$this->import($output, $properties)) {
-            return $this->bombout($output, 204);
+            return $this->bombout($output, 203);
         }
 
         // success
@@ -181,24 +165,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
         if (!$properties[self::SERVER_TYPE]['buildUser'] || !$properties[self::SERVER_TYPE]['buildServer']) {
             return false;
         }
-
-        return true;
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     *
-     * @return boolean
-     */
-    private function prepare(OutputInterface $output, array $properties)
-    {
-        $this->status($output, 'Preparing package manager configuration');
-
-        $preparer = $this->preparer;
-        // $preparer(
-        //     $properties[self::SERVER_TYPE]['environmentVariables']
-        // );
 
         return true;
     }

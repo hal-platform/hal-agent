@@ -16,7 +16,6 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
     public $output;
     public $logger;
 
-    public $preparer;
     public $exporter;
     public $builder;
     public $importer;
@@ -27,7 +26,6 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
         $this->output = new BufferedOutput;
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
 
-        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\PackageManagerPreparer', ['__invoke' => true]);
         $this->exporter = Mockery::mock('QL\Hal\Agent\Build\Windows\Exporter', ['__invoke' => true]);
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\Windows\Builder', ['__invoke' => true]);
         $this->importer = Mockery::mock('QL\Hal\Agent\Build\Windows\Importer', ['__invoke' => true]);
@@ -57,10 +55,6 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
             ->with('building')
             ->once();
 
-        // $this->preparer
-        //     ->shouldReceive('__invoke')
-        //     ->andReturn(true)
-        //     ->once();
         $this->exporter
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -79,7 +73,6 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
 
         $handler = new WindowsBuildHandler(
             $this->logger,
-            $this->preparer,
             $this->exporter,
             $this->builder,
             $this->importer,
@@ -95,7 +88,6 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
 Building on windows
 Validating windows configuration
 Exporting files to build server
-Preparing package manager configuration
 Running build command
 Importing files from build server
 Cleaning up build server
@@ -118,7 +110,6 @@ OUTPUT;
 
         $handler = new WindowsBuildHandler(
             $this->logger,
-            $this->preparer,
             $this->exporter,
             $this->builder,
             $this->importer,
@@ -160,7 +151,6 @@ OUTPUT;
 
         $handler = new WindowsBuildHandler(
             $this->logger,
-            $this->preparer,
             $this->exporter,
             $this->builder,
             $this->importer,
@@ -169,6 +159,6 @@ OUTPUT;
         $handler->disableShutdownHandler();
 
         $actual = $handler($this->output, $properties);
-        $this->assertSame(203, $actual);
+        $this->assertSame(202, $actual);
     }
 }

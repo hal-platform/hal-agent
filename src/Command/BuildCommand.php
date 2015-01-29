@@ -55,9 +55,8 @@ class BuildCommand extends Command
 
         200 => 'Required properties for windows are missing.',
         201 => 'Exporting files to build server failed.',
-        202 => 'Preparing package manager configuration failed.',
-        203 => 'Build command failed.',
-        204 => 'Importing files from build server failed.',
+        202 => 'Build command failed.',
+        203 => 'Importing files from build server failed.',
     ];
 
     /**

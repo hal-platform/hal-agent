@@ -74,18 +74,10 @@ services:
         class: 'QL\Hal\Agent\Build\Windows\WindowsBuildHandler'
         arguments:
             - @logger.event
-            - @build.windows.preparer
             - @build.windows.exporter
             - @build.windows.builder
             - @build.windows.importer
             - @build.windows.cleaner
-
-    build.windows.preparer:
-        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
-        arguments:
-            - @logger.event
-            - @utility.filesystem
-            - %github.com.token%
 
     build.windows.exporter:
         class: 'QL\Hal\Agent\Build\Windows\Exporter'
