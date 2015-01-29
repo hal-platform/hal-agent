@@ -27,6 +27,7 @@ class Builder
     }
 
     /**
+     * @param string $remoteUser
      * @param string $remoteServer
      * @param string $remotePath
      * @param array $commands
@@ -34,14 +35,14 @@ class Builder
      *
      * @return boolean
      */
-    public function __invoke($remoteServer, $remotePath, array $commands, array $env)
+    public function __invoke($remoteUser, $remoteServer, $remotePath, array $commands, array $env)
     {
         $chdir = sprintf('cd "%s" &&', $remotePath);
 
         $remoter = $this->remoter;
         foreach ($commands as $command) {
             // $command = $remoter->sanitize($command);
-            if (!$response = $remoter($remoteServer, $command, $env, true, $chdir, self::EVENT_MESSAGE)) {
+            if (!$response = $remoter($remoteUser, $remoteServer, $command, $env, true, $chdir, self::EVENT_MESSAGE)) {
                 return false;
             }
         }

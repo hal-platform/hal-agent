@@ -38,6 +38,7 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
     {
         $properties = [
             'windows' => [
+                'buildUser' => 'sshuser',
                 'buildServer' => 'windowsserver',
                 'remotePath' => '/path',
                 'environmentVariables' => []
@@ -92,6 +93,7 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
 
         $expected = <<<'OUTPUT'
 Building on windows
+Validating windows configuration
 Exporting files to build server
 Preparing package manager configuration
 Running build command
@@ -132,6 +134,7 @@ OUTPUT;
     {
         $properties = [
             'windows' => [
+                'buildUser' => 'sshuser',
                 'buildServer' => 'windowsserver',
                 'remotePath' => '/path',
                 'environmentVariables' => []

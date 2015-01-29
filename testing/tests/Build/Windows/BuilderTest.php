@@ -26,7 +26,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->andReturn(true);
 
         $builder = new Builder($this->remoter);
-        $success = $builder('server', 'path', ['command'], []);
+        $success = $builder('sshuser', 'server', 'path', ['command'], []);
         $this->assertTrue($success);
     }
 
@@ -37,7 +37,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             ->andReturn(false);
 
         $builder = new Builder($this->remoter);
-        $success = $builder('server', 'path', ['command'], []);
+        $success = $builder('sshuser', 'server', 'path', ['command'], []);
         $this->assertFalse($success);
     }
 
@@ -53,17 +53,17 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $this->remoter
             ->shouldReceive('__invoke')
-            ->with('server', 'command1', $env, true, $prefixCommand, Builder::EVENT_MESSAGE)
+            ->with('sshuser', 'server', 'command1', $env, true, $prefixCommand, Builder::EVENT_MESSAGE)
             ->andReturn(true)
             ->once();
         $this->remoter
             ->shouldReceive('__invoke')
-            ->with('server', 'command2', $env, true, $prefixCommand, Builder::EVENT_MESSAGE)
+            ->with('sshuser', 'server', 'command2', $env, true, $prefixCommand, Builder::EVENT_MESSAGE)
             ->andReturn(false)
             ->once();
 
         $builder = new Builder($this->remoter);
-        $success = $builder('server', 'path', $commands, $env);
+        $success = $builder('sshuser', 'server', 'path', $commands, $env);
 
         $this->assertSame(false, $success);
     }

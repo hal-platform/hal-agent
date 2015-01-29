@@ -156,9 +156,10 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'method' => 'rsync',
 
             'rsync' => [
-                'hostname' => '127.0.0.1',
-                'syncPath' => 'sshuser@127.0.0.1:/herp/derp',
+                'remoteUser' => 'sshuser',
+                'remoteServer' => '127.0.0.1',
                 'remotePath' => '/herp/derp',
+                'syncPath' => 'sshuser@127.0.0.1:/herp/derp',
 
                 'environmentVariables' => [
                     'HAL_HOSTNAME' => '127.0.0.1',

@@ -7,8 +7,6 @@
 
 namespace QL\Hal\Agent;
 
-use Crypt_RSA;
-use Net_SSH2;
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\ProcessUtils;
 
@@ -19,7 +17,6 @@ class RemoteProcess
      */
     const EVENT_MESSAGE = 'Run remote command';
     const ERR_COMMAND_TIMEOUT = 'Remote command took too long';
-    const ERR_CONNECT_SERVER = 'Failed to connect to server. It may be down.';
 
     /**
      * @type EventLogger
@@ -27,24 +24,14 @@ class RemoteProcess
     private $logger;
 
     /**
-     * @type string
+     * @type SSHSessionManager
      */
-    private $remoteUser;
-
-    /**
-     * @type string
-     */
-    private $sshKeyPath;
+    private $sshManager;
 
     /**
      * @type int
      */
     private $commandTimeout;
-
-    /**
-     * @type Net_SSH2|null
-     */
-    private $session;
 
     /**
      * @type string
@@ -53,22 +40,15 @@ class RemoteProcess
 
     /**
      * @param EventLogger $logger
-     * @param string $remoteUser
-     * @param string $sshKeyPath
+     * @param SSHSessionManager $sshManager
      * @param int $commandTimeout
      */
-    public function __construct(
-        EventLogger $logger,
-        $remoteUser,
-        $sshKeyPath,
-        $commandTimeout
-    ) {
+    public function __construct(EventLogger $logger, SSHSessionManager $sshManager, $commandTimeout)
+    {
         $this->logger = $logger;
-        $this->remoteUser = $remoteUser;
-        $this->sshKeyPath = $sshKeyPath;
+        $this->sshManager = $sshManager;
         $this->commandTimeout = $commandTimeout;
 
-        $this->session = null;
         $this->lastOutput = '';
     }
 
@@ -76,6 +56,7 @@ class RemoteProcess
      * Note:
      * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
      *
+     * @param string $remoteUser
      * @param string $remoteServer
      * @param string $command
      * @param array $env
@@ -85,19 +66,14 @@ class RemoteProcess
      *
      * @return boolean
      */
-    public function __invoke($remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
+    public function __invoke($remoteUser, $remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
     {
         $this->lastOutput = '';
 
         $message = $customMessage ?: self::EVENT_MESSAGE;
 
-        // No session exists yet
-        if ($this->session === null) {
-            $this->session = $this->createSession($remoteServer);
-        }
-
-        // Not logged in
-        if ($this->session === null) {
+        // No session could be started/resumed
+        if (!$ssh = $this->sshManager->createSession($remoteUser, $remoteServer)) {
             return false;
         }
 
@@ -111,18 +87,18 @@ class RemoteProcess
             $remoteCommand = implode(' && ', [$envSetters, $remoteCommand]);
         }
 
-        $this->session->setTimeout($this->commandTimeout);
-        $output = $this->session->exec($remoteCommand);
+        $ssh->setTimeout($this->commandTimeout);
+        $output = $ssh->exec($remoteCommand);
         $this->lastOutput = $output;
 
         // timed out
-        if ($this->session->isTimeout()) {
+        if ($ssh->isTimeout()) {
             if ($isLoggingEnabled) {
                 $this->logger->event('failure', self::ERR_COMMAND_TIMEOUT, [
                     'command' => $command,
                     'output' => $output,
-                    'errorOutput' => $this->session->getStdError(),
-                    'exitCode' => $this->session->getExitStatus()
+                    'errorOutput' => $ssh->getStdError(),
+                    'exitCode' => $ssh->getExitStatus()
                 ]);
             }
 
@@ -130,13 +106,13 @@ class RemoteProcess
         }
 
         // bad exit
-        if ($this->session->getExitStatus() !== 0) {
+        if ($ssh->getExitStatus() !== 0) {
             if ($isLoggingEnabled) {
                 $this->logger->event('failure', $message, [
-                    'command' =>$command,
+                    'command' => $command,
                     'output' => $output,
-                    'errorOutput' => $this->session->getStdError(),
-                    'exitCode' => $this->session->getExitStatus()
+                    'errorOutput' => $ssh->getStdError(),
+                    'exitCode' => $ssh->getExitStatus()
                 ]);
             }
 
@@ -185,33 +161,6 @@ class RemoteProcess
     public function getLastOutput()
     {
         return $this->lastOutput;
-    }
-
-    /**
-     * @param string $remoteServer
-     *
-     * @return Net_SSH2|null
-     */
-    public function createSession($remoteServer)
-    {
-        $ssh = new Net_SSH2($remoteServer);
-
-        // @todo symfony filesystem
-        $privateKey = file_get_contents($this->sshKeyPath);
-
-        $key = new Crypt_RSA;
-        $key->loadKey($privateKey);
-
-        $isLoggedIn = @$ssh->login($this->remoteUser, $key);
-        if ($isLoggedIn) {
-            return $ssh;
-        }
-
-        $this->logger->event('failure', self::ERR_CONNECT_SERVER, [
-            'server' => $remoteServer
-        ]);
-
-        return null;
     }
 
     /**

@@ -71,17 +71,31 @@ class Resolver
     private $homeDirectory;
 
     /**
+     * @type string
+     */
+    private $windowsUser;
+    private $windowsServer;
+
+    /**
      * @param BuildRepository $buildRepo
      * @param ProcessBuilder $processBuilder
      * @param string $envPath
      * @param string $archivePath
      */
-    public function __construct(BuildRepository $buildRepo, ProcessBuilder $processBuilder, $envPath, $archivePath)
-    {
+    public function __construct(
+        BuildRepository $buildRepo,
+        ProcessBuilder $processBuilder,
+        $envPath,
+        $archivePath
+    ) {
         $this->buildRepo = $buildRepo;
         $this->processBuilder = $processBuilder;
+
         $this->envPath = $envPath;
         $this->archivePath = $archivePath;
+
+        $this->windowsUser = '';
+        $this->windowsServer = '';
     }
 
     /**
@@ -125,13 +139,14 @@ class Resolver
 
         // system-specific configuration
         $properties[UnixBuildHandler::SERVER_TYPE] = [
-            'environmentVariables' => $this->generateBuildEnvironmentVariables($build)
+            'environmentVariables' => $this->generateUnixBuildEnvironmentVariables($build)
         ];
 
         $properties[WindowsBuildHandler::SERVER_TYPE] = [
+            'buildUser' => $this->windowsUser,
+            'buildServer' => $this->windowsServer,
             'remotePath' => $this->generateWindowsBuildPath($build->getId()),
-            'buildServer' => 'windows',
-            'environmentVariables' => $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables']
+            'environmentVariables' => $this->generateWindowsBuildEnvironmentVariables($build)
         ];
 
         unset($properties[WindowsBuildHandler::SERVER_TYPE]['environmentVariables']['HOME']);
@@ -173,11 +188,25 @@ class Resolver
      * If none is provided a common location within the shared build directory is used.
      *
      * @param string $directory
-     * @return string
+     * @return null
      */
     public function setHomeDirectory($directory)
     {
         $this->homeDirectory = $directory;
+    }
+
+    /**
+     * Add windows build server info non-unix builds can be built.
+     *
+     * @param string $user
+     * @param string $server
+     *
+     * @return null
+     */
+    public function setWindowsBuilder($user, $server)
+    {
+        $this->windowsUser = $user;
+        $this->windowsServer = $server;
     }
 
     /**
@@ -324,7 +353,7 @@ class Resolver
      * @param Build $build
      * @return array
      */
-    private function generateBuildEnvironmentVariables(Build $build)
+    private function generateUnixBuildEnvironmentVariables(Build $build)
     {
         $vars = [
             'HOME' => $this->generateHomePath($build->getRepository()->getId()),
@@ -341,6 +370,23 @@ class Resolver
         $vars = array_merge($vars, $this->getPackageManagerEnv($vars));
         $vars = array_merge($vars, $this->getRubyEnv($vars));
         $vars = array_merge($vars, $this->getIsolatedEnv($vars, $build));
+
+        return $vars;
+    }
+
+    /**
+     * @param Build $build
+     * @return array
+     */
+    private function generateWindowsBuildEnvironmentVariables(Build $build)
+    {
+        $vars = [
+            'HAL_BUILDID' => $build->getId(),
+            'HAL_COMMIT' => $build->getCommit(),
+            'HAL_GITREF' => $build->getBranch(),
+            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
+            'HAL_REPO' => $build->getRepository()->getKey()
+        ];
 
         return $vars;
     }

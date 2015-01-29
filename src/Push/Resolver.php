@@ -192,7 +192,7 @@ class Resolver
             $properties[ServerEnumType::TYPE_RSYNC] = $this->buildRsyncProperties($build, $deployment, $server);
 
             // add internal server/paths
-            $hostname = $properties[ServerEnumType::TYPE_RSYNC]['hostname'];
+            $hostname = $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'];
             $remotePath = $properties[ServerEnumType::TYPE_RSYNC]['remotePath'];
 
         } elseif ($method === ServerEnumType::TYPE_EB) {
@@ -303,9 +303,10 @@ class Resolver
         }
 
         return [
-            'hostname' => $hostname,
-            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
+            'remoteUser' => $this->sshUser,
+            'remoteServer' => $hostname,
             'remotePath' => $deployment->getPath(),
+            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
             'environmentVariables' => $this->buildServerEnvironmentVariables($build, $hostname, $deployment->getPath())
         ];
     }

@@ -83,13 +83,14 @@ class CodeDelta
     }
 
     /**
+     * @param string $remoteUser
      * @param string $remoteServer
      * @param string $remotePath
      * @param array $pushProperties
      *
      * @return boolean
      */
-    public function __invoke($remoteServer, $remotePath, array $pushProperties)
+    public function __invoke($remoteUser, $remoteServer, $remotePath, array $pushProperties)
     {
         $command = 'cat ' . self::FS_DETAILS_FILE;
 
@@ -97,7 +98,7 @@ class CodeDelta
         $chdir = sprintf('cd "%s" &&', $remotePath);
 
         $remoter = $this->remoter;
-        if (!$response = $remoter($remoteServer, $command, [], false, $chdir)) {
+        if (!$response = $remoter($remoteUser, $remoteServer, $command, [], false, $chdir)) {
             return false;
         }
 

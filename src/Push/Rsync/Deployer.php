@@ -116,7 +116,8 @@ class Deployer implements DeployerInterface
 
         $delta = $this->delta;
         return $delta(
-            $properties[ServerEnumType::TYPE_RSYNC]['hostname'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
             $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['pushProperties']
         );
@@ -163,7 +164,8 @@ class Deployer implements DeployerInterface
 
         $prepush = $this->serverCommand;
         return $prepush(
-            $properties[ServerEnumType::TYPE_RSYNC]['hostname'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
             $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['pre_push'],
             $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']
@@ -205,7 +207,8 @@ class Deployer implements DeployerInterface
 
         $postpush = $this->serverCommand;
         return $postpush(
-            $properties[ServerEnumType::TYPE_RSYNC]['hostname'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
             $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['post_push'],
             $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']

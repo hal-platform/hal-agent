@@ -10,7 +10,7 @@ services:
             - ['setBaseBuildDirectory', ['%environment.temp%']]
             - ['setHomeDirectory', ['%environment.home%']]
             - ['setWindowsBaseBuildDirectory', ['%environment.temp.windows%']]
-
+            - ['setWindowsBuilder', [%build.windows.remoteUser%, %build.windows.server%]]
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments: [@logger.event, @github.archive]
@@ -94,7 +94,7 @@ services:
             - @build.windows.standard.remoter
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
-            - %build.remoteUser%
+            - %build.windows.remoteUser%
 
     build.windows.builder:
         class: 'QL\Hal\Agent\Build\Windows\Builder'
@@ -107,7 +107,7 @@ services:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
-            - %build.remoteUser%
+            - %build.windows.remoteUser%
 
     build.windows.cleaner:
         class: 'QL\Hal\Agent\Build\Windows\Cleaner'
@@ -118,13 +118,11 @@ services:
         class: 'QL\Hal\Agent\RemoteProcess'
         arguments:
             - @logger.event
-            - %build.remoteUser%
-            - %ssh.keyPath%
+            - @ssh.manager
             - %timeout.build%
     build.windows.standard.remoter:
         class: 'QL\Hal\Agent\RemoteProcess'
         arguments:
             - @logger.event
-            - %build.remoteUser%
-            - %ssh.keyPath%
+            - @ssh.manager
             - %timeout.standard%

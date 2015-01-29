@@ -36,8 +36,9 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     {
         $properties = [
             'rsync' => [
-                'hostname' => '',
-                'remotePath' => '',
+                'remoteUser' => 'sshuser',
+                'remoteServer' => 'webserver',
+                'remotePath' => '/var/www',
                 'syncPath' => '',
                 'environmentVariables' => []
             ],
@@ -129,8 +130,9 @@ OUTPUT;
     {
         $properties = [
             'rsync' => [
-                'hostname' => '',
-                'remotePath' => '',
+                'remoteUser' => 'sshuser',
+                'remoteServer' => 'webserver',
+                'remotePath' => '/var/www',
                 'syncPath' => '',
             ],
             'configuration' => [
@@ -172,8 +174,9 @@ OUTPUT;
     {
         $properties = [
             'rsync' => [
-                'hostname' => '',
-                'remotePath' => '',
+                'remoteUser' => 'sshuser',
+                'remoteServer' => 'webserver',
+                'remotePath' => '/var/www',
                 'syncPath' => '',
                 'environmentVariables' => [],
             ],
@@ -220,8 +223,9 @@ OUTPUT;
     {
         $properties = [
             'rsync' => [
-                'hostname' => '',
-                'remotePath' => '',
+                'remoteUser' => 'sshuser',
+                'remoteServer' => 'webserver',
+                'remotePath' => '/var/www',
                 'syncPath' => '',
                 'environmentVariables' => [],
             ],
@@ -268,8 +272,9 @@ OUTPUT;
     {
         $properties = [
             'rsync' => [
-                'hostname' => '',
-                'remotePath' => '',
+                'remoteUser' => 'sshuser',
+                'remoteServer' => 'webserver',
+                'remotePath' => '/var/www',
                 'syncPath' => '',
                 'environmentVariables' => [],
             ],

@@ -25,6 +25,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public $mover;
     public $downloadProgress;
     public $filesystem;
+    public $ssh;
 
     public $input;
     public $output;
@@ -41,6 +42,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->mover = Mockery::mock('QL\Hal\Agent\Build\Mover');
         $this->downloadProgress = Mockery::mock('QL\Hal\Agent\Helper\DownloadProgressHelper');
         $this->filesystem = Mockery::mock('Symfony\Component\FileSystem\Filesystem');
+        $this->ssh = Mockery::mock('QL\Hal\Agent\SSHSessionManager');
 
         $this->output = new BufferedOutput;
     }
@@ -65,6 +67,10 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('addSubscription')
             ->twice();
 
+        $this->ssh
+            ->shouldReceive('disconnectAll')
+            ->twice();
+
         $command = new BuildCommand(
             'cmd',
             $this->logger,
@@ -76,7 +82,8 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             $this->packer,
             $this->mover,
             $this->downloadProgress,
-            $this->filesystem
+            $this->filesystem,
+            $this->ssh
         );
 
         $command->disableShutdownHandler();
@@ -192,6 +199,10 @@ OUTPUT;
             ->with('build.success', 'notifier.email')
             ->once();
 
+        $this->ssh
+            ->shouldReceive('disconnectAll')
+            ->twice();
+
         $command = new BuildCommand(
             'cmd',
             $this->logger,
@@ -203,7 +214,8 @@ OUTPUT;
             $this->packer,
             $this->mover,
             $this->downloadProgress,
-            $this->filesystem
+            $this->filesystem,
+            $this->ssh
         );
 
         $command->disableShutdownHandler();
@@ -278,6 +290,10 @@ OUTPUT;
             ->shouldReceive('addSubscription')
             ->twice();
 
+        $this->ssh
+            ->shouldReceive('disconnectAll')
+            ->once();
+
         $command = new BuildCommand(
             'cmd',
             $this->logger,
@@ -289,7 +305,8 @@ OUTPUT;
             $this->packer,
             $this->mover,
             $this->downloadProgress,
-            $this->filesystem
+            $this->filesystem,
+            $this->ssh
         );
 
         try {

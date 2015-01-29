@@ -136,7 +136,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
         $this->status($output, self::STATUS);
 
         // sanity check
-        if (!isset($properties[self::SERVER_TYPE])) {
+        if (!$this->sanityCheck($output, $properties)) {
             return 200;
         }
 
@@ -170,6 +170,27 @@ class WindowsBuildHandler implements BuildHandlerInterface
      *
      * @return boolean
      */
+    private function sanityCheck(OutputInterface $output, array $properties)
+    {
+        $this->status($output, 'Validating windows configuration');
+
+        if (!isset($properties[self::SERVER_TYPE])) {
+            return false;
+        }
+
+        if (!$properties[self::SERVER_TYPE]['buildUser'] || !$properties[self::SERVER_TYPE]['buildServer']) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     *
+     * @return boolean
+     */
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->status($output, 'Preparing package manager configuration');
@@ -192,15 +213,20 @@ class WindowsBuildHandler implements BuildHandlerInterface
     {
         $this->status($output, 'Exporting files to build server');
 
-        // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($properties);
-
         $exporter = $this->exporter;
-        return $exporter(
+        $response = $exporter(
             $properties['location']['path'],
+            $properties[self::SERVER_TYPE]['buildUser'],
             $properties[self::SERVER_TYPE]['buildServer'],
             $properties[self::SERVER_TYPE]['remotePath']
         );
+
+        if ($response) {
+            // Set emergency handler in case of super fatal
+            $this->enableEmergencyHandler($properties);
+        }
+
+        return $response;
     }
 
     /**
@@ -215,6 +241,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
 
         $builder = $this->builder;
         return $builder(
+            $properties[self::SERVER_TYPE]['buildUser'],
             $properties[self::SERVER_TYPE]['buildServer'],
             $properties[self::SERVER_TYPE]['remotePath'],
             $properties['configuration']['build'],
@@ -259,11 +286,12 @@ class WindowsBuildHandler implements BuildHandlerInterface
     private function enableEmergencyHandler(array $properties)
     {
         $cleaner = $this->cleaner;
+        $buildUser = $properties[self::SERVER_TYPE]['buildUser'];
         $buildServer = $properties[self::SERVER_TYPE]['buildServer'];
         $remotePath = $properties[self::SERVER_TYPE]['remotePath'];
 
-        $this->cleanup(function() use ($cleaner, $buildServer, $remotePath) {
-            $cleaner($buildServer, $remotePath);
+        $this->cleanup(function() use ($cleaner, $buildUser, $buildServer, $remotePath) {
+            $cleaner($buildUser, $buildServer, $remotePath);
         });
 
         // Set emergency handler in case of super fatal

@@ -26,9 +26,13 @@ parameters:
     environment.archive: ''
 
     # user used to SSH and RSYNC to target servers
-    build.remoteUser: ''
+    build.windows.remoteUser: ''
+    build.windows.server: ''
     push.remoteUser: ''
-    ssh.keyPath: '/path/to/id_rsa'
+    ssh.credentials:
+        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
+        - [%push.remoteUser%, '*', '/path/to/id_rsa']
+        - [%aws.ec2.user%, '*', '']
 
     # Core logger service hostname
     # Only required in standalone installations

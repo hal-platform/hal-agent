@@ -26,7 +26,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn(true);
 
         $serverCommand = new ServerCommand($this->remoter);
-        $success = $serverCommand('server', 'path', ['command'], []);
+        $success = $serverCommand('sshuser', 'server', 'path', ['command'], []);
         $this->assertTrue($success);
     }
 
@@ -37,7 +37,7 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn(false);
 
         $serverCommand = new ServerCommand($this->remoter);
-        $success = $serverCommand('server', 'path', ['command'], []);
+        $success = $serverCommand('sshuser', 'server', 'path', ['command'], []);
         $this->assertFalse($success);
     }
 
@@ -53,17 +53,17 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
 
         $this->remoter
             ->shouldReceive('__invoke')
-            ->with('server', 'command1', $env, true, $prefixCommand)
+            ->with('sshuser', 'server', 'command1', $env, true, $prefixCommand)
             ->andReturn(true)
             ->once();
         $this->remoter
             ->shouldReceive('__invoke')
-            ->with('server', 'command2', $env, true, $prefixCommand)
+            ->with('sshuser', 'server', 'command2', $env, true, $prefixCommand)
             ->andReturn(false)
             ->once();
 
         $serverCommand = new ServerCommand($this->remoter);
-        $success = $serverCommand('server', 'path', $commands, $env);
+        $success = $serverCommand('sshuser', 'server', 'path', $commands, $env);
 
         $this->assertSame(false, $success);
     }

@@ -52,60 +52,49 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
     }
 
-    public function testSuccess()
+    public function testWindowsSettingsResolvedWhenSet()
     {
-        $environment = new Environment;
-        $environment->setKey('envkey');
-
-        $repository = new Repository;
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setBuildCmd('derp');
-        $repository->setKey('repokey');
-
-        $build = new Build;
-        $build->setId('1234');
-        $build->setStatus('Waiting');
-        $build->setEnvironment($environment);
-        $build->setRepository($repository);
-        $build->setBranch('master');
-        $build->setCommit('5555');
+        $build = $this->createMockBuild();
 
         $expected = [
-            'build' => $build,
+            'buildUser' => 'buildinguser',
+            'buildServer' => 'windowsserver',
+            'remotePath' => '$HOME/builds/hal9000-build-1234',
+            'environmentVariables' => [
+                'HAL_BUILDID' => '1234',
+                'HAL_COMMIT' => '5555',
+                'HAL_GITREF' => 'master',
+                'HAL_ENVIRONMENT' => 'envkey',
+                'HAL_REPO' => 'repokey'
+            ]
+        ];
 
-            'configuration' => [
-                'system' => 'unix',
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
+        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
+            'find' => $build
+        ]);
 
-                'build' => [
-                    'derp'
-                ],
-                'build_transform' => [],
-                'pre_push' => [],
-                'post_push' => []
-            ],
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getOutput' => 'testdir/home/gempath/here:anotherpath',
+            'isSuccessful' => true
+        ])->makePartial();
 
-            'location' => [
-                'download' => 'testdir/hal9000-download-1234.tar.gz',
-                'path' => 'testdir/hal9000-build-1234',
-                'archive' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-1234.tar.gz'
-            ],
-            'github' => [
-                'user' => 'user1',
-                'repo' => 'repo1',
-                'reference' => '5555',
-            ],
-            'artifacts' => [
-                'testdir/hal9000-download-1234.tar.gz',
-                'testdir/hal9000-build-1234',
-                'testdir/hal9000-1234.tar.gz'
-            ],
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
+
+        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
+        $action->setBaseBuildDirectory('testdir');
+        $action->setWindowsBuilder('buildinguser', 'windowsserver');
+
+        $properties = $action('1234');
+
+        $this->assertSame($expected, $properties['windows']);
+    }
+
+    public function testUnixSettingsResolved()
+    {
+        $build = $this->createMockBuild();
+
+        $expected = [
             'environmentVariables' => [
                 'HOME' => 'testdir/home/',
                 'PATH' => 'testdir/home/gempath/here/bin:ENV_PATH',
@@ -144,11 +133,92 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $properties = $action('1234');
 
+        $this->assertSame($expected, $properties['unix']);
+    }
+
+    public function testSuccess()
+    {
+        $build = $this->createMockBuild();
+
+        $expected = [
+            'build' => $build,
+
+            'configuration' => [
+                'system' => 'unix',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
+
+                'build' => [
+                    'derp'
+                ],
+                'build_transform' => [],
+                'pre_push' => [],
+                'post_push' => []
+            ],
+
+            'location' => [
+                'download' => 'testdir/hal9000-download-1234.tar.gz',
+                'path' => 'testdir/hal9000-build-1234',
+                'archive' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-1234.tar.gz'
+            ],
+            'github' => [
+                'user' => 'user1',
+                'repo' => 'repo1',
+                'reference' => '5555',
+            ],
+            'artifacts' => [
+                'testdir/hal9000-download-1234.tar.gz',
+                'testdir/hal9000-build-1234',
+                'testdir/hal9000-1234.tar.gz'
+            ]
+        ];
+
+        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
+            'find' => $build
+        ]);
+
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'getOutput' => 'testdir/home/gempath/here:anotherpath',
+            'isSuccessful' => true
+        ])->makePartial();
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
+
+        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
+        $action->setBaseBuildDirectory('testdir');
+
+        $properties = $action('1234');
+
         $this->assertSame($expected['configuration'], $properties['configuration']);
         $this->assertSame($expected['location'], $properties['location']);
         $this->assertSame($expected['artifacts'], $properties['artifacts']);
         $this->assertSame($expected['github'], $properties['github']);
+    }
 
+    private function createMockBuild()
+    {
+        $environment = new Environment;
+        $environment->setKey('envkey');
 
+        $repository = new Repository;
+        $repository->setGithubUser('user1');
+        $repository->setGithubRepo('repo1');
+        $repository->setBuildCmd('derp');
+        $repository->setKey('repokey');
+
+        $build = new Build;
+        $build->setId('1234');
+        $build->setStatus('Waiting');
+        $build->setEnvironment($environment);
+        $build->setRepository($repository);
+        $build->setBranch('master');
+        $build->setCommit('5555');
+
+        return $build;
     }
 }

@@ -26,16 +26,17 @@ class Cleaner
     }
 
     /**
-     * @param string $buildServer
+     * @param string $remoteUser
+     * @param string $remoteServer
      * @param string $remotePath
      *
      * @return bool
      */
-    public function __invoke($buildServer, $remotePath)
+    public function __invoke($remoteUser, $remoteServer, $remotePath)
     {
         $rmdir = sprintf('rm -r "%s"', $remotePath);
 
         $remoter = $this->remoter;
-        return $remoter($buildServer, $rmdir, [], false);
+        return $remoter($remoteUser, $remoteServer, $rmdir, [], false);
     }
 }

@@ -27,8 +27,8 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
 
     public function testCommandNotSuccessfulReturnsFalse()
     {
-        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
-        $success = $action('hostname', 'path', []);
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi);
+        $success = $action('sshuser', 'hostname', 'path', []);
 
         $this->assertFalse($success);
     }
@@ -43,8 +43,8 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('bad-yaml')
             ->andReturn('bad-yaml');
 
-        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
-        $success = $action('hostname', 'path', []);
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi);
+        $success = $action('sshuser', 'hostname', 'path', []);
 
         $this->assertFalse($success);
     }
@@ -85,8 +85,8 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('test-output')
             ->andReturn($old);
 
-        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
-        $success = $action('hostname', 'path', $new);
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi);
+        $success = $action('sshuser', 'hostname', 'path', $new);
 
         $this->assertTrue($success);
     }
@@ -126,8 +126,8 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('test-output')
             ->andReturn($old);
 
-        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
-        $success = $action('hostname', 'path', $new);
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi);
+        $success = $action('sshuser', 'hostname', 'path', $new);
 
         $this->assertTrue($success);
     }
@@ -184,8 +184,8 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
             ->with('test-output')
             ->andReturn($old);
 
-        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi, 'sshuser');
-        $success = $action('hostname', 'path', $new);
+        $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi);
+        $success = $action('sshuser', 'hostname', 'path', $new);
 
         $this->assertTrue($success);
     }

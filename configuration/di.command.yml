@@ -62,6 +62,7 @@ services:
             - @build.mover
             - @utility.helper.downloadProgress
             - @utility.filesystem
+            - @ssh.manager
     command.build.remove:
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:

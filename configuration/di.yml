@@ -26,6 +26,13 @@ services:
         class: 'MCP\DataType\Time\Clock'
         arguments: ['now', 'UTC']
 
+    ssh.manager:
+        class: 'QL\Hal\Agent\SSHSessionManager'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - %ssh.credentials%
+
     ####################################################################################################################
     # doctrine
     ####################################################################################################################

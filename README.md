@@ -118,14 +118,16 @@ Command            | Description
 This agent supports the following:
 
 Build Systems:
-    - `unix` (Locally run)
-    - `windows` (Remotely run)
-Deployment Types:
-    - Rsync
-    - EC2 (Autoscaling, rsync)
-    - Elastic Beanstalk
+- `unix` (Locally run)
+- `windows` (Remotely run)
 
-Please note: For Rsync deployments "server commands" are skipped (Both pre-push and post-push).
+Deployment Types:
+- Rsync
+- EC2 (Autoscaling, rsync)
+- Elastic Beanstalk
+
+**Please note:** 
+For Rsync deployments "server commands" are skipped (Both pre-push and post-push).
 
 ### .hal9000.yml
 
@@ -235,6 +237,7 @@ environment.path          | System PATH
 environment.home          | System HOME
 push.remoteUser           | Username used to ssh to servers for syncing code
 build.remoteUser          | Username used to ssh to build server for syncing code (windows only)
+ssh.keyPath               | Path to private key for remote user
 github.token              | Github Enterprise authentication token
 github.com.token          | Github.com authentication token
 github.baseurl            | Github API url

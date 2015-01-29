@@ -16,6 +16,7 @@ use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Helper\DownloadProgressHelper;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\SSHSessionManager;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -110,6 +111,11 @@ class BuildCommand extends Command
     private $filesystem;
 
     /**
+     * @type SSHSessionManager
+     */
+    private $sshManager;
+
+    /**
      * @type string[]
      */
     private $artifacts;
@@ -131,6 +137,7 @@ class BuildCommand extends Command
      * @param Mover $mover
      * @param DownloadProgressHelper $progress
      * @param Filesystem $filesystem
+     * @param SSHSessionManager $sshManager
      */
     public function __construct(
         $name,
@@ -143,7 +150,8 @@ class BuildCommand extends Command
         Packer $packer,
         Mover $mover,
         DownloadProgressHelper $progress,
-        Filesystem $filesystem
+        Filesystem $filesystem,
+        SSHSessionManager $sshManager
     ) {
         parent::__construct($name);
 
@@ -159,6 +167,7 @@ class BuildCommand extends Command
 
         $this->progress = $progress;
         $this->filesystem = $filesystem;
+        $this->sshManager = $sshManager;
 
         $this->artifacts = [];
 
@@ -281,6 +290,9 @@ class BuildCommand extends Command
 
         // Clear artifacts
         $this->artifacts = [];
+
+        // Disconnect any active ssh sessions
+        $this->sshManager->disconnectAll();
     }
 
     /**
