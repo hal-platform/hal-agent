@@ -99,6 +99,8 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->with([
                 'scp',
                 '-r',
+                '-P',
+                '2200',
                 'sshuser@server:/remote/path/.',
                 '.',
             ])
@@ -107,7 +109,7 @@ class ImporterTest extends PHPUnit_Framework_TestCase
 
         $importer = new Importer($this->logger, $builder, 5, 'sshuser');
 
-        $actual = $importer('local/path', 'server', '/remote/path');
+        $actual = $importer('local/path', 'server:2200', '/remote/path');
         $this->assertSame(true, $actual);
     }
 

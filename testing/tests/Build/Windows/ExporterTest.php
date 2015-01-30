@@ -118,6 +118,50 @@ class ExporterTest extends PHPUnit_Framework_TestCase
         $this->assertSame(false, $actual);
     }
 
+    public function testScpUsesPortCorrectly()
+    {
+        $this->remoter
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+
+        $process = Mockery::mock('Symfony\Component\Process\Process', [
+            'run' => null,
+            'isSuccessful' => true
+        ])->makePartial();
+
+        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess,setArguments]');
+        $builder
+            ->shouldReceive('setArguments')
+            ->with(['rm', '-r', 'local/path'])
+            ->andReturn(Mockery::self())
+            ->once();
+        $builder
+            ->shouldReceive('setArguments')
+            ->with(['mkdir', 'local/path'])
+            ->andReturn(Mockery::self())
+            ->once();
+        $builder
+            ->shouldReceive('setArguments')
+            ->with([
+                'scp',
+                '-r',
+                '-P',
+                '2200',
+                '.',
+                'sshuser@server:/remote/path'
+            ])
+            ->andReturn(Mockery::self())
+            ->once();
+        $builder
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+
+        $exporter = new Exporter($this->logger, $this->remoter, $builder, 5, 'sshuser');
+
+        $actual = $exporter('local/path', 'sshuser', 'server:2200', '/remote/path');
+        $this->assertSame(true, $actual);
+    }
+
     public function testSuccess()
     {
         $this->remoter

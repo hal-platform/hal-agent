@@ -90,11 +90,21 @@ class Importer
      */
     private function transferFiles($buildPath, $buildServer, $remotePath)
     {
+        list($buildServer, $buildServerPort) = $this->parseServer($buildServer);
+
         $from = sprintf('%s@%s:%s', $this->remoteUser, $buildServer, $remotePath);
         $from = sprintf('%s/.', rtrim($from, '/'));
         $to = '.';
 
-        $cmd = ['scp', '-r', $from, $to];
+        $cmd = [
+            'scp',
+            '-r',
+            '-P',
+            $buildServerPort,
+            $from,
+            $to
+        ];
+
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
             ->setArguments($cmd)
@@ -117,5 +127,26 @@ class Importer
         ]);
 
         return false;
+    }
+
+    /**
+     * Parse servername or servername:port into an array containing [$server, $port]
+     *
+     * @param string $server
+     *
+     * @return array
+     */
+    private function parseServer($server)
+    {
+        $exploded = explode(':', $server);
+
+        $servername = array_shift($exploded);
+
+        $port = 22;
+        if ($exploded) {
+            $port = (int) array_shift($exploded);
+        }
+
+        return [$servername, $port];
     }
 }

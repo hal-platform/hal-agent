@@ -139,7 +139,9 @@ class SSHSessionManager
             return null;
         }
 
-        $ssh = new Net_SSH2($server);
+        list($server, $port) = $this->parseServer($server);
+
+        $ssh = new Net_SSH2($server, $port);
 
         $command = [$ssh, 'login'];
         $args = [$user, $privateKey];
@@ -298,6 +300,27 @@ class SSHSessionManager
         restore_error_handler();
 
         return $response;
+    }
+
+    /**
+     * Parse servername or servername:port into an array containing [$server, $port]
+     *
+     * @param string $server
+     *
+     * @return array
+     */
+    private function parseServer($server)
+    {
+        $exploded = explode(':', $server);
+
+        $servername = array_shift($exploded);
+
+        $port = 22;
+        if ($exploded) {
+            $port = (int) array_shift($exploded);
+        }
+
+        return [$servername, $port];
     }
 
     /**
