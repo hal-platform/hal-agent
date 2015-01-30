@@ -23,9 +23,14 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
 
     public function testNoCredentialsLogsError()
     {
+        $expectedContext = [
+            'user' => 'username',
+            'server' => 'server'
+        ];
+
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_NO_CREDENTIALS, Mockery::any())
+            ->with('failure', SSHSessionManager::ERR_NO_CREDENTIALS, $expectedContext)
             ->once();
 
         $ssh = new SSHSessionManager($this->logger, $this->filesystem);
@@ -36,9 +41,14 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
 
     public function testPrivateKeyMissingLogsError()
     {
+        $expectedContext = [
+            'user' => 'username',
+            'server' => 'server'
+        ];
+
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, Mockery::any())
+            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, $expectedContext)
             ->once();
 
         $this->filesystem
@@ -58,9 +68,14 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
 
     public function testPrivateKeyInvalidLogsError()
     {
+        $expectedContext = [
+            'user' => 'username',
+            'server' => 'server'
+        ];
+
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, Mockery::any())
+            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, $expectedContext)
             ->once();
 
         $this->filesystem
@@ -84,10 +99,21 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
 
     public function testLoginFailureLogsError()
     {
+        $expectedContext = [
+            'user' => 'username123456789',
+            'server' => 'localhost',
+            'errors' => [
+                'SSH_MSG_USERAUTH_FAILURE: publickey,keyboard-interactive'
+            ]
+        ];
+
+        $context = null;
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_CONNECT_SERVER, Mockery::any())
-            ->once();
+            ->with('failure', SSHSessionManager::ERR_CONNECT_SERVER, Mockery::on(function($v) use (&$context) {
+                $context = $v;
+                return true;
+            }));
 
         $this->filesystem
             ->shouldReceive('exists')
@@ -106,13 +132,58 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
         $session = $ssh->createSession('username123456789', 'localhost');
 
         $this->assertSame(null, $session);
+        $this->assertSame($expectedContext, $context);
+    }
+
+    public function testLoginFailureForUnknownServer()
+    {
+        $expectedContext = [
+            'user' => 'username123456789',
+            'server' => 'server123456789',
+            'errors' => [
+                'SSH User Notice: Connection closed prematurely',
+                'SSH Warning: fclose() expects parameter 1 to be resource, boolean given'
+            ]
+        ];
+
+        $context = null;
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', SSHSessionManager::ERR_CONNECT_SERVER, Mockery::on(function($v) use (&$context) {
+                $context = $v;
+                return true;
+            }));
+
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->with('key/path')
+            ->andReturn(true);
+
+        $credentials = [
+            ['username123456789', '*', 'key/path']
+        ];
+
+        $loader = function($filepath) {
+            return $this->getSamplePrivateKeyForTesting();
+        };
+
+        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials, $loader);
+        $session = $ssh->createSession('username123456789', 'server123456789');
+
+        $this->assertSame(null, $session);
+        $this->assertSame($expectedContext, $context);
     }
 
     public function testServerSpecificCredentialsPreferredOverWildcard()
     {
+        $expectedContext = [
+            'user' => 'username',
+            'server' => 'server'
+        ];
+
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, Mockery::any())
+            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, $expectedContext)
             ->once();
 
         // The important assertion for this test

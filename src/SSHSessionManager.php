@@ -19,6 +19,27 @@ class SSHSessionManager
     const ERR_NO_CREDENTIALS = 'Failed to connect to server. No valid credentials configured.';
 
     /**
+     * Stolen from Symfony ErrorHandler
+     */
+    public static $errorLevels = [
+        E_DEPRECATED => 'Deprecated',
+        E_USER_DEPRECATED => 'User Deprecated',
+        E_NOTICE => 'Notice',
+        E_USER_NOTICE => 'User Notice',
+        E_STRICT => 'Runtime Notice',
+        E_WARNING => 'Warning',
+        E_USER_WARNING => 'User Warning',
+        E_COMPILE_WARNING => 'Compile Warning',
+        E_CORE_WARNING => 'Core Warning',
+        E_USER_ERROR => 'User Error',
+        E_RECOVERABLE_ERROR => 'Catchable Fatal Error',
+        E_COMPILE_ERROR => 'Compile Error',
+        E_PARSE => 'Parse Error',
+        E_ERROR => 'Error',
+        E_CORE_ERROR => 'Core Error',
+    ];
+
+    /**
      * @type EventLogger
      */
     private $logger;
@@ -57,6 +78,13 @@ class SSHSessionManager
     private $activeSessions;
 
     /**
+     * A store to put errors from phpseclib
+     *
+     * @type array
+     */
+    private $errors;
+
+    /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param string $credentials
@@ -78,7 +106,7 @@ class SSHSessionManager
 
         $this->fileLoader = $fileLoader;
 
-        $this->activeSessions = [];
+        $this->activeSessions = $this->errors = [];
     }
 
     /**
@@ -113,13 +141,18 @@ class SSHSessionManager
 
         $ssh = new Net_SSH2($server);
 
-        // Suppress errors because this lib still has PHP4 support so it has shitty error handling.
-        $isLoggedIn = @$ssh->login($user, $privateKey);
+        $command = [$ssh, 'login'];
+        $args = [$user, $privateKey];
+        $isLoggedIn = $this->runCommandWithErrorHandling($command, $args);
 
         // Login failure
         if (!$isLoggedIn) {
-            // Suppress errors because this lib still has PHP4 support so it has shitty error handling.
-            @$ssh->disconnect();
+            $this->runCommandWithErrorHandling([$ssh, 'disconnect']);
+
+            $this->errors = array_merge($this->errors, $ssh->getErrors());
+            if ($this->errors) {
+                $context['errors'] = $this->errors;
+            }
 
             $this->logger->event('failure', self::ERR_CONNECT_SERVER, $context);
             return null;
@@ -138,9 +171,8 @@ class SSHSessionManager
      */
     public function disconnectAll()
     {
-        foreach ($this->activeSessions as $session) {
-            // Suppress errors because this lib still has PHP4 support so it has shitty error handling.
-            @$session->disconnect();
+        foreach ($this->activeSessions as $ssh) {
+            $this->runCommandWithErrorHandling([$ssh, 'disconnect']);
         }
 
         $this->activeSessions = [];
@@ -199,7 +231,12 @@ class SSHSessionManager
         $privateKey = call_user_func($this->fileLoader, $keyPath);
         $key = new Crypt_RSA;
 
-        if (!$isValid = $key->loadKey($privateKey)) {
+        $command = [$key, 'loadKey'];
+        $args = [$privateKey];
+
+        $isValid = $this->runCommandWithErrorHandling($command, $args);
+
+        if (!$isValid) {
             return null;
         }
 
@@ -239,6 +276,37 @@ class SSHSessionManager
             $server = $credentials[1];
             return ($server == $matchingServer || $server === '*');
         };
+    }
+
+    /**
+     * @param callable $command
+     * @param array $args
+     *
+     * @return mixed
+     */
+    private function runCommandWithErrorHandling(callable $command, array $args = [])
+    {
+        $this->errors = [];
+
+        // Set custom handler
+        set_error_handler([$this, 'recordError'], \E_ALL);
+
+        // Run phpseclib command
+        $response = call_user_func_array($command, $args);
+
+        // Restore previous handler
+        restore_error_handler();
+
+        return $response;
+    }
+
+    /**
+     * Custom error handler to wrap and capture notices from phpseclib
+     */
+    public function recordError($errno, $errstr, $errfile = '', $errline = 0, array $errcontext = [])
+    {
+        $this->errors[] = sprintf('SSH %s: %s', static::$errorLevels[$errno], $errstr);
+        return true;
     }
 
     private function getDefaultFileLoader()
