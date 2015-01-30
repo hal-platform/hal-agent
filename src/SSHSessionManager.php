@@ -175,9 +175,9 @@ class SSHSessionManager
         }
 
         // Find exact servername match
-        foreach ($matchingServerCredentials as $credential) {
-            if ($credential[2] !== '*') {
-                return $credential;
+        foreach ($matchingServerCredentials as $credentials) {
+            if ($credentials[1] !== '*') {
+                return $credentials;
             }
         }
 
@@ -198,7 +198,10 @@ class SSHSessionManager
 
         $privateKey = call_user_func($this->fileLoader, $keyPath);
         $key = new Crypt_RSA;
-        $key->loadKey($privateKey);
+
+        if (!$isValid = $key->loadKey($privateKey)) {
+            return null;
+        }
 
         return $key;
     }
