@@ -72,8 +72,8 @@ parameters:
     ############################################################################
 
     ssh.credentials:
-        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
-        - [%push.rsync.remoteUser%, '*', '/path/to/id_rsa']
+        - [%build.windows.remoteUser%, '*', '/home/hal9000/.ssh/id_rsa']
+        - [%push.rsync.remoteUser%, '*', '/home/hal9000/.ssh/id_rsa']
         - [%aws.ec2.user%, '*', '']
 
     aws.credentials.key: ''
