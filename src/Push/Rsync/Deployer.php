@@ -7,7 +7,6 @@
 
 namespace QL\Hal\Agent\Push\Rsync;
 
-use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Type\ServerEnumType;
@@ -28,11 +27,6 @@ class Deployer implements DeployerInterface
     private $delta;
 
     /**
-     * @type Builder
-     */
-    private $builder;
-
-    /**
      * @type ServerCommand
      */
     private $serverCommand;
@@ -45,20 +39,17 @@ class Deployer implements DeployerInterface
     /**
      * @param EventLogger $logger
      * @param CodeDelta $delta
-     * @param Builder $builder
      * @param ServerCommand $serverCommand
      * @param Pusher $pusher
      */
     public function __construct(
         EventLogger $logger,
         CodeDelta $delta,
-        Builder $builder,
         ServerCommand $serverCommand,
         Pusher $pusher
     ) {
         $this->logger = $logger;
         $this->delta = $delta;
-        $this->builder = $builder;
         $this->serverCommand = $serverCommand;
         $this->pusher = $pusher;
     }
@@ -78,26 +69,19 @@ class Deployer implements DeployerInterface
         // record code delta
         $this->delta($output, $properties);
 
-        // run build transform commands
-        if (!$this->build($output, $properties)) {
-            return 101;
-        }
-
-        $this->logger->setStage('pushing');
-
         // run pre push commands
         if (!$this->prepush($output, $properties)) {
-            return 102;
+            return 101;
         }
 
         // sync code
         if (!$this->push($output, $properties)) {
-            return 103;
+            return 102;
         }
 
         // run post push commands
         if (!$this->postpush($output, $properties)) {
-            return 104;
+            return 103;
         }
 
         // success
@@ -120,30 +104,6 @@ class Deployer implements DeployerInterface
             $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
             $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['pushProperties']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     *
-     * @return boolean
-     */
-    private function build(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['build_transform']) {
-            $this->status($output, 'Skipping build command');
-            return true;
-        }
-
-        $this->status($output, 'Running build command');
-
-        $builder = $this->builder;
-        return $builder(
-            $properties['configuration']['system'],
-            $properties['location']['path'],
-            $properties['configuration']['build_transform'],
-            $properties['environmentVariables']
         );
     }
 

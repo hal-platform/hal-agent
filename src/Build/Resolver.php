@@ -10,9 +10,10 @@ namespace QL\Hal\Agent\Build;
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
+use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
-use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Resolve build properties from user and environment input
@@ -20,14 +21,12 @@ use Symfony\Component\Process\ProcessBuilder;
 class Resolver
 {
     use DefaultConfigHelperTrait;
+    use ResolverTrait;
 
     /**
      * @type string
      */
-    const FS_DIRECTORY_PREFIX = 'hal9000-build-%s';
-    const FS_BUILD_PREFIX = 'hal9000-download-%s.tar.gz';
-    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
-    const FS_DEFAULT_WINDOWS_BUILD_DIR = '$HOME/builds';
+    const DOWNLOAD_FILE = 'hal9000-download-%s.tar.gz';
 
     /**
      * @type string
@@ -41,61 +40,18 @@ class Resolver
     private $buildRepo;
 
     /**
-     * @type ProcessBuilder
+     * @type BuildEnvironmentResolver
      */
-    private $processBuilder;
-
-    /**
-     * @type string
-     */
-    private $envPath;
-
-    /**
-     * @type string
-     */
-    private $archivePath;
-
-    /**
-     * @type string
-     */
-    private $buildDirectory;
-
-    /**
-     * @type string
-     */
-    private $windowsBuildDirectory;
-
-    /**
-     * @type string
-     */
-    private $homeDirectory;
-
-    /**
-     * @type string
-     */
-    private $windowsUser;
-    private $windowsServer;
+    private $environmentResolver;
 
     /**
      * @param BuildRepository $buildRepo
-     * @param ProcessBuilder $processBuilder
-     * @param string $envPath
-     * @param string $archivePath
+     * @param BuildEnvironmentResolver $environmentResolver
      */
-    public function __construct(
-        BuildRepository $buildRepo,
-        ProcessBuilder $processBuilder,
-        $envPath,
-        $archivePath
-    ) {
+    public function __construct(BuildRepository $buildRepo, BuildEnvironmentResolver $environmentResolver)
+    {
         $this->buildRepo = $buildRepo;
-        $this->processBuilder = $processBuilder;
-
-        $this->envPath = $envPath;
-        $this->archivePath = $archivePath;
-
-        $this->windowsUser = '';
-        $this->windowsServer = '';
+        $this->environmentResolver = $environmentResolver;
     }
 
     /**
@@ -122,10 +78,10 @@ class Resolver
             'configuration' => $this->buildDefaultConfiguration($build->getRepository()),
 
             'location' => [
-                'download' => $this->generateRepositoryDownload($build->getId()),
-                'path' => $this->generateBuildPath($build->getId()),
-                'archive' => $this->generateBuildArchive($build->getId()),
-                'tempArchive' => $this->generateTempBuildArchive($build->getId())
+                'download' => $this->generateRepositoryDownloadFile($build->getId()),
+                'path' => $this->generateLocalTempPath($build->getId(), 'build'),
+                'archive' => $this->generateBuildArchiveFile($build->getId()),
+                'tempArchive' => $this->generateTempBuildArchiveFile($build->getId(), 'build')
             ],
 
             'github' => [
@@ -137,76 +93,12 @@ class Resolver
 
         $properties['artifacts'] = $this->findBuildArtifacts($properties);
 
-        // system-specific configuration
-        $properties[UnixBuildHandler::SERVER_TYPE] = [
-            'environmentVariables' => $this->generateUnixBuildEnvironmentVariables($build)
-        ];
 
-        $properties[WindowsBuildHandler::SERVER_TYPE] = [
-            'buildUser' => $this->windowsUser,
-            'buildServer' => $this->windowsServer,
-            'remotePath' => $this->generateWindowsBuildPath($build->getId()),
-            'environmentVariables' => $this->generateWindowsBuildEnvironmentVariables($build)
-        ];
-
-        unset($properties[WindowsBuildHandler::SERVER_TYPE]['environmentVariables']['HOME']);
-        unset($properties[WindowsBuildHandler::SERVER_TYPE]['environmentVariables']['PATH']);
+        // build system configuration
+        $buildSystemProperties = $this->environmentResolver->getProperties($build);
+        $properties = array_merge($properties, $buildSystemProperties);
 
         return $properties;
-    }
-
-    /**
-     * Set the base directory in which temporary build artifacts are stored.
-     *
-     * If none is provided the system temporary directory is used.
-     *
-     * @param string $directory
-     * @return null
-     */
-    public function setBaseBuildDirectory($directory)
-    {
-        $this->buildDirectory = $directory;
-    }
-
-    /**
-     * Set the base directory in which temporary build artifacts are stored on windows build servers.
-     *
-     * If none is provided the system temporary directory is used.
-     *
-     * @param string $directory
-     * @return null
-     */
-    public function setWindowsBaseBuildDirectory($directory)
-    {
-        $this->windowsBuildDirectory = $directory;
-    }
-
-    /**
-     * Set the home directory for all build scripts. This can easily be changed
-     * later to be unique for each build.
-     *
-     * If none is provided a common location within the shared build directory is used.
-     *
-     * @param string $directory
-     * @return null
-     */
-    public function setHomeDirectory($directory)
-    {
-        $this->homeDirectory = $directory;
-    }
-
-    /**
-     * Add windows build server info non-unix builds can be built.
-     *
-     * @param string $user
-     * @param string $server
-     *
-     * @return null
-     */
-    public function setWindowsBuilder($user, $server)
-    {
-        $this->windowsUser = $user;
-        $this->windowsServer = $server;
     }
 
     /**
@@ -223,27 +115,6 @@ class Resolver
             $properties['location']['tempArchive']
         ];
 
-        $caches = [
-            'BOWER_STORAGE__CACHE',
-            'BOWER_STORAGE__PACKAGES',
-            'BOWER_TMP',
-            'COMPOSER_CACHE_DIR',
-            'NPM_CONFIG_CACHE'
-        ];
-
-        foreach ($caches as $cache) {
-            if (isset($properties['environmentVariables'][$cache])) {
-                $artifacts[] = $properties['environmentVariables'][$cache];
-            }
-        }
-
-        // Add $HOME if this is an isolated build
-        // For the love of all that is holy $HOME better be set to a build specific directory!
-        if (false) {
-        // if ($properties['build']->getRepository()->isIsolated()) {
-            $artifacts[] = $properties['HOME'];
-        }
-
         return $artifacts;
     }
 
@@ -253,253 +124,8 @@ class Resolver
      * @param string $id
      * @return string
      */
-    private function generateRepositoryDownload($id)
+    private function generateRepositoryDownloadFile($id)
     {
-        return $this->getBuildDirectory() . sprintf(self::FS_BUILD_PREFIX, $id);
+        return $this->getLocalTempPath() . sprintf(static::DOWNLOAD_FILE, $id);
     }
-
-    /**
-     * Generate a target for the build path.
-     *
-     * @param string $id
-     * @return string
-     */
-    private function generateBuildPath($id)
-    {
-        return $this->getBuildDirectory() . sprintf(self::FS_DIRECTORY_PREFIX, $id);
-    }
-
-    /**
-     * Generate a target for the windows build path.
-     *
-     * @param string $id
-     * @return string
-     */
-    private function generateWindowsBuildPath($id)
-    {
-        return $this->getWindowsBuildDirectory() . sprintf(self::FS_DIRECTORY_PREFIX, $id);
-    }
-
-    /**
-     * Generate a target for the build archive.
-     *
-     * @param string $id
-     * @return string
-     */
-    private function generateBuildArchive($id)
-    {
-        return sprintf(
-            '%s%s%s',
-            rtrim($this->archivePath, DIRECTORY_SEPARATOR),
-            DIRECTORY_SEPARATOR,
-            sprintf(self::FS_ARCHIVE_PREFIX, $id)
-        );
-    }
-
-    /**
-     * Generate a temporary target for the build archive.
-     *
-     * @param string $id
-     * @return string
-     */
-    private function generateTempBuildArchive($id)
-    {
-        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_PREFIX, $id);
-    }
-
-    /**
-     * Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
-     *
-     * @param string $suffix
-     * @return string
-     */
-    private function generateHomePath($suffix = '')
-    {
-        if (!$this->homeDirectory) {
-            $this->homeDirectory = $this->getBuildDirectory() . 'home';
-        }
-
-        $suffix = (strlen($suffix) > 0) ? sprintf('.%s', $suffix) : '';
-
-        return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . $suffix . DIRECTORY_SEPARATOR;
-    }
-
-    /**
-     * @return string
-     */
-    private function getBuildDirectory()
-    {
-        if (!$this->buildDirectory) {
-            $this->buildDirectory = sys_get_temp_dir();
-        }
-
-        return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-    }
-
-
-    /**
-     * @return string
-     */
-    private function getWindowsBuildDirectory()
-    {
-        if (!$this->windowsBuildDirectory) {
-            $this->windowsBuildDirectory = self::FS_DEFAULT_WINDOWS_BUILD_DIR;
-        }
-
-        return rtrim($this->windowsBuildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-    }
-
-    /**
-     * @param Build $build
-     * @return array
-     */
-    private function generateUnixBuildEnvironmentVariables(Build $build)
-    {
-        $vars = [
-            'HOME' => $this->generateHomePath($build->getRepository()->getId()),
-            'PATH' => $this->envPath,
-
-            'HAL_BUILDID' => $build->getId(),
-            'HAL_COMMIT' => $build->getCommit(),
-            'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_REPO' => $build->getRepository()->getKey()
-        ];
-
-        // add package manager configuration
-        $vars = array_merge($vars, $this->getPackageManagerEnv($vars));
-        $vars = array_merge($vars, $this->getRubyEnv($vars));
-        $vars = array_merge($vars, $this->getIsolatedEnv($vars, $build));
-
-        return $vars;
-    }
-
-    /**
-     * @param Build $build
-     * @return array
-     */
-    private function generateWindowsBuildEnvironmentVariables(Build $build)
-    {
-        $vars = [
-            'HAL_BUILDID' => $build->getId(),
-            'HAL_COMMIT' => $build->getCommit(),
-            'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_REPO' => $build->getRepository()->getKey()
-        ];
-
-        return $vars;
-    }
-
-    /**
-     * NOT ACTIVE.
-     *
-     * This was not updated to correctly isolated the ruby env
-     *
-     * @param array $env
-     * @param Build $build
-     * @return array
-     */
-    private function getIsolatedEnv(array $vars, Build $build)
-    {
-        if (true) {
-        // if ($build->getRepository()->isIsolated()) {
-            return [];
-        }
-
-        $buildPath = $this->generateBuildPath($build->getId());
-
-        return [
-            # DEFAULT = ???, version < 1.0.0
-            'BOWER_STORAGE__CACHE' => $buildPath . '-bower-cache',
-
-            # DEFAULT = ???, version >= 1.0.0
-            'BOWER_STORAGE__PACKAGES' => $buildPath . '-bower-cache',
-
-            # DEFAULT = $TEMP/bower
-            'BOWER_TMP' => $buildPath . '-bower',
-
-            # DEFAULT = $COMPOSER_HOME/cache
-            'COMPOSER_CACHE_DIR' => $buildPath . '-composer-cache',
-
-            # DEFAULT = $HOME/.npm
-            'NPM_CONFIG_CACHE' =>  $buildPath . '-npm-cache',
-
-            'HOME' =>  $buildPath . '-home'
-        ];
-    }
-
-    /**
-     * Ruby sucks. This is ridiculous.
-     *
-     * @param array $env
-     * @return array
-     */
-    private function getRubyEnv(array $vars)
-    {
-        /**
-         * Get the default gempath when we remove the GEM_HOME and GEM_PATH env variables
-         */
-        $process = $this->processBuilder
-            ->setWorkingDirectory($vars['HOME'])
-            ->setArguments(['gem', 'env', 'gempath'])
-            ->addEnvironmentVariables(['HOME' => $vars['HOME']])
-            ->getProcess();
-
-        $process->run();
-
-        if (!$gemPaths = $process->getOutput()) {
-            return [];
-        }
-
-        $gemPaths = trim($gemPaths);
-        $default = null;
-
-        /**
-         * Get the gem path within the HOME dir
-         */
-        $paths = explode(':', $gemPaths);
-        foreach ($paths as $path) {
-            if (stripos($path, $vars['HOME']) === 0) {
-                $default = $path;
-            }
-        }
-
-        if (!$default) {
-            // if not found just bail out and don't set any ruby envs.
-            return [];
-        }
-
-        $bindir = sprintf('%s/bin', $default);
-
-        return [
-            // wheres gems are installed
-            'GEM_HOME' => $default,
-
-            // where gems are searched for
-            'GEM_PATH' => implode(':', $paths),
-
-            // Add the new gembin dir to the PATH
-            'PATH' => sprintf('%s:%s', $bindir, $vars['PATH'])
-        ];
-    }
-
-    /**
-     * @param array $env
-     * @return array
-     */
-    private function getPackageManagerEnv(array $vars)
-    {
-        return [
-            'BOWER_INTERACTIVE' => 'false',
-            'BOWER_STRICT_SSL' => 'false',
-
-            'COMPOSER_HOME' => sprintf('%s/%s', rtrim($vars['HOME'], DIRECTORY_SEPARATOR), '.composer'),
-            'COMPOSER_NO_INTERACTION' => '1',
-
-            'NPM_CONFIG_STRICT_SSL' => 'false',
-            'NPM_CONFIG_COLOR' => 'always'
-        ];
-    }
-
 }

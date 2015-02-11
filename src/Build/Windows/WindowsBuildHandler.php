@@ -15,6 +15,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
 {
     const STATUS = 'Building on windows';
     const SERVER_TYPE = 'windows';
+    const ERR_INVALID_BUILD_SYSTEM = 'Windows build system is not configured';
 
     /**
      * @type EventLogger
@@ -52,7 +53,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
     private $emergencyCleaner;
 
     /**
-     * @param EventLogger $logger
      * @param Exporter $exporter
      * @param Builder $builder
      * @param Importer $importer
@@ -120,23 +120,22 @@ class WindowsBuildHandler implements BuildHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $properties)
+    public function __invoke(OutputInterface $output, array $commands, array $properties)
     {
         $this->status($output, self::STATUS);
 
         // sanity check
         if (!$this->sanityCheck($output, $properties)) {
+            $this->logger->event('failure', self::ERR_INVALID_BUILD_SYSTEM);
             return 200;
         }
-
-        $this->logger->setStage('building');
 
         if (!$this->export($output, $properties)) {
             return $this->bombout($output, 201);
         }
 
         // run build
-        if (!$this->build($output, $properties)) {
+        if (!$this->build($output, $properties, $commands)) {
             return $this->bombout($output, 202);
         }
 
@@ -198,10 +197,11 @@ class WindowsBuildHandler implements BuildHandlerInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
+     * @param array $commands
      *
      * @return boolean
      */
-    private function build(OutputInterface $output, array $properties)
+    private function build(OutputInterface $output, array $properties, array $commands)
     {
         $this->status($output, 'Running build command');
 
@@ -210,7 +210,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
             $properties[self::SERVER_TYPE]['buildUser'],
             $properties[self::SERVER_TYPE]['buildServer'],
             $properties[self::SERVER_TYPE]['remotePath'],
-            $properties['configuration']['build'],
+            $commands,
             $properties[self::SERVER_TYPE]['environmentVariables']
         );
     }

@@ -34,6 +34,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->mover = Mockery::mock('QL\Hal\Agent\Push\Mover');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
         $this->reader = Mockery::mock('QL\Hal\Agent\Push\ConfigurationReader');
+        $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
         $this->deployer = Mockery::mock('QL\Hal\Agent\Push\DelegatingDeployer');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
 
@@ -67,6 +68,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->mover,
             $this->unpacker,
             $this->reader,
+            $this->builder,
             $this->deployer,
             $this->filesystem
         );
@@ -137,7 +139,12 @@ OUTPUT;
                 'push' => $push,
                 'method' => 'rsync',
 
-                'configuration' => [],
+                'configuration' => [
+                    'system' => 'unix',
+                    'build_transform' => [
+                        'cmd'
+                    ]
+                ],
 
                 'location' => [
                     'path' => 'path/dir',
@@ -160,6 +167,9 @@ OUTPUT;
         $this->reader
             ->shouldReceive('__invoke')
             ->andReturn(true);
+        $this->builder
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->deployer
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -176,6 +186,7 @@ OUTPUT;
             $this->mover,
             $this->unpacker,
             $this->reader,
+            $this->builder,
             $this->deployer,
             $this->filesystem
         );
@@ -189,6 +200,7 @@ Found push: 1234
 Moving archive to local storage
 Unpacking build archive
 Reading .hal9000.yml
+Running build transform command
 Deploying application
 Success!
 
@@ -272,6 +284,7 @@ OUTPUT;
             $this->mover,
             $this->unpacker,
             $this->reader,
+            $this->builder,
             $this->deployer,
             $this->filesystem
         );

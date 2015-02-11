@@ -7,7 +7,6 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
-use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Type\ServerEnumType;
@@ -32,11 +31,6 @@ class Deployer implements DeployerInterface
     private $health;
 
     /**
-     * @type Builder
-     */
-    private $builder;
-
-    /**
      * @type Packer
      */
     private $packer;
@@ -55,21 +49,18 @@ class Deployer implements DeployerInterface
      * @param EventLogger $logger
      * @param HealthChecker $health
      * @param Packer $packer
-     * @param Builder $builder
      * @param Uploader $uploader
      * @param Pusher $pusher
      */
     public function __construct(
         EventLogger $logger,
         HealthChecker $health,
-        Builder $builder,
         Packer $packer,
         Uploader $uploader,
         Pusher $pusher
     ) {
         $this->logger = $logger;
         $this->health = $health;
-        $this->builder = $builder;
         $this->packer = $packer;
         $this->uploader = $uploader;
         $this->pusher = $pusher;
@@ -91,16 +82,9 @@ class Deployer implements DeployerInterface
             return 201;
         }
 
-        // run build transform commands
-        if (!$this->build($output, $properties)) {
-            return 202;
-        }
-
-        $this->logger->setStage('pushing');
-
         // create zip for s3
         if (!$this->pack($output, $properties)) {
-            return 203;
+            return 202;
         }
 
         // SKIP pre-push commands
@@ -110,12 +94,12 @@ class Deployer implements DeployerInterface
 
         // upload version to S3
         if (!$this->upload($output, $properties)) {
-            return 204;
+            return 203;
         }
 
         // push
         if (!$this->push($output, $properties)) {
-            return 205;
+            return 204;
         }
 
         // SKIP post-push commands
@@ -149,30 +133,6 @@ class Deployer implements DeployerInterface
         }
 
         return true;
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param array $properties
-     *
-     * @return boolean
-     */
-    private function build(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['build_transform']) {
-            $this->status($output, 'Skipping build command');
-            return true;
-        }
-
-        $this->status($output, 'Running build command');
-
-        $builder = $this->builder;
-        return $builder(
-            $properties['configuration']['system'],
-            $properties['location']['path'],
-            $properties['configuration']['build_transform'],
-            $properties['environmentVariables']
-        );
     }
 
     /**

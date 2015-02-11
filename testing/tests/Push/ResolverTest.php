@@ -20,10 +20,19 @@ use QL\Hal\Core\Entity\Server;
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
+    public $repo;
+    public $clock;
+    public $envResolver;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
+            'find' => null,
+            'findBy' => []
+        ]);
+        $this->clock = new Clock('now', 'UTC');
+        $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
     }
 
     /**
@@ -32,12 +41,14 @@ class ResolverTest extends PHPUnit_Framework_TestCase
      */
     public function testPushNotFound()
     {
-        $clock = new Clock('now', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => null
-        ]);
-
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $this->clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
 
         $properties = $action('1234');
     }
@@ -51,13 +62,18 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $push = new Push;
         $push->setStatus('Poo');
 
-        $clock = new Clock('now', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push,
-            'findBy' => []
-        ]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $this->clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
 
         $properties = $action('1234');
     }
@@ -73,13 +89,21 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $push->setStatus('Waiting');
         $push->setDeployment($deployment);
 
-        $clock = new Clock('now', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push,
-            'findBy' => ['derp']
-        ]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn(['derp']);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $this->clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
 
         $properties = $action('1234');
     }
@@ -107,12 +131,22 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $deployment->setServer($server);
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push,
-            'findBy' => []
-        ]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn([]);
+
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
 
         $properties = $action('1234');
     }
@@ -193,25 +227,13 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
-                'tempArchive' => 'testdir/hal9000-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-1234.zip'
-            ],
-
-            'environmentVariables' => [
-                'HOME' => 'testdir/home/',
-                'PATH' => 'ENV_PATH',
-                'HAL_HOSTNAME' => '127.0.0.1',
-                'HAL_PATH' => '/herp/derp',
-                'HAL_BUILDID' => '8956',
-                'HAL_COMMIT' => '5555',
-                'HAL_GITREF' => 'master',
-                'HAL_ENVIRONMENT' => 'envname',
-                'HAL_REPO' => 'repokey'
+                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
             ],
 
             'artifacts' => [
-                'testdir/hal9000-1234.tar.gz',
-                'testdir/hal9000-1234.zip',
+                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-push-1234.zip',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -227,17 +249,29 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         ];
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push,
-            'findBy' => []
-        ]);
+        $this->envResolver
+            ->shouldReceive('getProperties')
+            ->andReturn([]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn([]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
-        $action->setBaseBuildDirectory('testdir');
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
+        $action->setLocalTempPath('testdir');
+        $action->setArchivePath('ARCHIVE_PATH');
 
         $properties = $action('1234');
 
-        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
         $this->assertSame($expected['method'], $properties['method']);
         $this->assertSame($expected['configuration'], $properties['configuration']);
         $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
@@ -310,25 +344,13 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
-                'tempArchive' => 'testdir/hal9000-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-1234.zip'
-            ],
-
-            'environmentVariables' => [
-                'HOME' => 'testdir/home/',
-                'PATH' => 'ENV_PATH',
-                'HAL_HOSTNAME' => '',
-                'HAL_PATH' => '',
-                'HAL_BUILDID' => '8956',
-                'HAL_COMMIT' => '5555',
-                'HAL_GITREF' => 'master',
-                'HAL_ENVIRONMENT' => 'envname',
-                'HAL_REPO' => 'repokey'
+                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
             ],
 
             'artifacts' => [
-                'testdir/hal9000-1234.tar.gz',
-                'testdir/hal9000-1234.zip',
+                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-push-1234.zip',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -344,18 +366,30 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         ];
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push,
-            'findBy' => []
-        ]);
+        $this->envResolver
+            ->shouldReceive('getProperties')
+            ->andReturn([]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn([]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
-        $action->setBaseBuildDirectory('testdir');
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
+        $action->setLocalTempPath('testdir');
+        $action->setArchivePath('ARCHIVE_PATH');
         $action->setAwsCredentials('key', 'secret');
 
         $properties = $action('1234');
 
-        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
         $this->assertSame($expected['method'], $properties['method']);
         $this->assertSame($expected['configuration'], $properties['configuration']);
         $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
@@ -428,25 +462,13 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
-                'tempArchive' => 'testdir/hal9000-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-1234.zip'
-            ],
-
-            'environmentVariables' => [
-                'HOME' => 'testdir/home/',
-                'PATH' => 'ENV_PATH',
-                'HAL_HOSTNAME' => '',
-                'HAL_PATH' => '',
-                'HAL_BUILDID' => '8956',
-                'HAL_COMMIT' => '5555',
-                'HAL_GITREF' => 'master',
-                'HAL_ENVIRONMENT' => 'envname',
-                'HAL_REPO' => 'repokey'
+                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
             ],
 
             'artifacts' => [
-                'testdir/hal9000-1234.tar.gz',
-                'testdir/hal9000-1234.zip',
+                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-push-1234.zip',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -462,18 +484,30 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         ];
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
-            'find' => $push,
-            'findBy' => []
-        ]);
+        $this->envResolver
+            ->shouldReceive('getProperties')
+            ->andReturn([]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn([]);
 
-        $action = new Resolver($this->logger, $repo, $clock, 'sshuser', 'ENV_PATH', 'ARCHIVE_PATH', 'http://git');
-        $action->setBaseBuildDirectory('testdir');
+        $action = new Resolver(
+            $this->logger,
+            $this->repo,
+            $clock,
+            $this->envResolver,
+            'sshuser',
+            'http://git'
+        );
+        $action->setLocalTempPath('testdir');
+        $action->setArchivePath('ARCHIVE_PATH');
         $action->setAwsCredentials('key', 'secret');
 
         $properties = $action('1234');
 
-        $this->assertSame($expected['environmentVariables'], $properties['environmentVariables']);
         $this->assertSame($expected['method'], $properties['method']);
         $this->assertSame($expected['configuration'], $properties['configuration']);
         $this->assertSame($expected['pushProperties'], $properties['pushProperties']);

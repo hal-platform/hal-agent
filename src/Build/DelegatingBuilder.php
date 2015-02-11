@@ -14,6 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class DelegatingBuilder
 {
     const ERR_INVALID_BUILDER = 'Invalid build system specified';
+    const UNKNOWN_FAILURE_CODE = 5;
 
     /**
      * @type EventLogger
@@ -32,12 +33,18 @@ class DelegatingBuilder
 
     /**
      * An array of builder handlers
+     *
      * Example:
      *     unix => 'service.unix.builder'
      *
      * @type array
      */
     private $builders;
+
+    /**
+     * @type boolean
+     */
+    private $enableStaging;
 
     /**
      * @param EventLogger $logger
@@ -51,16 +58,18 @@ class DelegatingBuilder
         $this->builders = $builders;
 
         $this->exitCode = 0;
+        $this->enableStaging = false;
     }
 
     /**
      * @param OutputInterface $output
      * @param string $method
      * @param array $properties
+     * @param array $commands
      *
      * @return bool
      */
-    public function __invoke(OutputInterface $output, $system, array $properties)
+    public function __invoke(OutputInterface $output, $system, array $commands, array $properties)
     {
         // reset exit code
         $this->exitCode = 0;
@@ -79,7 +88,11 @@ class DelegatingBuilder
             return $this->explode($system);
         }
 
-        $this->exitCode = $builder($output, $properties);
+        if ($this->enableStaging) {
+            $this->logger->setStage('building');
+        }
+
+        $this->exitCode = $builder($output, $commands, $properties);
         return ($this->exitCode === 0);
     }
 
@@ -89,11 +102,27 @@ class DelegatingBuilder
      */
     private function explode($system)
     {
-        $this->exitCode = 5;
+        $this->exitCode = static::UNKNOWN_FAILURE_CODE;
+
         $this->logger->event('failure', self::ERR_INVALID_BUILDER, [
             'system' => $system
         ]);
+
         return false;
+    }
+
+    /**
+     * Set whether to start the "building" stage.
+     *
+     * Do not enable this if building during push.
+     *
+     * @param EventLogger $logger
+     *
+     * @return void
+     */
+    public function enableStaging()
+    {
+        $this->enableStaging = true;
     }
 
     /**

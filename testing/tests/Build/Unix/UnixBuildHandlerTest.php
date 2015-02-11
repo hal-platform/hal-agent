@@ -43,11 +43,6 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('building')
-            ->once();
-
         $this->preparer
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -60,7 +55,8 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
             ->once();
 
         $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder);
-        $actual = $handler($this->output, $properties);
+
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
 
         $this->assertSame(0, $actual);
 
@@ -85,8 +81,14 @@ OUTPUT;
             ]
         ];
 
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', 'Unix build system is not configured')
+            ->once();
+
         $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder);
-        $actual = $handler($this->output, $properties);
+
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
         $this->assertSame(100, $actual);
     }
 
@@ -105,11 +107,6 @@ OUTPUT;
             ]
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('building')
-            ->once();
-
         $this->preparer
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -120,7 +117,7 @@ OUTPUT;
             ->once();
 
         $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder);
-        $actual = $handler($this->output, $properties);
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
         $this->assertSame(102, $actual);
     }
 

@@ -6,13 +6,12 @@ services:
             - @logger.event
             - @push.repo
             - @clock
-            - %push.remoteUser%
-            - %environment.path%
-            - %environment.archive%
+            - @utility.environment.resolver
+            - %push.rsync.remoteUser%
             - %github.baseurl.site%
         calls:
-            - ['setBaseBuildDirectory', [%environment.temp%]]
-            - ['setHomeDirectory', [%environment.home%]]
+            - ['setLocalTempPath', [%environment.temp%]]
+            - ['setArchivePath', [%environment.archive%]]
             - ['setAwsCredentials', [%aws.credentials.key%, %aws.credentials.secret%]]
 
     push.mover:
@@ -38,11 +37,14 @@ services:
             - @yaml.parser
 
     push.builder:
-        class: 'QL\Hal\Agent\Push\Builder'
+        class: 'QL\Hal\Agent\Build\DelegatingBuilder'
         arguments:
             - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.push.build%
+            - @service_container
+            -
+                unix: build.unix.handler
+                windows: build.windows.handler
+
     push.deployer:
         class: 'QL\Hal\Agent\Push\DelegatingDeployer'
         arguments:
@@ -60,7 +62,6 @@ services:
         arguments:
             - @logger.event
             - @push.elasticbeanstalk.healthchecker
-            - @push.builder
             - @push.elasticbeanstalk.packer
             - @push.elasticbeanstalk.uploader
             - @push.elasticbeanstalk.pusher
@@ -97,7 +98,6 @@ services:
         arguments:
             - @logger.event
             - @push.rsync.delta
-            - @push.builder
             - @push.rsync.serverCommand
             - @push.rsync.pusher
 
@@ -108,7 +108,7 @@ services:
             - @push.rsync.delta.remoter
             - @yaml.parser
             - @github.commits
-            - %push.remoteUser%
+            - %push.rsync.remoteUser%
 
     push.rsync.pusher:
         class: 'QL\Hal\Agent\Push\Rsync\Pusher'
@@ -142,7 +142,6 @@ services:
         arguments:
             - @logger.event
             - @push.ec2.instance.finder
-            - @push.builder
             - @push.ec2.pusher
 
     push.ec2.instance.finder:

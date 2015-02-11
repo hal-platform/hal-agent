@@ -16,6 +16,7 @@ class UnixBuildHandler implements BuildHandlerInterface
 {
     const STATUS = 'Building on unix';
     const SERVER_TYPE = 'unix';
+    const ERR_INVALID_BUILD_SYSTEM = 'Unix build system is not configured';
 
     /**
      * @type EventLogger
@@ -37,11 +38,8 @@ class UnixBuildHandler implements BuildHandlerInterface
      * @param PackageManagerPreparer $preparer
      * @param builder $builder
      */
-    public function __construct(
-        EventLogger $logger,
-        PackageManagerPreparer $preparer,
-        Builder $builder
-    ) {
+    public function __construct(EventLogger $logger, PackageManagerPreparer $preparer, Builder $builder)
+    {
         $this->logger = $logger;
         $this->preparer = $preparer;
         $this->builder = $builder;
@@ -50,16 +48,15 @@ class UnixBuildHandler implements BuildHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $properties)
+    public function __invoke(OutputInterface $output, array $commands, array $properties)
     {
         $this->status($output, self::STATUS);
 
         // sanity check
         if (!isset($properties[self::SERVER_TYPE])) {
+            $this->logger->event('failure', self::ERR_INVALID_BUILD_SYSTEM);
             return 100;
         }
-
-        $this->logger->setStage('building');
 
         // set package manager config
         if (!$this->prepare($output, $properties)) {
@@ -67,7 +64,7 @@ class UnixBuildHandler implements BuildHandlerInterface
         }
 
         // run build
-        if (!$this->build($output, $properties)) {
+        if (!$this->build($output, $properties, $commands)) {
             return 102;
         }
 
@@ -96,17 +93,18 @@ class UnixBuildHandler implements BuildHandlerInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
+     * @param array $commands
      *
      * @return boolean
      */
-    private function build(OutputInterface $output, array $properties)
+    private function build(OutputInterface $output, array $properties, array $commands)
     {
         $this->status($output, 'Running build command');
 
         $builder = $this->builder;
         return $builder(
             $properties['location']['path'],
-            $properties['configuration']['build'],
+            $commands,
             $properties[self::SERVER_TYPE]['environmentVariables']
         );
     }

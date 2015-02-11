@@ -7,32 +7,52 @@ parameters:
 
     hal.baseurl: 'http://hal9000/'
 
+    # file path to store permanent archives of builds
+    environment.archive: '/builds/hal9000'
+
+    # temporary scratch
+    environment.temp: '%build.unix.temp%'
+
+    ############################################################################
+    # UNIX BUILDING
+    ############################################################################
+
     # system PATH inherited by build scripts
-    environment.path: '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin'
+    build.unix.path: '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin'
 
     # system HOME inherited by build scripts
     # Leave this empty to use the system temporary directory
-    environment.home: '/var/spool/hal9000/home'
+    build.unix.home: '/var/spool/hal9000/home'
 
     # temporary storage for build and push artifacts
     # Leave this empty to use the system temporary directory
-    environment.temp: '/var/spool/hal9000'
+    build.unix.temp: '/var/spool/hal9000'
 
-    # temporary storage for windows build artifacts
-    # Leave this empty to use a subdirectory in the remote users HOME
-    environment.temp.windows: ''
-
-    # file path to store permanent archives of builds
-    environment.archive: '/builds/hal9000'
+    ############################################################################
+    # WINDOWS BUILDING
+    ############################################################################
 
     # user used to SSH and RSYNC to target servers
     build.windows.remoteUser: ''
     build.windows.server: ''
-    push.remoteUser: ''
-    ssh.credentials:
-        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
-        - [%push.remoteUser%, '*', '/path/to/id_rsa']
-        - [%aws.ec2.user%, '*', '']
+
+    # temporary storage for windows build artifacts
+    # Leave this empty to use a subdirectory in the remote users HOME
+    build.windows.temp: ''
+
+    ############################################################################
+    # PUSHING
+    ############################################################################
+
+    push.rsync.remoteUser: ''
+
+    aws.region: ''
+    aws.s3.builds: ''
+    aws.ec2.user: 'ec2-user'
+
+    ############################################################################
+    # DATABASE / NOTIFICATIONS
+    ############################################################################
 
     # Core logger service hostname
     # Only required in standalone installations
@@ -47,14 +67,14 @@ parameters:
         password: placeholder
         dbname: hal9000
 
+    ############################################################################
+    # CREDENTIALS
+    ############################################################################
 
-
-
-
-    aws.region: ''
-    aws.s3.builds: ''
-    aws.ec2.user: 'ec2-user'
-
+    ssh.credentials:
+        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
+        - [%push.rsync.remoteUser%, '*', '/path/to/id_rsa']
+        - [%aws.ec2.user%, '*', '']
 
     aws.credentials.key: ''
     aws.credentials.secret: ''

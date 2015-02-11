@@ -3,14 +3,11 @@ services:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
             - @build.repo
-            - @utility.process.builder= # = signifies a prototype service
-            - %environment.path%
-            - %environment.archive%
+            - @utility.environment.resolver
         calls:
-            - ['setBaseBuildDirectory', ['%environment.temp%']]
-            - ['setHomeDirectory', ['%environment.home%']]
-            - ['setWindowsBaseBuildDirectory', ['%environment.temp.windows%']]
-            - ['setWindowsBuilder', [%build.windows.remoteUser%, %build.windows.server%]]
+            - ['setLocalTempPath', [%environment.temp%]]
+            - ['setArchivePath', [%environment.archive%]]
+
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
         arguments: [@logger.event, @github.archive]
@@ -35,6 +32,9 @@ services:
             -
                 unix: build.unix.handler
                 windows: build.windows.handler
+        calls:
+            - ['enableStaging', []]
+
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:

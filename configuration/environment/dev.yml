@@ -7,32 +7,52 @@ parameters:
 
     hal.baseurl: 'http://hal9000/'
 
+    # file path to store permanent archives of builds                   | recommended path: 'PROJECT_DIRECTORY/.archive'
+    environment.archive: ''
+
+    # temporary scratch
+    environment.temp: '%build.unix.temp%'
+
+    ############################################################################
+    # UNIX BUILDING
+    ############################################################################
+
     # system PATH inherited by build scripts
-    environment.path: ''
+    build.unix.path: ''
 
     # system HOME inherited by build scripts
     # Leave this empty to use the system temporary directory            | recommended path: 'PROJECT_DIRECTORY/.build/home'
-    environment.home: ''
+    build.unix.home: ''
 
     # temporary storage for build and push artifacts
     # Leave this empty to use the system temporary directory            | recommended path: 'PROJECT_DIRECTORY/.build'
-    environment.temp: ''
+    build.unix.temp: ''
 
-    # temporary storage for windows build artifacts
-    # Leave this empty to use a subdirectory in the remote users HOME   | recommended path: '/cygdrive/c/builds'
-    environment.temp.windows: ''
-
-    # file path to store permanent archives of builds                   | recommended path: 'PROJECT_DIRECTORY/.archive'
-    environment.archive: ''
+    ############################################################################
+    # WINDOWS BUILDING
+    ############################################################################
 
     # user used to SSH and RSYNC to target servers
     build.windows.remoteUser: ''
     build.windows.server: ''
-    push.remoteUser: ''
-    ssh.credentials:
-        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
-        - [%push.remoteUser%, '*', '/path/to/id_rsa']
-        - [%aws.ec2.user%, '*', '']
+
+    # temporary storage for windows build artifacts
+    # Leave this empty to use a subdirectory in the remote users HOME   | recommended path: '/cygdrive/c/builds'
+    build.windows.temp: ''
+
+    ############################################################################
+    # PUSHING
+    ############################################################################
+
+    push.rsync.remoteUser: ''
+
+    aws.region: ''
+    aws.s3.builds: ''
+    aws.ec2.user: 'ec2-user'
+
+    ############################################################################
+    # DATABASE / NOTIFICATIONS
+    ############################################################################
 
     # Core logger service hostname
     # Only required in standalone installations
@@ -51,9 +71,14 @@ parameters:
     email.notify:
         - 'yourname@quickenloans.com'
 
-    aws.region: ''
-    aws.s3.builds: ''
-    aws.ec2.user: 'ec2-user'
+    ############################################################################
+    # CREDENTIALS
+    ############################################################################
+
+    ssh.credentials:
+        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
+        - [%push.rsync.remoteUser%, '*', '/path/to/id_rsa']
+        - [%aws.ec2.user%, '*', '']
 
     # dont ever commit, dont be stupid
     aws.credentials.key: ''

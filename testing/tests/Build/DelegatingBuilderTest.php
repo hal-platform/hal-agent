@@ -36,7 +36,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem', $properties);
+        $actual = $deployer($this->output, 'buildsystem', [], $properties);
         $this->assertSame(false, $actual);
     }
 
@@ -57,7 +57,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem', $properties);
+        $actual = $deployer($this->output, 'buildsystem', [], $properties);
         $this->assertSame(false, $actual);
     }
 
@@ -78,7 +78,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem', $properties);
+        $actual = $deployer($this->output, 'buildsystem', [], $properties);
         $this->assertSame(false, $actual);
     }
 
@@ -94,7 +94,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem.a', $properties);
+        $actual = $deployer($this->output, 'buildsystem.a', [], $properties);
         $this->assertSame(false, $actual);
         $this->assertSame(999, $deployer->getExitCode());
     }
@@ -111,7 +111,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem.b', $properties);
+        $actual = $deployer($this->output, 'buildsystem.b', [], $properties);
         $this->assertSame(true, $actual);
     }
 }

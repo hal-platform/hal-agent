@@ -25,9 +25,9 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null
         ]);
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
 
-        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
+        $action = new Resolver($repo, $envResolver);
 
         $properties = $action('1234');
     }
@@ -45,95 +45,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
 
-        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
-
-        $properties = $action('1234');
-    }
-
-    public function testWindowsSettingsResolvedWhenSet()
-    {
-        $build = $this->createMockBuild();
-
-        $expected = [
-            'buildUser' => 'buildinguser',
-            'buildServer' => 'windowsserver',
-            'remotePath' => '$HOME/builds/hal9000-build-1234',
-            'environmentVariables' => [
-                'HAL_BUILDID' => '1234',
-                'HAL_COMMIT' => '5555',
-                'HAL_GITREF' => 'master',
-                'HAL_ENVIRONMENT' => 'envkey',
-                'HAL_REPO' => 'repokey'
-            ]
-        ];
-
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
-            'find' => $build
-        ]);
-
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => null,
-            'getOutput' => 'testdir/home/gempath/here:anotherpath',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
-
-        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
-        $action->setBaseBuildDirectory('testdir');
-        $action->setWindowsBuilder('buildinguser', 'windowsserver');
+        $action = new Resolver($repo, $envResolver);
 
         $properties = $action('1234');
-
-        $this->assertSame($expected, $properties['windows']);
-    }
-
-    public function testUnixSettingsResolved()
-    {
-        $build = $this->createMockBuild();
-
-        $expected = [
-            'environmentVariables' => [
-                'HOME' => 'testdir/home/',
-                'PATH' => 'testdir/home/gempath/here/bin:ENV_PATH',
-                'HAL_BUILDID' => '1234',
-                'HAL_COMMIT' => '5555',
-                'HAL_GITREF' => 'master',
-                'HAL_ENVIRONMENT' => 'envkey',
-                'HAL_REPO' => 'repokey',
-
-                // package manager configuration
-                'BOWER_INTERACTIVE' => 'false',
-                'BOWER_STRICT_SSL' => 'false',
-                'COMPOSER_HOME' => 'testdir/home/.composer',
-                'COMPOSER_NO_INTERACTION' => '1',
-                'NPM_CONFIG_STRICT_SSL' => 'false',
-                'NPM_CONFIG_COLOR' => 'always',
-                'GEM_HOME' => 'testdir/home/gempath/here',
-                'GEM_PATH' => 'testdir/home/gempath/here:anotherpath'
-            ]
-        ];
-
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
-            'find' => $build
-        ]);
-
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => null,
-            'getOutput' => 'testdir/home/gempath/here:anotherpath',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
-
-        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
-        $action->setBaseBuildDirectory('testdir');
-
-        $properties = $action('1234');
-
-        $this->assertSame($expected, $properties['unix']);
     }
 
     public function testSuccess()
@@ -163,7 +79,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'download' => 'testdir/hal9000-download-1234.tar.gz',
                 'path' => 'testdir/hal9000-build-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-1234.tar.gz'
+                'tempArchive' => 'testdir/hal9000-build-1234.tar.gz'
             ],
             'github' => [
                 'user' => 'user1',
@@ -173,7 +89,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'artifacts' => [
                 'testdir/hal9000-download-1234.tar.gz',
                 'testdir/hal9000-build-1234',
-                'testdir/hal9000-1234.tar.gz'
+                'testdir/hal9000-build-1234.tar.gz'
             ]
         ];
 
@@ -181,16 +97,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => null,
-            'getOutput' => 'testdir/home/gempath/here:anotherpath',
-            'isSuccessful' => true
-        ])->makePartial();
+        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver', ['getProperties' => []]);
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
-
-        $action = new Resolver($repo, $builder, 'ENV_PATH', 'ARCHIVE_PATH');
-        $action->setBaseBuildDirectory('testdir');
+        $action = new Resolver($repo, $envResolver);
+        $action->setLocalTempPath('testdir');
+        $action->setArchivePath('ARCHIVE_PATH');
 
         $properties = $action('1234');
 

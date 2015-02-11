@@ -17,7 +17,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public $logger;
 
     public $delta;
-    public $builder;
     public $command;
     public $pusher;
 
@@ -27,7 +26,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
 
         $this->delta = Mockery::mock('QL\Hal\Agent\Push\Rsync\CodeDelta');
-        $this->builder = Mockery::mock('QL\Hal\Agent\Push\Builder');
         $this->command = Mockery::mock('QL\Hal\Agent\Push\Rsync\ServerCommand');
         $this->pusher = Mockery::mock('QL\Hal\Agent\Push\Rsync\Pusher');
     }
@@ -56,11 +54,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
-
         $this->delta
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -71,10 +64,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->once();
 
         // non-essential commands
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(true)
-            ->once();
         $this->command
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -83,7 +72,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->delta,
-            $this->builder,
             $this->command,
             $this->pusher
         );
@@ -95,7 +83,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $expected = <<<'OUTPUT'
 Deploying push by rsync
 Reading previous push data
-Running build command
 Running pre-push command
 Pushing code to server
 Running post-push command
@@ -110,7 +97,6 @@ OUTPUT;
         $deployer = new Deployer(
             $this->logger,
             $this->delta,
-            $this->builder,
             $this->command,
             $this->pusher
         );
@@ -125,51 +111,6 @@ Deploying push by rsync
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
     }
-
-    public function testFailBuild()
-    {
-        $properties = [
-            'rsync' => [
-                'remoteUser' => 'sshuser',
-                'remoteServer' => 'webserver',
-                'remotePath' => '/var/www',
-                'syncPath' => '',
-            ],
-            'configuration' => [
-                'system' => '',
-                'build_transform' => ['cmd1'],
-                'pre_push' => ['cmd2'],
-                'post_push' => ['cmd3', 'cmd4'],
-                'exclude' => [],
-            ],
-            'location' => [
-                'path' => ''
-            ],
-            'pushProperties' => [],
-            'environmentVariables' => []
-        ];
-
-        $this->delta
-            ->shouldReceive('__invoke')
-            ->andReturn(true)
-            ->once();
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(false)
-            ->once();
-
-        $deployer = new Deployer(
-            $this->logger,
-            $this->delta,
-            $this->builder,
-            $this->command,
-            $this->pusher
-        );
-
-        $actual = $deployer($this->output, $properties);
-        $this->assertSame(101, $actual);
-    }
-
     public function testFailPrePush()
     {
         $properties = [
@@ -194,10 +135,6 @@ OUTPUT;
             'environmentVariables' => []
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
         $this->delta
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -210,13 +147,12 @@ OUTPUT;
         $deployer = new Deployer(
             $this->logger,
             $this->delta,
-            $this->builder,
             $this->command,
             $this->pusher
         );
 
         $actual = $deployer($this->output, $properties);
-        $this->assertSame(102, $actual);
+        $this->assertSame(101, $actual);
     }
 
     public function testFailPush()
@@ -243,10 +179,6 @@ OUTPUT;
             'environmentVariables' => []
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
         $this->delta
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -259,13 +191,12 @@ OUTPUT;
         $deployer = new Deployer(
             $this->logger,
             $this->delta,
-            $this->builder,
             $this->command,
             $this->pusher
         );
 
         $actual = $deployer($this->output, $properties);
-        $this->assertSame(103, $actual);
+        $this->assertSame(102, $actual);
     }
 
     public function testFailPostPush()
@@ -292,10 +223,6 @@ OUTPUT;
             'environmentVariables' => []
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
         $this->delta
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -312,12 +239,11 @@ OUTPUT;
         $deployer = new Deployer(
             $this->logger,
             $this->delta,
-            $this->builder,
             $this->command,
             $this->pusher
         );
 
         $actual = $deployer($this->output, $properties);
-        $this->assertSame(104, $actual);
+        $this->assertSame(103, $actual);
     }
 }

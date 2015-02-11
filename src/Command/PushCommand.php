@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Command;
 
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Build\DelegatingBuilder;
 use QL\Hal\Agent\Push\ConfigurationReader;
 use QL\Hal\Agent\Push\DelegatingDeployer;
 use QL\Hal\Agent\Push\Mover;
@@ -42,7 +43,8 @@ class PushCommand extends Command
         2 => 'Build archive could not be copied to local storage.',
         3 => 'Build archive could not be unpacked.',
         4 => '.hal9000.yml configuration was invalid and could not be read.',
-        5 => 'Deployment failed.',
+        5 => 'Build transform failed.',
+        6 => 'Deployment failed.',
 
         100 => 'Required properties for rsync are missing.',
         101 => 'Build transform command failed.',
@@ -52,15 +54,13 @@ class PushCommand extends Command
 
         200 => 'Required properties for EB are missing.',
         201 => 'Elastic Beanstalk environment is not ready.',
-        202 => 'Build transform command failed.',
-        203 => 'Build could not be packed for S3.',
-        204 => 'Upload to S3 failed.',
-        205 => 'Deploying application to EB failed.',
+        202 => 'Build could not be packed for S3.',
+        203 => 'Upload to S3 failed.',
+        204 => 'Deploying application to EB failed.',
 
         300 => 'Required properties for EC2 are missing.',
         301 => 'No EC2 instances found.',
-        302 => 'Build transform command failed.',
-        303 => 'EC2 push failed.',
+        302 => 'EC2 push failed.',
     ];
 
     /**
@@ -89,6 +89,11 @@ class PushCommand extends Command
     private $reader;
 
     /**
+     * @type DelegatingBuilder
+     */
+    private $builder;
+
+    /**
      * @type DelegatingDeployer
      */
     private $deployer;
@@ -115,6 +120,7 @@ class PushCommand extends Command
      * @param Mover $mover
      * @param Unpacker $unpacker
      * @param ConfigurationReader $reader
+     * @param DelegatingBuilder $builder
      * @param DelegatingDeployer $deployer
      * @param Filesystem $filesystem
      */
@@ -125,6 +131,7 @@ class PushCommand extends Command
         Mover $mover,
         Unpacker $unpacker,
         ConfigurationReader $reader,
+        DelegatingBuilder $builder,
         DelegatingDeployer $deployer,
         Filesystem $filesystem
     ) {
@@ -136,6 +143,8 @@ class PushCommand extends Command
         $this->mover = $mover;
         $this->reader = $reader;
         $this->unpacker = $unpacker;
+
+        $this->builder = $builder;
         $this->deployer = $deployer;
 
         $this->filesystem = $filesystem;
@@ -226,6 +235,11 @@ class PushCommand extends Command
         // read hal9000.yml
         if (!$this->read($output, $properties)) {
             return $this->failure($output, 4);
+        }
+
+        // build (transform)
+        if (!$this->build($output, $properties)) {
+            return $this->failure($output, 5);
         }
 
         // deploy
@@ -371,6 +385,31 @@ class PushCommand extends Command
         return $reader(
             $properties['location']['path'],
             $properties['configuration']
+        );
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
+     *
+     * @return boolean
+     */
+    private function build(OutputInterface $output, array $properties)
+    {
+        if (!$properties['configuration']['build_transform']) {
+            $this->status($output, 'Skipping build transform command');
+            return true;
+        }
+
+        $this->status($output, 'Running build transform command');
+
+        $builder = $this->builder;
+
+        return $builder(
+            $output,
+            $properties['configuration']['system'],
+            $properties['configuration']['build_transform'],
+            $properties
         );
     }
 

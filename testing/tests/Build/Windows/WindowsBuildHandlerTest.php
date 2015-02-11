@@ -50,11 +50,6 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('building')
-            ->once();
-
         $this->exporter
             ->shouldReceive('__invoke')
             ->andReturn(true)
@@ -80,7 +75,7 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties);
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
 
         $this->assertSame(0, $actual);
 
@@ -108,6 +103,11 @@ OUTPUT;
             ]
         ];
 
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', 'Windows build system is not configured')
+            ->once();
+
         $handler = new WindowsBuildHandler(
             $this->logger,
             $this->exporter,
@@ -117,7 +117,7 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties);
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
         $this->assertSame(200, $actual);
     }
 
@@ -139,11 +139,6 @@ OUTPUT;
             ]
         ];
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('building')
-            ->once();
-
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(false)
@@ -158,7 +153,7 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties);
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
         $this->assertSame(202, $actual);
     }
 }

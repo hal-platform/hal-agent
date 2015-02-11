@@ -7,7 +7,6 @@
 
 namespace QL\Hal\Agent\Push\EC2;
 
-use QL\Hal\Agent\Push\Builder;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Entity\Type\ServerEnumType;
@@ -32,11 +31,6 @@ class Deployer implements DeployerInterface
     private $finder;
 
     /**
-     * @type Builder
-     */
-    private $builder;
-
-    /**
      * @type Pusher
      */
     private $pusher;
@@ -44,18 +38,15 @@ class Deployer implements DeployerInterface
     /**
      * @param EventLogger $logger
      * @param InstanceFinder $finder
-     * @param Builder $builder
      * @param Pusher $pusher
      */
     public function __construct(
         EventLogger $logger,
         InstanceFinder $finder,
-        Builder $builder,
         Pusher $pusher
     ) {
         $this->logger = $logger;
         $this->finder = $finder;
-        $this->builder = $builder;
         $this->pusher = $pusher;
     }
 
@@ -75,13 +66,6 @@ class Deployer implements DeployerInterface
             return 301;
         }
 
-        // run build transform commands
-        if (!$this->build($output, $properties)) {
-            return 302;
-        }
-
-        $this->logger->setStage('pushing');
-
         // SKIP pre-push commands
         if ($properties['configuration']['pre_push']) {
             $this->logger->event('info', self::SKIP_PRE_PUSH);
@@ -89,7 +73,7 @@ class Deployer implements DeployerInterface
 
         // push
         if (!$this->push($output, $properties, $instances)) {
-            return 303;
+            return 302;
         }
 
         // SKIP post-push commands
@@ -141,12 +125,7 @@ class Deployer implements DeployerInterface
         $this->status($output, 'Running build command');
 
         $builder = $this->builder;
-        return $builder(
-            $properties['configuration']['system'],
-            $properties['location']['path'],
-            $properties['configuration']['build_transform'],
-            $properties['environmentVariables']
-        );
+        return $builder($output, $properties['configuration']['system'], $properties);
     }
 
     /**

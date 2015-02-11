@@ -10,6 +10,8 @@ namespace QL\Hal\Agent\Push;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Repository;
@@ -23,13 +25,12 @@ use QL\Hal\Core\Entity\Type\ServerEnumType;
 class Resolver
 {
     use DefaultConfigHelperTrait;
+    use ResolverTrait;
 
     /**
      * @type string
      */
-    const FS_DIRECTORY_PREFIX = 'hal9000-push-%s';
-    const FS_ARCHIVE = 'hal9000-%s.tar.gz';
-    const FS_ARCHIVE_ZIP = 'hal9000-%s.zip';
+    const ZIP_FILE = 'hal9000-push-%s.zip';
 
     /**
      * @type string
@@ -58,6 +59,11 @@ class Resolver
     private $clock;
 
     /**
+     * @type BuildEnvironmentResolver
+     */
+    private $buildEnvironmentResolver;
+
+    /**
      * @type string
      */
     private $sshUser;
@@ -65,62 +71,37 @@ class Resolver
     /**
      * @type string
      */
-    private $envPath;
-
-    /**
-     * @type string
-     */
-    private $archivePath;
-
-    /**
-     * @type string
-     */
     private $githubBaseUrl;
-
-    /**
-     * @type string
-     */
-    private $buildDirectory;
-
-    /**
-     * @type string
-     */
-    private $homeDirectory;
 
     /**
      * @type string|null
      */
     private $awsKey;
-
-    /**
-     * @type string|null
-     */
     private $awsSecret;
 
     /**
      * @param EventLogger $logger
      * @param PushRepository $pushRepo
      * @param Clock $clock
+     * @param BuildEnvironmentResolver $buildEnvironmentResolver
+     *
      * @param string $sshUser
-     * @param string $envPath
-     * @param string $archivePath
      * @param string $githubBaseUrl
      */
     public function __construct(
         EventLogger $logger,
         PushRepository $pushRepo,
         Clock $clock,
+        BuildEnvironmentResolver $buildEnvironmentResolver,
         $sshUser,
-        $envPath,
-        $archivePath,
         $githubBaseUrl
     ) {
         $this->logger = $logger;
         $this->pushRepo = $pushRepo;
         $this->clock = $clock;
+        $this->buildEnvironmentResolver = $buildEnvironmentResolver;
+
         $this->sshUser = $sshUser;
-        $this->envPath = $envPath;
-        $this->archivePath = $archivePath;
         $this->githubBaseUrl = $githubBaseUrl;
     }
 
@@ -155,6 +136,7 @@ class Resolver
         $this->validateAWSConfiguration($method);
 
         $properties = [
+            'build' => $build,
             'push' => $push,
             'method' => $method,
 
@@ -162,10 +144,12 @@ class Resolver
             'configuration' => $this->buildDefaultConfiguration($repository),
 
             'location' => [
-                'path' => $this->generatePushPath($push->getId()),
-                'archive' => $this->generateBuildArchive($build->getId()),
-                'tempArchive' => $this->generateTempBuildArchive($push->getId()),
-                'tempZipArchive' => $this->generateTempZipArchive($push->getId()),
+                'path' => $this->generateLocalTempPath($push->getId(), 'push'),
+                'archive' => $this->generateBuildArchiveFile($build->getId()),
+                'tempArchive' => $this->generateTempBuildArchiveFile($push->getId(), 'push'),
+
+                // elastic beanstalk
+                'tempZipArchive' => $this->generateTempZipArchiveFile($push->getId()),
             ],
 
             'pushProperties' => [
@@ -202,42 +186,17 @@ class Resolver
             $properties[ServerEnumType::TYPE_EC2] = $this->buildEc2Properties($deployment);
         }
 
-        // add env for build environment
-        $properties['environmentVariables'] = $this->buildBuildEnvironmentVariables($build, $hostname, $remotePath);
+        // build system configuration
+        $buildSystemProperties = $this->buildEnvironmentResolver->getProperties($build);
+        $properties = array_merge($properties, $buildSystemProperties);
+
+        // // add env for build environment
+        // $properties['environmentVariables'] = $this->buildBuildEnvironmentVariables($build, $hostname, $remotePath);
 
         // add artifacts to delete
         $properties['artifacts'] = $this->findPushArtifacts($properties);
 
         return $properties;
-    }
-
-    /**
-     * Set the base directory in which temporary build artifacts are stored.
-     *
-     * If none is provided the system temporary directory is used.
-     *
-     * @param string $directory
-     *
-     * @return null
-     */
-    public function setBaseBuildDirectory($directory)
-    {
-        $this->buildDirectory = $directory;
-    }
-
-    /**
-     * Set the home directory for all build scripts. This can easily be changed
-     * later to be unique for each build.
-     *
-     * If none is provided a common location within the shared build directory is used.
-     *
-     * @param string $directory
-     *
-     * @return null
-     */
-    public function setHomeDirectory($directory)
-    {
-        $this->homeDirectory = $directory;
     }
 
     /**
@@ -302,44 +261,9 @@ class Resolver
             $hostname = $serverName;
         }
 
-        return [
-            'remoteUser' => $this->sshUser,
-            'remoteServer' => $hostname,
-            'remotePath' => $deployment->getPath(),
-            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
-            'environmentVariables' => $this->buildServerEnvironmentVariables($build, $hostname, $deployment->getPath())
-        ];
-    }
-
-    /**
-     * @param Build $build
-     * @param string $hostname
-     * @param string $remotePath
-     *
-     * @return array
-     */
-    private function buildBuildEnvironmentVariables(Build $build, $hostname, $remotePath)
-    {
-        $vars = [
-            'HOME' => $this->generateHomePath($build->getRepository()->getId()),
-            'PATH' => $this->envPath
-        ];
-
-        return array_merge($vars, $this->buildServerEnvironmentVariables($build, $hostname, $remotePath));
-    }
-
-    /**
-     * @param Build $build
-     * @param string $hostname
-     * @param string $remotePath
-     *
-     * @return array
-     */
-    private function buildServerEnvironmentVariables(Build $build, $hostname, $remotePath)
-    {
-        $vars = [
+        $env = [
             'HAL_HOSTNAME' => $hostname,
-            'HAL_PATH' => $remotePath,
+            'HAL_PATH' => $deployment->getPath(),
 
             'HAL_BUILDID' => $build->getId(),
             'HAL_COMMIT' => $build->getCommit(),
@@ -348,7 +272,13 @@ class Resolver
             'HAL_REPO' => $build->getRepository()->getKey()
         ];
 
-        return $vars;
+        return [
+            'remoteUser' => $this->sshUser,
+            'remoteServer' => $hostname,
+            'remotePath' => $deployment->getPath(),
+            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
+            'environmentVariables' => $env
+        ];
     }
 
     /**
@@ -368,88 +298,15 @@ class Resolver
     }
 
     /**
-     * Generate a target for the build archive.
-     *
-     * @param string $buildId
-     *
-     * @return string
-     */
-    private function generateBuildArchive($buildId)
-    {
-        return sprintf(
-            '%s%s%s',
-            rtrim($this->archivePath, '/'),
-            DIRECTORY_SEPARATOR,
-            sprintf(self::FS_ARCHIVE, $buildId)
-        );
-    }
-
-    /**
-     * Generate a temporary target for the build archive.
-     *
-     * @param string $pushId
-     *
-     * @return string
-     */
-    private function generateTempBuildArchive($pushId)
-    {
-        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE, $pushId);
-    }
-
-    /**
      * Generate a temporary target for the zip archive (Used for EB Deployments)
      *
-     * @param string $pushId
-     *
-     * @return string
-     */
-    private function generateTempZipArchive($pushId)
-    {
-        return $this->getBuildDirectory() . sprintf(self::FS_ARCHIVE_ZIP, $pushId);
-    }
-
-    /**
-     * Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
-     *
-     * @param string $suffix
-     *
-     * @return string
-     */
-    private function generateHomePath($suffix = '')
-    {
-        if (!$this->homeDirectory) {
-            $this->homeDirectory = $this->getBuildDirectory() . 'home';
-        }
-
-        $suffix = (strlen($suffix) > 0) ? sprintf('.%s', $suffix) : '';
-
-        return rtrim($this->homeDirectory, DIRECTORY_SEPARATOR) . $suffix . DIRECTORY_SEPARATOR;
-    }
-
-    /**
-     * Generate a target for the build path.
-     *
      * @param string $id
      *
      * @return string
      */
-    private function generatePushPath($id)
+    private function generateTempZipArchiveFile($id)
     {
-        return $this->getBuildDirectory() . sprintf(self::FS_DIRECTORY_PREFIX, $id);
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return string
-     */
-    private function getBuildDirectory()
-    {
-        if (!$this->buildDirectory) {
-            $this->buildDirectory = sys_get_temp_dir();
-        }
-
-        return rtrim($this->buildDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        return $this->getLocalTempPath() . sprintf(static::ZIP_FILE, $id);
     }
 
     /**

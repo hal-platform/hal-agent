@@ -20,7 +20,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public $output;
     public $logger;
     public $health;
-    public $builder;
     public $packer;
     public $uploader;
     public $pusher;
@@ -31,7 +30,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
 
         $this->health = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker');
-        $this->builder = Mockery::mock('QL\Hal\Agent\Push\Builder');
         $this->packer = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Packer');
         $this->uploader = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Uploader');
         $this->pusher = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Pusher');
@@ -78,9 +76,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $this->health
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Ready', 'health' => '']);
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(true);
         $this->packer
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -91,15 +86,9 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
-
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
@@ -150,9 +139,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $this->health
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Ready', 'health' => '']);
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(true);
         $this->packer
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -163,10 +149,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
         $this->logger
             ->shouldReceive('event')
             ->with('info', Deployer::SKIP_PRE_PUSH)
@@ -179,7 +161,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
@@ -196,7 +177,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
@@ -234,7 +214,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
@@ -242,48 +221,6 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $actual = $deployer($this->output, $properties);
         $this->assertSame(201, $actual);
-    }
-
-    public function testBuildTransformFails()
-    {
-        $properties = [
-            'elasticbeanstalk' => [
-                'application' => '',
-                'environment' => ''
-            ],
-            'pushProperties' => [],
-            'configuration' => [
-                'system' => '',
-                'build_transform' => ['cmd1'],
-                'pre_push' => ['cmd2'],
-                'post_push' => ['cmd3'],
-            ],
-            'location' => [
-                'path' => '',
-                'tempZipArchive' => ''
-            ],
-            'environmentVariables' => []
-        ];
-
-        $this->health
-            ->shouldReceive('__invoke')
-            ->andReturn(['status' => 'Ready', 'health' => 'Grey']);
-
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->andReturn(false);
-
-        $deployer = new Deployer(
-            $this->logger,
-            $this->health,
-            $this->builder,
-            $this->packer,
-            $this->uploader,
-            $this->pusher
-        );
-
-        $actual = $deployer($this->output, $properties);
-        $this->assertSame(202, $actual);
     }
 
     public function testPackerFails()
@@ -312,22 +249,16 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(false);
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
-
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
         );
 
         $actual = $deployer($this->output, $properties);
-        $this->assertSame(203, $actual);
+        $this->assertSame(202, $actual);
     }
 
     public function testUploaderFails()
@@ -377,22 +308,16 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(false);
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
-
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
         );
 
         $actual = $deployer($this->output, $properties);
-        $this->assertSame(204, $actual);
+        $this->assertSame(203, $actual);
     }
 
     public function testPusherFails()
@@ -445,21 +370,15 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(false);
 
-        $this->logger
-            ->shouldReceive('setStage')
-            ->with('pushing')
-            ->once();
-
         $deployer = new Deployer(
             $this->logger,
             $this->health,
-            $this->builder,
             $this->packer,
             $this->uploader,
             $this->pusher
         );
 
         $actual = $deployer($this->output, $properties);
-        $this->assertSame(205, $actual);
+        $this->assertSame(204, $actual);
     }
 }

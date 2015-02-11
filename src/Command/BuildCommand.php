@@ -427,7 +427,12 @@ class BuildCommand extends Command
         $this->status($output, 'Building');
 
         $builder = $this->builder;
-        return $builder($output, $properties['configuration']['system'], $properties);
+        return $builder(
+            $output,
+            $properties['configuration']['system'],
+            $properties['configuration']['build'],
+            $properties
+        );
     }
 
     /**

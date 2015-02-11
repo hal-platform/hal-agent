@@ -104,6 +104,14 @@ services:
     yaml.parser:
         class: 'Symfony\Component\Yaml\Parser'
 
+    utility.environment.resolver:
+        class: 'QL\Hal\Agent\Utility\BuildEnvironmentResolver'
+        arguments:
+            - @utility.process.builder= # = signifies a prototype service
+        calls:
+            - ['setWindowsBuilder', [%build.windows.remoteUser%, %build.windows.server%, %build.windows.temp%]]
+            - ['setUnixBuilder', [%build.unix.home%, %build.unix.path%, %build.unix.temp%]]
+
     ####################################################################################################################
     # github
     ####################################################################################################################

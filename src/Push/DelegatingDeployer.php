@@ -14,6 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class DelegatingDeployer
 {
     const ERR_INVALID_DEPLOYMENT = 'Invalid deployment method specified';
+    const UNKNOWN_FAILURE_CODE = 6;
 
     /**
      * @type EventLogger
@@ -79,6 +80,8 @@ class DelegatingDeployer
             return $this->explode($method);
         }
 
+        $this->logger->setStage('pushing');
+
         $this->exitCode = $deployer($output, $properties);
         return ($this->exitCode === 0);
     }
@@ -89,10 +92,12 @@ class DelegatingDeployer
      */
     private function explode($method)
     {
-        $this->exitCode = 5;
+        $this->exitCode = self::UNKNOWN_FAILURE_CODE;
+
         $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT, [
             'method' => $method
         ]);
+
         return false;
     }
 

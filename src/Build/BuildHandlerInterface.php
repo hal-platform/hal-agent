@@ -13,12 +13,17 @@ interface BuildHandlerInterface
 {
     /**
      * @param OutputInterface $output
+     *
+     * @param array $commands
+     *                An array of shell commands to run
+     *
      * @param array $properties
+     *                Push/Build properties
      *
      * @return int
      *     exit code:
      *         0 success
      *         >=1 failure
      */
-    public function __invoke(OutputInterface $output, array $properties);
+    public function __invoke(OutputInterface $output, array $commands, array $properties);
 }

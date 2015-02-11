@@ -89,6 +89,11 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
             ->with('service.pushmethod', Mockery::any())
             ->andReturn(function() {return 999;});
 
+        $this->logger
+            ->shouldReceive('setStage')
+            ->with('pushing')
+            ->once();
+
         $deployer = new DelegatingDeployer($this->logger, $this->container, [
             'pushmethod' => 'service.pushmethod'
         ]);
@@ -105,6 +110,11 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('get')
             ->with('service.pushmethod', Mockery::any())
             ->andReturn(function() {return 0;});
+
+        $this->logger
+            ->shouldReceive('setStage')
+            ->with('pushing')
+            ->once();
 
         $deployer = new DelegatingDeployer($this->logger, $this->container, [
             'pushmethod' => 'service.pushmethod'
