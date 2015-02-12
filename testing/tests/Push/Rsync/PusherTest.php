@@ -23,7 +23,6 @@ class PusherTest extends PHPUnit_Framework_TestCase
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getCommandLine' => 'rsync',
             'getOutput' => 'test-output',
             'isSuccessful' => true
         ])->makePartial();
@@ -36,7 +35,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('success', Mockery::any(), [
-                'command' => 'rsync',
+                'command' => 'rsync --rsh=ssh -o BatchMode=yes --recursive --links --perms --group --owner --devices --specials --checksum --verbose --delete-after build/path/ sync/path',
                 'output' => 'test-output'
             ])->once();
 
@@ -50,7 +49,6 @@ class PusherTest extends PHPUnit_Framework_TestCase
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getCommandLine' => 'deployscript',
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
             'getExitCode' => 9000,
@@ -60,7 +58,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'deployscript',
+                'command' => 'rsync --rsh=ssh -o BatchMode=yes --recursive --links --perms --group --owner --devices --specials --checksum --verbose --delete-after --exclude=excluded1 --exclude=excluded2 build/path/ sync/path',
                 'exitCode' => 9000,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output'
@@ -73,7 +71,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
         $action = new Pusher($this->logger, $builder, 20);
 
-        $success = $action('build/path', 'sync/path', []);
+        $success = $action('build/path', 'sync/path', ['excluded1', 'excluded2']);
         $this->assertFalse($success);
     }
 }

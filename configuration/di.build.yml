@@ -57,7 +57,7 @@ services:
             - @build.unix.builder
 
     build.unix.preparer:
-        class: 'QL\Hal\Agent\Build\PackageManagerPreparer'
+        class: 'QL\Hal\Agent\Build\Unix\PackageManagerPreparer'
         arguments:
             - @logger.event
             - @utility.filesystem

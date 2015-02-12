@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Push;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\ProcessBuilder;
@@ -23,9 +23,8 @@ class Unpacker
      */
     const EVENT_MESSAGE = 'Unpack build archive';
 
-    const ERR_UNPACK_FAILURE = 'Unable to unpack build archive';
-    const ERR_UNPACKING_TIMEOUT = 'Unpacking archive took too long';
-    const ERR_PROPERTIES = 'Push details could not be written: %s';
+    const ERR_TIMEOUT = 'Unpacking archive took too long';
+    const ERR_PROPERTIES = 'Push details could not be written';
 
     /**
      * @type string
@@ -119,7 +118,10 @@ class Unpacker
             $this->filesystem->dumpFile($file, $yml);
 
         } catch(IOException $exception) {
-            $this->logger->event('failure', sprintf(self::ERR_PROPERTIES, $exception->getMessage()));
+            $this->logger->event('failure', self::ERR_PROPERTIES, [
+                'error' => $exception->getMessage()
+            ]);
+
             return false;
         }
 
@@ -150,7 +152,7 @@ class Unpacker
 
         // We do it like this so unpack will not be run if makeProcess is not succesful
         if ($makeProcess->run() === 0) {
-            if (!$this->runProcess($unpackProcess, $this->logger, self::ERR_UNPACKING_TIMEOUT, $this->commandTimeout)) {
+            if (!$this->runProcess($unpackProcess, $this->commandTimeout)) {
                 return false;
             }
 
@@ -161,13 +163,11 @@ class Unpacker
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;
 
-        $this->logger->event('failure', self::ERR_UNPACK_FAILURE, [
-            'command' => $failedCommand->getCommandLine(),
-            'exitCode' => $failedCommand->getExitCode(),
-            'output' => $failedCommand->getOutput(),
-            'errorOutput' => $failedCommand->getErrorOutput()
-        ]);
+        $dispCommand = [
+            implode(' ', $makeCommand),
+            implode(' ', $unpackCommand)
+        ];
 
-        return false;
+        return $this->processFailure($dispCommand, $failedCommand);
     }
 }

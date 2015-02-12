@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace QL\Hal\Agent\Build\Unix;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;

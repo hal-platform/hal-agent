@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Build\BuildHandlerInterface;
-use QL\Hal\Agent\Build\PackageManagerPreparer;
+use QL\Hal\Agent\Build\Unix\PackageManagerPreparer;
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 

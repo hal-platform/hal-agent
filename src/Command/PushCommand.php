@@ -8,8 +8,8 @@
 namespace QL\Hal\Agent\Command;
 
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Build\ConfigurationReader;
 use QL\Hal\Agent\Build\DelegatingBuilder;
-use QL\Hal\Agent\Push\ConfigurationReader;
 use QL\Hal\Agent\Push\DelegatingDeployer;
 use QL\Hal\Agent\Push\Mover;
 use QL\Hal\Agent\Push\Pusher;

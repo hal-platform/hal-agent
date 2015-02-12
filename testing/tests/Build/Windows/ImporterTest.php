@@ -53,7 +53,7 @@ class ImporterTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => '',
+                'command' => 'scp -r -P 22 sshuser@server:/remote/path/. .',
                 'exitCode' => 127,
                 'output' => 'test-output',
                 'errorOutput' => 'test-stderr'

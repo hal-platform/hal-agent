@@ -53,7 +53,6 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         ]);
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'getCommandLine' => 'tar',
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
             'getExitCode' => 500
@@ -77,7 +76,10 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'tar',
+                'command' => [
+                    'mkdir php://temp',
+                    'tar -vxzf archive --directory=php://temp',
+                ],
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output',
                 'exitCode' => 500

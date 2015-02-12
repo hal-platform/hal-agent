@@ -94,6 +94,12 @@ OUTPUT;
     public function testFailRsyncSanityCheck()
     {
         $properties = [];
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Deployer::ERR_INVALID_DEPLOYMENT_SYSTEM)
+            ->once();
+
         $deployer = new Deployer(
             $this->logger,
             $this->delta,

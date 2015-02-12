@@ -66,7 +66,6 @@ class PackerTest extends PHPUnit_Framework_TestCase
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
-            'getCommandLine' => './packer',
             'getExitCode' => 9000,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
@@ -81,7 +80,7 @@ class PackerTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => './packer',
+                'command' => 'tar -vczf ' . $this->file . ' .',
                 'exitCode' => 9000,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output'

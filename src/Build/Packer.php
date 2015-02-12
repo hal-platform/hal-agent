@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -20,7 +20,8 @@ class Packer
      * @type string
      */
     const EVENT_MESSAGE = 'Archive build';
-    const ERR_PACKING_TIMEOUT = 'Archiving the build took too long';
+    const ERR_TIMEOUT = 'Archiving the build took too long';
+
     const ERR_DIST_NOT_FOUND = 'Distribution directory not found';
     const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';
 
@@ -93,14 +94,14 @@ class Packer
             $workingPath = $wholePath;
         }
 
-        $cmd = ['tar', '-vczf', $targetFile, '.'];
+        $tarCommand = ['tar', '-vczf', $targetFile, '.'];
         $process = $this->processBuilder
             ->setWorkingDirectory($workingPath)
-            ->setArguments($cmd)
+            ->setArguments($tarCommand)
             ->setTimeout($this->commandTimeout)
             ->getProcess();
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_PACKING_TIMEOUT, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             return false;
         }
 
@@ -116,13 +117,7 @@ class Packer
             return true;
         }
 
-        $this->logger->event('failure', self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
-
-        return false;
+        $dispCommand = implode(' ', $tarCommand);
+        return $this->processFailure($dispCommand, $process);
     }
 }

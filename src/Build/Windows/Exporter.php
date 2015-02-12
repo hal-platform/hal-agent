@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use QL\Hal\Agent\RemoteProcess;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
@@ -21,9 +21,9 @@ class Exporter
      * @type string
      */
     const EVENT_MESSAGE = 'Export to build server';
-    const PREPARE_BUILD_DIR = 'Prepare build directory';
-    const RESET_LOCAL_DIR = 'Reset local build directory';
     const ERR_TIMEOUT = 'Export to build server took too long';
+
+    const PREPARE_BUILD_DIR = 'Failed to prepare build directory';
 
     /**
      * @type EventLogger
@@ -115,7 +115,6 @@ class Exporter
         }
 
         $this->logger->event('failure', self::PREPARE_BUILD_DIR);
-
         return false;
     }
 
@@ -133,7 +132,7 @@ class Exporter
         $from = '.';
         $to = sprintf('%s@%s:%s', $this->remoteUser, $buildServer, $remotePath);
 
-        $cmd = [
+        $scpCommand = [
             'scp',
             '-r',
             '-P',
@@ -144,10 +143,10 @@ class Exporter
 
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
-            ->setArguments($cmd)
+            ->setArguments($scpCommand)
             ->getProcess();
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_TIMEOUT, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out
             return false;
         }
@@ -156,14 +155,8 @@ class Exporter
             return true;
         }
 
-        $this->logger->event('failure', self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
-
-        return false;
+        $dispCommand = implode(' ', $scpCommand);
+        return $this->processFailure($dispCommand, $process);
     }
 
     /**
@@ -174,17 +167,17 @@ class Exporter
     private function removeLocalFiles($buildPath)
     {
         // remove local build dir
-        $cmd = ['rm', '-r', $buildPath];
+        $rmCommand = ['rm', '-r', $buildPath];
         $rmdir = $this->processBuilder
             ->setWorkingDirectory($buildPath)
-            ->setArguments($cmd)
+            ->setArguments($rmCommand)
             ->getProcess();
 
         // create again
-        $cmd = ['mkdir', $buildPath];
+        $mkCommand = ['mkdir', $buildPath];
         $mkdir = $this->processBuilder
             ->setWorkingDirectory($buildPath)
-            ->setArguments($cmd)
+            ->setArguments($mkCommand)
             ->getProcess();
 
         $rmdir->run();
@@ -194,16 +187,14 @@ class Exporter
             return true;
         }
 
-        $process = $rmdir->isSuccessful() ? $mkdir : $rmdir;
+        $failedProcess = $rmdir->isSuccessful() ? $mkdir : $rmdir;
 
-        $this->logger->event('failure', self::RESET_LOCAL_DIR, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
+        $dispCommand = [
+            implode(' ', $rmCommand),
+            implode(' ', $mkCommand)
+        ];
 
-        return false;
+        return $this->processFailure($dispCommand, $failedProcess);
     }
 
     /**

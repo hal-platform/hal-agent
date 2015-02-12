@@ -25,7 +25,6 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'getOutput' => 'test-output',
-            'getCommandLine' => 'deployscript',
             'isSuccessful' => true
         ])->makePartial();
 
@@ -37,7 +36,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('success', Mockery::any(), [
-                'command' => 'deployscript',
+                'command' => 'command',
                 'output' => 'test-output'
             ])->once();
 
@@ -53,7 +52,6 @@ class BuilderTest extends PHPUnit_Framework_TestCase
             'run' => null,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
-            'getCommandLine' => 'deployscript',
             'isSuccessful' => false,
             'getExitCode' => 127
         ])->makePartial();
@@ -66,7 +64,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'deployscript',
+                'command' => 'command',
                 'exitCode' => 127,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output'
@@ -97,7 +95,6 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
-            'getCommandLine' => null,
             'getOutput' => null,
             'isSuccessful' => true,
             'stop' => null

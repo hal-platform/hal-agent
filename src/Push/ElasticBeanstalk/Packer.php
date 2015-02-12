@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -25,7 +25,7 @@ class Packer
      * @type string
      */
     const EVENT_MESSAGE = 'Packing push';
-    const ERR_PACKING_TIMEOUT = 'Packing the push took too long';
+    const ERR_TIMEOUT = 'Packing the push took too long';
 
     /**
      * @type EventLogger
@@ -63,13 +63,14 @@ class Packer
     public function __invoke($buildPath, $targetFile)
     {
         $cmd = ['zip', '--recurse-paths', $targetFile, '.'];
+
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
             ->setArguments($cmd)
             ->setTimeout($this->commandTimeout)
             ->getProcess();
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_PACKING_TIMEOUT, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             return false;
         }
 
@@ -84,13 +85,7 @@ class Packer
             return true;
         }
 
-        $this->logger->event('failure', self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
-
-        return false;
+        $dispCommand = implode(' ', $cmd);
+        return $this->processFailure($dispCommand, $process);
     }
 }

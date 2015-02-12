@@ -24,7 +24,7 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
         $this->output = new BufferedOutput;
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
 
-        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\PackageManagerPreparer', ['__invoke' => null]);
+        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\Unix\PackageManagerPreparer', ['__invoke' => null]);
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\Unix\Builder', ['__invoke' => null]);
     }
 

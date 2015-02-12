@@ -16,6 +16,8 @@ class Deployer implements DeployerInterface
 {
     const STATUS = 'Deploying push by EB';
 
+    const ERR_INVALID_DEPLOYMENT_SYSTEM = 'Elastic Beanstalk deployment system is not configured';
+
     const SKIP_PRE_PUSH = 'Skipping pre-push commands for EB deployment';
     const SKIP_POST_PUSH = 'Skipping post-push commands for EBdeployment';
     const ERR_ENVIRONMENT_HEALTH = 'Elastic Beanstalk environment is not ready';
@@ -75,6 +77,7 @@ class Deployer implements DeployerInterface
 
         // sanity check
         if (!isset($properties[ServerEnumType::TYPE_EB])) {
+            $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 200;
         }
 

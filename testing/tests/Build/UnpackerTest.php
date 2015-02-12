@@ -34,14 +34,13 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Unpacker($this->logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('archive.file', 'path');
         $this->assertTrue($success);
     }
 
     public function testMakeDirectoryFails()
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'getCommandLine' => 'mkdir',
             'getExitCode' => 127,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
@@ -61,7 +60,10 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'mkdir',
+                'command' => [
+                    'mkdir path',
+                    'tar -vxzf archive.file --directory=path',
+                ],
                 'exitCode' => 127,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output',
@@ -69,14 +71,13 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Unpacker($this->logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('archive.file', 'path');
         $this->assertFalse($success);
     }
 
     public function testUnpackingFails()
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'getCommandLine' => 'tar',
             'getExitCode' => 128,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
@@ -99,7 +100,10 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'tar',
+                'command' => [
+                    'mkdir path',
+                    'tar -vxzf archive.file --directory=path',
+                ],
                 'exitCode' => 128,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output',
@@ -107,14 +111,13 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Unpacker($this->logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('archive.file', 'path');
         $this->assertFalse($success);
     }
 
     public function testLocatingUnpackedArchiveFails()
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'getCommandLine' => 'mv',
             'getExitCode' => 128,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output'
@@ -143,7 +146,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'mv',
+                'command' => 'find path -type d',
                 'exitCode' => 128,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output'
@@ -151,7 +154,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Unpacker($this->logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('archive.file', 'path');
         $this->assertFalse($success);
     }
 
@@ -159,7 +162,6 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
     {
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getCommandLine' => 'mv',
             'getExitCode' => 128,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output'
@@ -182,7 +184,10 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'mv',
+                'command' => [
+                    'mv {,.[!.],..?}* ..',
+                    'rmdir test-output'
+                ],
                 'exitCode' => 128,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output'
@@ -190,7 +195,7 @@ class UnpackerTest extends PHPUnit_Framework_TestCase
 
         $action = new Unpacker($this->logger, $builder, 10);
 
-        $success = $action('path', 'command', []);
+        $success = $action('archive.file', 'path');
         $this->assertFalse($success);
     }
 }

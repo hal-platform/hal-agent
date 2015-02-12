@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Unpacker
@@ -19,11 +19,7 @@ class Unpacker
      * @type string
      */
     const EVENT_MESSAGE = 'Unpack GitHub archive';
-
-    const ERR_UNPACK_FAILURE = 'Unable to unpack GitHub archive';
-    const ERR_UNPACKING_TIMEOUT = 'Unpacking GitHub archive took too long';
-    const ERR_LOCATED = 'Unpacked GitHub archive could not be located';
-    const ERR_SANITIZED = 'Unpacked GitHub archive directory was not empty after sanitizing.';
+    const ERR_TIMEOUT = 'Unpacking GitHub archive took too long';
 
     /**
      * @type EventLogger
@@ -89,12 +85,8 @@ class Unpacker
             return strtok($process->getOutput(), "\n");
         }
 
-        $this->logger->event('failure', self::ERR_LOCATED, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
+        $dispCommand = implode(' ', $cmd);
+        $this->processFailure($dispCommand, $process);
 
         return null;
     }
@@ -105,20 +97,22 @@ class Unpacker
      */
     private function sanitizeUnpackedArchive($unpackedPath)
     {
+        $mvCommand = 'mv {,.[!.],..?}* ..';
+        $rmCommand = ['rmdir', $unpackedPath];
+
         $process = $this->processBuilder
             ->setWorkingDirectory($unpackedPath)
             ->setArguments([''])
             ->getProcess()
             // processbuilder escapes input, but we need these wildcards to resolve correctly unescaped
-            ->setCommandLine('mv {,.[!.],..?}* ..');
+            ->setCommandLine($mvCommand);
 
         $process->run();
 
         // remove unpacked directory
-        $cmd = ['rmdir', $unpackedPath];
         $removalProcess = $this->processBuilder
             ->setWorkingDirectory(null)
-            ->setArguments($cmd)
+            ->setArguments($rmCommand)
             ->getProcess();
 
         $removalProcess->run();
@@ -127,14 +121,12 @@ class Unpacker
             return true;
         }
 
-        $this->logger->event('failure', self::ERR_SANITIZED, [
-            'command' => $removalProcess->getCommandLine(),
-            'exitCode' => $removalProcess->getExitCode(),
-            'output' => $removalProcess->getOutput(),
-            'errorOutput' => $removalProcess->getErrorOutput()
-        ]);
+        $dispCommand = [
+            $mvCommand,
+            implode(' ', $rmCommand)
+        ];
 
-        return false;
+        return $this->processFailure($dispCommand, $removalProcess);
     }
 
     /**
@@ -160,7 +152,7 @@ class Unpacker
 
         // We do it like this so unpack will not be run if makeProcess is not succesful
         if ($makeProcess->run() === 0) {
-            if (!$this->runProcess($unpackProcess, $this->logger, self::ERR_UNPACKING_TIMEOUT, $this->commandTimeout)) {
+            if (!$this->runProcess($unpackProcess, $this->commandTimeout)) {
                 return false;
             }
 
@@ -171,13 +163,11 @@ class Unpacker
 
         $failedCommand = ($unpackProcess->isStarted()) ? $unpackProcess : $makeProcess;
 
-        $this->logger->event('failure', self::ERR_UNPACK_FAILURE, [
-            'command' => $failedCommand->getCommandLine(),
-            'exitCode' => $failedCommand->getExitCode(),
-            'output' => $failedCommand->getOutput(),
-            'errorOutput' => $failedCommand->getErrorOutput()
-        ]);
+        $dispCommand = [
+            implode(' ', $makeCommand),
+            implode(' ', $unpackCommand)
+        ];
 
-        return false;
+        return $this->processFailure($dispCommand, $failedCommand);
     }
 }

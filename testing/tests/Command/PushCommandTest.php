@@ -33,7 +33,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
         $this->mover = Mockery::mock('QL\Hal\Agent\Push\Mover');
         $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
-        $this->reader = Mockery::mock('QL\Hal\Agent\Push\ConfigurationReader');
+        $this->reader = Mockery::mock('QL\Hal\Agent\Build\ConfigurationReader');
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
         $this->deployer = Mockery::mock('QL\Hal\Agent\Push\DelegatingDeployer');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');

@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Push\Rsync;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -20,7 +20,7 @@ class Pusher
      * @type string
      */
     const EVENT_MESSAGE = 'Code Deployment';
-    const ERR_PUSHING_TIMEOUT = 'Deploying code to server took too long';
+    const ERR_TIMEOUT = 'Deploying code to server took too long';
 
     /**
      * @type EventLogger
@@ -59,6 +59,7 @@ class Pusher
     public function __invoke($buildPath, $syncPath, array $excludedFiles)
     {
         $command = $this->buildRsyncCommand($buildPath, $syncPath, $excludedFiles);
+        $dispCommand = implode(' ', $command);
 
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
@@ -67,15 +68,15 @@ class Pusher
             ->getProcess();
         $process->setCommandLine($process->getCommandLine() . ' 2>&1');
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_PUSHING_TIMEOUT, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             return false;
         }
 
         if ($process->isSuccessful()) {
-            return $this->processSuccess($process);
+            return $this->processSuccess($dispCommand, $process);
         }
 
-        return $this->processFailure($process);
+        return $this->processFailure($dispCommand, $process);
     }
 
     /**
@@ -106,38 +107,9 @@ class Pusher
             $command[] = '--exclude=' . $excluded;
         }
 
-        return array_merge($command, [$buildPath . '/', $syncPath]);
-    }
+        $command[] = $buildPath . '/';
+        $command[] = $syncPath;
 
-    /**
-     * @param Process $process
-     *
-     * @return bool
-     */
-    private function processFailure(Process $process)
-    {
-        $this->logger->event('failure', self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput(),
-            'exitCode' => $process->getExitCode()
-        ]);
-
-        return false;
-    }
-
-    /**
-     * @param Process $process
-     *
-     * @return bool
-     */
-    private function processSuccess(Process $process)
-    {
-        $this->logger->event('success', self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'output' => $process->getOutput()
-        ]);
-
-        return true;
+        return $command;
     }
 }

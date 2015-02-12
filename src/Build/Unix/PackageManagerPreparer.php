@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Exception\IOException;

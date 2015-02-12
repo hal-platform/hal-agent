@@ -47,7 +47,7 @@ class ExporterTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Exporter::EVENT_MESSAGE, [
-                'command' => '',
+                'command' => 'scp -r -P 22 . sshuser@server:/remote/path',
                 'exitCode' => 5,
                 'output' => 'test-output',
                 'errorOutput' => 'test-stderr'
@@ -80,8 +80,11 @@ class ExporterTest extends PHPUnit_Framework_TestCase
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Exporter::RESET_LOCAL_DIR, [
-                'command' => '',
+            ->with('failure', Exporter::EVENT_MESSAGE, [
+                'command' => [
+                    'rm -r local/path',
+                    'mkdir local/path',
+                ],
                 'exitCode' => 5,
                 'output' => 'test-output',
                 'errorOutput' => 'test-stderr'

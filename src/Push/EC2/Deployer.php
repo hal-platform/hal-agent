@@ -15,6 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Deployer implements DeployerInterface
 {
     const STATUS = 'Deploying push by EC2';
+    const ERR_INVALID_DEPLOYMENT_SYSTEM = 'EC2 deployment system is not configured';
 
     const SKIP_PRE_PUSH = 'Skipping pre-push commands for EC2 deployment';
     const SKIP_POST_PUSH = 'Skipping post-push commands for EC2 deployment';
@@ -59,10 +60,12 @@ class Deployer implements DeployerInterface
 
         // sanity check
         if (!isset($properties[ServerEnumType::TYPE_EC2])) {
+            $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 300;
         }
 
         if (!$instances = $this->finder($output, $properties)) {
+            $this->logger->event('failure', self::ERR_NO_INSTANCES);
             return 301;
         }
 
@@ -102,7 +105,6 @@ class Deployer implements DeployerInterface
         );
 
         if (!$instances) {
-            $this->logger->event('failure', self::ERR_NO_INSTANCES);
             return null;
         }
 

@@ -30,7 +30,7 @@ services:
             - %timeout.filepacking%
 
     push.configuration.reader:
-        class: 'QL\Hal\Agent\Push\ConfigurationReader'
+        class: 'QL\Hal\Agent\Build\ConfigurationReader'
         arguments:
             - @logger.event
             - @utility.filesystem

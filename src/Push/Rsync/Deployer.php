@@ -15,6 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Deployer implements DeployerInterface
 {
     const STATUS = 'Deploying push by rsync';
+    const ERR_INVALID_DEPLOYMENT_SYSTEM = 'Rsync deployment system is not configured';
 
     /**
      * @type EventLogger
@@ -63,6 +64,7 @@ class Deployer implements DeployerInterface
 
         // sanity check
         if (!isset($properties[ServerEnumType::TYPE_RSYNC])) {
+            $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 100;
         }
 

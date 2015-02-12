@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\ProcessRunnerTrait;
+use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -96,7 +96,7 @@ class Importer
         $from = sprintf('%s/.', rtrim($from, '/'));
         $to = '.';
 
-        $cmd = [
+        $scpCommand = [
             'scp',
             '-r',
             '-P',
@@ -107,10 +107,10 @@ class Importer
 
         $process = $this->processBuilder
             ->setWorkingDirectory($buildPath)
-            ->setArguments($cmd)
+            ->setArguments($scpCommand)
             ->getProcess();
 
-        if (!$this->runProcess($process, $this->logger, self::ERR_TIMEOUT, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out
             return false;
         }
@@ -119,14 +119,8 @@ class Importer
             return true;
         }
 
-        $this->logger->event('failure', self::EVENT_MESSAGE, [
-            'command' => $process->getCommandLine(),
-            'exitCode' => $process->getExitCode(),
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput()
-        ]);
-
-        return false;
+        $dispCommand = implode(' ', $scpCommand);
+        return $this->processFailure($dispCommand, $process);
     }
 
     /**
