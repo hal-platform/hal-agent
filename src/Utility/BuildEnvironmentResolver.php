@@ -182,7 +182,7 @@ class BuildEnvironmentResolver
         }
 
         $homeDir = sprintf(
-            '%s/home.%s/',
+            '%s.%s/',
             rtrim($this->unixHomeDirectory, DIRECTORY_SEPARATOR),
             $suffix
         );

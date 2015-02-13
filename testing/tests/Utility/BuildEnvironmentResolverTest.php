@@ -46,7 +46,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
         $expected = [
             'unix' => [
                 'environmentVariables' => [
-                    'HOME' => '/homedir/home.1234/',
+                    'HOME' => '/homedir.1234/',
                     'PATH' => 'global/path:usr/bin',
 
                     'HAL_BUILDID' => '1234',
@@ -58,7 +58,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
                     'BOWER_INTERACTIVE' => 'false',
                     'BOWER_STRICT_SSL' => 'false',
 
-                    'COMPOSER_HOME' => '/homedir/home.1234/.composer',
+                    'COMPOSER_HOME' => '/homedir.1234/.composer',
                     'COMPOSER_NO_INTERACTION' => '1',
 
                     'NPM_CONFIG_STRICT_SSL' => 'false',
