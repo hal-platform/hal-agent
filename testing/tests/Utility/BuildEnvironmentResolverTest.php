@@ -11,6 +11,7 @@ use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
 
 class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
@@ -23,7 +24,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
         $resolver = new BuildEnvironmentResolver($processBuilder);
 
         $expected = [];
-        $actual = $resolver->getProperties($build);
+        $actual = $resolver->getBuildProperties($build);
 
         $this->assertSame($expected, $actual);
     }
@@ -67,7 +68,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $actual = $resolver->getProperties($build);
+        $actual = $resolver->getBuildProperties($build);
 
         $this->assertSame($expected, $actual);
     }
@@ -97,7 +98,41 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $actual = $resolver->getProperties($build);
+        $actual = $resolver->getBuildProperties($build);
+
+        $this->assertSame($expected, $actual);
+    }
+
+    public function testWindowsPropertiesForPush()
+    {
+        $build = $this->createMockBuild();
+
+        $push = new Push;
+        $push->setId(4321);
+        $push->setBuild($build);
+
+        $processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+
+        $resolver = new BuildEnvironmentResolver($processBuilder);
+        $resolver->setWindowsBuilder('winuser', 'windowsbox1', '/win/builds');
+
+        $expected = [
+            'windows' => [
+                'buildUser' => 'winuser',
+                'buildServer' => 'windowsbox1',
+                'remotePath' => '/win/builds/hal9000-push-4321/',
+
+                'environmentVariables' => [
+                    'HAL_BUILDID' => '1234',
+                    'HAL_COMMIT' => '5555',
+                    'HAL_GITREF' => 'master',
+                    'HAL_ENVIRONMENT' => 'envkey',
+                    'HAL_REPO' => 'repokey'
+                ]
+            ]
+        ];
+
+        $actual = $resolver->getPushProperties($push);
 
         $this->assertSame($expected, $actual);
     }

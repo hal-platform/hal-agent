@@ -250,7 +250,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getProperties')
+            ->shouldReceive('getPushProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')
@@ -367,7 +367,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getProperties')
+            ->shouldReceive('getPushProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')
@@ -485,7 +485,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getProperties')
+            ->shouldReceive('getPushProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')

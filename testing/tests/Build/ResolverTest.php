@@ -97,7 +97,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => $build
         ]);
 
-        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver', ['getProperties' => []]);
+        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver', ['getBuildProperties' => []]);
 
         $action = new Resolver($repo, $envResolver);
         $action->setLocalTempPath('testdir');

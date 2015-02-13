@@ -95,7 +95,7 @@ class Resolver
 
 
         // build system configuration
-        $buildSystemProperties = $this->environmentResolver->getProperties($build);
+        $buildSystemProperties = $this->environmentResolver->getBuildProperties($build);
         $properties = array_merge($properties, $buildSystemProperties);
 
         return $properties;

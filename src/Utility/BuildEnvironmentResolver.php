@@ -10,6 +10,7 @@ namespace QL\Hal\Agent\Utility;
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
@@ -17,7 +18,7 @@ use Symfony\Component\Process\ProcessBuilder;
  */
 class BuildEnvironmentResolver
 {
-    const UNIQUE_BUILD_PATH = 'hal9000-build-%s';
+    const UNIQUE_BUILD_PATH = 'hal9000-%s';
 
     /**
      * @type ProcessBuilder
@@ -51,17 +52,38 @@ class BuildEnvironmentResolver
     }
 
     /**
-     * Retrieve build-system specific properties
+     * Retrieve build-system specific properties for build
      *
      * @param Build $build
      *
      * @return array
      */
-    public function getProperties(Build $build)
+    public function getBuildProperties(Build $build)
     {
+        $uniqueId = sprintf('build-%s', $build->getId());
+
         $properties = array_merge(
             $this->getUnixProperties($build),
-            $this->getWindowsProperties($build)
+            $this->getWindowsProperties($build, $uniqueId)
+        );
+
+        return $properties;
+    }
+
+    /**
+     * Retrieve build-system specific properties for push
+     *
+     * @param Push $push
+     *
+     * @return array
+     */
+    public function getPushProperties(Push $push)
+    {
+        $uniqueId = sprintf('push-%s', $push->getId());
+
+        $properties = array_merge(
+            $this->getUnixProperties($push->getBuild()),
+            $this->getWindowsProperties($push->getBuild(), $uniqueId)
         );
 
         return $properties;
@@ -139,10 +161,11 @@ class BuildEnvironmentResolver
 
     /**
      * @param Build $build
+     * @param string $uniqueId
      *
      * @return array
      */
-    private function getWindowsProperties(Build $build)
+    private function getWindowsProperties(Build $build, $uniqueId)
     {
         // sanity check
         if (!$this->windowsBuildDirectory || !$this->windowsUser || !$this->windowsServer) {
@@ -161,7 +184,7 @@ class BuildEnvironmentResolver
             WindowsBuildHandler::SERVER_TYPE => [
                 'buildUser' => $this->windowsUser,
                 'buildServer' => $this->windowsServer,
-                'remotePath' => $this->generateWindowsBuildPath($build->getId()),
+                'remotePath' => $this->generateWindowsBuildPath($uniqueId),
                 'environmentVariables' => $env
             ]
         ];
@@ -193,15 +216,16 @@ class BuildEnvironmentResolver
     /**
      * Generate a target for the windows build path.
      *
-     * @param string $id
+     * @param string $uniqueId
+     *
      * @return string
      */
-    private function generateWindowsBuildPath($id)
+    private function generateWindowsBuildPath($uniqueId)
     {
         $buildPath = sprintf(
             '%s/%s/',
             rtrim($this->windowsBuildDirectory, DIRECTORY_SEPARATOR),
-            sprintf(self::UNIQUE_BUILD_PATH, $id)
+            sprintf(self::UNIQUE_BUILD_PATH, $uniqueId)
         );
 
         return $buildPath;

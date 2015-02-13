@@ -174,7 +174,7 @@ class Resolver
         $properties = array_merge($properties, $deploymentSystemProperties);
 
         // build system configuration
-        $buildSystemProperties = $this->buildEnvironmentResolver->getProperties($build);
+        $buildSystemProperties = $this->buildEnvironmentResolver->getPushProperties($push);
         $properties = array_merge($properties, $buildSystemProperties);
 
 
