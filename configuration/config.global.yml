@@ -20,6 +20,7 @@ parameters:
     timeout.filetransfer: 120
 
     github.baseurl.site: 'http://git/'
+    github.baseurl.api: 'http://git/api/v3/'
 
     aws.region: ''
     aws.s3.builds: ''

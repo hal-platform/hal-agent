@@ -140,7 +140,7 @@ services:
     github.guzzleHttpClient:
         class: 'Guzzle\Http\Client'
         arguments:
-            - %github.baseurl%
+            - %github.baseurl.api%
             -
                 curl.options:
                     progress: true
