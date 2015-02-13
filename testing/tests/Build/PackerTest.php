@@ -50,6 +50,10 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('exists')
             ->andReturn(true)
             ->twice();
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->andReturn(false)
+            ->once();
 
         $this->filesystem
             ->shouldReceive('copy')

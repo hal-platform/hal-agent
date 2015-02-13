@@ -13,6 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DelegatingBuilder
 {
+    const PREPARING_BUILD_ENVIRONMENT = 'Prepare build environment';
     const ERR_INVALID_BUILDER = 'Invalid build system specified';
     const UNKNOWN_FAILURE_CODE = 5;
 
@@ -90,6 +91,11 @@ class DelegatingBuilder
 
         if ($this->enableStaging) {
             $this->logger->setStage('building');
+        }
+
+        // Record build environment properties
+        if (isset($properties[$system])) {
+            $this->logger->event('success', static::PREPARING_BUILD_ENVIRONMENT, $properties[$system]);
         }
 
         $this->exitCode = $builder($output, $commands, $properties);

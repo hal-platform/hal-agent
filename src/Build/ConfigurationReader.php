@@ -91,6 +91,11 @@ class ConfigurationReader
             return false;
         }
 
+        if (!is_array($yaml)) {
+            $this->logger->event('failure', self::ERR_INVALID_YAML);
+            return false;
+        }
+
         // load system
         if (array_key_exists('system', $yaml) && $yaml['system']) {
             if (!is_scalar($yaml['system'])) {

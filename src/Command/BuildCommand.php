@@ -351,8 +351,14 @@ class BuildCommand extends Command
             register_shutdown_function([$this, 'blowTheHatch']);
         }
 
+        // Mangle context
         $context = $properties;
+        $context['defaultConfiguration'] = $context['configuration'];
+
         unset($context['artifacts']);
+        unset($context['unix']);
+        unset($context['windows']);
+        unset($context['configuration']);
 
         $this->logger->event('success', 'Resolved build properties', $context);
 

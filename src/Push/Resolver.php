@@ -14,6 +14,7 @@ use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
+use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Repository\PushRepository;
 use QL\Hal\Core\Entity\Server;
@@ -126,9 +127,9 @@ class Resolver
             throw new PushException(sprintf(self::ERR_CLOBBERING_TIME, $pushId));
         }
 
+        $deployment = $push->getDeployment();
         $build = $push->getBuild();
         $repository = $push->getRepository();
-        $deployment = $push->getDeployment();
         $server = $deployment->getServer();
 
         $method = $server->getType();
@@ -168,30 +169,17 @@ class Resolver
             ]
         ];
 
-        // default to blank
-        $hostname = $remotePath = '';
-
-        // Add deployment type specific properties
-        if ($method === ServerEnumType::TYPE_RSYNC) {
-            $properties[ServerEnumType::TYPE_RSYNC] = $this->buildRsyncProperties($build, $deployment, $server);
-
-            // add internal server/paths
-            $hostname = $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'];
-            $remotePath = $properties[ServerEnumType::TYPE_RSYNC]['remotePath'];
-
-        } elseif ($method === ServerEnumType::TYPE_EB) {
-            $properties[ServerEnumType::TYPE_EB] = $this->buildElasticBeanstalkProperties($repository, $deployment);
-
-        } elseif ($method === ServerEnumType::TYPE_EC2) {
-            $properties[ServerEnumType::TYPE_EC2] = $this->buildEc2Properties($deployment);
-        }
+        // deployment system configuration
+        $deploymentSystemProperties = $this->buildDeploymentSystemProperties($method, $push);
+        $properties = array_merge($properties, $deploymentSystemProperties);
 
         // build system configuration
         $buildSystemProperties = $this->buildEnvironmentResolver->getProperties($build);
         $properties = array_merge($properties, $buildSystemProperties);
 
-        // // add env for build environment
-        // $properties['environmentVariables'] = $this->buildBuildEnvironmentVariables($build, $hostname, $remotePath);
+
+        // attempt to add push-specific properties to build system props
+        $this->addPushVarsToBuildVars($properties);
 
         // add artifacts to delete
         $properties['artifacts'] = $this->findPushArtifacts($properties);
@@ -216,31 +204,66 @@ class Resolver
     }
 
     /**
-     * @param Repository $repository
-     * @param Deployment $deployment
+     * @param array $properties
      *
-     * @return array
+     * @return void
      */
-    private function buildEc2Properties(Deployment $deployment)
+    private function addPushVarsToBuildVars(array &$properties)
     {
-        return [
-            'pool' => $deployment->getEc2Pool(),
-            'remotePath' => $deployment->getPath()
-        ];
+        if (!isset($properties['rsync']['environmentVariables'])) {
+            return;
+        }
+
+        $hostname = $properties['rsync']['environmentVariables']['HAL_HOSTNAME'];
+        $path = $properties['rsync']['environmentVariables']['HAL_PATH'];
+
+        // Add to unix env
+        if (isset($properties['unix']['environmentVariables'])) {
+            $properties['unix']['environmentVariables']['HAL_HOSTNAME'] = $hostname;
+            $properties['unix']['environmentVariables']['HAL_PATH'] = $path;
+        }
+
+        // Add to windows env
+        if (isset($properties['windows']['environmentVariables'])) {
+            $properties['windows']['environmentVariables']['HAL_HOSTNAME'] = $hostname;
+            $properties['windows']['environmentVariables']['HAL_PATH'] = $path;
+        }
     }
 
     /**
-     * @param Repository $repository
-     * @param Deployment $deployment
+     * @param string $method
+     * @param Push $push
      *
      * @return array
      */
-    private function buildElasticBeanstalkProperties(Repository $repository, Deployment $deployment)
+    private function buildDeploymentSystemProperties($method, Push $push)
     {
-        return [
-            'application' => $repository->getEbName(),
-            'environment' => $deployment->getEbEnvironment()
-        ];
+        $deployment = $push->getDeployment();
+        $build = $push->getBuild();
+        $repository = $push->getRepository();
+        $server = $deployment->getServer();
+
+        $properties = [];
+
+        if ($method === ServerEnumType::TYPE_RSYNC) {
+            $properties[$method] = $this->buildRsyncProperties($build, $deployment, $server);
+
+        } elseif ($method === ServerEnumType::TYPE_EB) {
+
+            $properties[$method] = [
+                'application' => $repository->getEbName(),
+                'environment' => $deployment->getEbEnvironment()
+            ];
+
+        } elseif ($method === ServerEnumType::TYPE_EC2) {
+
+            $properties[$method] = [
+                'pool' => $deployment->getEc2Pool(),
+                'remotePath' => $deployment->getPath()
+            ];
+        }
+
+        return $properties;
     }
 
     /**

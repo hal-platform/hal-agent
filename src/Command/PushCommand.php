@@ -329,9 +329,18 @@ class PushCommand extends Command
             register_shutdown_function([$this, 'blowTheHatch']);
         }
 
+        // Mangle context
         $context = $properties;
-        unset($context['pushProperties']);
+        $context['defaultConfiguration'] = $context['configuration'];
+
         unset($context['artifacts']);
+        unset($context['pushProperties']);
+        unset($context['configuration']);
+        unset($context['unix']);
+        unset($context['windows']);
+        unset($context['rsync']);
+        unset($context['ec2']);
+        unset($context['elasticbeanstalk']);
 
         $this->logger->event('success', 'Resolved push properties', $context);
 

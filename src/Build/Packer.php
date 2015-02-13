@@ -85,7 +85,7 @@ class Packer
         // move .hal9000.yml file to dist if present
         $halSource = $buildPath . '/.hal9000.yml';
         $halTarget = $wholePath . '/.hal9000.yml';
-        if ($this->filesystem->exists($halSource)) {
+        if ($this->filesystem->exists($halSource) && !$this->filesystem->exists($halTarget)) {
             $this->filesystem->copy($halSource, $halTarget, true);
         }
 
