@@ -112,6 +112,15 @@ services:
             - ['setWindowsBuilder', [%build.windows.remoteUser%, %build.windows.server%, %build.windows.temp%]]
             - ['setUnixBuilder', [%build.unix.home%, %build.unix.path%, %build.unix.temp%]]
 
+    utility.github.deploymenter:
+        class: 'QL\Hal\Agent\Utility\GithubDeploymenter'
+        arguments:
+            - @github.deployments
+            - %hal.baseurl%
+
+    guzzle:
+        class: 'GuzzleHttp\Client'
+
     ####################################################################################################################
     # github
     ####################################################################################################################
@@ -128,6 +137,12 @@ services:
     github.pullRequests:
         class: 'Github\Api\PullRequest'
         arguments: [@github.client]
+
+    github.deployments:
+        class: 'QL\Hal\Agent\Github\DeploymentsApi'
+        arguments:
+            - @guzzle
+            - %github.baseurl.api%
 
     github.client:
         class: 'Github\Client'

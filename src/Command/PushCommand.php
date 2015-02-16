@@ -15,6 +15,7 @@ use QL\Hal\Agent\Push\Mover;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\Unpacker;
+use QL\Hal\Agent\Utility\GithubDeploymenter;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -104,6 +105,11 @@ class PushCommand extends Command
     private $filesystem;
 
     /**
+     * @type GitHubDeploymenter
+     */
+    private $ghDeploymenter;
+
+    /**
      * @type Push|null
      */
     private $push;
@@ -123,6 +129,7 @@ class PushCommand extends Command
      * @param DelegatingBuilder $builder
      * @param DelegatingDeployer $deployer
      * @param Filesystem $filesystem
+     * @param GitHubDeploymenter $ghDeploymenter
      */
     public function __construct(
         $name,
@@ -133,7 +140,8 @@ class PushCommand extends Command
         ConfigurationReader $reader,
         DelegatingBuilder $builder,
         DelegatingDeployer $deployer,
-        Filesystem $filesystem
+        Filesystem $filesystem,
+        GitHubDeploymenter $ghDeploymenter
     ) {
         parent::__construct($name);
 
@@ -148,6 +156,7 @@ class PushCommand extends Command
         $this->deployer = $deployer;
 
         $this->filesystem = $filesystem;
+        $this->ghDeploymenter = $ghDeploymenter;
         $this->artifacts = [];
 
         $this->enableShutdownHandler = true;
@@ -278,8 +287,11 @@ class PushCommand extends Command
     {
         if ($exitCode === 0) {
             $this->logger->success();
+            $this->ghDeploymenter->updateDeployment('success');
+
         } else {
             $this->logger->failure();
+            $this->ghDeploymenter->updateDeployment('failure');
         }
 
         $this->cleanup();
@@ -343,6 +355,10 @@ class PushCommand extends Command
         unset($context['elasticbeanstalk']);
 
         $this->logger->event('success', 'Resolved push properties', $context);
+
+        // Attempt to create a github deployment
+        $this->ghDeploymenter->createGitHubDeployment($properties['push']);
+        $this->ghDeploymenter->updateDeployment('pending');
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];
@@ -445,5 +461,6 @@ class PushCommand extends Command
 
         // If we got to this point and the status is still "Pushing", something terrible has happened.
         $this->logger->failure();
+        $this->ghDeploymenter->updateDeployment('failure');
     }
 }

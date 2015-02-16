@@ -7,13 +7,36 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Github\Api\AbstractApi;
+use GuzzleHttp\Client as Guzzle;
+use GuzzleHttp\Exception\ParseException;
+use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\UriTemplate;
 
 /**
  * Requires GitHub Enterprise 2.1
  */
-class DeploymentsApi extends AbstractApi
+class DeploymentsApi
 {
+    /**
+     * @type Guzzle
+     */
+    private $guzzle;
+
+    /**
+     * @type string
+     */
+    private $ghApiBaseUrl;
+
+    /**
+     * @param Guzzle $guzzle
+     * @param string $ghApiBaseUrl
+     */
+    public function __construct(Guzzle $guzzle, $ghApiBaseUrl)
+    {
+        $this->guzzle = $guzzle;
+        $this->ghApiBaseUrl = rtrim($ghApiBaseUrl, '/');
+    }
+
     /**
      * Create a deployment
      *
@@ -28,35 +51,48 @@ class DeploymentsApi extends AbstractApi
      * @param array  $payload       Optional, payload
      * @param string $description   Optional, Description
      *
-     * @return boolean
+     * @return int|null
      */
-    public function createDeployment($owner, $repository, $deploymentKey, $reference, $environment, array $payload = [], $description = '')
+    public function createDeployment($owner, $repository, $deploymentKey, $reference, $environment, $description = '', array $payload = [])
     {
-        $path = sprintf(
-            'repos/%s/%s/deployments',
-            rawurlencode($owner),
-            rawurlencode($repository)
-        );
+        $apiUrl = (new UriTemplate)->expand($this->ghApiBaseUrl . '/repos/{owner}/{repo}/deployments', [
+            'owner' => $owner,
+            'repo' => $repository
+        ]);
 
-        $query = [
+        $body = [
             'ref' => $reference,
             'environment' => $environment,
             'auto_merge' => false
         ];
 
         if ($payload) {
-            $query['payload'] = json_encode($payload);
+            $body['payload'] = json_encode($payload);
         }
 
         if ($description) {
-            $query['description'] = $description;
+            $body['description'] = $description;
         }
 
-        $response = $this->client->getHttpClient()->get($path, $query, [
-            // Need to verify this will not be overridden by authlistener
-            'Authorization' => sprintf('token %s', $deploymentKey)
+        $response = $this->guzzle->post($apiUrl, [
+            'headers' => [
+                'Authorization' => sprintf('token %s', $deploymentKey),
+                'Content-Type' => 'application/json'
+            ],
+            'body' => json_encode($body),
+            'exceptions' => false
         ]);
-        // return $response->isSuccessful();
+
+        // fail
+        if (!$decoded = $this->parseResponse($response)) {
+            return null;
+        }
+
+        if (!array_key_exists('id', $decoded)) {
+            return null;
+        }
+
+        return (int) $decoded['id'];
     }
 
     /**
@@ -77,31 +113,59 @@ class DeploymentsApi extends AbstractApi
      */
     public function createDeploymentStatus($owner, $repository, $deploymentKey, $deploymentId, $state, $url = '', $description = '')
     {
-        $path = sprintf(
-            'repos/%s/%s/deployments/%s',
-            rawurlencode($owner),
-            rawurlencode($repository),
-            rawurlencode($deploymentId)
-        );
+        $apiUrl = (new UriTemplate)->expand($this->ghApiBaseUrl . '/repos/{owner}/{repo}/deployments/{id}/statuses', [
+            'owner' => $owner,
+            'repo' => $repository,
+            'id' => $deploymentId
+        ]);
 
         // Create payload
-        $query = [
+        $body = [
             'state' => $state
         ];
 
         if ($url) {
-            $query['url'] = $url;
+            $body['target_url'] = $url;
         }
 
         if ($description) {
-            $query['description'] = $description;
+            $body['description'] = $description;
         }
 
-        $response = $this->client->getHttpClient()->get($path, $query, [
-            // Need to verify this will not be overridden by authlistener
-            'Authorization' => sprintf('token %s', $deploymentKey)
+        $response = $this->guzzle->post($apiUrl, [
+            'headers' => [
+                'Authorization' => sprintf('token %s', $deploymentKey),
+                'Content-Type' => 'application/json'
+            ],
+            'body' => json_encode($body),
+            'exceptions' => false
         ]);
 
-        // return $response->isSuccessful();
+        // fail
+        if (!$decoded = $this->parseResponse($response)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param ResponseInterface $response
+     *
+     * @return array|null
+     */
+    private function parseResponse(ResponseInterface $response)
+    {
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+            return null;
+        }
+
+        try {
+            $decoded = $response->json();
+        } catch (ParseException $e) {
+            return null;
+        }
+
+        return $decoded;
     }
 }

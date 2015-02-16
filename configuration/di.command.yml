@@ -103,6 +103,7 @@ services:
             - @push.builder
             - @push.deployer
             - @utility.filesystem
+            - @utility.github.deploymenter
     command.worker.build:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:

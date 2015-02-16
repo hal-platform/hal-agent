@@ -177,7 +177,6 @@ class Resolver
         $buildSystemProperties = $this->buildEnvironmentResolver->getPushProperties($push);
         $properties = array_merge($properties, $buildSystemProperties);
 
-
         // attempt to add push-specific properties to build system props
         $this->addPushVarsToBuildVars($properties);
 
