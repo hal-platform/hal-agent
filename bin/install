@@ -2,7 +2,7 @@
 set -e
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
-BIN="$DIR/composer install --prefer-dist --no-interaction"
+BIN="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize-autoloader --profile"
 
 if [[ "$1" = '--dev' ]] ; then
     BIN="$BIN --dev"
