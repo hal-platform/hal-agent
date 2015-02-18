@@ -15,3 +15,6 @@
 /configuration/config.env.yml
 /src/CachedContainer.php
 /vendor/
+
+# sensitive stuff
+/.keys/
