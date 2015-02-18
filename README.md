@@ -127,7 +127,7 @@ Deployment Types:
 - Elastic Beanstalk
 
 **Please note:** 
-For Rsync deployments "server commands" are skipped (Both pre-push and post-push).
+For EC2 and EB deployments "server commands" are skipped (Both pre-push and post-push).
 
 ### .hal9000.yml
 
@@ -178,7 +178,7 @@ exclude:
     - 'data/'
 ```
 
-Please note, currently the only system or container supported is "global". In addition, the total commands in each command list for each step must be less than 10.
+Please note, the total commands in each command list for each step must be less than 10.
 
 ### On Build
 
@@ -208,7 +208,7 @@ commit: ''     # Git commit SHA
 date: ''       # ISO 8601 date
 ```
 
-The following environment variables are available to application pre and post push scripts:
+The following environment variables are available to application **build_transform**, **pre_push** and **post_push** scripts:
 
 Variable         | Description
 ---------------- | -----------
@@ -218,7 +218,7 @@ HAL_BUILDID      | ID of the build
 HAL_COMMIT       | 40 character commit SHA
 HAL_GITREF       | Git reference (such as `master`)
 HAL_ENVIRONMENT  | Environment (such as `test`, `beta`, `prod`)
-HAL_REPO         | Hal name for the deployed application
+HAL_REPO         | Hal project name for the deployed application
 
 ## Deployment
 
@@ -227,22 +227,22 @@ For development deployments, create a `config.env.yml` using `environment/dev.ym
 
 ### Configuration
 
-Key                       | Description
-------------------------- | -----------
-email.notify              | A list of secondary email addresses to notify
-environment.archive       | Path to permanent archive directory for successful builds
-environment.temp          | Path to temporary build directory
-environment.temp.windows  | Path to temporary build directory on windows server
-environment.path          | System PATH
-environment.home          | System HOME
-push.remoteUser           | Username used to ssh to servers for syncing code
-build.remoteUser          | Username used to ssh to build server for syncing code (windows only)
-ssh.keyPath               | Path to private key for remote user
-github.token              | Github Enterprise authentication token
-github.com.token          | Github.com authentication token
-github.baseurl            | Github API url
-github.baseurl.site       | Github url
-hal.baseurl               | HAL 9000 Application url
+Key                            | Description
+------------------------------ | -----------
+email.notify                   | A list of secondary email addresses to notify
+environment.archive            | Path to permanent archive directory for successful builds
+environment.temp               | Path to temporary build directory
+build.windows.temp             | Path to temporary build directory on windows server
+build.unix.path                | System PATH for unix builds
+build.unix.home                | System HOME for unix builds
+build.unix.temp                | Temp location for unix builds
+build.windows.remoteUser       | Username used to ssh to build server for syncing code (windows only)
+push.rsync.remoteUser          | Username used to ssh to servers for rsync deployments
+ssh.credentials                | SSH Config username->keypath pairings
+github.token                   | Github Enterprise authentication token
+github.com.token               | Github.com authentication token
+hal.baseurl                    | HAL 9000 Application url
+encrypter.symmetricKeyPath     | Absolute file path to symmetric key
 
 ### Windows Build Server Preparation
 
@@ -270,12 +270,15 @@ The porcelain commands can be used to create and build entities in a single proc
 
 Build example:
 ```
-bin/hal build:build $(bin/hal build:create REPOSITORY_ID ENVIRONMENT_ID GIT_REFERENCE --porcelain)
-bin/hal b:b $(bin/hal b:c REPOSITORY_ID ENVIRONMENT_ID master --porcelain)
+bin/hal b:b $(bin/hal b:c REPO_ID ENV_ID master --porcelain)
 ```
 
 Push example:
 ```
-bin/hal push:push $(bin/hal push:create BUILD_ID DEPLOYMENT_ID --porcelain)
 bin/hal p:p $(bin/hal p:c BUILD_ID DEPLOYMENT_ID --porcelain)
+```
+
+Unit tests:
+```
+bin/test --rapid
 ```
