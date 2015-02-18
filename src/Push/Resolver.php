@@ -8,9 +8,9 @@
 namespace QL\Hal\Agent\Push;
 
 use MCP\DataType\Time\Clock;
-use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;

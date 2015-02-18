@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Helper;
+namespace QL\Hal\Agent\Utility;
 
 use QL\Hal\Core\Entity\Repository;
 

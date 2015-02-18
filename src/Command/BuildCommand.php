@@ -14,9 +14,9 @@ use QL\Hal\Agent\Build\Mover;
 use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
-use QL\Hal\Agent\Helper\DownloadProgressHelper;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\SSHSessionManager;
+use QL\Hal\Agent\Symfony\GuzzleDownloadProgress;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -100,7 +100,7 @@ class BuildCommand extends Command
     private $mover;
 
     /**
-     * @type DownloadProgressHelper
+     * @type GuzzleDownloadProgress
      */
     private $progress;
 
@@ -134,7 +134,7 @@ class BuildCommand extends Command
      * @param DelegatingBuilder $builder
      * @param Packer $packer
      * @param Mover $mover
-     * @param DownloadProgressHelper $progress
+     * @param GuzzleDownloadProgress $progress
      * @param Filesystem $filesystem
      * @param SSHSessionManager $sshManager
      */
@@ -148,7 +148,7 @@ class BuildCommand extends Command
         DelegatingBuilder $builder,
         Packer $packer,
         Mover $mover,
-        DownloadProgressHelper $progress,
+        GuzzleDownloadProgress $progress,
         Filesystem $filesystem,
         SSHSessionManager $sshManager
     ) {

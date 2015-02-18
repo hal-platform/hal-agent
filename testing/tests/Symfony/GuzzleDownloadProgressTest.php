@@ -5,14 +5,14 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Helper;
+namespace QL\Hal\Agent\Symfony;
 
 use Guzzle\Common\Event;
 use Guzzle\Http\Client;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class DownloadProgressHelperTest extends PHPUnit_Framework_TestCase
+class GuzzleDownloadProgressTest extends PHPUnit_Framework_TestCase
 {
     public $client;
 
@@ -20,7 +20,7 @@ class DownloadProgressHelperTest extends PHPUnit_Framework_TestCase
     {
         $output = new BufferedOutput;
         $client = new Client;
-        $helper = new DownloadProgressHelper($client);
+        $helper = new GuzzleDownloadProgress($client);
 
         $helper->enableDownloadProgress($output);
 
@@ -38,7 +38,7 @@ class DownloadProgressHelperTest extends PHPUnit_Framework_TestCase
     {
         $output = new BufferedOutput;
         $client = new Client;
-        $helper = new DownloadProgressHelper($client);
+        $helper = new GuzzleDownloadProgress($client);
 
         $helper->enableDownloadProgress($output);
 
@@ -53,7 +53,7 @@ class DownloadProgressHelperTest extends PHPUnit_Framework_TestCase
     {
         $output = new BufferedOutput;
         $client = new Client;
-        $helper = new DownloadProgressHelper($client);
+        $helper = new GuzzleDownloadProgress($client);
 
         $helper->enableDownloadProgress($output);
         $dispatcher = $client->getEventDispatcher();

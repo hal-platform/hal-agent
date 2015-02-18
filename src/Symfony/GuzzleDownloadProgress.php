@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Helper;
+namespace QL\Hal\Agent\Symfony;
 
 use Closure;
 use Guzzle\Common\Event;
@@ -13,7 +13,10 @@ use Guzzle\Http\Client;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class DownloadProgressHelper
+/**
+ * Output progressive status of a file download to the symfony console output.
+ */
+class GuzzleDownloadProgress
 {
     /**
      * @var Client

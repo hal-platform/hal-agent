@@ -71,7 +71,7 @@ services:
     ####################################################################################################################
 
     utility.helper.downloadProgress:
-        class: 'QL\Hal\Agent\Helper\DownloadProgressHelper'
+        class: 'QL\Hal\Agent\Symfony\GuzzleDownloadProgress'
         arguments: [@github.guzzleHttpClient]
 
     utility.filesystem:
@@ -90,7 +90,7 @@ services:
     utility.forker:
         class: 'QL\Hal\Agent\Helper\ForkHelper'
     utility.exceptionHandler:
-        class: 'QL\Hal\Agent\Helper\ExceptionHandlerSubscriber'
+        class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
         arguments: [@logger.mcp]
 
     utility.id.generator:

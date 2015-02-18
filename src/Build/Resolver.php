@@ -9,8 +9,8 @@ namespace QL\Hal\Agent\Build;
 
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
-use QL\Hal\Agent\Helper\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
