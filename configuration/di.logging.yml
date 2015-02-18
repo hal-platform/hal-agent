@@ -51,8 +51,7 @@ services:
         arguments: [@notifier.twig.loader.path]
     notifier.twig.loader.path:
         class: 'WUT'
-        factory_class: 'QL\Hal\Agent\Helper\StringSmusher'
-        factory_method: 'smush'
+        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
         arguments: [@root, '/configuration/templates']
 
     ####################################################################################################################

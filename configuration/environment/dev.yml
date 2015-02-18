@@ -87,7 +87,7 @@ parameters:
     # ENCRYPTION
     ############################################################################
 
-    encrypter.symmetricKeyPath: ''
+    encrypter.symmetricKeyPath: 'PATH_TO_PROJECT_ROOT/configuration/dev.encrypter.pass'
     encrypter.encryptedkey: |
         42858609e48904512e2a9f903d8d7d573600959e438393755d682e6aa4be2bfb82705c1b36ee8174
         769fafd37e6a7db76fe1ded572fab7a08130a06ac80cc5e76601cea8fdaa7c8627655ebf1093e23e

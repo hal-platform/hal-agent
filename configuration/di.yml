@@ -48,8 +48,7 @@ services:
             - @doctrine.cache
     doctrine.proxyDir:
         class: 'DOES_NOT_MATTER'
-        factory_class: 'QL\Hal\Agent\Helper\StringSmusher'
-        factory_method: 'smush'
+        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
         arguments: [@root, '/.doctrine']
 
     doctrine.cache:
@@ -137,7 +136,7 @@ services:
 
     encrypter.encryptedkey.squished:
         class: 'DERP'
-        factory: ['QL\Hal\Agent\Utility\EncryptedKeySquisher', 'squish']
+        factory: ['QL\Hal\Agent\Utility\Stringify', 'squish']
         arguments: [%encrypter.encryptedkey%]
 
     ####################################################################################################################
