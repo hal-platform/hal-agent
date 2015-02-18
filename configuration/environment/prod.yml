@@ -45,7 +45,7 @@ parameters:
 
     push.rsync.remoteUser: ''
 
-    aws.region: ''
+    aws.region: 'us-west-2'
     aws.s3.builds: ''
     aws.ec2.user: 'ec2-user'
 
