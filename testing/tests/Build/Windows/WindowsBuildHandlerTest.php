@@ -20,6 +20,7 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
     public $builder;
     public $importer;
     public $cleaner;
+    public $decrypter;
 
     public function setUp()
     {
@@ -30,6 +31,7 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\Windows\Builder', ['__invoke' => true]);
         $this->importer = Mockery::mock('QL\Hal\Agent\Build\Windows\Importer', ['__invoke' => true]);
         $this->cleaner = Mockery::mock('QL\Hal\Agent\Build\Windows\Cleaner', ['__invoke' => true]);
+        $this->decrypter = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
     }
 
     public function testSuccess()
@@ -71,7 +73,8 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner
+            $this->cleaner,
+            $this->decrypter
         );
         $handler->disableShutdownHandler();
 
@@ -113,7 +116,8 @@ OUTPUT;
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner
+            $this->cleaner,
+            $this->decrypter
         );
         $handler->disableShutdownHandler();
 
@@ -149,11 +153,72 @@ OUTPUT;
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner
+            $this->cleaner,
+            $this->decrypter
         );
         $handler->disableShutdownHandler();
 
         $actual = $handler($this->output, $properties['configuration']['build'], $properties);
         $this->assertSame(202, $actual);
+    }
+
+    public function testEncryptedPropertiesMergedIntoEnv()
+    {
+        $properties = [
+            'windows' => [
+                'buildUser' => 'sshuser',
+                'buildServer' => 'windowsserver',
+                'remotePath' => '/path',
+                'environmentVariables' => ['derp' => 'herp']
+            ],
+            'configuration' => [
+                'system' => 'windows',
+                'build' => ['cmd1'],
+            ],
+            'location' => [
+                'path' => ''
+            ],
+            'encrypted' => [
+                'VAL1' => 'testing1',
+                'VAL2' => 'testing2'
+            ]
+        ];
+
+        $this->decrypter
+            ->shouldReceive('decryptAndMergeProperties')
+            ->with(
+                ['derp' => 'herp'],
+                [
+                    'VAL1' => 'testing1',
+                    'VAL2' => 'testing2'
+                ]
+            )
+            ->andReturn(['decrypt-output']);
+
+        $this->builder
+            ->shouldReceive('__invoke')
+            ->with(
+                'sshuser',
+                'windowsserver',
+                '/path',
+                ['cmd1'],
+                ['decrypt-output']
+            )
+            ->andReturn(true)
+            ->once();
+
+        $handler = new WindowsBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter
+        );
+        $handler->disableShutdownHandler();
+
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+
+        $this->assertSame(0, $actual);
     }
 }

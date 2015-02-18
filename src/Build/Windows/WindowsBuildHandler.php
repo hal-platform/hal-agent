@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\Build\BuildHandlerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class WindowsBuildHandler implements BuildHandlerInterface
@@ -43,6 +44,11 @@ class WindowsBuildHandler implements BuildHandlerInterface
     private $cleaner;
 
     /**
+     * @type EncryptedPropertyResolver
+     */
+    private $decrypter;
+
+    /**
      * @type bool
      */
     private $enableShutdownHandler;
@@ -53,17 +59,20 @@ class WindowsBuildHandler implements BuildHandlerInterface
     private $emergencyCleaner;
 
     /**
+     * @param EventLogger $logger
      * @param Exporter $exporter
      * @param Builder $builder
      * @param Importer $importer
      * @param Cleaner $cleaner
+     * @param EncryptedPropertyResolver $decrypter
      */
     public function __construct(
         EventLogger $logger,
         Exporter $exporter,
         Builder $builder,
         Importer $importer,
-        Cleaner $cleaner
+        Cleaner $cleaner,
+        EncryptedPropertyResolver $decrypter
     ) {
         $this->logger = $logger;
 
@@ -71,6 +80,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
         $this->builder = $builder;
         $this->importer = $importer;
         $this->cleaner = $cleaner;
+        $this->decrypter = $decrypter;
 
         $this->enableShutdownHandler = true;
         $this->emergencyCleaner = null;
@@ -205,13 +215,20 @@ class WindowsBuildHandler implements BuildHandlerInterface
     {
         $this->status($output, 'Running build command');
 
+        $env = $properties[self::SERVER_TYPE]['environmentVariables'];
+
+        // decrypt and add encrypted properties to env if possible
+        if (isset($properties['encrypted'])) {
+            $env = $this->decrypter->decryptAndMergeProperties($env, $properties['encrypted']);
+        }
+
         $builder = $this->builder;
         return $builder(
             $properties[self::SERVER_TYPE]['buildUser'],
             $properties[self::SERVER_TYPE]['buildServer'],
             $properties[self::SERVER_TYPE]['remotePath'],
             $commands,
-            $properties[self::SERVER_TYPE]['environmentVariables']
+            $env
         );
     }
 

@@ -56,6 +56,7 @@ services:
             - @logger.event
             - @build.unix.preparer
             - @build.unix.builder
+            - @encrypted.resolver
 
     build.unix.preparer:
         class: 'QL\Hal\Agent\Build\Unix\PackageManagerPreparer'
@@ -79,6 +80,7 @@ services:
             - @build.windows.builder
             - @build.windows.importer
             - @build.windows.cleaner
+            - @encrypted.resolver
 
     build.windows.exporter:
         class: 'QL\Hal\Agent\Build\Windows\Exporter'

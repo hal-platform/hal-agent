@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Utility;
 
 use Doctrine\Common\Collections\Criteria;
+use Exception;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
 use QL\Hal\Core\Entity\Environment;
@@ -19,6 +20,8 @@ use QL\Hal\Core\Entity\Repository\EncryptedPropertyRepository;
  */
 class EncryptedPropertyResolver
 {
+    const ERR_BAD_DECRYPT = 'Some properties could not be decrypted';
+
     /**
      * @type EncryptedPropertyRepository
      */
@@ -47,6 +50,54 @@ class EncryptedPropertyResolver
         $this->encryptedRepo = $encryptedRepo;
         $this->logger = $logger;
         $this->decrypter = $decrypter;
+    }
+
+    /**
+     * @param array $encrypteds
+     *
+     * @return array
+     */
+    public function decryptProperties(array $encrypteds)
+    {
+        $decrypteds = [];
+
+        $bads = [];
+
+        foreach ($encrypteds as $key => $encrypted) {
+            try {
+                $decrypted = $this->decrypter->decrypt($encrypted);
+                $decrypteds[$key] = $decrypted;
+
+            } catch (Exception $ex) {
+                $bad[] = $key;
+            }
+        }
+
+        if ($bads) {
+            $this->logger->event('failure', self::ERR_BAD_DECRYPT, [
+                'invalidProperties' => $bads
+            ]);
+        }
+
+        return $decrypteds;
+    }
+
+    /**
+     * @param array $env
+     * @param array $encrypted
+     *
+     * @return array
+     */
+    public function decryptAndMergeProperties(array $env, array $encrypted)
+    {
+        if ($decrypteds = $this->decryptProperties($encrypted)) {
+            foreach ($decrypteds as $property => $decrypted) {
+                $key = sprintf('ENCRYPTED_%s', strtoupper($property));
+                $env[$key] = $decrypted;
+            }
+        }
+
+        return $env;
     }
 
     /**
