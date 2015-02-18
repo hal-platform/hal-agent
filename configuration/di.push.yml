@@ -7,6 +7,7 @@ services:
             - @push.repo
             - @clock
             - @utility.environment.resolver
+            - @encrypted.resolver
             - %push.rsync.remoteUser%
             - %github.baseurl.site%
         calls:

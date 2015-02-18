@@ -15,19 +15,27 @@ use QL\Hal\Core\Entity\Repository;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
+    public $buildRepo;
+    public $envResolver;
+    public $encryptedResolver;
+
+    public function setUp()
+    {
+        $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
+        $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
+        $this->encryptedResolver = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
+    }
     /**
      * @expectedException QL\Hal\Agent\Build\BuildException
      * @expectedExceptionMessage Build "1234" could not be found!
      */
     public function testBuildNotFound()
     {
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
-            'find' => null
-        ]);
+        $this->buildRepo
+            ->shouldReceive('find')
+            ->andReturnNull();
 
-        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
-
-        $action = new Resolver($repo, $envResolver);
+        $action = new Resolver($this->buildRepo, $this->envResolver, $this->encryptedResolver);
 
         $properties = $action('1234');
     }
@@ -41,13 +49,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $build = new Build;
         $build->setStatus('Poo');
 
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
-            'find' => $build
-        ]);
+        $this->buildRepo
+            ->shouldReceive('find')
+            ->andReturn($build);
 
-        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
-
-        $action = new Resolver($repo, $envResolver);
+        $action = new Resolver($this->buildRepo, $this->envResolver, $this->encryptedResolver);
 
         $properties = $action('1234');
     }
@@ -90,16 +96,22 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'testdir/hal9000-download-1234.tar.gz',
                 'testdir/hal9000-build-1234',
                 'testdir/hal9000-build-1234.tar.gz'
-            ]
+            ],
+            'encrypted' => []
         ];
 
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository', [
-            'find' => $build
-        ]);
+        $this->buildRepo
+            ->shouldReceive('find')
+            ->andReturn($build);
 
-        $envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver', ['getBuildProperties' => []]);
+        $this->envResolver
+            ->shouldReceive('getBuildProperties')
+            ->andReturn([]);
+        $this->encryptedResolver
+            ->shouldReceive('getEncryptedPropertiesWithSources')
+            ->andReturn([]);
 
-        $action = new Resolver($repo, $envResolver);
+        $action = new Resolver($this->buildRepo, $this->envResolver, $this->encryptedResolver);
         $action->setLocalTempPath('testdir');
         $action->setArchivePath('ARCHIVE_PATH');
 

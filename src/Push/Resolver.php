@@ -11,6 +11,7 @@ use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
 use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
+use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
@@ -65,6 +66,11 @@ class Resolver
     private $buildEnvironmentResolver;
 
     /**
+     * @type EncryptedPropertyResolver
+     */
+    private $encryptedResolver;
+
+    /**
      * @type string
      */
     private $sshUser;
@@ -85,6 +91,7 @@ class Resolver
      * @param PushRepository $pushRepo
      * @param Clock $clock
      * @param BuildEnvironmentResolver $buildEnvironmentResolver
+     * @param EncryptedPropertyResolver $encryptedResolver
      *
      * @param string $sshUser
      * @param string $githubBaseUrl
@@ -94,6 +101,7 @@ class Resolver
         PushRepository $pushRepo,
         Clock $clock,
         BuildEnvironmentResolver $buildEnvironmentResolver,
+        EncryptedPropertyResolver $encryptedResolver,
         $sshUser,
         $githubBaseUrl
     ) {
@@ -101,6 +109,7 @@ class Resolver
         $this->pushRepo = $pushRepo;
         $this->clock = $clock;
         $this->buildEnvironmentResolver = $buildEnvironmentResolver;
+        $this->encryptedResolver = $encryptedResolver;
 
         $this->sshUser = $sshUser;
         $this->githubBaseUrl = $githubBaseUrl;
@@ -179,6 +188,13 @@ class Resolver
 
         // attempt to add push-specific properties to build system props
         $this->addPushVarsToBuildVars($properties);
+
+        // Get encrypted properties for use in build_transform, with sources as well (for logging)
+        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
+            $build->getRepository(),
+            $build->getEnvironment()
+        );
+        $properties = array_merge($properties, $encryptedProperties);
 
         // add artifacts to delete
         $properties['artifacts'] = $this->findPushArtifacts($properties);

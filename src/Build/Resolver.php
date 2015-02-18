@@ -10,9 +10,12 @@ namespace QL\Hal\Agent\Build;
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Repository\BuildRepository;
 
 /**
@@ -45,13 +48,23 @@ class Resolver
     private $environmentResolver;
 
     /**
+     * @type EncryptedPropertyResolver
+     */
+    private $encryptedResolver;
+
+    /**
      * @param BuildRepository $buildRepo
      * @param BuildEnvironmentResolver $environmentResolver
+     * @param EncryptedPropertyResolver $encryptedResolver
      */
-    public function __construct(BuildRepository $buildRepo, BuildEnvironmentResolver $environmentResolver)
-    {
+    public function __construct(
+        BuildRepository $buildRepo,
+        BuildEnvironmentResolver $environmentResolver,
+        EncryptedPropertyResolver $encryptedResolver
+    ) {
         $this->buildRepo = $buildRepo;
         $this->environmentResolver = $environmentResolver;
+        $this->encryptedResolver = $encryptedResolver;
     }
 
     /**
@@ -88,11 +101,17 @@ class Resolver
                 'user' => $build->getRepository()->getGithubUser(),
                 'repo' => $build->getRepository()->getGithubRepo(),
                 'reference' => $build->getCommit()
-            ],
+            ]
         ];
 
-        $properties['artifacts'] = $this->findBuildArtifacts($properties);
+        // Get encrypted properties for use in build, with sources as well (for logging)
+        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
+            $build->getRepository(),
+            $build->getEnvironment()
+        );
+        $properties = array_merge($properties, $encryptedProperties);
 
+        $properties['artifacts'] = $this->findBuildArtifacts($properties);
 
         // build system configuration
         $buildSystemProperties = $this->environmentResolver->getBuildProperties($build);

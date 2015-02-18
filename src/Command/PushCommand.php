@@ -342,17 +342,15 @@ class PushCommand extends Command
         }
 
         // Mangle context
-        $context = $properties;
-        $context['defaultConfiguration'] = $context['configuration'];
+        $context =  [
+            'defaultConfiguration' => $properties['configuration'],
+            'method' => $properties['method'],
+            'location' => $properties['location']
+        ];
 
-        unset($context['artifacts']);
-        unset($context['pushProperties']);
-        unset($context['configuration']);
-        unset($context['unix']);
-        unset($context['windows']);
-        unset($context['rsync']);
-        unset($context['ec2']);
-        unset($context['elasticbeanstalk']);
+        if (isset($properties['encryptedSources'])) {
+            $context['encrypted'] = $properties['encryptedSources'];
+        }
 
         $this->logger->event('success', 'Resolved push properties', $context);
 

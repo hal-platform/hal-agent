@@ -4,6 +4,7 @@ services:
         arguments:
             - @build.repo
             - @utility.environment.resolver
+            - @encrypted.resolver
         calls:
             - ['setLocalTempPath', [%environment.temp%]]
             - ['setArchivePath', [%environment.archive%]]

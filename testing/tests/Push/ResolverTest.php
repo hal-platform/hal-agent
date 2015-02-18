@@ -23,6 +23,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     public $repo;
     public $clock;
     public $envResolver;
+    public $encryptedResolver;
 
     public function setUp()
     {
@@ -31,8 +32,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'find' => null,
             'findBy' => []
         ]);
+
         $this->clock = new Clock('now', 'UTC');
         $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
+        $this->encryptedResolver = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver', [
+            'getEncryptedPropertiesWithSources' => []
+        ]);
     }
 
     /**
@@ -46,6 +51,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $this->clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );
@@ -71,6 +77,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $this->clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );
@@ -101,6 +108,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $this->clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );
@@ -144,6 +152,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );
@@ -264,6 +273,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );
@@ -381,6 +391,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );
@@ -499,6 +510,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->repo,
             $clock,
             $this->envResolver,
+            $this->encryptedResolver,
             'sshuser',
             'http://git'
         );

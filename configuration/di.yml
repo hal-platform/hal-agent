@@ -67,7 +67,7 @@ services:
         arguments: [@clock, @doctrine.random]
 
     ####################################################################################################################
-    # utility
+    # utility / shared
     ####################################################################################################################
 
     utility.helper.downloadProgress:
@@ -138,6 +138,13 @@ services:
         class: 'DERP'
         factory: ['QL\Hal\Agent\Utility\Stringify', 'squish']
         arguments: [%encrypter.encryptedkey%]
+
+    encrypted.resolver:
+        class: 'QL\Hal\Agent\Utility\EncryptedPropertyResolver'
+        arguments:
+            - @encrypted.repo
+            - @logger.event
+            - @decrypter
 
     ####################################################################################################################
     # github

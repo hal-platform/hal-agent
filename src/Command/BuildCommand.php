@@ -352,13 +352,15 @@ class BuildCommand extends Command
         }
 
         // Mangle context
-        $context = $properties;
-        $context['defaultConfiguration'] = $context['configuration'];
+        $context =  [
+            'defaultConfiguration' => $properties['configuration'],
+            'github' => $properties['github'],
+            'location' => $properties['location']
+        ];
 
-        unset($context['artifacts']);
-        unset($context['unix']);
-        unset($context['windows']);
-        unset($context['configuration']);
+        if (isset($properties['encryptedSources'])) {
+            $context['encrypted'] = $properties['encryptedSources'];
+        }
 
         $this->logger->event('success', 'Resolved build properties', $context);
 
