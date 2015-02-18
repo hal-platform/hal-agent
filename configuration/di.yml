@@ -122,6 +122,25 @@ services:
         class: 'GuzzleHttp\Client'
 
     ####################################################################################################################
+    # encryption
+    ####################################################################################################################
+
+    encrypter.factory:
+        class: 'QL\Hal\Core\Crypto\CryptoFactory'
+        arguments:
+            - @encrypter.encryptedkey.squished
+            - %encrypter.symmetricKeyPath%
+
+    decrypter:
+        class: 'QL\Hal\Core\Crypto\Decrypter'
+        factory: [@encrypter.factory, 'getAsymmetricDecrypter']
+
+    encrypter.encryptedkey.squished:
+        class: 'DERP'
+        factory: ['QL\Hal\Agent\Utility\EncryptedKeySquisher', 'squish']
+        arguments: [%encrypter.encryptedkey%]
+
+    ####################################################################################################################
     # github
     ####################################################################################################################
 
