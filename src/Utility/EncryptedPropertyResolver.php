@@ -84,13 +84,13 @@ class EncryptedPropertyResolver
 
     /**
      * @param array $env
-     * @param array $encrypted
+     * @param array $decrypteds
      *
      * @return array
      */
-    public function decryptAndMergeProperties(array $env, array $encrypted)
+    public function mergePropertiesIntoEnv(array $env, array $decrypteds)
     {
-        if ($decrypteds = $this->decryptProperties($encrypted)) {
+        if ($decrypteds) {
             foreach ($decrypteds as $property => $decrypted) {
                 $key = sprintf('ENCRYPTED_%s', strtoupper($property));
                 $env[$key] = $decrypted;

@@ -51,12 +51,14 @@ class BuildCommand extends Command
 
         100 => 'Required properties for unix are missing.',
         101 => 'Preparing package manager configuration failed.',
-        102 => 'Build command failed.',
+        102 => 'Encryption failure.',
+        103 => 'Build command failed.',
 
         200 => 'Required properties for windows are missing.',
         201 => 'Exporting files to build server failed.',
-        202 => 'Build command failed.',
-        203 => 'Importing files from build server failed.',
+        202 => 'Encryption failure.',
+        203 => 'Build command failed.',
+        204 => 'Importing files from build server failed.',
     ];
 
     /**

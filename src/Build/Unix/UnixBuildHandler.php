@@ -18,6 +18,7 @@ class UnixBuildHandler implements BuildHandlerInterface
     const STATUS = 'Building on unix';
     const SERVER_TYPE = 'unix';
     const ERR_INVALID_BUILD_SYSTEM = 'Unix build system is not configured';
+    const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted properties';
 
     /**
      * @type EventLogger
@@ -75,9 +76,16 @@ class UnixBuildHandler implements BuildHandlerInterface
             return 101;
         }
 
-        // run build
-        if (!$this->build($output, $properties, $commands)) {
+        // decrypt
+        $decrypted = $this->decrypt($output, $properties);
+        if ($decrypted === null) {
+            $this->logger->event('failure', self::ERR_BAD_DECRYPT);
             return 102;
+        }
+
+        // run build
+        if (!$this->build($output, $properties, $commands, $decrypted)) {
+            return 103;
         }
 
         // success
@@ -105,19 +113,40 @@ class UnixBuildHandler implements BuildHandlerInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
+     *
+     * @return array|null
+     */
+    private function decrypt(OutputInterface $output, array $properties)
+    {
+        if (!isset($properties['encrypted'])) {
+            return [];
+        }
+
+        $decrypted = $this->decrypter->decryptProperties($properties['encrypted']);
+        if (count($decrypted) !== count($properties['encrypted'])) {
+            return null;
+        }
+
+        return $decrypted;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param array $properties
      * @param array $commands
+     * @param array $decrypted
      *
      * @return boolean
      */
-    private function build(OutputInterface $output, array $properties, array $commands)
+    private function build(OutputInterface $output, array $properties, array $commands, array $decrypted)
     {
         $this->status($output, 'Running build command');
 
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
 
         // decrypt and add encrypted properties to env if possible
-        if (isset($properties['encrypted'])) {
-            $env = $this->decrypter->decryptAndMergeProperties($env, $properties['encrypted']);
+        if ($decrypted) {
+            $env = $this->decrypter->mergePropertiesIntoEnv($env, $decrypted);
         }
 
         $builder = $this->builder;

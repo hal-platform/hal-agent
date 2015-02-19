@@ -120,6 +120,60 @@ OUTPUT;
 
         $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
         $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $this->assertSame(103, $actual);
+    }
+
+    public function testBadDecryptHaltsBuild()
+    {
+        $properties = [
+            'unix' => [
+                'environmentVariables' => [
+                    'derp' => 'herp'
+                ]
+            ],
+            'configuration' => [
+                'system' => 'unix',
+                'build' => ['cmd1'],
+            ],
+            'location' => [
+                'path' => '/path'
+            ],
+            'encrypted' => [
+                'VAL1' => 'testing1',
+                'VAL2' => 'testing2'
+            ]
+        ];
+
+        $this->decrypter
+            ->shouldReceive('decryptProperties')
+            ->with([
+                'VAL1' => 'testing1',
+                'VAL2' => 'testing2'
+            ])
+            ->andReturn([
+                'VAL1' => 'testing1-D',
+                // one value missing
+            ]);
+
+        $this->decrypter
+            ->shouldReceive('mergePropertiesIntoEnv')
+            ->never();
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', UnixBuildHandler::ERR_BAD_DECRYPT)
+            ->once();
+
+        $this->preparer
+            ->shouldReceive('__invoke')
+            ->andReturn(true)
+            ->once();
+        $this->builder
+            ->shouldReceive('__invoke')
+            ->never();
+
+        $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
+        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
         $this->assertSame(102, $actual);
     }
 
@@ -145,14 +199,25 @@ OUTPUT;
         ];
 
         $this->decrypter
-            ->shouldReceive('decryptAndMergeProperties')
+            ->shouldReceive('decryptProperties')
+            ->with([
+                'VAL1' => 'testing1',
+                'VAL2' => 'testing2'
+            ])
+            ->andReturn([
+                'VAL1' => 'testing1-D',
+                'VAL2' => 'testing2-D'
+            ]);
+
+        $this->decrypter
+            ->shouldReceive('mergePropertiesIntoEnv')
             ->with(
                 [
                     'derp' => 'herp'
                 ],
                 [
-                    'VAL1' => 'testing1',
-                    'VAL2' => 'testing2'
+                    'VAL1' => 'testing1-D',
+                    'VAL2' => 'testing2-D'
                 ]
             )
             ->andReturn(['decrypt-output']);
