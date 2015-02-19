@@ -144,7 +144,7 @@ services:
         arguments:
             - @encrypted.repo
             - @logger.event
-            - @decrypter
+            - @service_container
 
     ####################################################################################################################
     # github
