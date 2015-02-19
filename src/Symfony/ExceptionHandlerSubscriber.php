@@ -43,7 +43,7 @@ class ExceptionHandlerSubscriber implements EventSubscriberInterface
             'exceptionData' => $exception->getTraceAsString()
         ];
 
-        $this->logger->error($exception->getMessage(), $context);
+        $this->logger->critical($exception->getMessage(), $context);
     }
 
     /**
