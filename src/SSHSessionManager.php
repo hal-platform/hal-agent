@@ -216,7 +216,7 @@ class SSHSessionManager
         }
 
         // otherwise pop the top credential
-        return $matchingServerCredentials[0];
+        return array_pop($matchingServerCredentials);
     }
 
     /**
