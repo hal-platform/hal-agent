@@ -13,7 +13,7 @@ parameters:
     application.name: 'HAL 9000 Agent'
 
     application.major.version: '2'
-    application.version: '%application.major.version%.0.0'
+    application.version: '%application.major.version%.2.0'
 
     # base58
     unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
