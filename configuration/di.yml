@@ -152,7 +152,8 @@ services:
 
     github.archive:
         class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments: [@github.client, @utility.filesystem]
+        arguments: [@github.client]
+
     github.references:
         class: 'Github\Api\GitData\References'
         arguments: [@github.client]

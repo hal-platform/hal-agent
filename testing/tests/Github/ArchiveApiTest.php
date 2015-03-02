@@ -17,21 +17,39 @@ use PHPUnit_Framework_TestCase;
 
 class ArchiveApiTest extends PHPUnit_Framework_TestCase
 {
-    public function testSuccess()
+
+    /**
+     * @expectedException Exception
+     */
+    public function testExceptionThrowIfDirectResponseIsNotRedirect()
     {
         $guzzle = new GuzzleClient;
         $guzzle->addSubscriber(new MockPlugin([
             new Response(200)
         ]));
 
-        $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
-        $filesystem->shouldReceive('dumpFile');
+        $client = new Client(new HttpClient([], $guzzle));
 
-        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)), $filesystem);
+        $api = new ArchiveApi($client);
 
-        $success = $api->download('user', 'repo', 'ref', 'path/derp');
+        $api->download('user', 'repo', 'ref', 'path/derp');
+    }
+
+    public function testSuccess()
+    {
+        $guzzle = new GuzzleClient;
+        $guzzle->addSubscriber(new MockPlugin([
+            new Response(302),
+            new Response(200)
+        ]));
+
+        $client = new Client(new HttpClient([], $guzzle));
+        $api = new ArchiveApi($client);
+
+        $success = $api->download('user', 'repo', 'ref', 'php://memory');
         $this->assertTrue($success);
     }
+
 
     /**
      * @expectedException Github\Exception\RuntimeException
@@ -43,34 +61,28 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
             new Response(503)
         ]));
 
-        $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
-
-        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)), $filesystem);
+        $client = new Client(new HttpClient([], $guzzle));
+        $api = new ArchiveApi($client);
 
         $success = $api->download('user', 'repo', 'ref', 'path/derp');
     }
 
     public function testMessageBodyGoesToTarget()
     {
+        $testFile = __DIR__ . '/test.request';
+
         $guzzle = new GuzzleClient;
         $guzzle->addSubscriber(new MockPlugin([
+            new Response(302),
             new Response(200, null, 'test-body')
         ]));
 
-        $body = null;
+        $client = new Client(new HttpClient([], $guzzle));
+        $api = new ArchiveApi($client);
 
-        $filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
-        $filesystem
-            ->shouldReceive('dumpFile')
-            ->with('path/derp', Mockery::on(function($v) use (&$body) {
-                $body = $v;
-                return true;
-            }))
-            ->once();
+        $api->download('user', 'repo', 'ref', $testFile);
+        $this->assertSame('test-body', file_get_contents($testFile));
 
-        $api = new ArchiveApi(new Client(new HttpClient([], $guzzle)), $filesystem);
-
-        $api->download('user', 'repo', 'ref', 'path/derp');
-        $this->assertSame('test-body', (string) $body);
+        unlink($testFile);
     }
 }

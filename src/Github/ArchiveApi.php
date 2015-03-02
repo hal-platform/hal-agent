@@ -7,25 +7,25 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Github\Api\AbstractApi;
+use Closure;
+use Exception;
+use Guzzle\Common\Event;
 use Github\Client;
-use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class ArchiveApi extends AbstractApi
+class ArchiveApi
 {
     /**
-     * @var Filesystem
+     * @type client
      */
-    private $filesystem;
+    private $github;
 
     /**
-     * @param Client $client
-     * @param Filesystem $filesystem Allows null just to maintain parent compatibility
+     * @param Client $github
      */
-    public function __construct(Client $client, Filesystem $filesystem = null)
+    public function __construct(Client $github)
     {
-        $this->client = $client;
-        $this->filesystem = $filesystem ?: new Filesystem;
+        $this->github = $github;
     }
 
     /**
@@ -49,9 +49,49 @@ class ArchiveApi extends AbstractApi
             rawurlencode($reference)
         );
 
-        $response = $this->client->getHttpClient()->get($path);
-        $this->filesystem->dumpFile($target, $response->getBody());
+        $client = $this->github->getHttpClient();
+        $response = $client->request($path, null, 'GET', [], ['allow_redirects'  => false]);
+
+        if (302 !== $response->getStatusCode()) {
+            throw new Exception('Unexpected response from github archive link');
+        }
+
+        $redirect = $response->getLocation();
+
+        $listener = $this->setResponseBody($target);
+        $client->addListener('request.before_send', $listener);
+        $client->addListener('request.complete', $this->onCompletion($listener));
+
+        $response = $client->get($redirect);
 
         return $response->isSuccessful();
+    }
+
+    /**
+     * @param string $target
+     *
+     * @return Closure
+     */
+    private function setResponseBody($target)
+    {
+        return function (Event $event) use ($target) {
+            if (!$event['request']) {
+                return;
+            }
+
+            $event['request']->setResponseBody($target);
+        };
+    }
+
+    /**
+     * @param Closure $listener
+     *
+     * @return Closure
+     */
+    private function onCompletion(Closure $listener)
+    {
+        return function (Event $event, $name, EventDispatcherInterface $dispatcher) use ($listener) {
+            $dispatcher->removeListener('request.before_send', $listener);
+        };
     }
 }
