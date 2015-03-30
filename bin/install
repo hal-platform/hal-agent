@@ -6,9 +6,9 @@ COMPOSER="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize
 COMPOSER_SHOW_INSTALLED="composer show --installed"
 
 if [[ "$1" = '--dev' ]] ; then
-    COMPOSER="$BIN --dev"
+    COMPOSER="$COMPOSER --dev"
 else
-    COMPOSER="$BIN --no-dev"
+    COMPOSER="$COMPOSER --no-dev"
 fi
 
 # download, update composer
