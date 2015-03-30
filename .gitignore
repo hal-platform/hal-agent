@@ -12,6 +12,7 @@
 /.phpunit/
 
 # compiled configuration, package manager installation
+/bin/composer
 /configuration/config.env.yml
 /src/CachedContainer.php
 /vendor/
