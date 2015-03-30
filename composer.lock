@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "e55e6b7ed6b1d7c9acff3d5d7c44e063",
+    "hash": "89537972f7b63bdb8e47d411a8f86362",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1070,17 +1070,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.5.0",
+            "version": "2.6.1",
             "source": {
                 "type": "git",
                 "url": "git@git:web-core/hal-core.git",
-                "reference": "1e29f71bd6c51d15342a1114ee61f7080fd304a9"
+                "reference": "6963d8bc1f331e3307ebededfe5bf93706a3ec27"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.5.0-878946.zip",
-                "reference": "1e29f71bd6c51d15342a1114ee61f7080fd304a9",
-                "shasum": "6233c83b3982f537b4c4650b81d242c3e81a041d"
+                "url": "http://composer/dist/ql-hal-core-2.6.1-f57dae.zip",
+                "reference": "6963d8bc1f331e3307ebededfe5bf93706a3ec27",
+                "shasum": "66e2492bf8c0761ff5648799882ba640e250fa36"
             },
             "archive": {
                 "exclude": [
@@ -1120,7 +1120,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2015-02-19 15:09:53"
+            "time": "2015-03-13 12:54:37"
         },
         {
             "name": "ql/mcp-core",
