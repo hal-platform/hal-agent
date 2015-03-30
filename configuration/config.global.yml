@@ -28,3 +28,15 @@ parameters:
 
     aws.credentials.key: ''
     aws.credentials.secret: ''
+
+    # Replaced by env
+    database.username: ''
+    database.server: ''
+    database.database: ''
+
+    doctrine.connection:
+        driver: pdo_mysql
+        host: %database.server%
+        user: %database.username%
+        password: %database.password%
+        dbname: %database.database%

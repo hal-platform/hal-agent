@@ -58,13 +58,12 @@ parameters:
     logger.mcp.host: 'http://qlsonictest:2581/web/core/logentries'
 
     # doctrine configuration
-    doctrine.connection:
-        driver:     pdo_mysql
-        host:       localhost
-        user:       root
-        password:
-        dbname:     hal
     doctrine.devmode: true
+
+    database.username: 'root'
+    database.password: ''
+    database.server: 'localhost'
+    database.database: 'hal'
 
     email.from.name: 'HAL9000 - DEV'
     email.notify:

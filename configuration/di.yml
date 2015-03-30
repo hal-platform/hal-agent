@@ -37,16 +37,7 @@ services:
     # doctrine
     ####################################################################################################################
 
-    doctrine.config:
-        class: 'Doctrine\ORM\Configuration'
-        factory_class: 'Doctrine\ORM\Tools\Setup'
-        factory_method: 'createAnnotationMetadataConfiguration'
-        arguments:
-            - ['@doctrine.mapping']
-            - %doctrine.devmode%
-            - @doctrine.proxyDir
-            - @doctrine.cache
-    doctrine.proxyDir:
+    doctrine.proxy.dir:
         class: 'DOES_NOT_MATTER'
         factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
         arguments: [@root, '/.doctrine']
