@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Logger;
 use QL\Hal\Agent\Notifier\NotifierInterface;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Type\EventEnumType;
+use QL\Hal\Core\Type\EventEnumType;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Notifier

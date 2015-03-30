@@ -13,7 +13,7 @@ use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Repository;
-use QL\Hal\Core\Entity\Repository\EncryptedPropertyRepository;
+use QL\Hal\Core\Repository\EncryptedPropertyRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**

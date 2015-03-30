@@ -30,7 +30,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
+        $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->forker = Mockery::mock('QL\Hal\Agent\Helper\ForkHelper');
         $this->logger = new MemoryLogger;

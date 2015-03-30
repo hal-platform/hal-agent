@@ -25,7 +25,7 @@ class RemoveBuildCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
+        $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
         $this->archive = 'path';
 

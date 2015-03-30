@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
 use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Repository\BuildRepository;
+use QL\Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

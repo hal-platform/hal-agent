@@ -9,7 +9,7 @@ namespace QL\Hal\Agent\Push\EC2;
 
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Core\Entity\Type\ServerEnumType;
+use QL\Hal\Core\Type\ServerEnumType;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Deployer implements DeployerInterface

@@ -17,9 +17,9 @@ use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
-use QL\Hal\Core\Entity\Repository\PushRepository;
 use QL\Hal\Core\Entity\Server;
-use QL\Hal\Core\Entity\Type\ServerEnumType;
+use QL\Hal\Core\Repository\PushRepository;
+use QL\Hal\Core\Type\ServerEnumType;
 
 /**
  * Resolve push properties from user and environment input

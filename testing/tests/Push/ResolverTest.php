@@ -28,7 +28,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->repo = Mockery::mock('QL\Hal\Core\Entity\Repository\PushRepository', [
+        $this->repo = Mockery::mock('QL\Hal\Core\Repository\PushRepository', [
             'find' => null,
             'findBy' => []
         ]);

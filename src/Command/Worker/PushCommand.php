@@ -13,7 +13,7 @@ use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository\PushRepository;
+use QL\Hal\Core\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;

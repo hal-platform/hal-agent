@@ -16,7 +16,7 @@ use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Repository;
-use QL\Hal\Core\Entity\Repository\BuildRepository;
+use QL\Hal\Core\Repository\BuildRepository;
 
 /**
  * Resolve build properties from user and environment input

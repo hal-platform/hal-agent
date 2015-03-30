@@ -12,7 +12,7 @@ use JsonSerializable;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\EventLog;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Type\EventEnumType;
+use QL\Hal\Core\Type\EventEnumType;
 
 /**
  * This makes attaching logs to events very simple.

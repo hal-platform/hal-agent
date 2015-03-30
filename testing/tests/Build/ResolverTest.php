@@ -21,7 +21,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
+        $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
         $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
         $this->encryptedResolver = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
     }

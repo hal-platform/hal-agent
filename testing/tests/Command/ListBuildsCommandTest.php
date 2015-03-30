@@ -29,9 +29,9 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->buildRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\BuildRepository');
-        $this->repoRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\RepositoryRepository');
-        $this->envRepo = Mockery::mock('QL\Hal\Core\Entity\Repository\EnvironmentRepository');
+        $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
+        $this->repoRepo = Mockery::mock('QL\Hal\Core\Repository\RepositoryRepository');
+        $this->envRepo = Mockery::mock('QL\Hal\Core\Repository\EnvironmentRepository');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
         $this->archive = 'path';
 

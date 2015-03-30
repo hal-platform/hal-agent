@@ -11,7 +11,7 @@ use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Helper\ForkHelper;
-use QL\Hal\Core\Entity\Repository\BuildRepository;
+use QL\Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
