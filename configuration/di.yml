@@ -45,7 +45,7 @@ services:
     doctrine.cache:
         class: 'Doctrine\Common\Cache\ArrayCache'
 
-    doctrine.events:
+    doctrine.em.events:
         class: 'Doctrine\Common\EventManager'
         calls:
             - ['addEventListener', [['prePersist'], @doctrine.persist.listener]]
@@ -54,7 +54,7 @@ services:
         class: 'QL\Hal\Core\RandomGenerator'
 
     doctrine.persist.listener:
-        class: 'QL\Hal\Core\Entity\Listener\EntityPersistListener'
+        class: 'QL\Hal\Core\DoctrinePersistListener'
         arguments: [@clock, @doctrine.random]
 
     ####################################################################################################################
