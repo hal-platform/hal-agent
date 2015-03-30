@@ -2,12 +2,22 @@
 set -e
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
-BIN="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize-autoloader --profile"
+COMPOSER="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize-autoloader --profile"
+COMPOSER_SHOW_INSTALLED="composer show --installed"
 
 if [[ "$1" = '--dev' ]] ; then
-    BIN="$BIN --dev"
+    COMPOSER="$BIN --dev"
 else
-    BIN="$BIN --no-dev"
+    COMPOSER="$BIN --no-dev"
 fi
 
-$BIN
+# download, update composer
+if [ ! -f "$DIR/composer" ]; then
+    curl http://composer/installer | bash -s "$DIR/composer"
+fi
+
+$COMPOSER
+
+if [ -n "$HAL_ENVIRONMENT" ]; then
+    "$DIR/"$COMPOSER_SHOW_INSTALLED
+fi
