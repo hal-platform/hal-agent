@@ -8,14 +8,17 @@
 
 namespace QL\Hal\Agent\Bootstrap;
 
+use QL\Hal\Agent\Application\Di;
+use QL\Hal\Agent\Application\EnvConfigLoader;
+
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
 $file = $root . '/src/CachedContainer.php';
 $class = 'QL\Hal\Agent\CachedContainer';
-$container = buildDi($root);
+$container = Di::buildDi($root, [new EnvConfigLoader, 'load']);
 
-file_put_contents($file, dumpDi($container, $class));
+file_put_contents($file, Di::dumpDi($container, $class));
 
 echo <<<OUTPUT
 Dumping DI Container cache:

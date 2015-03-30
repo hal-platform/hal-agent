@@ -8,12 +8,13 @@
 
 namespace QL\Hal\Agent\Bootstrap;
 
+use QL\Hal\Agent\Application\Di;
 use Symfony\Component\Debug\ErrorHandler;
 
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
-$di = getDi($root);
+$di = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
 
 $err = ErrorHandler::register();
 $err->setDefaultLogger($di->get('logger.mcp'));
