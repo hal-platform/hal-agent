@@ -6,14 +6,14 @@ COMPOSER="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize
 COMPOSER_SHOW_INSTALLED="composer show --installed"
 
 if [[ "$1" = '--dev' ]] ; then
-    COMPOSER="$COMPOSER --dev"
+    COMPOSER="$COMPOSER"
 else
     COMPOSER="$COMPOSER --no-dev"
 fi
 
 # download, update composer
 if [ ! -f "$DIR/composer" ]; then
-    curl http://composer/installer | bash -s "$DIR/composer"
+    curl --silent http://composer/installer | sh
 fi
 
 $COMPOSER
