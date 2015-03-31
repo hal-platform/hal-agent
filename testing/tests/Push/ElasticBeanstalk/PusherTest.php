@@ -76,7 +76,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->ebs
             ->shouldReceive('updateEnvironment')
-            ->andThrow('Aws\Common\Exception\RunTimeException');
+            ->andThrow('Aws\Common\Exception\RuntimeException');
 
         $this->logger
             ->shouldReceive('event')
@@ -102,7 +102,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->ebs
             ->shouldReceive('waitUntilEnvironmentReady')
-            ->andThrow('Aws\Common\Exception\RunTimeException');
+            ->andThrow('Aws\Common\Exception\RuntimeException');
 
         $this->logger
             ->shouldReceive('event')

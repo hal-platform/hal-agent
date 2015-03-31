@@ -68,7 +68,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
 
         $this->s3
             ->shouldReceive('upload')
-            ->andThrow('Aws\Common\Exception\RunTimeException');
+            ->andThrow('Aws\Common\Exception\RuntimeException');
 
         $this->logger
             ->shouldReceive('event')
@@ -90,7 +90,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->s3
             ->shouldReceive('waitUntil')
-            ->andThrow('Aws\Common\Exception\RunTimeException');
+            ->andThrow('Aws\Common\Exception\RuntimeException');
 
         $this->logger
             ->shouldReceive('event')
