@@ -13,7 +13,7 @@ fi
 
 # download, update composer
 if [ ! -f "$DIR/composer" ]; then
-    curl --silent http://composer/installer | sh
+    curl --silent http://composer/installer | sh -s -- "$DIR/composer"
 fi
 
 $COMPOSER
