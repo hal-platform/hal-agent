@@ -97,44 +97,6 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
         $this->assertSame(null, $session);
     }
 
-    public function testLoginFailureLogsError()
-    {
-        $expectedContext = [
-            'user' => 'username123456789',
-            'server' => 'localhost',
-            'errors' => [
-                'SSH_MSG_USERAUTH_FAILURE: publickey,keyboard-interactive'
-            ]
-        ];
-
-        $context = null;
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_CONNECT_SERVER, Mockery::on(function($v) use (&$context) {
-                $context = $v;
-                return true;
-            }));
-
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path')
-            ->andReturn(true);
-
-        $credentials = [
-            ['username123456789', '*', 'key/path']
-        ];
-
-        $loader = function($filepath) {
-            return $this->getSamplePrivateKeyForTesting();
-        };
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials, $loader);
-        $session = $ssh->createSession('username123456789', 'localhost');
-
-        $this->assertSame(null, $session);
-        $this->assertSame($expectedContext, $context);
-    }
-
     public function testParsingPortFromServerName()
     {
         $expectedContext = [
