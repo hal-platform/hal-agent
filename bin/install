@@ -2,7 +2,7 @@
 set -e
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
-COMPOSER="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize-autoloader --profile"
+COMPOSER="$DIR/composer install --prefer-dist --no-interaction --ansi --optimize-autoloader --profile --no-progress"
 COMPOSER_SHOW_INSTALLED="composer show --installed"
 
 if [[ "$1" = '--dev' ]] ; then
