@@ -83,7 +83,8 @@ class ListBuildsCommand extends Command
      * @param Filesystem $filesystem
      * @param string $archivePath
      */
-    public function __construct($name,
+    public function __construct(
+        $name,
         BuildRepository $buildRepo,
         RepositoryRepository $repoRepo,
         EnvironmentRepository $envRepo,
