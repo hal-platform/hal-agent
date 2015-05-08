@@ -8,12 +8,15 @@
 namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\Build\BuildHandlerInterface;
+use QL\Hal\Agent\Build\BuildHandlerTrait;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class WindowsBuildHandler implements BuildHandlerInterface
 {
+    use BuildHandlerTrait;
+
     const STATUS = 'Building on windows';
     const SERVER_TYPE = 'windows';
     const ERR_INVALID_BUILD_SYSTEM = 'Windows build system is not configured';
@@ -50,16 +53,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
     private $decrypter;
 
     /**
-     * @type bool
-     */
-    private $enableShutdownHandler;
-
-    /**
-     * @type callable|null
-     */
-    private $emergencyCleaner;
-
-    /**
      * @param EventLogger $logger
      * @param Exporter $exporter
      * @param Builder $builder
@@ -82,50 +75,6 @@ class WindowsBuildHandler implements BuildHandlerInterface
         $this->importer = $importer;
         $this->cleaner = $cleaner;
         $this->decrypter = $decrypter;
-
-        $this->enableShutdownHandler = true;
-        $this->emergencyCleaner = null;
-    }
-
-    /**
-     * In case of error or critical failure, ensure that we clean up the build artifacts.
-     *
-     * Note that this is only called for exceptions and non-fatal errors.
-     * Fatal errors WILL NOT trigger this.
-     *
-     * @return null
-     */
-    public function __destruct()
-    {
-        $this->cleanup();
-    }
-
-    /**
-     * Emergency failsafe
-     *
-     * Set or execute the emergency cleanup process
-     *
-     * @param callable|null $cleaner
-     * @return null
-     */
-    public function cleanup(callable $cleaner = null)
-    {
-        if (func_num_args() === 1) {
-            $this->emergencyCleaner = $cleaner;
-        } else {
-            if (is_callable($this->emergencyCleaner)) {
-                call_user_func($this->emergencyCleaner);
-                $this->emergencyCleaner = null;
-            }
-        }
-    }
-
-    /**
-     * @return null
-     */
-    public function disableShutdownHandler()
-    {
-        $this->enableShutdownHandler = false;
     }
 
     /**
@@ -149,7 +98,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
         $decrypted = $this->decrypt($output, $properties);
         if ($decrypted === null) {
             $this->logger->event('failure', self::ERR_BAD_DECRYPT);
-            return 202;
+            return $this->bombout($output, 202);
         }
 
         // run build
@@ -196,17 +145,17 @@ class WindowsBuildHandler implements BuildHandlerInterface
     {
         $this->status($output, 'Exporting files to build server');
 
+        $localPath = $properties['location']['path'];
+        $user = $properties[self::SERVER_TYPE]['buildUser'];
+        $server = $properties[self::SERVER_TYPE]['buildServer'];
+        $path = $properties[self::SERVER_TYPE]['remotePath'];
+
         $exporter = $this->exporter;
-        $response = $exporter(
-            $properties['location']['path'],
-            $properties[self::SERVER_TYPE]['buildUser'],
-            $properties[self::SERVER_TYPE]['buildServer'],
-            $properties[self::SERVER_TYPE]['remotePath']
-        );
+        $response = $exporter($localPath, $user, $server, $path);
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($properties);
+            $this->enableEmergencyHandler($user, $server, $path);
         }
 
         return $response;
@@ -245,6 +194,9 @@ class WindowsBuildHandler implements BuildHandlerInterface
         $this->status($output, 'Running build command');
 
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
+        $user = $properties[self::SERVER_TYPE]['buildUser'];
+        $server = $properties[self::SERVER_TYPE]['buildServer'];
+        $path = $properties[self::SERVER_TYPE]['remotePath'];
 
         // merge decrypted properties into env
         if ($decrypted) {
@@ -252,13 +204,7 @@ class WindowsBuildHandler implements BuildHandlerInterface
         }
 
         $builder = $this->builder;
-        return $builder(
-            $properties[self::SERVER_TYPE]['buildUser'],
-            $properties[self::SERVER_TYPE]['buildServer'],
-            $properties[self::SERVER_TYPE]['remotePath'],
-            $commands,
-            $env
-        );
+        return $builder($user, $server, $path, $commands, $env);
     }
 
     /**
@@ -271,69 +217,12 @@ class WindowsBuildHandler implements BuildHandlerInterface
     {
         $this->status($output, 'Importing files from build server');
 
+        $localPath = $properties['location']['path'];
+        $user = $properties[self::SERVER_TYPE]['buildUser'];
+        $server = $properties[self::SERVER_TYPE]['buildServer'];
+        $path = $properties[self::SERVER_TYPE]['remotePath'];
+
         $importer = $this->importer;
-        return $importer(
-            $properties['location']['path'],
-            $properties[self::SERVER_TYPE]['buildServer'],
-            $properties[self::SERVER_TYPE]['remotePath']
-        );
-    }
-
-    /**
-     * @param OutputInterface $output
-     *
-     * @return boolean
-     */
-    private function clean(OutputInterface $output)
-    {
-        $this->status($output, 'Cleaning up build server');
-
-        $this->cleanup();
-    }
-
-    /**
-     * @param array $properties
-     * @return null
-     */
-    private function enableEmergencyHandler(array $properties)
-    {
-        $cleaner = $this->cleaner;
-        $buildUser = $properties[self::SERVER_TYPE]['buildUser'];
-        $buildServer = $properties[self::SERVER_TYPE]['buildServer'];
-        $remotePath = $properties[self::SERVER_TYPE]['remotePath'];
-
-        $this->cleanup(function() use ($cleaner, $buildUser, $buildServer, $remotePath) {
-            $cleaner($buildUser, $buildServer, $remotePath);
-        });
-
-        // Set emergency handler in case of super fatal
-        if ($this->enableShutdownHandler) {
-            register_shutdown_function([$this, 'cleanup']);
-        }
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param int $exitCode
-     *
-     * @return int
-     */
-    private function bombout(OutputInterface $output, $exitCode)
-    {
-        $this->clean($output);
-
-        return $exitCode;
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
+        return $importer($localPath, $user, $server, $path);
     }
 }

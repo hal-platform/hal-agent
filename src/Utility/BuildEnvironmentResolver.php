@@ -31,8 +31,8 @@ class BuildEnvironmentResolver
      * @type string|null
      */
     private $unixBuildDirectory;
-    private $unixHomeDirectory;
-    private $unixGlobalPath;
+    private $unixUser;
+    private $unixServer;
 
     /**
      * WINDOWS properties
@@ -63,7 +63,7 @@ class BuildEnvironmentResolver
         $uniqueId = sprintf('build-%s', $build->getId());
 
         $properties = array_merge(
-            $this->getUnixProperties($build),
+            $this->getUnixProperties($build, $uniqueId),
             $this->getWindowsProperties($build, $uniqueId)
         );
 
@@ -82,7 +82,7 @@ class BuildEnvironmentResolver
         $uniqueId = sprintf('push-%s', $push->getId());
 
         $properties = array_merge(
-            $this->getUnixProperties($push->getBuild()),
+            $this->getUnixProperties($push->getBuild(), $uniqueId),
             $this->getWindowsProperties($push->getBuild(), $uniqueId)
         );
 
@@ -101,7 +101,6 @@ class BuildEnvironmentResolver
     public function setWindowsBuilder($user, $server, $baseDirectory)
     {
         $this->windowsUser = $user;
-
         $this->windowsServer = $server;
         $this->windowsBuildDirectory = $baseDirectory;
     }
@@ -109,36 +108,33 @@ class BuildEnvironmentResolver
     /**
      * Add unix build server info so unix builds can be built.
      *
-     * @param string $homeDirectory
-     * @param string $globalPath
+     * @param string $user
+     * @param string $server
      * @param string $baseDirectory
      *
      * @return null
      */
-    public function setUnixBuilder($homeDirectory, $globalPath, $baseDirectory)
+    public function setUnixBuilder($user, $server, $baseDirectory)
     {
-        $this->unixHomeDirectory = $homeDirectory;
-
-        $this->unixGlobalPath = $globalPath;
+        $this->unixUser = $user;
+        $this->unixServer = $server;
         $this->unixBuildDirectory = $baseDirectory;
     }
 
     /**
      * @param Build $build
+     * @param string $uniqueId
      *
      * @return array
      */
-    private function getUnixProperties(Build $build)
+    private function getUnixProperties(Build $build, $uniqueId)
     {
         // sanity check
-        if (!$this->unixHomeDirectory || !$this->unixGlobalPath || !$this->unixBuildDirectory) {
+        if (!$this->unixBuildDirectory || !$this->unixUser || !$this->unixServer) {
             return [];
         }
 
         $env = [
-            'HOME' => $this->generateUnixHomePath($build->getRepository()->getId()),
-            'PATH' => $this->unixGlobalPath,
-
             'HAL_BUILDID' => $build->getId(),
             'HAL_COMMIT' => $build->getCommit(),
             'HAL_GITREF' => $build->getBranch(),
@@ -146,12 +142,11 @@ class BuildEnvironmentResolver
             'HAL_REPO' => $build->getRepository()->getKey()
         ];
 
-        // add package manager configuration
-        $env = array_merge($env, $this->getPackageManagerEnv($env));
-        $env = array_merge($env, $this->getRubyEnv($env));
-
         $properties = [
             UnixBuildHandler::SERVER_TYPE => [
+                'buildUser' => $this->unixUser,
+                'buildServer' => $this->unixServer,
+                'remotePath' => $this->generateUnixBuildPath($uniqueId),
                 'environmentVariables' => $env
             ]
         ];
@@ -193,27 +188,6 @@ class BuildEnvironmentResolver
     }
 
     /**
-     * Generate a target for $HOME and/or $TEMP with an optional suffix for uniqueness
-     *
-     * @param string $suffix
-     * @return string
-     */
-    private function generateUnixHomePath($suffix = '')
-    {
-        if (!$suffix) {
-            $suffix = 'shared';
-        }
-
-        $homeDir = sprintf(
-            '%s.%s/',
-            rtrim($this->unixHomeDirectory, DIRECTORY_SEPARATOR),
-            $suffix
-        );
-
-        return $homeDir;
-    }
-
-    /**
      * Generate a target for the windows build path.
      *
      * @param string $uniqueId
@@ -232,77 +206,95 @@ class BuildEnvironmentResolver
     }
 
     /**
-     * Ruby sucks. This is ridiculous.
+     * Generate a target for the unix build path.
      *
-     * @param array $env
+     * @param string $uniqueId
      *
-     * @return array
+     * @return string
      */
-    private function getRubyEnv(array $vars)
+    private function generateUnixBuildPath($uniqueId)
     {
-        /**
-         * Get the default gempath when we remove the GEM_HOME and GEM_PATH env variables
-         */
-        $process = $this->processBuilder
-            ->setWorkingDirectory($vars['HOME'])
-            ->setArguments(['gem', 'env', 'gempath'])
-            ->addEnvironmentVariables(['HOME' => $vars['HOME']])
-            ->getProcess();
+        $buildPath = sprintf(
+            '%s/%s/',
+            rtrim($this->unixBuildDirectory, DIRECTORY_SEPARATOR),
+            sprintf(self::UNIQUE_BUILD_PATH, $uniqueId)
+        );
 
-        $process->run();
-
-        if (!$gemPaths = $process->getOutput()) {
-            return [];
-        }
-
-        $gemPaths = trim($gemPaths);
-        $default = null;
-
-        /**
-         * Get the gem path within the HOME dir
-         */
-        $paths = explode(':', $gemPaths);
-        foreach ($paths as $path) {
-            if (stripos($path, $vars['HOME']) === 0) {
-                $default = $path;
-            }
-        }
-
-        if (!$default) {
-            // if not found just bail out and don't set any ruby envs.
-            return [];
-        }
-
-        $bindir = sprintf('%s/bin', $default);
-
-        return [
-            // wheres gems are installed
-            'GEM_HOME' => $default,
-
-            // where gems are searched for
-            'GEM_PATH' => implode(':', $paths),
-
-            // Add the new gembin dir to the PATH
-            'PATH' => sprintf('%s:%s', $bindir, $vars['PATH'])
-        ];
+        return $buildPath;
     }
 
-    /**
-     * @param array $env
-     *
-     * @return array
-     */
-    private function getPackageManagerEnv(array $vars)
-    {
-        return [
-            'BOWER_INTERACTIVE' => 'false',
-            'BOWER_STRICT_SSL' => 'false',
+    // /**
+    //  * Ruby sucks. This is ridiculous.
+    //  *
+    //  * @param array $env
+    //  *
+    //  * @return array
+    //  */
+    // private function getRubyEnv(array $vars)
+    // {
+    //     /**
+    //      * Get the default gempath when we remove the GEM_HOME and GEM_PATH env variables
+    //      */
+    //     $process = $this->processBuilder
+    //         ->setWorkingDirectory($vars['HOME'])
+    //         ->setArguments(['gem', 'env', 'gempath'])
+    //         ->addEnvironmentVariables(['HOME' => $vars['HOME']])
+    //         ->getProcess();
 
-            'COMPOSER_HOME' => sprintf('%s/%s', rtrim($vars['HOME'], DIRECTORY_SEPARATOR), '.composer'),
-            'COMPOSER_NO_INTERACTION' => '1',
+    //     $process->run();
 
-            'NPM_CONFIG_STRICT_SSL' => 'false',
-            'NPM_CONFIG_COLOR' => 'always'
-        ];
-    }
+    //     if (!$gemPaths = $process->getOutput()) {
+    //         return [];
+    //     }
+
+    //     $gemPaths = trim($gemPaths);
+    //     $default = null;
+
+    //     /**
+    //      * Get the gem path within the HOME dir
+    //      */
+    //     $paths = explode(':', $gemPaths);
+    //     foreach ($paths as $path) {
+    //         if (stripos($path, $vars['HOME']) === 0) {
+    //             $default = $path;
+    //         }
+    //     }
+
+    //     if (!$default) {
+    //         // if not found just bail out and don't set any ruby envs.
+    //         return [];
+    //     }
+
+    //     $bindir = sprintf('%s/bin', $default);
+
+    //     return [
+    //         // wheres gems are installed
+    //         'GEM_HOME' => $default,
+
+    //         // where gems are searched for
+    //         'GEM_PATH' => implode(':', $paths),
+
+    //         // Add the new gembin dir to the PATH
+    //         'PATH' => sprintf('%s:%s', $bindir, $vars['PATH'])
+    //     ];
+    // }
+
+    // /**
+    //  * @param array $env
+    //  *
+    //  * @return array
+    //  */
+    // private function getPackageManagerEnv(array $vars)
+    // {
+    //     return [
+    //         'BOWER_INTERACTIVE' => 'false',
+    //         'BOWER_STRICT_SSL' => 'false',
+
+    //         'COMPOSER_HOME' => sprintf('%s/%s', rtrim($vars['HOME'], DIRECTORY_SEPARATOR), '.composer'),
+    //         'COMPOSER_NO_INTERACTION' => '1',
+
+    //         'NPM_CONFIG_STRICT_SSL' => 'false',
+    //         'NPM_CONFIG_COLOR' => 'always'
+    //     ];
+    // }
 }

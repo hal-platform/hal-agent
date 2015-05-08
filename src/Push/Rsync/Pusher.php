@@ -59,7 +59,7 @@ class Pusher
     public function __invoke($buildPath, $syncPath, array $excludedFiles)
     {
         $command = $this->buildRsyncCommand($buildPath, $syncPath, $excludedFiles);
-        $dispCommand = implode(' ', $command);
+        $dispCommand = implode("\n", $command);
 
         $process = $this->processBuilder
             ->setWorkingDirectory(null)

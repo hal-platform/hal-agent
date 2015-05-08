@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Build\Generic\Cleaner as BaseCleaner;
 

@@ -1,11 +1,11 @@
 <?php
 /**
- * @copyright ©2014 Quicken Loans Inc. All rights reserved. Trade Secret,
+ * @copyright ©2015 Quicken Loans Inc. All rights reserved. Trade Secret,
  *    Confidential and Proprietary. Any dissemination outside of Quicken Loans
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Build\FileSyncTrait;
 use QL\Hal\Agent\Logger\EventLogger;
@@ -14,9 +14,7 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
- * Art Vandaley
- *
- * This uses SCP for file transfer
+ * This uses RSYNC for file transfer
  */
 class Importer
 {
@@ -50,6 +48,7 @@ class Importer
      * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
+     * @param string $remoteUser
      */
     public function __construct(
         EventLogger $logger,
@@ -88,12 +87,14 @@ class Importer
      */
     private function transferFiles($buildPath, $remoteUser, $buildServer, $remotePath)
     {
-        $command = $this->buildIncomingScp('.', $remoteUser, $buildServer, $remotePath);
+        $command = $this->buildIncomingRsync($buildPath, $remoteUser, $buildServer, $remotePath);
 
         $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
+            ->setWorkingDirectory(null)
             ->setArguments($command)
+            ->setTimeout($this->commandTimeout)
             ->getProcess();
+        $process->setCommandLine($process->getCommandLine() . ' 2>&1');
 
         if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out
