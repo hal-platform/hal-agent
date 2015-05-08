@@ -100,7 +100,7 @@ services:
             - @utility.process.builder= # = signifies a prototype service
         calls:
             - ['setWindowsBuilder', [%build.windows.remoteUser%, %build.windows.server%, %build.windows.temp%]]
-            - ['setUnixBuilder', [%build.unix.home%, %build.unix.path%, %build.unix.temp%]]
+            - ['setUnixBuilder', [%build.unix.remoteUser%, %build.unix.server%, %build.unix.temp%]]
 
     utility.github.deploymenter:
         class: 'QL\Hal\Agent\Utility\GithubDeploymenter'

@@ -89,7 +89,6 @@ services:
             - @build.windows.standard.remoter
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
-            - %build.windows.remoteUser%
 
     build.windows.builder:
         class: 'QL\Hal\Agent\Build\Windows\Builder'
@@ -102,7 +101,6 @@ services:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
-            - %build.windows.remoteUser%
 
     build.windows.cleaner:
         class: 'QL\Hal\Agent\Build\Windows\Cleaner'
