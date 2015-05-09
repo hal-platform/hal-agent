@@ -95,10 +95,6 @@ class Exporter
             return false;
         }
 
-        if (!$this->removeLocalFiles($buildPath)) {
-            return false;
-        }
-
         return true;
     }
 
@@ -138,11 +134,6 @@ class Exporter
         }
 
         $rsyncCommand = implode(' ', $command);
-        // $process = $this->processBuilder
-        //     ->setWorkingDirectory(null)
-        //     ->setArguments($command)
-        //     ->setTimeout($this->commandTimeout)
-        //     ->getProcess();
 
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
@@ -151,8 +142,6 @@ class Exporter
             ->getProcess()
             // processbuilder escapes input, but it breaks the rsync params
             ->setCommandLine($rsyncCommand . ' 2>&1');
-
-        // $process->setCommandLine($process->getCommandLine() . ' 2>&1');
 
         if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out
@@ -165,43 +154,5 @@ class Exporter
 
         $dispCommand = implode("\n", $command);
         return $this->processFailure($dispCommand, $process);
-    }
-
-    /**
-     * @param string $buildPath
-     *
-     * @return bool
-     */
-    private function removeLocalFiles($buildPath)
-    {
-        // remove local build dir
-        $rmCommand = ['rm', '-r', $buildPath];
-        $rmdir = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($rmCommand)
-            ->getProcess();
-
-        // create again
-        $mkCommand = ['mkdir', $buildPath];
-        $mkdir = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($mkCommand)
-            ->getProcess();
-
-        $rmdir->run();
-        $mkdir->run();
-
-        if ($rmdir->isSuccessful() && $mkdir->isSuccessful()) {
-            return true;
-        }
-
-        $failedProcess = $rmdir->isSuccessful() ? $mkdir : $rmdir;
-
-        $dispCommand = [
-            implode(' ', $rmCommand),
-            implode(' ', $mkCommand)
-        ];
-
-        return $this->processFailure($dispCommand, $failedProcess);
     }
 }

@@ -45,6 +45,9 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     const EVENT_MESSAGE = 'Run build command';
     const CONTAINER_WORKING_DIR = '/build';
     const DOCKERFILE_SOURCES = '/docker-images';
+    const DOCKER_SHELL = <<<SHELL
+sh -c '%s'
+SHELL;
 
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source';
     const EVENT_BUILD_CONTAINER = 'Build Docker image';
@@ -53,6 +56,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     const EVENT_START_CONTAINER = 'Start Docker container';
     const EVENT_CLEAN_PERMISSIONS = 'Clean build permissions';
     const EVENT_KILL_CONTAINER = 'Kill Docker container';
+    const EVENT_REMOVE_CONTAINER = 'Remove Docker container';
 
     /**
      * @type EventLogger
@@ -71,7 +75,9 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     private $remoteUser;
     private $remoteServer;
 
-    // debug
+    /**
+     * @type bool
+     */
     private $logDockerCommands;
     private $useSudoForDocker;
 
@@ -79,16 +85,31 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
      * @param EventLogger $logger
      * @param SSHProcess $remoter
      * @param SSHProcess $buildRemoter
-     * @param bool $useSudoForDocker
      */
-    public function __construct(EventLogger $logger, SSHProcess $remoter, SSHProcess $buildRemoter, $useSudoForDocker = false)
+    public function __construct(EventLogger $logger, SSHProcess $remoter, SSHProcess $buildRemoter)
     {
         $this->logger = $logger;
         $this->remoter = $remoter;
         $this->buildRemoter = $buildRemoter;
 
+        $this->logDockerCommands = false;
+        $this->useSudoForDocker = false;
+    }
+
+    /**
+     * @return void
+     */
+    public function enableDockerCommandLogging()
+    {
         $this->logDockerCommands = true;
-        $this->useSudoForDocker = $useSudoForDocker;
+    }
+
+    /**
+     * @return void
+     */
+    public function enableDockerSudo()
+    {
+        $this->useSudoForDocker = true;
     }
 
     /**
@@ -139,11 +160,6 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
         if (!$this->runCommands($containerName, $commands)) {
             return $this->bombout(false);
         }
-
-        // // 6. Shut down docker container
-        // if (!$this->cleanupContainer($containerName, $owner, $group)) {
-        //     return $this->bombout(false);
-        // }
 
         return $this->bombout(true);
     }
@@ -296,7 +312,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
         $prefix = implode(' ', $prefix);
 
         foreach ($commands as $command) {
-            $actual = sprintf('sh -c "%s"', $command);
+            $actual = sprintf(self::DOCKER_SHELL, $command);
 
             $this->status('Running user build command inside Docker container');
 
@@ -317,7 +333,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
      * @param string $owner
      * @param string $group
      *
-     * @return bool
+     * @return void
      */
     private function cleanupContainer($containerName, $owner, $group)
     {
@@ -327,29 +343,23 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
         $chown = [
             $this->useSudoForDocker ? 'sudo docker exec' : 'docker exec',
             sprintf('"%s"', $containerName),
-            sprintf('sh -c "%s"', $chown)
+            sprintf(self::DOCKER_SHELL, $chown)
         ];
 
         $kill = [
-            // Kill
             $this->useSudoForDocker ? 'sudo docker kill' : 'docker kill',
             sprintf('"%s"', $containerName),
+        ];
 
-            '&&',
-
-            // ...and remove container
+        $rm = [
             $this->useSudoForDocker ? 'sudo docker rm' : 'docker rm',
             sprintf('"%s"', $containerName),
         ];
 
-        // Do not care whether chown fails
-        $response = $this->runRemote($chown, self::EVENT_CLEAN_PERMISSIONS);
-
-        if (!$response = $this->runRemote($kill, self::EVENT_KILL_CONTAINER)) {
-            return false;
-        }
-
-        return true;
+        // Do not care whether these fail
+        $this->runRemote($chown, self::EVENT_CLEAN_PERMISSIONS);
+        $this->runRemote($kill, self::EVENT_KILL_CONTAINER);
+        $this->runRemote($rm, self::EVENT_REMOVE_CONTAINER);
     }
 
     /**
@@ -396,7 +406,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
             $this->remoteServer,
             $command,
             $env,
-            $this->logDockerCommands,
+            true,
             null,
             $customMessage
         );

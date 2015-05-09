@@ -99,12 +99,15 @@ class Importer
             return false;
         }
 
+        $rsyncCommand = implode(' ', $command);
+
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
-            ->setArguments($command)
+            ->setArguments([''])
             ->setTimeout($this->commandTimeout)
-            ->getProcess();
-        $process->setCommandLine($process->getCommandLine() . ' 2>&1');
+            ->getProcess()
+            // processbuilder escapes input, but it breaks the rsync params
+            ->setCommandLine($rsyncCommand . ' 2>&1');
 
         if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out

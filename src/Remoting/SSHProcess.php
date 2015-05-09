@@ -10,6 +10,11 @@ namespace QL\Hal\Agent\Remoting;
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\ProcessUtils;
 
+/**
+ * This class got too big :(
+ *
+ * Need to break out __invoke into smaller pieces
+ */
 class SSHProcess
 {
     /**
@@ -89,13 +94,12 @@ class SSHProcess
 
         $ssh->setTimeout($this->commandTimeout);
 
-        $ssh->enablePTY(); // debug
+        // Enable PTY for pretty colors
+        $ssh->enablePTY();
 
         $output = $ssh->exec($remoteCommand);
 
-        $output = $ssh->read(); // debug
-
-        $this->lastOutput = $output;
+        $this->lastOutput = $ssh->read();
 
         // timed out
         if ($ssh->isTimeout()) {
