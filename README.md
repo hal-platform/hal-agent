@@ -32,16 +32,6 @@ Help for any command may be viewed by adding the --help flag as follows.
 bin/hal [command] [options] --help
 ```
 
-Debug messaging will be displayed if run with verbosity.
-```bash
-bin/hal [command] -v
-```
-
-Contextual variables will be displayed if run with increased verbosity.
-```bash
-bin/hal [command] -vv
-```
-
 ## Available Commands
 
 Command          | Description
@@ -52,6 +42,7 @@ Command          | Description
 `push:create`    | Create a push job for an application based on a build and deployment
 `push:push`      | Push a built application to a server
 `builds:list`    | List all existing builds.
+`docker:refresh` | Refresh dockerfile sources on build server
 
 ## A note on `builds:list` and `build:remove`
 
@@ -95,10 +86,6 @@ Command          | Description
 ---------------- | -----------
 `worker:build`   | Find and build all waiting builds.
 `worker:push`    | Find and push all waiting pushes.
-
-**A note on permissions:**  
-Within the console application, no user switching or `sudo` is performed. The worker commands must be run as the
-user with the proper permissions to perform the required system actions.
 
 ### Convenience bins
 Two convenience bash scripts are included to make it easier to set up cronjobs every 15 seconds, rather than every minute which cron supports.
@@ -225,25 +212,6 @@ HAL_REPO         | Hal project name for the deployed application
 `bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.
 For development deployments, create a `config.env.yml` using `environment/dev.yml` as a prototype.
 
-### Configuration
-
-Key                            | Description
------------------------------- | -----------
-email.notify                   | A list of secondary email addresses to notify
-environment.archive            | Path to permanent archive directory for successful builds
-environment.temp               | Path to temporary build directory
-build.windows.temp             | Path to temporary build directory on windows server
-build.unix.path                | System PATH for unix builds
-build.unix.home                | System HOME for unix builds
-build.unix.temp                | Temp location for unix builds
-build.windows.remoteUser       | Username used to ssh to build server for syncing code (windows only)
-push.rsync.remoteUser          | Username used to ssh to servers for rsync deployments
-ssh.credentials                | SSH Config username->keypath pairings
-github.token                   | Github Enterprise authentication token
-github.com.token               | Github.com authentication token
-hal.baseurl                    | HAL 9000 Application url
-encrypter.symmetricKeyPath     | Absolute file path to symmetric key
-
 ### Windows Build Server Preparation
 
 1. Enable SSH and SCP on windows agent
@@ -263,22 +231,3 @@ encrypter.symmetricKeyPath     | Absolute file path to symmetric key
    export PATH="$PATH:$PROGRAMFILES/IIS/Microsoft Web Deploy V3"
    export PATH="$PATH:$WINDIR/System32/WindowsPowerShell/v1.0"
    ```
-
-## Testing
-
-The porcelain commands can be used to create and build entities in a single process:
-
-Build example:
-```
-bin/hal b:b $(bin/hal b:c REPO_ID ENV_ID master --porcelain)
-```
-
-Push example:
-```
-bin/hal p:p $(bin/hal p:c BUILD_ID DEPLOYMENT_ID --porcelain)
-```
-
-Unit tests:
-```
-bin/test --rapid
-```
