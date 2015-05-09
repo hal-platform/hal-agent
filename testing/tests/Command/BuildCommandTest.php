@@ -42,7 +42,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->mover = Mockery::mock('QL\Hal\Agent\Build\Mover');
         $this->downloadProgress = Mockery::mock('QL\Hal\Agent\Symfony\GuzzleDownloadProgress');
         $this->filesystem = Mockery::mock('Symfony\Component\FileSystem\Filesystem');
-        $this->ssh = Mockery::mock('QL\Hal\Agent\SSHSessionManager');
+        $this->ssh = Mockery::mock('QL\Hal\Agent\Remoting\SSHSessionManager');
 
         $this->output = new BufferedOutput;
     }

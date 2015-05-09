@@ -13,10 +13,12 @@ use PHPUnit_Framework_TestCase;
 class ImporterTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
+    public $syncer;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->syncer = Mockery::mock('QL\Hal\Agent\Remoting\FileSyncManager');
     }
 
     public function testScpTimesOut()
@@ -27,6 +29,10 @@ class ImporterTest extends PHPUnit_Framework_TestCase
                 'maxTimeout' => '5 seconds',
                 'output' => 'test-output'
             ])->once();
+
+        $this->syncer
+            ->shouldReceive('buildIncomingScp')
+            ->andReturn(['scp', 'param1']);
 
         $ex = Mockery::mock('Symfony\Component\Process\Exception\ProcessTimedOutException');
         $process = Mockery::mock('Symfony\Component\Process\Process', [
@@ -42,9 +48,9 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $importer = new Importer($this->logger, $builder, 5, 'sshuser');
+        $importer = new Importer($this->logger, $this->syncer, $builder, 5);
 
-        $actual = $importer('local/path', 'server', '/remote/path');
+        $actual = $importer('local/path', 'windows-user', 'server', '/remote/path');
         $this->assertSame(false, $actual);
     }
 
@@ -53,11 +59,15 @@ class ImporterTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'scp -r -P 22 sshuser@server:/remote/path/. .',
+                'command' => "scp\nparam1",
                 'exitCode' => 127,
                 'output' => 'test-output',
                 'errorOutput' => 'test-stderr'
             ])->once();
+
+        $this->syncer
+            ->shouldReceive('buildIncomingScp')
+            ->andReturn(['scp', 'param1']);
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
@@ -72,14 +82,19 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $importer = new Importer($this->logger, $builder, 5, 'sshuser');
+        $importer = new Importer($this->logger, $this->syncer, $builder, 5);
 
-        $actual = $importer('local/path', 'server', '/remote/path');
+        $actual = $importer('local/path', 'windows-user', 'server', '/remote/path');
         $this->assertSame(false, $actual);
     }
 
     public function testScpBuildsCommandCorrectly()
     {
+        $this->syncer
+            ->shouldReceive('buildIncomingScp')
+            ->with('.', 'windows-user', 'server:2200', '/remote/path')
+            ->andReturn(['scp', 'param1']);
+
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'isSuccessful' => true
@@ -96,25 +111,22 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->once();
         $builder
             ->shouldReceive('setArguments')
-            ->with([
-                'scp',
-                '-r',
-                '-P',
-                '2200',
-                'sshuser@server:/remote/path/.',
-                '.',
-            ])
+            ->with(['scp', 'param1'])
             ->andReturn(Mockery::self())
             ->once();
 
-        $importer = new Importer($this->logger, $builder, 5, 'sshuser');
+        $importer = new Importer($this->logger, $this->syncer, $builder, 5);
 
-        $actual = $importer('local/path', 'server:2200', '/remote/path');
+        $actual = $importer('local/path', 'windows-user', 'server:2200', '/remote/path');
         $this->assertSame(true, $actual);
     }
 
     public function testScpSuccess()
     {
+        $this->syncer
+            ->shouldReceive('buildIncomingScp')
+            ->andReturn(['scp', 'param1']);
+
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
             'isSuccessful' => true
@@ -125,9 +137,9 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $importer = new Importer($this->logger, $builder, 5, 'sshuser');
+        $importer = new Importer($this->logger, $this->syncer, $builder, 5);
 
-        $actual = $importer('local/path', 'server', '/remote/path');
+        $actual = $importer('local/path', 'windows-user', 'server', '/remote/path');
         $this->assertSame(true, $actual);
     }
 }

@@ -16,7 +16,7 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->remoter = Mockery::mock('QL\Hal\Agent\RemoteProcess');
+        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
     }
 
     public function testSuccess()

@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Testing\BuildHandlerStub;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
@@ -84,10 +85,13 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testDeployerSaysFail()
     {
+        $stub = new BuildHandlerStub;
+        $stub->response = 999;
+
         $this->container
             ->shouldReceive('get')
             ->with('service.build.a', Mockery::any())
-            ->andReturn(function() {return 999;});
+            ->andReturn($stub);
 
         $deployer = new DelegatingBuilder($this->logger, $this->container, [
             'buildsystem.a' => 'service.build.a'
@@ -101,10 +105,13 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testSuccess()
     {
+        $stub = new BuildHandlerStub;
+        $stub->response = 0;
+
         $this->container
             ->shouldReceive('get')
             ->with('service.build.b', Mockery::any())
-            ->andReturn(function() {return 0;});
+            ->andReturn($stub);
 
         $deployer = new DelegatingBuilder($this->logger, $this->container, [
             'buildsystem.b' => 'service.build.b'

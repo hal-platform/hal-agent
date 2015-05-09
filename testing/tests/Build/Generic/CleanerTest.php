@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace QL\Hal\Agent\Build\Generic;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -16,7 +16,7 @@ class CleanerTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->remoter = Mockery::mock('QL\Hal\Agent\RemoteProcess');
+        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
     }
 
     public function testRunCleaner()

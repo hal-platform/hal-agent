@@ -16,8 +16,10 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
     public $output;
     public $logger;
 
-    public $preparer;
+    public $exporter;
     public $builder;
+    public $importer;
+    public $cleaner;
     public $decrypter;
 
     public function setUp()
@@ -25,8 +27,14 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
         $this->output = new BufferedOutput;
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
 
-        $this->preparer = Mockery::mock('QL\Hal\Agent\Build\Unix\PackageManagerPreparer', ['__invoke' => null]);
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\Unix\Builder', ['__invoke' => null]);
+        $this->exporter = Mockery::mock('QL\Hal\Agent\Build\Unix\Exporter', ['__invoke' => null]);
+        $this->builder = Mockery::mock('QL\Hal\Agent\Build\Unix\DockerBuilder', [
+            '__invoke' => null,
+            '__destruct' => null,
+            'cleanup' => null
+        ]);
+        $this->importer = Mockery::mock('QL\Hal\Agent\Build\Unix\Importer', ['__invoke' => null]);
+        $this->cleaner = Mockery::mock('QL\Hal\Agent\Build\Unix\Cleaner', ['__invoke' => null]);
         $this->decrypter = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
     }
 
@@ -34,7 +42,10 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
     {
         $properties = [
             'unix' => [
-                'environmentVariables' => []
+                'environmentVariables' => [],
+                'buildUser' => 'testuser',
+                'buildServer' => 'buildserver',
+                'remotePath' => '/tmp/builds/derp'
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -45,27 +56,44 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $this->preparer
+        $this->exporter
             ->shouldReceive('__invoke')
             ->andReturn(true)
             ->once();
-
-        // non-essential commands
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(true)
             ->once();
+        $this->builder
+            ->shouldReceive('setOutput')
+            ->once();
+        $this->importer
+            ->shouldReceive('__invoke')
+            ->andReturn(true)
+            ->once();
 
-        $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
+        $handler = new UnixBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter
+        );
+        $handler->disableShutdownHandler();
+        $handler->setOutput($this->output);
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
 
         $this->assertSame(0, $actual);
 
         $expected = <<<'OUTPUT'
 Building on unix
-Preparing package manager configuration
+Validating unix configuration
+Exporting files to build server
 Running build command
+Importing files from build server
+Cleaning up build server
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -77,6 +105,9 @@ OUTPUT;
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
+                'buildUser' => 'testuser',
+                'buildServer' => 'buildserver',
+                'remotePath' => '/tmp/builds/derp'
             ],
             'location' => [
                 'path' => ''
@@ -88,9 +119,18 @@ OUTPUT;
             ->with('failure', 'Unix build system is not configured')
             ->once();
 
-        $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
+        $handler = new UnixBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter
+        );
+        $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
+
         $this->assertSame(100, $actual);
     }
 
@@ -98,7 +138,10 @@ OUTPUT;
     {
         $properties = [
             'unix' => [
-                'environmentVariables' => []
+                'environmentVariables' => [],
+                'buildUser' => 'testuser',
+                'buildServer' => 'buildserver',
+                'remotePath' => '/tmp/builds/derp'
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -109,7 +152,7 @@ OUTPUT;
             ]
         ];
 
-        $this->preparer
+        $this->exporter
             ->shouldReceive('__invoke')
             ->andReturn(true)
             ->once();
@@ -117,9 +160,23 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->andReturn(false)
             ->once();
+        $this->importer
+            ->shouldReceive('__invoke')
+            ->andReturn(true)
+            ->never();
 
-        $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $handler = new UnixBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter
+        );
+        $handler->disableShutdownHandler();
+
+        $actual = $handler($properties['configuration']['build'], $properties);
+
         $this->assertSame(103, $actual);
     }
 
@@ -129,7 +186,10 @@ OUTPUT;
             'unix' => [
                 'environmentVariables' => [
                     'derp' => 'herp'
-                ]
+                ],
+                'buildUser' => 'testuser',
+                'buildServer' => 'buildserver',
+                'remotePath' => '/tmp/builds/derp'
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -164,7 +224,7 @@ OUTPUT;
             ->with('failure', UnixBuildHandler::ERR_BAD_DECRYPT)
             ->once();
 
-        $this->preparer
+        $this->exporter
             ->shouldReceive('__invoke')
             ->andReturn(true)
             ->once();
@@ -172,8 +232,17 @@ OUTPUT;
             ->shouldReceive('__invoke')
             ->never();
 
-        $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $handler = new UnixBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter
+        );
+        $handler->disableShutdownHandler();
+
+        $actual = $handler($properties['configuration']['build'], $properties);
         $this->assertSame(102, $actual);
     }
 
@@ -183,7 +252,10 @@ OUTPUT;
             'unix' => [
                 'environmentVariables' => [
                     'derp' => 'herp'
-                ]
+                ],
+                'buildUser' => 'testuser',
+                'buildServer' => 'buildserver',
+                'remotePath' => '/tmp/builds/derp'
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -222,22 +294,38 @@ OUTPUT;
             )
             ->andReturn(['decrypt-output']);
 
-        $this->preparer
+        $this->exporter
             ->shouldReceive('__invoke')
             ->andReturn(true)
             ->once();
         $this->builder
             ->shouldReceive('__invoke')
             ->with(
-                '/path',
+                'php5.5',
+                'testuser',
+                'buildserver',
+                '/tmp/builds/derp',
                 ['cmd1'],
                 ['decrypt-output']
             )
             ->andReturn(true)
             ->once();
+        $this->importer
+            ->shouldReceive('__invoke')
+            ->andReturn(true)
+            ->once();
 
-        $handler = new UnixBuildHandler($this->logger, $this->preparer, $this->builder, $this->decrypter);
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $handler = new UnixBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter
+        );
+        $handler->disableShutdownHandler();
+
+        $actual = $handler($properties['configuration']['build'], $properties);
         $this->assertSame(0, $actual);
     }
 }

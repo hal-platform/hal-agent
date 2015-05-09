@@ -139,7 +139,7 @@ SHELL;
         }
 
         // 2. Build docker image
-        if (!$this->prepareImage($imageName, $fqImageName, $imagesBasePath)) {
+        if (!$this->buildImage($imageName, $fqImageName, $imagesBasePath)) {
             return $this->bombout(false);
         }
 
@@ -182,11 +182,7 @@ SHELL;
             sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName)
         ];
 
-        if (!$response = $this->runRemote($checkFile, self::EVENT_VALIDATE_DOCKERSOURCE)) {
-            return false;
-        }
-
-        return true;
+        return $this->runRemote($checkFile, self::EVENT_VALIDATE_DOCKERSOURCE);
     }
 
     /**
@@ -196,7 +192,7 @@ SHELL;
      *
      * @return bool
      */
-    private function prepareImage($imageName, $fqImageName, $imagesBasePath)
+    private function buildImage($imageName, $fqImageName, $imagesBasePath)
     {
         $this->status(sprintf('Building container "%s"', $fqImageName));
 
@@ -206,11 +202,7 @@ SHELL;
             sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName)
         ];
 
-        if (!$response = $this->runBuildRemote($build, self::EVENT_BUILD_CONTAINER)) {
-            return false;
-        }
-
-        return true;
+        return $this->runBuildRemote($build, self::EVENT_BUILD_CONTAINER);
     }
 
     /**

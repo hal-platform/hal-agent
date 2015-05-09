@@ -20,7 +20,7 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->remoter = Mockery::mock('QL\Hal\Agent\RemoteProcess', ['__invoke' => false]);
+        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess', ['__invoke' => false]);
         $this->commitApi = Mockery::mock('Github\Api\Repository\Commits');
         $this->parser = Mockery::mock('Symfony\Component\Yaml\Parser');
     }

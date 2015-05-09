@@ -77,8 +77,9 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
             $this->decrypter
         );
         $handler->disableShutdownHandler();
+        $handler->setOutput($this->output);
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
 
         $this->assertSame(0, $actual);
 
@@ -121,7 +122,8 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
+
         $this->assertSame(200, $actual);
     }
 
@@ -158,7 +160,7 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
         $this->assertSame(203, $actual);
     }
 
@@ -218,7 +220,7 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
         $this->assertSame(202, $actual);
     }
 
@@ -290,7 +292,7 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
-        $actual = $handler($this->output, $properties['configuration']['build'], $properties);
+        $actual = $handler($properties['configuration']['build'], $properties);
 
         $this->assertSame(0, $actual);
     }
