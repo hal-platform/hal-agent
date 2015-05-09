@@ -27,8 +27,7 @@ use QL\Hal\Agent\Symfony\OutputAwareInterface;
  * - sudo su hal9000test
  * - mkdir /tmp/hal9000
  *
- *
- * COMMANDS
+ * QUICK COMMANDS
  * - Remove untagged docker images:
  * docker rmi $(docker images | grep "^<none>" | awk '{print $3}')
  *
@@ -44,7 +43,6 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
      */
     const EVENT_MESSAGE = 'Run build command';
     const CONTAINER_WORKING_DIR = '/build';
-    const DOCKERFILE_SOURCES = '/docker-images';
     const DOCKER_SHELL = <<<SHELL
 sh -c '%s'
 SHELL;
@@ -70,6 +68,11 @@ SHELL;
     private $buildRemoter;
 
     /**
+     * @type string
+     */
+    private $dockerSourcesPath;
+
+    /**
      * @type string|null
      */
     private $remoteUser;
@@ -85,12 +88,18 @@ SHELL;
      * @param EventLogger $logger
      * @param SSHProcess $remoter
      * @param SSHProcess $buildRemoter
+     * @param string $dockerSourcesPath
      */
-    public function __construct(EventLogger $logger, SSHProcess $remoter, SSHProcess $buildRemoter)
-    {
+    public function __construct(
+        EventLogger $logger,
+        SSHProcess $remoter,
+        SSHProcess $buildRemoter,
+        $dockerSourcesPath
+    ) {
         $this->logger = $logger;
         $this->remoter = $remoter;
         $this->buildRemoter = $buildRemoter;
+        $this->dockerSourcesPath = $dockerSourcesPath;
 
         $this->logDockerCommands = false;
         $this->useSudoForDocker = false;
@@ -113,19 +122,13 @@ SHELL;
     }
 
     /**
-     * @param string $remoteUser
-     * @param string $remoteServer
-     * @param string $remotePath
-     * @param array $commands
-     * @param array $env
-     *
-     * @return boolean
+     * {@inheritdoc}
      */
-    public function __invoke($remoteUser, $remoteServer, $remotePath, array $commands, array $env)
+    public function __invoke($system, $remoteUser, $remoteServer, $remotePath, array $commands, array $env)
     {
-        $imageName = 'php5.5';
+        $imageName = $system;
         $fqImageName = sprintf('hal9000/%s', $imageName);
-        $imagesBasePath = self::DOCKERFILE_SOURCES;
+        $imagesBasePath = $this->dockerSourcesPath;
 
         $this->remoteUser = $remoteUser;
         $this->remoteServer = $remoteServer;

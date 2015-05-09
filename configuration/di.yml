@@ -15,6 +15,7 @@ services:
             - ['add', [@lazy.command.builds.list]]
             - ['add', [@lazy.command.worker.build]]
             - ['add', [@lazy.command.worker.push]]
+            - ['add', [@lazy.command.docker.refresh]]
             - ['setDispatcher', [@dispatcher]]
     dispatcher:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'

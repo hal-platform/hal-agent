@@ -189,6 +189,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     {
         $this->status('Running build command');
 
+        $system = 'php5.5';
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
         $server = $properties[self::SERVER_TYPE]['buildServer'];
@@ -205,7 +206,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
             $builder->setOutput($this->getOutput());
         }
 
-        return $builder($user, $server, $path, $commands, $env);
+        return $builder($system, $user, $server, $path, $commands, $env);
     }
 
     /**

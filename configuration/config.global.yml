@@ -22,6 +22,10 @@ parameters:
     github.baseurl.site: 'http://git/'
     github.baseurl.api: 'http://git/api/v3/'
 
+    docker.source.repository: 'skluck/docker-images'
+    docker.source.reference: 'master'
+    docker.source.path: '/docker-images'
+
     aws.region: ''
     aws.s3.builds: ''
     aws.ec2.user: ''

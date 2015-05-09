@@ -75,6 +75,7 @@ services:
             - @logger.event
             - @build.unix.standard.remoter
             - @build.unix.build.remoter
+            - %docker.source.path%
 
     build.unix.importer:
         class: 'QL\Hal\Agent\Build\Unix\Importer'

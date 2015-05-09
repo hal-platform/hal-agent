@@ -109,7 +109,7 @@ class CreatePushCommand extends Command
     }
 
     /**
-     *  Configure the command
+     * Configure the command
      */
     protected function configure()
     {
@@ -145,11 +145,11 @@ class CreatePushCommand extends Command
     }
 
     /**
-     *  Run the command
+     * Run the command
      *
-     *  @param InputInterface $input
-     *  @param OutputInterface $output
-     *  @return null
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return null
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {

@@ -32,6 +32,10 @@ services:
         class: 'QL\Hal\Agent\Command\LazyCommand'
         arguments: ['worker:push', 'command.worker.push', @service_container]
 
+    lazy.command.docker.refresh:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['docker:refresh', 'command.docker.refresh', @service_container]
+
     ####################################################################################################################
     # commands
     ####################################################################################################################
@@ -122,3 +126,18 @@ services:
             - @doctrine.em
             - @utility.forker
             - @logger.mcp
+
+    command.docker.refresh:
+        class: 'QL\Hal\Agent\Command\UpdateDockerSourcesCommand'
+        arguments:
+            - 'docker:refresh'
+            - @ssh.filemanager
+            - @utility.process.builder= # = signifies a prototype service
+            - @github.archive
+            - %environment.temp%
+            - %build.unix.remoteUser%
+            - %build.unix.server%
+            - %docker.source.path%
+            - %docker.source.repository%
+            - %docker.source.reference%
+
