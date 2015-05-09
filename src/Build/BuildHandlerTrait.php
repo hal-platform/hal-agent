@@ -111,7 +111,7 @@ trait BuildHandlerTrait
      */
     private function enableEmergencyHandler($user, $server, $path)
     {
-        if (!property_exists($this, 'cleaner') {
+        if (!property_exists($this, 'cleaner')) {
             return;
         }
 

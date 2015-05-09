@@ -53,7 +53,7 @@ class BuildCommand extends Command
         101 => 'Exporting files to build server failed.',
         102 => 'Encryption failure.',
         103 => 'Build command failed.',
-        104 => 'Importing files from build server failed.'
+        104 => 'Importing files from build server failed.',
 
         200 => 'Required properties for windows are missing.',
         201 => 'Exporting files to build server failed.',
