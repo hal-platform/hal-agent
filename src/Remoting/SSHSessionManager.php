@@ -104,7 +104,7 @@ class SSHSessionManager
         list($server, $port) = $this->parseServer($server);
 
         // No credentials
-        if (!$credential = $this->credentials->findCredentials($user, $server)) {
+        if (!$credential = $this->credentials->findCredential($user, $server)) {
             $this->logger->event('failure', self::ERR_NO_CREDENTIALS, $context);
             return null;
         }

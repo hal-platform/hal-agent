@@ -72,7 +72,7 @@ class CredentialWallet
      *
      * @return Credential|null
      */
-    public function findCredentials($user, $server)
+    public function findCredential($user, $server)
     {
         if (count($this->credentials) === 0) {
             return null;

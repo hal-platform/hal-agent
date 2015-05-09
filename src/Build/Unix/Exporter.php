@@ -7,8 +7,8 @@
 
 namespace QL\Hal\Agent\Build\Unix;
 
-use QL\Hal\Agent\Build\FileSyncTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\FileSyncManager;
 use QL\Hal\Agent\Remoting\SSHProcess;
 use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
@@ -20,7 +20,6 @@ use Symfony\Component\Process\ProcessBuilder;
 class Exporter
 {
     use ProcessRunnerTrait;
-    use FileSyncTrait;
 
     /**
      * @type string
@@ -33,6 +32,11 @@ class Exporter
      * @type EventLogger
      */
     private $logger;
+
+    /**
+     * @type FileSyncManager
+     */
+    private $fileSyncManager;
 
     /**
      * @type SSHProcess
@@ -53,6 +57,7 @@ class Exporter
 
     /**
      * @param EventLogger $logger
+     * @param FileSyncManager $fileSyncManager
      * @param SSHProcess $remoter
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
@@ -60,11 +65,13 @@ class Exporter
      */
     public function __construct(
         EventLogger $logger,
+        FileSyncManager $fileSyncManager,
         SSHProcess $remoter,
         ProcessBuilder $processBuilder,
         $commandTimeout
     ) {
         $this->logger = $logger;
+        $this->fileSyncManager = $fileSyncManager;
         $this->remoter = $remoter;
         $this->processBuilder = $processBuilder;
         $this->commandTimeout = $commandTimeout;
@@ -97,17 +104,17 @@ class Exporter
 
     /**
      * @param string $buildUser
-     * @param string $buildServer
+     * @param string $remoteServer
      * @param string $remotePath
      *
      * @return bool
      */
-    private function createRemoteDir($buildUser, $buildServer, $remotePath)
+    private function createRemoteDir($buildUser, $remoteServer, $remotePath)
     {
         $command = sprintf('if [ -d "%1$s" ]; then rm -r "%1$s"; fi; mkdir -p "%1$s"', $remotePath);
 
         $remoter = $this->remoter;
-        if ($response = $remoter($buildUser, $buildServer, $command, [], false)) {
+        if ($response = $remoter($buildUser, $remoteServer, $command, [], false)) {
             return true;
         }
 
@@ -118,21 +125,34 @@ class Exporter
     /**
      * @param string $buildPath
      * @param string $remoteUser
-     * @param string $buildServer
+     * @param string $remoteServer
      * @param string $remotePath
      *
      * @return bool
      */
-    private function transferFiles($buildPath, $remoteUser, $buildServer, $remotePath)
+    private function transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)
     {
-        $command = $this->buildOutgoingRsync($buildPath, $remoteUser, $buildServer, $remotePath);
+        $command = $this->fileSyncManager->buildOutgoingRsync($buildPath, $remoteUser, $remoteServer, $remotePath);
+        if ($command === null) {
+            return false;
+        }
+
+        $rsyncCommand = implode(' ', $command);
+        // $process = $this->processBuilder
+        //     ->setWorkingDirectory(null)
+        //     ->setArguments($command)
+        //     ->setTimeout($this->commandTimeout)
+        //     ->getProcess();
 
         $process = $this->processBuilder
             ->setWorkingDirectory(null)
-            ->setArguments($command)
+            ->setArguments([''])
             ->setTimeout($this->commandTimeout)
-            ->getProcess();
-        $process->setCommandLine($process->getCommandLine() . ' 2>&1');
+            ->getProcess()
+            // processbuilder escapes input, but it breaks the rsync params
+            ->setCommandLine($rsyncCommand . ' 2>&1');
+
+        // $process->setCommandLine($process->getCommandLine() . ' 2>&1');
 
         if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out

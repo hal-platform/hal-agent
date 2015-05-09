@@ -7,10 +7,12 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Symfony\Component\Console\Output\OutputInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 
-trait BuildHandlerTrait
+trait EmergencyBuildHandlerTrait
 {
+    use OutputAwareTrait;
+
     /**
      * @type bool
      */
@@ -63,41 +65,23 @@ trait BuildHandlerTrait
     }
 
     /**
-     * @param OutputInterface $output
-     *
-     * @return boolean
+     * @return void
      */
-    private function clean(OutputInterface $output)
+    private function clean()
     {
-        // shitty :(
-        if (is_callable([$this, 'status'])) {
-            $this->status($output, 'Cleaning up build server');
-        }
+        $this->status('Cleaning up build server');
 
         $this->cleanup();
     }
 
     /**
-     * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
-    }
-
-    /**
-     * @param OutputInterface $output
      * @param int $exitCode
      *
      * @return int
      */
-    private function bombout(OutputInterface $output, $exitCode)
+    private function bombout($exitCode)
     {
-        $this->clean($output);
+        $this->clean();
 
         return $exitCode;
     }

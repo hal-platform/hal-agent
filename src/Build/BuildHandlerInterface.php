@@ -7,13 +7,9 @@
 
 namespace QL\Hal\Agent\Build;
 
-use Symfony\Component\Console\Output\OutputInterface;
-
 interface BuildHandlerInterface
 {
     /**
-     * @param OutputInterface $output
-     *
      * @param array $commands
      *                An array of shell commands to run
      *
@@ -25,5 +21,5 @@ interface BuildHandlerInterface
      *         0 success
      *         >=1 failure
      */
-    public function __invoke(OutputInterface $output, array $commands, array $properties);
+    public function __invoke(array $commands, array $properties);
 }

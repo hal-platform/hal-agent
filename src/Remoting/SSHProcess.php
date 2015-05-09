@@ -88,7 +88,13 @@ class SSHProcess
         }
 
         $ssh->setTimeout($this->commandTimeout);
+
+        $ssh->enablePTY(); // debug
+
         $output = $ssh->exec($remoteCommand);
+
+        $output = $ssh->read(); // debug
+
         $this->lastOutput = $output;
 
         // timed out

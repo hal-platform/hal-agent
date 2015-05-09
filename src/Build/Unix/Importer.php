@@ -7,8 +7,8 @@
 
 namespace QL\Hal\Agent\Build\Unix;
 
-use QL\Hal\Agent\Build\FileSyncTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\FileSyncManager;
 use QL\Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
@@ -19,7 +19,6 @@ use Symfony\Component\Process\ProcessBuilder;
 class Importer
 {
     use ProcessRunnerTrait;
-    use FileSyncTrait;
 
     /**
      * @type string
@@ -31,6 +30,11 @@ class Importer
      * @type EventLogger
      */
     private $logger;
+
+    /**
+     * @type FileSyncManager
+     */
+    private $fileSyncManager;
 
     /**
      * @type ProcessBuilder
@@ -46,16 +50,19 @@ class Importer
 
     /**
      * @param EventLogger $logger
+     * @param FileSyncManager $fileSyncManager
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
      * @param string $remoteUser
      */
     public function __construct(
         EventLogger $logger,
+        FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
         $commandTimeout
     ) {
         $this->logger = $logger;
+        $this->fileSyncManager = $fileSyncManager;
         $this->processBuilder = $processBuilder;
         $this->commandTimeout = $commandTimeout;
     }
@@ -63,14 +70,14 @@ class Importer
     /**
      * @param string $buildPath
      * @param string $remoteUser
-     * @param string $buildServer
+     * @param string $remoteServer
      * @param string $remotePath
      *
      * @return boolean
      */
-    public function __invoke($buildPath, $remoteUser, $buildServer, $remotePath)
+    public function __invoke($buildPath, $remoteUser, $remoteServer, $remotePath)
     {
-        if (!$this->transferFiles($buildPath, $remoteUser, $buildServer, $remotePath)) {
+        if (!$this->transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)) {
             return false;
         }
 
@@ -80,14 +87,17 @@ class Importer
     /**
      * @param string $buildPath
      * @param string $remoteUser
-     * @param string $buildServer
+     * @param string $remoteServer
      * @param string $remotePath
      *
      * @return bool
      */
-    private function transferFiles($buildPath, $remoteUser, $buildServer, $remotePath)
+    private function transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)
     {
-        $command = $this->buildIncomingRsync($buildPath, $remoteUser, $buildServer, $remotePath);
+        $command = $this->fileSyncManager->buildIncomingRsync($buildPath, $remoteUser, $remoteServer, $remotePath);
+        if ($command === null) {
+            return false;
+        }
 
         $process = $this->processBuilder
             ->setWorkingDirectory(null)

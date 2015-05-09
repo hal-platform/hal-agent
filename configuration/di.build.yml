@@ -64,13 +64,15 @@ services:
         class: 'QL\Hal\Agent\Build\Unix\Exporter'
         arguments:
             - @logger.event
+            - @ssh.filemanager
             - @build.unix.standard.remoter
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
 
     build.unix.builder:
-        class: 'QL\Hal\Agent\Build\Unix\Builder'
+        class: 'QL\Hal\Agent\Build\Unix\DockerBuilder'
         arguments:
+            - @logger.event
             - @build.unix.standard.remoter
             - @build.unix.build.remoter
 
@@ -78,6 +80,7 @@ services:
         class: 'QL\Hal\Agent\Build\Unix\Importer'
         arguments:
             - @logger.event
+            - @ssh.filemanager
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
 
@@ -114,6 +117,7 @@ services:
         class: 'QL\Hal\Agent\Build\Windows\Exporter'
         arguments:
             - @logger.event
+            - @ssh.filemanager
             - @build.windows.standard.remoter
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
@@ -127,6 +131,7 @@ services:
         class: 'QL\Hal\Agent\Build\Windows\Importer'
         arguments:
             - @logger.event
+            - @ssh.filemanager
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.filetransfer%
 

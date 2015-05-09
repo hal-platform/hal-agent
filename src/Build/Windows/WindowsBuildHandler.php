@@ -8,14 +8,14 @@
 namespace QL\Hal\Agent\Build\Windows;
 
 use QL\Hal\Agent\Build\BuildHandlerInterface;
-use QL\Hal\Agent\Build\BuildHandlerTrait;
+use QL\Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
-use Symfony\Component\Console\Output\OutputInterface;
 
-class WindowsBuildHandler implements BuildHandlerInterface
+class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
 {
-    use BuildHandlerTrait;
+    use EmergencyBuildHandlerTrait;
 
     const STATUS = 'Building on windows';
     const SERVER_TYPE = 'windows';
@@ -80,49 +80,48 @@ class WindowsBuildHandler implements BuildHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $commands, array $properties)
+    public function __invoke(array $commands, array $properties)
     {
-        $this->status($output, self::STATUS);
+        $this->status(self::STATUS);
 
         // sanity check
-        if (!$this->sanityCheck($output, $properties)) {
+        if (!$this->sanityCheck($properties)) {
             $this->logger->event('failure', self::ERR_INVALID_BUILD_SYSTEM);
             return 200;
         }
 
-        if (!$this->export($output, $properties)) {
-            return $this->bombout($output, 201);
+        if (!$this->export($properties)) {
+            return $this->bombout(201);
         }
 
         // decrypt
-        $decrypted = $this->decrypt($output, $properties);
+        $decrypted = $this->decrypt($properties);
         if ($decrypted === null) {
             $this->logger->event('failure', self::ERR_BAD_DECRYPT);
-            return $this->bombout($output, 202);
+            return $this->bombout(202);
         }
 
         // run build
-        if (!$this->build($output, $properties, $commands, $decrypted)) {
-            return $this->bombout($output, 203);
+        if (!$this->build($properties, $commands, $decrypted)) {
+            return $this->bombout(203);
         }
 
-        if (!$this->import($output, $properties)) {
-            return $this->bombout($output, 204);
+        if (!$this->import($properties)) {
+            return $this->bombout(204);
         }
 
         // success
-        return $this->bombout($output, 0);
+        return $this->bombout(0);
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function sanityCheck(OutputInterface $output, array $properties)
+    private function sanityCheck(array $properties)
     {
-        $this->status($output, 'Validating windows configuration');
+        $this->status('Validating windows configuration');
 
         if (!isset($properties[self::SERVER_TYPE])) {
             return false;
@@ -136,14 +135,13 @@ class WindowsBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function export(OutputInterface $output, array $properties)
+    private function export(array $properties)
     {
-        $this->status($output, 'Exporting files to build server');
+        $this->status('Exporting files to build server');
 
         $localPath = $properties['location']['path'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
@@ -162,12 +160,11 @@ class WindowsBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return array|null
      */
-    private function decrypt(OutputInterface $output, array $properties)
+    private function decrypt(array $properties)
     {
         if (!isset($properties['encrypted'])) {
             return [];
@@ -182,16 +179,15 @@ class WindowsBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      * @param array $commands
      * @param array $decrypted
      *
      * @return boolean
      */
-    private function build(OutputInterface $output, array $properties, array $commands, array $decrypted)
+    private function build(array $properties, array $commands, array $decrypted)
     {
-        $this->status($output, 'Running build command');
+        $this->status('Running build command');
 
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
@@ -208,14 +204,13 @@ class WindowsBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function import(OutputInterface $output, array $properties)
+    private function import(array $properties)
     {
-        $this->status($output, 'Importing files from build server');
+        $this->status('Importing files from build server');
 
         $localPath = $properties['location']['path'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];

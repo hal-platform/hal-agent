@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Build;
 
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -85,7 +86,7 @@ class DelegatingBuilder
         $builder = $this->container->get($serviceId, ContainerInterface::NULL_ON_INVALID_REFERENCE);
 
         // Builder must be invokeable
-        if (!is_callable($builder)) {
+        if (!$builder instanceof BuildHandlerInterface) {
             return $this->explode($system);
         }
 
@@ -98,7 +99,11 @@ class DelegatingBuilder
             $this->logger->event('success', static::PREPARING_BUILD_ENVIRONMENT, $properties[$system]);
         }
 
-        $this->exitCode = $builder($output, $commands, $properties);
+        if ($builder instanceof OutputAwareInterface) {
+            $builder->setOutput($output);
+        }
+
+        $this->exitCode = $builder($commands, $properties);
         return ($this->exitCode === 0);
     }
 

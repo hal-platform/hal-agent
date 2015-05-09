@@ -113,6 +113,14 @@ class Credential
     /**
      * @return string|null
      */
+    public function keyPath()
+    {
+        return $this->keyPath;
+    }
+
+    /**
+     * @return string|null
+     */
     public function privateKey()
     {
         if ($this->keyPath === null) {

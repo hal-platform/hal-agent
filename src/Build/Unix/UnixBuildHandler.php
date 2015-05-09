@@ -8,15 +8,14 @@
 namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Build\BuildHandlerInterface;
-use QL\Hal\Agent\Build\BuildHandlerTrait;
-// use QL\Hal\Agent\Build\Unix\PackageManagerPreparer;
+use QL\Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
-use Symfony\Component\Console\Output\OutputInterface;
 
-class UnixBuildHandler implements BuildHandlerInterface
+class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
 {
-    use BuildHandlerTrait;
+    use EmergencyBuildHandlerTrait;
 
     const STATUS = 'Building on unix';
     const SERVER_TYPE = 'unix';
@@ -34,7 +33,7 @@ class UnixBuildHandler implements BuildHandlerInterface
     private $exporter;
 
     /**
-     * @type Builder
+     * @type BuilderInterface
      */
     private $builder;
 
@@ -56,7 +55,7 @@ class UnixBuildHandler implements BuildHandlerInterface
     /**
      * @param EventLogger $logger
      * @param Exporter $exporter
-     * @param Builder $builder
+     * @param BuilderInterface $builder
      * @param Importer $importer
      * @param Cleaner $cleaner
      * @param EncryptedPropertyResolver $decrypter
@@ -64,7 +63,7 @@ class UnixBuildHandler implements BuildHandlerInterface
     public function __construct(
         EventLogger $logger,
         Exporter $exporter,
-        Builder $builder,
+        BuilderInterface $builder,
         Importer $importer,
         Cleaner $cleaner,
         EncryptedPropertyResolver $decrypter
@@ -81,49 +80,48 @@ class UnixBuildHandler implements BuildHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $commands, array $properties)
+    public function __invoke(array $commands, array $properties)
     {
-        $this->status($output, self::STATUS);
+        $this->status(self::STATUS);
 
         // sanity check
-        if (!$this->sanityCheck($output, $properties)) {
+        if (!$this->sanityCheck($properties)) {
             $this->logger->event('failure', self::ERR_INVALID_BUILD_SYSTEM);
             return 100;
         }
 
-        if (!$this->export($output, $properties)) {
-            return $this->bombout($output, 101);
+        if (!$this->export($properties)) {
+            return $this->bombout(101);
         }
 
         // decrypt
-        $decrypted = $this->decrypt($output, $properties);
+        $decrypted = $this->decrypt($properties);
         if ($decrypted === null) {
             $this->logger->event('failure', self::ERR_BAD_DECRYPT);
-            return $this->bombout($output, 102);
+            return $this->bombout(102);
         }
 
         // run build
-        if (!$this->build($output, $properties, $commands, $decrypted)) {
-            return $this->bombout($output, 103);
+        if (!$this->build($properties, $commands, $decrypted)) {
+            return $this->bombout(103);
         }
 
-        if (!$this->import($output, $properties)) {
-            return $this->bombout($output, 104);
+        if (!$this->import($properties)) {
+            return $this->bombout(104);
         }
 
         // success
-        return $this->bombout($output, 0);
+        return $this->bombout(0);
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function sanityCheck(OutputInterface $output, array $properties)
+    private function sanityCheck(array $properties)
     {
-        $this->status($output, 'Validating unix configuration');
+        $this->status('Validating unix configuration');
 
         if (!isset($properties[self::SERVER_TYPE])) {
             return false;
@@ -137,14 +135,13 @@ class UnixBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function export(OutputInterface $output, array $properties)
+    private function export(array $properties)
     {
-        $this->status($output, 'Exporting files to build server');
+        $this->status('Exporting files to build server');
 
         $localPath = $properties['location']['path'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
@@ -163,12 +160,11 @@ class UnixBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return array|null
      */
-    private function decrypt(OutputInterface $output, array $properties)
+    private function decrypt(array $properties)
     {
         if (!isset($properties['encrypted'])) {
             return [];
@@ -183,16 +179,15 @@ class UnixBuildHandler implements BuildHandlerInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      * @param array $commands
      * @param array $decrypted
      *
      * @return boolean
      */
-    private function build(OutputInterface $output, array $properties, array $commands, array $decrypted)
+    private function build(array $properties, array $commands, array $decrypted)
     {
-        $this->status($output, 'Running build command');
+        $this->status('Running build command');
 
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
@@ -205,18 +200,22 @@ class UnixBuildHandler implements BuildHandlerInterface
         }
 
         $builder = $this->builder;
+
+        if ($builder instanceof OutputAwareInterface && $this->getOutput()) {
+            $builder->setOutput($this->getOutput());
+        }
+
         return $builder($user, $server, $path, $commands, $env);
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function import(OutputInterface $output, array $properties)
+    private function import(array $properties)
     {
-        $this->status($output, 'Importing files from build server');
+        $this->status('Importing files from build server');
 
         $localPath = $properties['location']['path'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];

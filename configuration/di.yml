@@ -30,6 +30,10 @@ services:
         class: 'QL\Hal\Agent\Remoting\SSHSessionManager'
         arguments: [@logger.event, @ssh.wallet]
 
+    ssh.filemanager:
+        class: 'QL\Hal\Agent\Remoting\FileSyncManager'
+        arguments: [@ssh.wallet]
+
     ssh.wallet:
         class: 'QL\Hal\Agent\Remoting\CredentialWallet'
         calls:
