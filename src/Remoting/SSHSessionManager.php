@@ -10,10 +10,10 @@ namespace QL\Hal\Agent\Remoting;
 use Crypt_RSA;
 use Net_SSH2;
 use QL\Hal\Agent\Logger\EventLogger;
-use Symfony\Component\Filesystem\Filesystem;
 
 class SSHSessionManager
 {
+    const DEFAULT_SSH_PORT = 22;
     const ERR_CONNECT_SERVER = 'Failed to connect to server. It may be down.';
     const ERR_MISSING_PRIVATE_KEY = 'Failed to connect to server. Private key is missing.';
     const ERR_NO_CREDENTIALS = 'Failed to connect to server. No valid credentials configured.';
@@ -45,22 +45,7 @@ class SSHSessionManager
     private $logger;
 
     /**
-     * @type Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * Each entry is an array of [$username, $server, $privateKey]
-     *
-     * $server can be "*" for wildcard.
-     *
-     * Example:
-     * [
-     *     ['user',  'server', '/file/path/id_rsa'],
-     *     ['user',  '*',      '/file/path/id_rsa'],
-     *     ['user2', 'server', '/file/path/id_rsa']
-     * ]
-     * @type array
+     * @type CredentialWallet
      */
     private $credentials;
 
@@ -86,25 +71,14 @@ class SSHSessionManager
 
     /**
      * @param EventLogger $logger
-     * @param Filesystem $filesystem
-     * @param string $credentials
-     * @param callable $fileLoader
+     * @param CredentialWallet $credentials
      */
     public function __construct(
         EventLogger $logger,
-        Filesystem $filesystem,
-        array $credentials = [],
-        callable $fileLoader = null
+        CredentialWallet $credentials
     ) {
         $this->logger = $logger;
-        $this->filesystem = $filesystem;
         $this->credentials = $credentials;
-
-        if ($fileLoader === null) {
-            $fileLoader = $this->getDefaultFileLoader();
-        }
-
-        $this->fileLoader = $fileLoader;
 
         $this->activeSessions = $this->errors = [];
     }
@@ -127,24 +101,30 @@ class SSHSessionManager
             'server' => $server
         ];
 
+        list($server, $port) = $this->parseServer($server);
+
         // No credentials
-        if (!$credentials = $this->findCredentials($user, $server)) {
+        if (!$credential = $this->credentials->findCredentials($user, $server)) {
             $this->logger->event('failure', self::ERR_NO_CREDENTIALS, $context);
             return null;
         }
 
-        // No key found
-        if (!$privateKey = $this->loadPrivateKey($credentials[2])) {
-            $this->logger->event('failure', self::ERR_MISSING_PRIVATE_KEY, $context);
-            return null;
-        }
+        if ($credential->isKeyCredential()) {
+            $sshCredential = $this->loadPrivateKey($credential->privateKey());
 
-        list($server, $port) = $this->parseServer($server);
+            // No key found
+            if ($sshCredential === null) {
+                $this->logger->event('failure', self::ERR_MISSING_PRIVATE_KEY, $context);
+                return null;
+            }
+        } else {
+            $sshCredential = $credential->password();
+        }
 
         $ssh = new Net_SSH2($server, $port);
 
         $command = [$ssh, 'login'];
-        $args = [$user, $privateKey];
+        $args = [$user, $sshCredential];
         $isLoggedIn = $this->runCommandWithErrorHandling($command, $args);
 
         // Login failure
@@ -181,56 +161,16 @@ class SSHSessionManager
     }
 
     /**
-     * @param string $user
-     * @param string $server
-     *
-     * @return array|null
-     */
-    private function findCredentials($user, $server)
-    {
-        if (count($this->credentials) === 0) {
-            return null;
-        }
-
-        // filters
-        $filterUser = $this->filterUserCredentials($user);
-        $filterServer = $this->filterServerCredentials($server);
-
-        // Find all username matches
-        // No results, fail
-        if (!$matchingUserCredentials = array_filter($this->credentials, $filterUser)) {
-            return null;
-        }
-
-        // Find server matches
-        // No results, fail
-        if (!$matchingServerCredentials = array_filter($matchingUserCredentials, $filterServer)) {
-            return null;
-        }
-
-        // Find exact servername match
-        foreach ($matchingServerCredentials as $credentials) {
-            if ($credentials[1] !== '*') {
-                return $credentials;
-            }
-        }
-
-        // otherwise get the top credential
-        return reset($matchingServerCredentials);
-    }
-
-    /**
-     * @param string $keyPath
+     * @param string|null $privateKey
      *
      * @return Crypt_RSA|null
      */
-    private function loadPrivateKey($keyPath)
+    private function loadPrivateKey($privateKey)
     {
-        if (!$this->filesystem->exists($keyPath)) {
+        if ($privateKey === null) {
             return null;
         }
 
-        $privateKey = call_user_func($this->fileLoader, $keyPath);
         $key = new Crypt_RSA;
 
         $command = [$key, 'loadKey'];
@@ -243,41 +183,6 @@ class SSHSessionManager
         }
 
         return $key;
-    }
-
-    /**
-     * @param string $matchingUser
-     *
-     * @return callable
-     */
-    private function filterUserCredentials($matchingUser)
-    {
-        return function($credentials) use ($matchingUser) {
-            if (!is_array($credentials) || count($credentials) !== 3) {
-                // invalid credentials
-                return false;
-            }
-
-            // first entry is username
-            $username = $credentials[0];
-            return ($username == $matchingUser);
-        };
-    }
-
-    /**
-     * @param string $matchingServer
-     *
-     * @return callable
-     */
-    private function filterServerCredentials($matchingServer)
-    {
-        return function($credentials) use ($matchingServer) {
-            // Passed user filter first, so we know credentials schema is correct
-
-            // second entry is server
-            $server = $credentials[1];
-            return ($server == $matchingServer || $server === '*');
-        };
     }
 
     /**
@@ -315,7 +220,7 @@ class SSHSessionManager
 
         $servername = array_shift($exploded);
 
-        $port = 22;
+        $port = self::DEFAULT_SSH_PORT;
         if ($exploded) {
             $port = (int) array_shift($exploded);
         }
@@ -330,10 +235,5 @@ class SSHSessionManager
     {
         $this->errors[] = sprintf('SSH %s: %s', static::$errorLevels[$errno], $errstr);
         return true;
-    }
-
-    private function getDefaultFileLoader()
-    {
-        return 'file_get_contents';
     }
 }

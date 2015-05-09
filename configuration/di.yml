@@ -28,10 +28,12 @@ services:
 
     ssh.manager:
         class: 'QL\Hal\Agent\Remoting\SSHSessionManager'
-        arguments:
-            - @logger.event
-            - @utility.filesystem
-            - %ssh.credentials%
+        arguments: [@logger.event, @ssh.wallet]
+
+    ssh.wallet:
+        class: 'QL\Hal\Agent\Remoting\CredentialWallet'
+        calls:
+            - ['importCredentials', [%ssh.credentials%]]
 
     ####################################################################################################################
     # doctrine
