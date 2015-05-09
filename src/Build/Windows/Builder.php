@@ -7,21 +7,21 @@
 
 namespace QL\Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\RemoteProcess;
+use QL\Hal\Agent\Remoting\SSHProcess;
 
 class Builder
 {
     const EVENT_MESSAGE = 'Run Windows Build Command';
 
     /**
-     * @type RemoteProcess
+     * @type SSHProcess
      */
     private $remoter;
 
     /**
-     * @param RemoteProcess $remoter
+     * @param SSHProcess $remoter
      */
-    public function __construct(RemoteProcess $remoter)
+    public function __construct(SSHProcess $remoter)
     {
         $this->remoter = $remoter;
     }

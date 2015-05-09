@@ -7,19 +7,19 @@
 
 namespace QL\Hal\Agent\Push\Rsync;
 
-use QL\Hal\Agent\RemoteProcess;
+use QL\Hal\Agent\Remoting\SSHProcess;
 
 class ServerCommand
 {
     /**
-     * @type RemoteProcess
+     * @type SSHProcess
      */
     private $remoter;
 
     /**
-     * @param RemoteProcess $remoter
+     * @param SSHProcess $remoter
      */
-    public function __construct(RemoteProcess $remoter)
+    public function __construct(SSHProcess $remoter)
     {
         $this->remoter = $remoter;
     }

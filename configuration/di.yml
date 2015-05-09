@@ -27,7 +27,7 @@ services:
         arguments: ['now', 'UTC']
 
     ssh.manager:
-        class: 'QL\Hal\Agent\SSHSessionManager'
+        class: 'QL\Hal\Agent\Remoting\SSHSessionManager'
         arguments:
             - @logger.event
             - @utility.filesystem

@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent;
+namespace QL\Hal\Agent\Remoting;
 
 use Crypt_RSA;
 use Net_SSH2;

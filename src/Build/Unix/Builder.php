@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Build\Unix;
 
-use QL\Hal\Agent\RemoteProcess;
+use QL\Hal\Agent\Remoting\SSHProcess;
 
 class Builder
 {
@@ -19,7 +19,7 @@ class Builder
     const DOCKERFILE_SOURCES = '/docker-images';
 
     /**
-     * @type RemoteProcess
+     * @type SSHProcess
      */
     private $remoter;
     private $buildRemoter;
@@ -34,10 +34,10 @@ class Builder
     private $logDockerCommands = true;
 
     /**
-     * @param RemoteProcess $remoter
-     * @param RemoteProcess $buildRemoter
+     * @param SSHProcess $remoter
+     * @param SSHProcess $buildRemoter
      */
-    public function __construct(RemoteProcess $remoter, RemoteProcess $buildRemoter)
+    public function __construct(SSHProcess $remoter, SSHProcess $buildRemoter)
     {
         $this->remoter = $remoter;
         $this->buildRemoter = $buildRemoter;

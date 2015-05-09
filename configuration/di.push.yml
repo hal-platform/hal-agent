@@ -124,14 +124,14 @@ services:
             - @push.rsync.standard.remoter
 
     push.rsync.standard.remoter:
-        class: 'QL\Hal\Agent\RemoteProcess'
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
             - @logger.event
             - @ssh.manager
             - %timeout.push.serverCommand%
 
     push.rsync.delta.remoter:
-        class: 'QL\Hal\Agent\RemoteProcess'
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
             - @logger.event
             - @ssh.manager

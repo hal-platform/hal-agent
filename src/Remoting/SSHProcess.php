@@ -5,12 +5,12 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent;
+namespace QL\Hal\Agent\Remoting;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\ProcessUtils;
 
-class RemoteProcess
+class SSHProcess
 {
     /**
      * @type string

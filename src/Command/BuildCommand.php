@@ -15,7 +15,7 @@ use QL\Hal\Agent\Build\Packer;
 use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\SSHSessionManager;
+use QL\Hal\Agent\Remoting\SSHSessionManager;
 use QL\Hal\Agent\Symfony\GuzzleDownloadProgress;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;

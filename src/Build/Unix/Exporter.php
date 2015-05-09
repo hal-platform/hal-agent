@@ -9,8 +9,8 @@ namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Build\FileSyncTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\SSHProcess;
 use QL\Hal\Agent\Utility\ProcessRunnerTrait;
-use QL\Hal\Agent\RemoteProcess;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -35,7 +35,7 @@ class Exporter
     private $logger;
 
     /**
-     * @type RemoteProcess
+     * @type SSHProcess
      */
     private $remoter;
 
@@ -53,14 +53,14 @@ class Exporter
 
     /**
      * @param EventLogger $logger
-     * @param RemoteProcess $remoter
+     * @param SSHProcess $remoter
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
      * @param string $remoteUser
      */
     public function __construct(
         EventLogger $logger,
-        RemoteProcess $remoter,
+        SSHProcess $remoter,
         ProcessBuilder $processBuilder,
         $commandTimeout
     ) {

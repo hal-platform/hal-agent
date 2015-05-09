@@ -7,20 +7,20 @@
 
 namespace QL\Hal\Agent\Build\Generic;
 
-use QL\Hal\Agent\RemoteProcess;
+use QL\Hal\Agent\Remoting\SSHProcess;
 
 class Cleaner
 {
     /**
-     * @type RemoteProcess
+     * @type SSHProcess
      */
     private $remoter;
 
     /**
      * @param EventLogger $logger
-     * @param RemoteProcess $remoter
+     * @param SSHProcess $remoter
      */
-    public function __construct(RemoteProcess $remoter)
+    public function __construct(SSHProcess $remoter)
     {
         $this->remoter = $remoter;
     }

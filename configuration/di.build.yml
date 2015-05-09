@@ -71,9 +71,8 @@ services:
     build.unix.builder:
         class: 'QL\Hal\Agent\Build\Unix\Builder'
         arguments:
-            - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.build%
+            - @build.unix.standard.remoter
+            - @build.unix.build.remoter
 
     build.unix.importer:
         class: 'QL\Hal\Agent\Build\Unix\Importer'
@@ -87,14 +86,14 @@ services:
         arguments: [@build.unix.standard.remoter]
 
     build.unix.build.remoter:
-        class: 'QL\Hal\Agent\RemoteProcess'
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
             - @logger.event
             - @ssh.manager
             - %timeout.build%
 
     build.unix.standard.remoter:
-        class: 'QL\Hal\Agent\RemoteProcess'
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
             - @logger.event
             - @ssh.manager
@@ -136,13 +135,13 @@ services:
         arguments: [@build.windows.standard.remoter]
 
     build.windows.build.remoter:
-        class: 'QL\Hal\Agent\RemoteProcess'
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
             - @logger.event
             - @ssh.manager
             - %timeout.build%
     build.windows.standard.remoter:
-        class: 'QL\Hal\Agent\RemoteProcess'
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
             - @logger.event
             - @ssh.manager
