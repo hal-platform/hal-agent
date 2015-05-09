@@ -9,30 +9,28 @@ parameters:
     # file path to store permanent archives of builds                   | recommended path: 'PROJECT_DIRECTORY/.archive'
     environment.archive: ''
 
-    # temporary scratch
-    environment.temp: '%build.unix.temp%'
+    # temporary scratch                                                 | recommended path: 'PROJECT_DIRECTORY/.build'
+    environment.temp: ''
 
     ############################################################################
     # UNIX BUILDING
     ############################################################################
 
-    # system PATH inherited by build scripts
-    build.unix.path: ''
+    # user used to SSH and RSYNC to build server
+    build.unix.remoteUser: 'docker'
 
-    # system HOME inherited by build scripts
-    # Leave this empty to use the system temporary directory            | recommended path: 'PROJECT_DIRECTORY/.build/home'
-    build.unix.home: ''
+    # Unix build server
+    build.unix.server: 'localhost:2022'
 
-    # temporary storage for build and push artifacts
-    # Leave this empty to use the system temporary directory            | recommended path: 'PROJECT_DIRECTORY/.build'
-    build.unix.temp: ''
+    # temporary scratch on the build server
+    build.unix.temp: '/tmp/hal9000'
 
     ############################################################################
     # WINDOWS BUILDING
     ############################################################################
 
     # user used to SSH and RSYNC to target servers
-    build.windows.remoteUser: ''
+    build.windows.remoteUser: 'satya_nadella'
     build.windows.server: ''
 
     # temporary storage for windows build artifacts
@@ -74,9 +72,9 @@ parameters:
     ############################################################################
 
     ssh.credentials:
-        - [%build.windows.remoteUser%, '*', '/path/to/id_rsa']
-        - [%push.rsync.remoteUser%, '*', '/path/to/id_rsa']
-        - [%aws.ec2.user%, '*', '']
+        - ['%build.unix.remoteUser%', '*', 'key:/path/to/id_boot2docker']
+        - ['%build.windows.remoteUser%', '*', 'key:/path/to/id_rsa']
+        - ['%push.rsync.remoteUser%', '*', 'key:/path/to/id_rsa']
 
     # dont ever commit, dont be stupid
     aws.credentials.key: ''

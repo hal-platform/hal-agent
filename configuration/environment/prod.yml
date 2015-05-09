@@ -10,22 +10,20 @@ parameters:
     environment.archive: '/builds/hal9000'
 
     # temporary scratch
-    environment.temp: '%build.unix.temp%'
+    environment.temp: '/tmp/hal9000'
 
     ############################################################################
     # UNIX BUILDING
     ############################################################################
 
-    # system PATH inherited by build scripts
-    build.unix.path: '/usr/local/zend/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin'
+    # user used to SSH and RSYNC to build server
+    build.unix.remoteUser: 'hal9000'
 
-    # system HOME inherited by build scripts
-    # Leave this empty to use the system temporary directory
-    build.unix.home: '/var/spool/hal9000/home'
+    # Unix build server
+    build.unix.server: 'ql1halprbld1'
 
-    # temporary storage for build and push artifacts
-    # Leave this empty to use the system temporary directory
-    build.unix.temp: '/var/spool/hal9000'
+    # temporary scratch on the build server
+    build.unix.temp: '/tmp/hal9000'
 
     ############################################################################
     # WINDOWS BUILDING
@@ -69,9 +67,8 @@ parameters:
     ############################################################################
 
     ssh.credentials:
-        - [%build.windows.remoteUser%, '*', '/home/hal9000/.ssh/id_rsa']
-        - [%push.rsync.remoteUser%, '*', '/home/hal9000/.ssh/id_rsa']
-        - [%aws.ec2.user%, '*', '']
+        - ['%build.unix.remoteUser%', '*', 'key:/home/%build.unix.remoteUser%/.ssh/id_rsa']
+        - ['%push.rsync.remoteUser%', '*', 'key:/home/%build.unix.remoteUser%/.ssh/id_rsa']
 
     aws.credentials.key: ''
     aws.credentials.secret: ''
