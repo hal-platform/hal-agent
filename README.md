@@ -12,13 +12,13 @@ Table of Contents:
 * [Usage](#usage)
 * [Available Commands](#available-commands)
 * [Worker Commands](#worker-commands)
+* [Deployment](#deployment)
+    * [Unix Build Server Preparation](#unix-build-server-preparation)
+    * [Windows Build Server Preparation](#windows-build-server-preparation)
 * [Application scripting environment](#application-scripting-environment)
     * [.hal9000.yml](#hal9000yml)
     * [On Build](#on-build)
     * [On Push](#on-push)
-* [Deployment](#deployment)
-* [Configuration](#configuration)
-* [Testing](#testing)
 
 ## Usage
 
@@ -98,6 +98,52 @@ Command            | Description
 `bin/worker-build` | Bash script for builds
 `bin/worker-push`  | Bash script for pushes
 
+## Deployment
+
+`bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.
+For development deployments, create a `config.env.yml` using `environment/dev.yml` as a prototype.
+
+Unix builds require a docker-supported build server. `boot2docker` can be used for this purpose.
+
+### Unix Build Server Preparation
+
+- `$user` is the dedicated user that runs the agent (Example: `hal9000test`).
+- `$syncer` is the user code is rsynced through (Example: `codexfer`).
+
+1. Agent server setup
+    * Deploy agent to **agent server**.
+    * **$user** must be able to ssh (passwordless) to the dedicated **build server**.
+    * **$user** must be able to ssh (passwordless) as $syncer to all deploy web/app servers.
+    * `/tmp/hal9000` must exist and be owned by **$user**.
+2. Build server setup
+    * Docker must be installed (>=1.5).
+    * **$user** must be able to sudo docker.
+    * `/tmp/hal9000` must exist and be owned by **$user**.
+    * `/docker-images` must exist and be owned by **$user**.
+3. Deploy **docker images** to build server
+    * The agent command "docker:refresh" will automatically do this (As long as the directory is present!).
+4. It should work
+
+### Windows Build Server Preparation
+
+1. Enable SSH and SCP on windows agent
+    - Cygwin, CopSSH, etc
+2. Install **Windows 8 & .NET Framwork SDK**
+    - Ensure `MsBuild.exe` is installed for the following versions:
+        - `2.0.50727`
+        - `3.5`
+        - `4.0.30319`
+3. Install **Microsoft Visual Studio 2010 Shell Redistributable Package**
+4. Install **Microsoft Visual Studio 2013 Shell Redistributable Package**
+5. Install **nuget** to `C:\Program Files (x86)\Nuget`.
+7. Create `C:\builds` directory.
+6. Update path in `.bashrc` for build user:
+   ```
+   export PATH="$PATH:$PROGRAMFILES/Nuget"
+   export PATH="$PATH:$PROGRAMFILES/IIS/Microsoft Web Deploy V3"
+   export PATH="$PATH:$WINDIR/System32/WindowsPowerShell/v1.0"
+   ```
+
 ## Application scripting environment
 
 ### Build systems and deployment types
@@ -105,7 +151,7 @@ Command            | Description
 This agent supports the following:
 
 Build Systems:
-- `unix` (Locally run)
+- `unix` (Remotely run through docker)
 - `windows` (Remotely run)
 
 Deployment Types:
@@ -206,28 +252,3 @@ HAL_COMMIT       | 40 character commit SHA
 HAL_GITREF       | Git reference (such as `master`)
 HAL_ENVIRONMENT  | Environment (such as `test`, `beta`, `prod`)
 HAL_REPO         | Hal project name for the deployed application
-
-## Deployment
-
-`bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.
-For development deployments, create a `config.env.yml` using `environment/dev.yml` as a prototype.
-
-### Windows Build Server Preparation
-
-1. Enable SSH and SCP on windows agent
-    - Cygwin, CopSSH, etc
-2. Install **Windows 8 & .NET Framwork SDK**
-    - Ensure `MsBuild.exe` is installed for the following versions:
-        - `2.0.50727`
-        - `3.5`
-        - `4.0.30319`
-3. Install **Microsoft Visual Studio 2010 Shell Redistributable Package**
-4. Install **Microsoft Visual Studio 2013 Shell Redistributable Package**
-5. Install **nuget** to `C:\Program Files (x86)\Nuget`.
-7. Create `C:\builds` directory.
-6. Update path in `.bashrc` for build user:
-   ```
-   export PATH="$PATH:$PROGRAMFILES/Nuget"
-   export PATH="$PATH:$PROGRAMFILES/IIS/Microsoft Web Deploy V3"
-   export PATH="$PATH:$WINDIR/System32/WindowsPowerShell/v1.0"
-   ```
