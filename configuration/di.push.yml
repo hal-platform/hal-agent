@@ -115,6 +115,7 @@ services:
         class: 'QL\Hal\Agent\Push\Rsync\Pusher'
         arguments:
             - @logger.event
+            - @ssh.filemanager
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push%
 

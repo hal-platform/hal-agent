@@ -97,9 +97,10 @@ class SSHProcess
         // Enable PTY for pretty colors
         $ssh->enablePTY();
 
-        $output = $ssh->exec($remoteCommand);
+        $ssh->exec($remoteCommand);
 
-        $this->lastOutput = $ssh->read();
+        $output = $ssh->read();
+        $this->lastOutput = $output;
 
         // timed out
         if ($ssh->isTimeout()) {

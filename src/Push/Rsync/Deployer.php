@@ -145,9 +145,12 @@ class Deployer implements DeployerInterface
         $this->status($output, 'Pushing code to server');
 
         $pusher = $this->pusher;
+
         return $pusher(
             $properties['location']['path'],
-            $properties[ServerEnumType::TYPE_RSYNC]['syncPath'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
+            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['exclude']
         );
     }

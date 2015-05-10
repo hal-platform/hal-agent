@@ -29,10 +29,11 @@ class FileSyncManager
      * @param string $remoteUser
      * @param string $remoteServer
      * @param string $remotePath
+     * @param string[] $excludedFiles
      *
      * @return string[]|null
      */
-    public function buildOutgoingRsync($localPath, $remoteUser, $remoteServer, $remotePath)
+    public function buildOutgoingRsync($localPath, $remoteUser, $remoteServer, $remotePath, array $excludedFiles = [])
     {
         list($server, $port) = $this->parseServer($remoteServer);
 
@@ -43,7 +44,16 @@ class FileSyncManager
         $from = $localPath . '/';
         $to = sprintf('%s@%s:%s', $credential->username(), $server, $remotePath);
 
-        return $this->buildRsync($from, $to, $port, $credential->keyPath());
+        $rsync = $this->buildBaseRsync($port, $credential->keyPath());
+
+        $rsync[] = $from;
+        $rsync[] = $to;
+
+        foreach ($excludedFiles as $excluded) {
+            $rsync[] = '--exclude=' . $excluded;
+        }
+
+        return $rsync;
     }
 
     /**
@@ -51,10 +61,11 @@ class FileSyncManager
      * @param string $remoteUser
      * @param string $remoteServer
      * @param string $remotePath
+     * @param string[] $excludedFiles
      *
      * @return string[]|null
      */
-    public function buildIncomingRsync($localPath, $remoteUser, $remoteServer, $remotePath)
+    public function buildIncomingRsync($localPath, $remoteUser, $remoteServer, $remotePath, array $excludedFiles = [])
     {
         list($server, $port) = $this->parseServer($remoteServer);
 
@@ -65,20 +76,27 @@ class FileSyncManager
         $to = $localPath . '/';
         $from = sprintf('%s@%s:%s', $credential->username(), $server, $remotePath);
 
-        return $this->buildRsync($from, $to, $port, $credential->keyPath());
+        $rsync = $this->buildBaseRsync($port, $credential->keyPath());
+
+        $rsync[] = $from;
+        $rsync[] = $to;
+
+        foreach ($excludedFiles as $excluded) {
+            $rsync[] = '--exclude=' . $excluded;
+        }
+
+        return $rsync;
     }
 
     /**
      * alternative? http://www.cis.upenn.edu/~bcpierce/unison/
      *
-     * @param string $from
-     * @param string $to
      * @param string $port
      * @param string $identity
      *
      * @return string[]
      */
-    private function buildRsync($from, $to, $port, $identity)
+    private function buildBaseRsync($port, $identity)
     {
         $remoteShell = sprintf('ssh -o BatchMode=yes -p %d -i %s', $port, $identity);
 
@@ -96,9 +114,6 @@ class FileSyncManager
             '--verbose',
             '--delete-after'
         ];
-
-        $command[] = $from;
-        $command[] = $to;
 
         return $command;
     }
