@@ -5,12 +5,12 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent;
+namespace QL\Hal\Agent\Remoting;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
-class RemoteProcessTest extends PHPUnit_Framework_TestCase
+class SSHProcessTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
     public $ssh;
@@ -18,7 +18,7 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->ssh = Mockery::mock('QL\Hal\Agent\SSHSessionManager');
+        $this->ssh = Mockery::mock('QL\Hal\Agent\Remoting\SSHSessionManager');
     }
 
     public function testFailedToCreateSession()
@@ -28,7 +28,7 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
             ->with('user', 'server')
             ->andReturnNull();
 
-        $remoter = new RemoteProcess($this->logger, $this->ssh, 5);
+        $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
         $success = $remoter('user', 'server', 'command', [], false, '');
         $this->assertSame(false, $success);
@@ -47,8 +47,14 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
             ->with(5)
             ->once();
         $session
+            ->shouldReceive('enablePTY')
+            ->once();
+        $session
             ->shouldReceive('exec')
             ->with('command')
+            ->once();
+        $session
+            ->shouldReceive('read')
             ->andReturn('command output')
             ->once();
         $session
@@ -56,7 +62,7 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
             ->andReturn(true)
             ->once();
 
-        $remoter = new RemoteProcess($this->logger, $this->ssh, 5);
+        $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
         $success = $remoter('user', 'server', 'command', [], false, '');
         $this->assertSame(false, $success);
@@ -73,7 +79,9 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'exec' => 'test-output',
+                'enablePTY' => null,
+                'exec' => true,
+                'read' => 'test-output',
                 'getExitStatus' => 127,
                 'isTimeout' => true,
                 'getStdError' => 'test-err'
@@ -81,14 +89,14 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', RemoteProcess::ERR_COMMAND_TIMEOUT, [
+            ->with('failure', SSHProcess::ERR_COMMAND_TIMEOUT, [
                 'command' => 'deployscript',
                 'output' => 'test-output',
                 'errorOutput' => 'test-err',
                 'exitCode' => 127
             ])->once();
 
-        $remoter = new RemoteProcess($this->logger, $this->ssh, 5);
+        $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
         $success = $remoter('user', 'server', 'deployscript', [], true, '');
         $this->assertSame(false, $success);
@@ -105,6 +113,8 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
+                'enablePTY' => null,
+                'read' => 'test-output',
                 'getExitStatus' => 127,
                 'isTimeout' => false,
                 'getStdError' => 'test-err'
@@ -113,7 +123,7 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive('exec')
             ->with('prefix cmd && deployscript')
-            ->andReturn('test-output')
+            ->andReturn(false)
             ->once();
 
         $this->logger
@@ -125,7 +135,7 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
                 'exitCode' => 127
             ])->once();
 
-        $remoter = new RemoteProcess($this->logger, $this->ssh, 5);
+        $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
         $success = $remoter('user', 'server', 'deployscript', [], true, 'prefix cmd &&', 'custom msg');
         $this->assertSame(false, $success);
@@ -142,7 +152,9 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'exec' => 'test-output',
+                'enablePTY' => null,
+                'exec' => null,
+                'read' => 'test-output',
                 'getExitStatus' => 0,
                 'isTimeout' => false
             ]);
@@ -154,7 +166,7 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
                 'output' => 'test-output'
             ])->once();
 
-        $remoter = new RemoteProcess($this->logger, $this->ssh, 5);
+        $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
         $success = $remoter('user', 'server', 'deployscript', [], true, 'prefix cmd &&', 'custom msg');
         $this->assertSame(true, $success);
@@ -171,12 +183,14 @@ class RemoteProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'exec' => 'test-output',
+                'enablePTY' => null,
+                'exec' => null,
+                'read' => 'test-output',
                 'getExitStatus' => 0,
                 'isTimeout' => false
             ]);
 
-        $remoter = new RemoteProcess($this->logger, $this->ssh, 5);
+        $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
         $success = $remoter('user', 'server', 'command', [], false, '');
         $this->assertSame(true, $success);

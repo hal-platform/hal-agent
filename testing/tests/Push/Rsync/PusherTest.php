@@ -13,14 +13,21 @@ use PHPUnit_Framework_TestCase;
 class PusherTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
+    public $syncer;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->syncer = Mockery::mock('QL\Hal\Agent\Remoting\FileSyncManager');
     }
 
     public function testSuccess()
     {
+        $this->syncer
+            ->shouldReceive('buildOutgoingRsync')
+            ->with('build/path', 'xferuser', 'hostname', '/remote/path', [])
+            ->andReturn(['rsync', 'param']);
+
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
             'getOutput' => 'test-output',
@@ -35,18 +42,23 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('success', Mockery::any(), [
-                'command' => 'rsync --rsh=ssh -o BatchMode=yes --recursive --links --perms --group --owner --devices --specials --checksum --verbose --delete-after build/path/ sync/path',
+                'command' => "rsync\nparam",
                 'output' => 'test-output'
             ])->once();
 
-        $action = new Pusher($this->logger, $builder, 20);
+        $action = new Pusher($this->logger, $this->syncer, $builder, 20);
 
-        $success = $action('build/path', 'sync/path', []);
+        $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', []);
         $this->assertTrue($success);
     }
 
     public function testFail()
     {
+        $this->syncer
+            ->shouldReceive('buildOutgoingRsync')
+            ->with('build/path', 'xferuser', 'hostname', '/remote/path', ['excluded1', 'excluded2'])
+            ->andReturn(['rsync', 'param']);
+
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
             'getOutput' => 'test-output',
@@ -58,7 +70,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
-                'command' => 'rsync --rsh=ssh -o BatchMode=yes --recursive --links --perms --group --owner --devices --specials --checksum --verbose --delete-after --exclude=excluded1 --exclude=excluded2 build/path/ sync/path',
+                'command' => "rsync\nparam",
                 'exitCode' => 9000,
                 'output' => 'test-output',
                 'errorOutput' => 'test-error-output'
@@ -69,9 +81,9 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Pusher($this->logger, $builder, 20);
+        $action = new Pusher($this->logger, $this->syncer, $builder, 20);
 
-        $success = $action('build/path', 'sync/path', ['excluded1', 'excluded2']);
+        $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', ['excluded1', 'excluded2']);
         $this->assertFalse($success);
     }
 }

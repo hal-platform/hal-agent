@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent;
+namespace QL\Hal\Agent\Remoting;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -13,12 +13,12 @@ use PHPUnit_Framework_TestCase;
 class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
-    public $filesystem;
+    public $credentials;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
+        $this->credentials = Mockery::mock('QL\Hal\Agent\Remoting\CredentialWallet');
     }
 
     public function testNoCredentialsLogsError()
@@ -28,12 +28,16 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'server'
         ];
 
+        $this->credentials
+            ->shouldReceive('findCredential')
+            ->andReturnNull();
+
         $this->logger
             ->shouldReceive('event')
             ->with('failure', SSHSessionManager::ERR_NO_CREDENTIALS, $expectedContext)
             ->once();
 
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem);
+        $ssh = new SSHSessionManager($this->logger, $this->credentials);
         $session = $ssh->createSession('username', 'server');
 
         $this->assertSame(null, $session);
@@ -46,21 +50,21 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'server'
         ];
 
+        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+            'isKeyCredential' => true,
+            'privateKey' => null
+        ]);
+
+        $this->credentials
+            ->shouldReceive('findCredential')
+            ->andReturn($cred);
+
         $this->logger
             ->shouldReceive('event')
             ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, $expectedContext)
             ->once();
 
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path')
-            ->andReturn(false);
-
-        $credentials = [
-            ['username', 'server', 'key/path']
-        ];
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials);
+        $ssh = new SSHSessionManager($this->logger, $this->credentials);
         $session = $ssh->createSession('username', 'server');
 
         $this->assertSame(null, $session);
@@ -73,25 +77,21 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'server'
         ];
 
+        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+            'isKeyCredential' => true,
+            'privateKey' => 'derp'
+        ]);
+
+        $this->credentials
+            ->shouldReceive('findCredential')
+            ->andReturn($cred);
+
         $this->logger
             ->shouldReceive('event')
             ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, $expectedContext)
             ->once();
 
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path')
-            ->andReturn(true);
-
-        $credentials = [
-            ['username', 'server', 'key/path']
-        ];
-
-        $loader = function($filepath) {
-            return '';
-        };
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials, $loader);
+        $ssh = new SSHSessionManager($this->logger, $this->credentials);
         $session = $ssh->createSession('username', 'server');
 
         $this->assertSame(null, $session);
@@ -104,6 +104,16 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'localhost:3300'
         ];
 
+        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+            'isKeyCredential' => true,
+            'privateKey' => $this->getSamplePrivateKeyForTesting()
+        ]);
+
+        $this->credentials
+            ->shouldReceive('findCredential')
+            ->with('username123456789', 'localhost')
+            ->andReturn($cred);
+
         $context = null;
         $this->logger
             ->shouldReceive('event')
@@ -112,20 +122,7 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path')
-            ->andReturn(true);
-
-        $credentials = [
-            ['username123456789', 'localhost:3300', 'key/path']
-        ];
-
-        $loader = function($filepath) {
-            return $this->getSamplePrivateKeyForTesting();
-        };
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials, $loader);
+        $ssh = new SSHSessionManager($this->logger, $this->credentials);
         $session = $ssh->createSession('username123456789', 'localhost:3300');
 
         $this->assertSame(null, $session);
@@ -143,6 +140,16 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
+        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+            'isKeyCredential' => true,
+            'privateKey' => $this->getSamplePrivateKeyForTesting()
+        ]);
+
+        $this->credentials
+            ->shouldReceive('findCredential')
+            ->with('username123456789', 'server123456789')
+            ->andReturn($cred);
+
         $context = null;
         $this->logger
             ->shouldReceive('event')
@@ -151,83 +158,16 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path')
-            ->andReturn(true);
-
-        $credentials = [
-            ['username123456789', '*', 'key/path']
-        ];
-
-        $loader = function($filepath) {
-            return $this->getSamplePrivateKeyForTesting();
-        };
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials, $loader);
+        $ssh = new SSHSessionManager($this->logger, $this->credentials);
         $session = $ssh->createSession('username123456789', 'server123456789');
 
         $this->assertSame(null, $session);
         $this->assertSame($expectedContext, $context);
     }
 
-    public function testServerSpecificCredentialsPreferredOverWildcard()
-    {
-        $expectedContext = [
-            'user' => 'username',
-            'server' => 'server'
-        ];
-
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, $expectedContext)
-            ->once();
-
-        // The important assertion for this test
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path/2')
-            ->andReturn(false);
-
-        $credentials = [
-            ['username', '*', 'key/path/1'],
-            ['username', 'server', 'key/path/2'], // specific server pair will be picked over wildcard
-            ['username', 'server', 'key/path/3'] // erroneous duplicate
-        ];
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials);
-        $session = $ssh->createSession('username', 'server');
-
-        $this->assertSame(null, $session);
-    }
-
-    public function testFirstCredentialIsPreferredIfDuplicatesSet()
-    {
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', SSHSessionManager::ERR_MISSING_PRIVATE_KEY, Mockery::any())
-            ->once();
-
-        // The important assertion for this test
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with('key/path/1')
-            ->andReturn(false);
-
-        $credentials = [
-            ['username', 'server', 'key/path/1'],
-            ['username', 'server', 'key/path/2']
-        ];
-
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem, $credentials);
-        $session = $ssh->createSession('username', 'server');
-
-        $this->assertSame(null, $session);
-    }
-
     public function testDisconnectDoesNotBreak()
     {
-        $ssh = new SSHSessionManager($this->logger, $this->filesystem);
+        $ssh = new SSHSessionManager($this->logger, $this->credentials);
         $dummy = $ssh->disconnectAll();
 
         $this->assertSame(null, $dummy);

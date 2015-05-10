@@ -29,50 +29,6 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected, $actual);
     }
 
-    public function testUnixPropertiesDoesStuffRubyStuff()
-    {
-        $build = $this->createMockBuild();
-
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => null,
-            'getOutput' => 'testdir/home/gempath/here:anotherpath',
-            'isSuccessful' => true
-        ])->makePartial();
-
-        $processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]', ['getProcess' => $process]);
-
-        $resolver = new BuildEnvironmentResolver($processBuilder);
-        $resolver->setUnixBuilder('/homedir/', 'global/path:usr/bin', '/unix/builds');
-
-        $expected = [
-            'unix' => [
-                'environmentVariables' => [
-                    'HOME' => '/homedir.1234/',
-                    'PATH' => 'global/path:usr/bin',
-
-                    'HAL_BUILDID' => '1234',
-                    'HAL_COMMIT' => '5555',
-                    'HAL_GITREF' => 'master',
-                    'HAL_ENVIRONMENT' => 'envkey',
-                    'HAL_REPO' => 'repokey',
-
-                    'BOWER_INTERACTIVE' => 'false',
-                    'BOWER_STRICT_SSL' => 'false',
-
-                    'COMPOSER_HOME' => '/homedir.1234/.composer',
-                    'COMPOSER_NO_INTERACTION' => '1',
-
-                    'NPM_CONFIG_STRICT_SSL' => 'false',
-                    'NPM_CONFIG_COLOR' => 'always'
-                ]
-            ]
-        ];
-
-        $actual = $resolver->getBuildProperties($build);
-
-        $this->assertSame($expected, $actual);
-    }
-
     public function testWindowsProperties()
     {
         $build = $this->createMockBuild();
