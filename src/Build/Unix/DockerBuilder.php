@@ -124,9 +124,8 @@ SHELL;
     /**
      * {@inheritdoc}
      */
-    public function __invoke($system, $remoteUser, $remoteServer, $remotePath, array $commands, array $env)
+    public function __invoke($imageName, $remoteUser, $remoteServer, $remotePath, array $commands, array $env)
     {
-        $imageName = $system;
         $fqImageName = sprintf('hal9000/%s', $imageName);
         $imagesBasePath = $this->dockerSourcesPath;
 

@@ -59,6 +59,7 @@ services:
             - @build.unix.importer
             - @build.unix.cleaner
             - @encrypted.resolver
+            - %docker.default.image%
 
     build.unix.exporter:
         class: 'QL\Hal\Agent\Build\Unix\Exporter'

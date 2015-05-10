@@ -151,7 +151,8 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
 This agent supports the following:
 
 Build Systems:
-- `unix` (Remotely run through docker)
+- `unix` (Remotely run through docker with default docker image)
+- `docker:$image` (Remotely run through docker with custom docker image`$image`)
 - `windows` (Remotely run)
 
 Deployment Types:
@@ -168,7 +169,8 @@ A `.hal9000.yml` yaml file can be placed into the project repository to enable c
 
 ```yaml
 # Environment to use to build application.
-# Optional. The default is "unix"
+# Optional. The default is "unix".
+# Also available: "docker:$dockerimage" to specify a custom docker image as build system.
 system: ''
 
 # Directory of build dist to archive, relative to application root.

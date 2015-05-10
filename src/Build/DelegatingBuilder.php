@@ -17,6 +17,7 @@ class DelegatingBuilder
     const PREPARING_BUILD_ENVIRONMENT = 'Prepare build environment';
     const ERR_INVALID_BUILDER = 'Invalid build system specified';
     const UNKNOWN_FAILURE_CODE = 5;
+    const DOCKER_PREFIX = 'docker:';
 
     /**
      * @type EventLogger
@@ -75,6 +76,11 @@ class DelegatingBuilder
     {
         // reset exit code
         $this->exitCode = 0;
+
+        // Convert "docker/" system to unix
+        if (substr($system, 0, 7) === self::DOCKER_PREFIX) {
+            $system = 'unix';
+        }
 
         if (!$system || !isset($this->builders[$system])) {
             return $this->explode($system);

@@ -25,6 +25,7 @@ parameters:
     docker.source.repository: 'skluck/docker-images'
     docker.source.reference: 'master'
     docker.source.path: '/docker-images'
+    docker.default.image: 'legacy'
 
     aws.region: ''
     aws.s3.builds: ''

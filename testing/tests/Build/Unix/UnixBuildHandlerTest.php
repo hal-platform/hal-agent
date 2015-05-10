@@ -78,7 +78,8 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
             $this->builder,
             $this->importer,
             $this->cleaner,
-            $this->decrypter
+            $this->decrypter,
+            'default-image'
         );
         $handler->disableShutdownHandler();
         $handler->setOutput($this->output);
@@ -125,7 +126,8 @@ OUTPUT;
             $this->builder,
             $this->importer,
             $this->cleaner,
-            $this->decrypter
+            $this->decrypter,
+            'default-image'
         );
         $handler->disableShutdownHandler();
 
@@ -144,7 +146,7 @@ OUTPUT;
                 'remotePath' => '/tmp/builds/derp'
             ],
             'configuration' => [
-                'system' => 'unix',
+                'system' => 'docker:custom-docker-image',
                 'build' => ['cmd1'],
             ],
             'location' => [
@@ -158,6 +160,14 @@ OUTPUT;
             ->once();
         $this->builder
             ->shouldReceive('__invoke')
+            ->with(
+                'custom-docker-image',
+                'testuser',
+                'buildserver',
+                '/tmp/builds/derp',
+                ['cmd1'],
+                []
+            )
             ->andReturn(false)
             ->once();
         $this->importer
@@ -171,7 +181,8 @@ OUTPUT;
             $this->builder,
             $this->importer,
             $this->cleaner,
-            $this->decrypter
+            $this->decrypter,
+            'default-image'
         );
         $handler->disableShutdownHandler();
 
@@ -238,7 +249,8 @@ OUTPUT;
             $this->builder,
             $this->importer,
             $this->cleaner,
-            $this->decrypter
+            $this->decrypter,
+            'default-image'
         );
         $handler->disableShutdownHandler();
 
@@ -301,7 +313,7 @@ OUTPUT;
         $this->builder
             ->shouldReceive('__invoke')
             ->with(
-                'php5.5',
+                'default-image',
                 'testuser',
                 'buildserver',
                 '/tmp/builds/derp',
@@ -321,7 +333,8 @@ OUTPUT;
             $this->builder,
             $this->importer,
             $this->cleaner,
-            $this->decrypter
+            $this->decrypter,
+            'default-image'
         );
         $handler->disableShutdownHandler();
 

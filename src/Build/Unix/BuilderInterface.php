@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Build\Unix;
 interface BuilderInterface
 {
     /**
-     * @param string $system
+     * @param string $imageName
      *
      * @param string $remoteUser
      * @param string $remoteServer
@@ -21,5 +21,5 @@ interface BuilderInterface
      *
      * @return boolean
      */
-    public function __invoke($system, $remoteUser, $remoteServer, $remotePath, array $commands, array $env);
+    public function __invoke($imageName, $remoteUser, $remoteServer, $remotePath, array $commands, array $env);
 }

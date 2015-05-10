@@ -21,6 +21,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     const SERVER_TYPE = 'unix';
     const ERR_INVALID_BUILD_SYSTEM = 'Unix build system is not configured';
     const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted properties';
+    const DOCKER_PREFIX = 'docker:';
 
     /**
      * @type EventLogger
@@ -53,12 +54,18 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     private $decrypter;
 
     /**
+     * @type string
+     */
+    private $defaultDockerImage;
+
+    /**
      * @param EventLogger $logger
      * @param Exporter $exporter
      * @param BuilderInterface $builder
      * @param Importer $importer
      * @param Cleaner $cleaner
      * @param EncryptedPropertyResolver $decrypter
+     * @param string $defaultDockerImage
      */
     public function __construct(
         EventLogger $logger,
@@ -66,7 +73,8 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         BuilderInterface $builder,
         Importer $importer,
         Cleaner $cleaner,
-        EncryptedPropertyResolver $decrypter
+        EncryptedPropertyResolver $decrypter,
+        $defaultDockerImage
     ) {
         $this->logger = $logger;
 
@@ -75,6 +83,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $this->importer = $importer;
         $this->cleaner = $cleaner;
         $this->decrypter = $decrypter;
+        $this->defaultDockerImage = $defaultDockerImage;
     }
 
     /**
@@ -189,7 +198,8 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     {
         $this->status('Running build command');
 
-        $system = 'php5.5';
+        $dockerImage = $this->determineImage($properties['configuration']['system']);
+
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
         $server = $properties[self::SERVER_TYPE]['buildServer'];
@@ -206,7 +216,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
             $builder->setOutput($this->getOutput());
         }
 
-        return $builder($system, $user, $server, $path, $commands, $env);
+        return $builder($dockerImage, $user, $server, $path, $commands, $env);
     }
 
     /**
@@ -225,5 +235,30 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
 
         $importer = $this->importer;
         return $importer($localPath, $user, $server, $path);
+    }
+
+    /**
+     * @param system $system
+     *
+     * @return string
+     */
+    private function determineImage($system)
+    {
+        // "unix" = default
+        if ($system === self::SERVER_TYPE) {
+            return $this->defaultDockerImage;
+        }
+
+        // remove "docker:" prefix
+        if (substr($system, 0, 7) === self::DOCKER_PREFIX) {
+            $system = substr($system, 7);
+        }
+
+        // malformed = default
+        if (!$system) {
+            return $this->defaultDockerImage;
+        }
+
+        return $system;
     }
 }
