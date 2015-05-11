@@ -5,8 +5,10 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace QL\Hal\Agent\Command\Docker;
 
+use QL\Hal\Agent\Command\CommandTrait;
+use QL\Hal\Agent\Command\FormatterTrait;
 use QL\Hal\Agent\Remoting\FileSyncManager;
 use QL\Hal\Agent\Github\ArchiveApi;
 use Symfony\Component\Console\Command\Command;
@@ -20,7 +22,7 @@ use Symfony\Component\Process\ProcessBuilder;
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class UpdateDockerSourcesCommand extends Command
+class UpdateSourcesCommand extends Command
 {
     use CommandTrait;
     use FormatterTrait;
