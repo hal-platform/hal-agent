@@ -17,6 +17,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Nuke all containers, even running ones!
  *
+ * ```
+ * docker ps -aq | xargs docker rm -f
+ * ```
+ *
  * BUILT FOR COMMAND LINE ONLY
  */
 class NukeContainersCommand extends Command

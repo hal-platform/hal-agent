@@ -27,12 +27,13 @@ use QL\Hal\Agent\Symfony\OutputAwareInterface;
  * - sudo su hal9000test
  * - mkdir /tmp/hal9000
  *
- * QUICK COMMANDS
- * - Remove untagged docker images:
- * docker rmi $(docker images | grep "^<none>" | awk '{print $3}')
+ * @todo  MANGLE USER COMMANDS
  *
- * - Nuke all containers:
- * docker ps -aq | xargs docker rm -f
+ * bin/myscript 'arg1'
+ * =>
+ * bin/script '"'"'arg1'"'"'
+ * =>
+ * sh -c 'bin/script '"'"'arg1'"'"''
  */
 class DockerBuilder implements BuilderInterface, OutputAwareInterface
 {

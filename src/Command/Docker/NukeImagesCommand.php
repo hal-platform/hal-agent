@@ -17,6 +17,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Nuke all docker images
  *
+ * Remove untagged docker images:
+ * ```
+ * docker rmi $(docker images | grep "^<none>" | awk '{print $3}')
+ * ```
+ *
  * BUILT FOR COMMAND LINE ONLY
  */
 class NukeImagesCommand extends Command
