@@ -15,11 +15,11 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Nuke all docker images
+ * Verify the ability to connect to servers.
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class NukeImagesCommand extends Command
+class VerifyServerConnectionsCommand extends Command
 {
     use CommandTrait;
     use FormatterTrait;
