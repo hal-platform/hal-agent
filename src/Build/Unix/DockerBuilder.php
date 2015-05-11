@@ -390,7 +390,7 @@ SHELL;
         }
 
         $remoter = $this->remoter;
-        return $remoter(
+        return $remoter->runWithLoggingOnFailure(
             $this->remoteUser,
             $this->remoteServer,
             $command,

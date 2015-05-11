@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Remoting;
 
+use Net_SSH2;
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\ProcessUtils;
 
@@ -42,6 +43,8 @@ class SSHProcess
      * @type string
      */
     private $lastOutput;
+    private $lastErrorOutput;
+    private $lastExitCode;
 
     /**
      * @param EventLogger $logger
@@ -54,7 +57,7 @@ class SSHProcess
         $this->sshManager = $sshManager;
         $this->commandTimeout = $commandTimeout;
 
-        $this->lastOutput = '';
+        $this->resetStatus();
     }
 
     /**
@@ -73,7 +76,7 @@ class SSHProcess
      */
     public function __invoke($remoteUser, $remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
     {
-        $this->lastOutput = '';
+        $this->resetStatus();
 
         $message = $customMessage ?: self::EVENT_MESSAGE;
 
@@ -82,49 +85,13 @@ class SSHProcess
             return false;
         }
 
-        $remoteCommand = $command;
-        if ($prefixCommand) {
-            $remoteCommand = $prefixCommand . ' ' . $command;
-        }
+        $this->runCommand($ssh, $command, $prefixCommand, $env);
 
-        // Add environment variables if possible
-        if ($envSetters = $this->formatEnvSetters($env)) {
-            $remoteCommand = implode(' && ', [$envSetters, $remoteCommand]);
-        }
-
-        $ssh->setTimeout($this->commandTimeout);
-
-        // Enable PTY for pretty colors
-        $ssh->enablePTY();
-
-        $ssh->exec($remoteCommand);
-
-        $output = $ssh->read();
-        $this->lastOutput = $output;
-
-        // timed out
-        if ($ssh->isTimeout()) {
+        // timed out, bad exit
+        if ($ssh->isTimeout() || $ssh->getExitStatus()) {
             if ($isLoggingEnabled) {
-                $this->logger->event('failure', self::ERR_COMMAND_TIMEOUT, [
-                    'command' => $command,
-                    'output' => $output,
-                    'errorOutput' => $ssh->getStdError(),
-                    'exitCode' => $ssh->getExitStatus()
-                ]);
-            }
-
-            return false;
-        }
-
-        // bad exit
-        if ($ssh->getExitStatus() !== 0) {
-            if ($isLoggingEnabled) {
-                $this->logger->event('failure', $message, [
-                    'command' => $command,
-                    'output' => $output,
-                    'errorOutput' => $ssh->getStdError(),
-                    'exitCode' => $ssh->getExitStatus()
-                ]);
+                $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $message;
+                $this->logLastCommandAsError($errorMessage, $command);
             }
 
             return false;
@@ -132,10 +99,51 @@ class SSHProcess
 
         // log if enabled
         if ($isLoggingEnabled) {
-            $this->logger->event('success', $message, [
-                'command' => $command,
-                'output' => $output
-            ]);
+            $this->logLastCommandAsSuccess($errorMessage, $command);
+        }
+
+        // all good
+        return true;
+    }
+
+    /**
+     * Note:
+     * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
+     *
+     * @param string $remoteUser
+     * @param string $remoteServer
+     * @param string $command
+     * @param array $env
+     * @param bool $forceLogging
+     * @param string $prefixCommand
+     * @param string $customMessage
+     *
+     * @return boolean
+     */
+    public function runWithLoggingOnFailure($remoteUser, $remoteServer, $command, array $env, $forceLogging = false, $prefixCommand = null, $customMessage = '')
+    {
+        $this->resetStatus();
+
+        $message = $customMessage ?: self::EVENT_MESSAGE;
+
+        // No session could be started/resumed
+        if (!$ssh = $this->sshManager->createSession($remoteUser, $remoteServer)) {
+            return false;
+        }
+
+        $this->runCommand($ssh, $command, $prefixCommand, $env);
+
+        // timed out, bad exit
+        if ($ssh->isTimeout() || $ssh->getExitStatus()) {
+            $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $message;
+            $this->logLastCommandAsError($errorMessage, $command);
+
+            return false;
+        }
+
+        // log if enabled
+        if ($forceLogging) {
+            $this->logLastCommandAsSuccess($message, $command);
         }
 
         // all good
@@ -175,6 +183,28 @@ class SSHProcess
     }
 
     /**
+     * @return string
+     */
+    public function getLastStatus()
+    {
+        return [
+            'output' => $this->lastOutput,
+            'errorOutput' => $this->lastErrorOutput,
+            'exitCode' => $this->lastExitCode,
+        ];
+    }
+
+    /**
+     * @return void
+     */
+    private function resetStatus()
+    {
+        $this->lastOutput = '';
+        $this->lastErrorOutput = '';
+        $this->lastExitCode = '';
+    }
+
+    /**
      * @param array $env
      *
      * @return string
@@ -187,5 +217,65 @@ class SSHProcess
         }
 
         return implode(' ', $envSetters);
+    }
+
+    /**
+     * @param Net_SSH2 $sshSession
+     * @param string $remoteCommand
+     * @param string $prefixCommand
+     * @param array $env
+     *
+     * @return void
+     */
+    private function runCommand(Net_SSH2 $sshSession, $remoteCommand, $prefixCommand, array $env = [])
+    {
+        if ($prefixCommand) {
+            $remoteCommand = $prefixCommand . ' ' . $command;
+        }
+
+        // Add environment variables if possible
+        if ($envSetters = $this->formatEnvSetters($env)) {
+            $remoteCommand = implode(' && ', [$envSetters, $remoteCommand]);
+        }
+
+        $sshSession->setTimeout($this->commandTimeout);
+
+        // Enable PTY for pretty colors
+        $sshSession->enablePTY();
+
+        $sshSession->exec($remoteCommand);
+
+        $this->lastOutput = $sshSession->read();
+        $this->lastErrorOutput = $sshSession->getStdError();
+        $this->lastExitCode = $sshSession->getExitStatus();
+    }
+
+    /**
+     * @param string $message
+     * @param string $command
+     *
+     * @return void
+     */
+    private function logLastCommandAsError($message, $command)
+    {
+        $context = array_merge($this->getLastStatus(), [
+            'command' => $command
+        ]);
+
+        $this->logger->event('failure', $message, $context);
+    }
+
+    /**
+     * @param string $message
+     * @param string $command
+     *
+     * @return void
+     */
+    private function logLastCommandAsSuccess($message, $command)
+    {
+        $this->logger->event('success', $message, [
+            'command' => $command,
+            'output' => $this->lastOutput
+        ]);
     }
 }

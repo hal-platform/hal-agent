@@ -77,6 +77,11 @@ services:
             - @build.unix.standard.remoter
             - @build.unix.build.remoter
             - %docker.source.path%
+        configurator: [@build.unix.builder.configurator, 'configure']
+
+    build.unix.builder.configurator:
+        class: 'QL\Hal\Agent\Build\Unix\DockerBuilderConfigurator'
+        arguments: [%docker.option.sudo%, %docker.option.debug%]
 
     build.unix.importer:
         class: 'QL\Hal\Agent\Build\Unix\Importer'

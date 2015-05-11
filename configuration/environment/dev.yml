@@ -25,6 +25,10 @@ parameters:
     # temporary scratch on the build server
     build.unix.temp: '/tmp/hal9000'
 
+    # Docker configuration
+    docker.option.sudo: false
+    docker.option.debug: true
+
     ############################################################################
     # WINDOWS BUILDING
     ############################################################################

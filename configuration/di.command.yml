@@ -128,7 +128,7 @@ services:
             - @logger.mcp
 
     command.docker.refresh:
-        class: 'QL\Hal\Agent\Command\UpdateDockerSourcesCommand'
+        class: 'QL\Hal\Agent\Command\Docker\UpdateSourcesCommand'
         arguments:
             - 'docker:refresh'
             - @ssh.filemanager

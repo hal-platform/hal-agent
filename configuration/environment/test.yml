@@ -37,6 +37,10 @@ parameters:
     # Leave this empty to use a subdirectory in the remote users HOME
     build.windows.temp: ''
 
+    # Docker configuration
+    docker.option.sudo: true
+    docker.option.debug: false
+
     ############################################################################
     # PUSHING
     ############################################################################

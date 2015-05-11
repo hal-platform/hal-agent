@@ -26,6 +26,8 @@ parameters:
     docker.source.reference: 'master'
     docker.source.path: '/docker-images'
     docker.default.image: 'legacy'
+    docker.option.sudo: false
+    docker.option.debug: false
 
     aws.region: ''
     aws.s3.builds: ''
