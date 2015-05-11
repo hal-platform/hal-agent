@@ -48,6 +48,7 @@ sh -c '%s'
 SHELL;
 
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source';
+    const EVENT_DOCKER_RUNNING = 'Check Docker daemon status';
     const EVENT_BUILD_CONTAINER = 'Build Docker image';
     const EVENT_SCRATCH_OWNER = 'Record build owner metadata';
     const EVENT_SCRATCH_GROUP = 'Record build group metadata';
@@ -176,12 +177,31 @@ SHELL;
     {
         $this->status(sprintf('Validating specified Docker image "%s"', $imageName));
 
-        $checkFile = [
+        $imagePath = sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName);
+        $dockerFilePath = sprintf('"%s/%s/Dockerfile"', rtrim($imagesBasePath, '/'), $imageName);
+
+        $validateDockerSourceCommand = [
             'test -d',
-            sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName)
+            $imagePath,
+            '&&',
+
+            'test -f',
+            $dockerFilePath
         ];
 
-        return $this->runRemote($checkFile, self::EVENT_VALIDATE_DOCKERSOURCE);
+        $dockerRunningCommand = [
+            $this->useSudoForDocker ? 'sudo docker info' : 'docker info'
+        ];
+
+        if (!$isDockerImageValid = $this->runRemote($validateDockerSourceCommand, self::EVENT_VALIDATE_DOCKERSOURCE)) {
+            return false;
+        }
+
+        if (!$isDockerRunning = $this->runRemote($dockerRunningCommand, self::EVENT_DOCKER_RUNNING)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
