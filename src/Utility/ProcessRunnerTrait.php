@@ -36,7 +36,8 @@ trait ProcessRunnerTrait
 
                 $this->logger->event('failure', $err, [
                     'maxTimeout' => sprintf('%d seconds', $timeout),
-                    'output' => $process->getOutput()
+                    'output' => $process->getOutput(),
+                    'errorOutput' => $process->getErrorOutput()
                 ]);
             }
 
