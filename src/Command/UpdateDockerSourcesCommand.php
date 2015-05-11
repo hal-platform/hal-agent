@@ -36,11 +36,12 @@ HELP;
      */
     private static $codes = [
         0 => 'Success',
-        1 => 'Invalid GitHub repository or reference.',
-        2 => 'Archive download and unpack failed.',
+        1 => 'Invalid temp directory.',
+        2 => 'Invalid GitHub repository or reference.',
+        3 => 'Archive download and unpack failed.',
         4 => 'Failed to locate unpacked archive.',
-        8 => 'Failed to sanitize unpacked archive.',
-        16 => 'An error occured while transferring dockerfile sources to build server.'
+        5 => 'Failed to sanitize unpacked archive.',
+        6 => 'An error occured while transferring dockerfile sources to build server.'
     ];
 
     /**
@@ -160,13 +161,17 @@ HELP;
         $this->status($output, sprintf('Archive Download: %s', $archive));
         $this->status($output, sprintf('Temp Scratch: %s', $tempDir));
 
-        if (!$this->download($repository, $reference, $archive)) {
+        if (!$this->sanityCheck($output, $this->localTemp)) {
             return $this->failure($output, 1);
+        }
+
+        if (!$this->download($repository, $reference, $archive)) {
+            return $this->failure($output, 2);
         }
 
         if (!$this->unpackArchive($tempDir, $archive)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 2);
+            return $this->failure($output, 3);
         }
 
         if (!$unpackedPath = $this->locateUnpackedArchive($tempDir)) {
@@ -176,7 +181,7 @@ HELP;
 
         if (!$this->sanitizeUnpackedArchive($unpackedPath)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 8);
+            return $this->failure($output, 5);
         }
 
         $transfer = $this->transferFiles(
@@ -189,11 +194,27 @@ HELP;
 
         if (!$transfer) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 16);
+            return $this->failure($output, 6);
         }
 
         $this->cleanupArtifacts($tempDir, $archive);
         return $this->success($output, 'Dockerfiles refreshed!');
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param string $tempDir
+     *
+     * @return bool
+     */
+    private function sanityCheck(OutputInterface $output, $tempDir)
+    {
+        if (is_writeable($tempDir)) {
+            return true;
+        }
+
+        $output->writeln(sprintf('Temp directory "%s" is not writeable!', $tempDir));
+        return false;
     }
 
     /**
