@@ -99,7 +99,7 @@ class SSHProcess
 
         // log if enabled
         if ($isLoggingEnabled) {
-            $this->logLastCommandAsSuccess($errorMessage, $command);
+            $this->logLastCommandAsSuccess($message, $command);
         }
 
         // all good
@@ -230,7 +230,7 @@ class SSHProcess
     private function runCommand(Net_SSH2 $sshSession, $remoteCommand, $prefixCommand, array $env = [])
     {
         if ($prefixCommand) {
-            $remoteCommand = $prefixCommand . ' ' . $command;
+            $remoteCommand = $prefixCommand . ' ' . $remoteCommand;
         }
 
         // Add environment variables if possible
