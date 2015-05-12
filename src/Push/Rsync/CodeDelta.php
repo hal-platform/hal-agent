@@ -92,17 +92,19 @@ class CodeDelta
      */
     public function __invoke($remoteUser, $remoteServer, $remotePath, array $pushProperties)
     {
-        $command = 'cat ' . self::FS_DETAILS_FILE;
+        $command = [
+            // move to the application directory before command is executed
+            sprintf('cd "%s"', $remotePath),
+            '&&',
+            sprintf('cat %s', self::FS_DETAILS_FILE),
+        ];
 
-        // move to the application directory before command is executed
-        $chdir = sprintf('cd "%s" &&', $remotePath);
-
-        $remoter = $this->remoter;
-        if (!$response = $remoter($remoteUser, $remoteServer, $command, [], false, $chdir)) {
+        $context = $this->remoter->createCommand($remoteUser, $remoteServer, $command);
+        if (!$response = $this->remoter->run($context, [], [false])) {
             return false;
         }
 
-        if (!$parsed = $this->parseYaml($remoter->getLastOutput())) {
+        if (!$parsed = $this->parseYaml($this->remoter->getLastOutput())) {
             return false;
         }
 

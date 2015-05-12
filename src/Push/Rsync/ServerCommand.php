@@ -37,10 +37,13 @@ class ServerCommand
     {
         $chdir = sprintf('cd "%s" &&', $remotePath);
 
-        $remoter = $this->remoter;
         foreach ($commands as $command) {
-            // $command = $remoter->sanitize($command);
-            if (!$response = $remoter($remoteUser, $remoteServer, $command, $env, true, $chdir)) {
+            $context = $this->remoter
+                ->createCommand($remoteUser, $remoteServer, [$chdir, $command])
+                ->withIsInteractive(true)
+                ->withSanitized($command);
+
+            if (!$response = $this->remoter->run($context, $env, [true])) {
                 return false;
             }
         }

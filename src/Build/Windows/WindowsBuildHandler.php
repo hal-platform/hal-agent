@@ -153,7 +153,7 @@ class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($user, $server, $path);
+            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote windows build server', $user, $server, $path);
         }
 
         return $response;

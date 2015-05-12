@@ -72,24 +72,49 @@ class SSHProcess
      * @param string $prefixCommand
      * @param string $customMessage
      *
-     * @return boolean
+     * @return bool
      */
     public function __invoke($remoteUser, $remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
     {
-        $this->resetStatus();
+        if ($prefixCommand) {
+            $command = $command . ' ' . $prefixCommand;
+        }
 
-        $message = $customMessage ?: self::EVENT_MESSAGE;
+        $context = $this->createCommand($remoteUser, $remoteServer, $command);
+        if ($prefixCommand) {
+            $context->withSanitized($command);
+        }
+
+        return $this->run($context, $env, [$isLoggingEnabled, $customMessage]);
+    }
+
+    /**
+     * Note:
+     * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
+     *
+     * @param CommandContext $command
+     * @param array $env
+     * @param array $loggingContext
+     *                [$alwaysLog=true, $customMessage='']
+     *
+     * @return bool
+     */
+    public function run(CommandContext $command, array $env, array $loggingContext = [])
+    {
+        $this->resetStatus();
+        $alwaysLog = (count($loggingContext) > 0) ? array_shift($loggingContext) : true;
+        $errorMessage = (count($loggingContext) > 0) ? array_shift($loggingContext) : self::EVENT_MESSAGE;
 
         // No session could be started/resumed
-        if (!$ssh = $this->sshManager->createSession($remoteUser, $remoteServer)) {
+        if (!$ssh = $this->sshManager->createSession($command->username(), $command->server())) {
             return false;
         }
 
-        $this->runCommand($ssh, $command, $prefixCommand, $env);
+        $this->runCommand($ssh, $command, $env);
 
         // timed out, bad exit
         if ($ssh->isTimeout() || $ssh->getExitStatus()) {
-            if ($isLoggingEnabled) {
+            if ($alwaysLog) {
                 $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $message;
                 $this->logLastCommandAsError($errorMessage, $command);
             }
@@ -98,8 +123,8 @@ class SSHProcess
         }
 
         // log if enabled
-        if ($isLoggingEnabled) {
-            $this->logLastCommandAsSuccess($message, $command);
+        if ($alwaysLog) {
+            $this->logLastCommandAsSuccess($errorMessage, $command);
         }
 
         // all good
@@ -110,32 +135,29 @@ class SSHProcess
      * Note:
      * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
      *
-     * @param string $remoteUser
-     * @param string $remoteServer
-     * @param string $command
+     * @param CommandContext $command
      * @param array $env
-     * @param bool $forceLogging
-     * @param string $prefixCommand
-     * @param string $customMessage
+     * @param array $loggingContext
+     *                [$forceLogging=false, $customMessage='']
      *
-     * @return boolean
+     * @return bool
      */
-    public function runWithLoggingOnFailure($remoteUser, $remoteServer, $command, array $env, $forceLogging = false, $prefixCommand = null, $customMessage = '')
+    public function runWithLoggingOnFailure(CommandContext $command, array $env, array $loggingContext = [])
     {
         $this->resetStatus();
-
-        $message = $customMessage ?: self::EVENT_MESSAGE;
+        $forceLogging = (count($loggingContext) > 0) ? array_shift($loggingContext) : false;
+        $errorMessage = (count($loggingContext) > 0) ? array_shift($loggingContext) : self::EVENT_MESSAGE;
 
         // No session could be started/resumed
-        if (!$ssh = $this->sshManager->createSession($remoteUser, $remoteServer)) {
+        if (!$ssh = $this->sshManager->createSession($command->username(), $command->server())) {
             return false;
         }
 
-        $this->runCommand($ssh, $command, $prefixCommand, $env);
+        $this->runCommand($ssh, $command, $env);
 
         // timed out, bad exit
         if ($ssh->isTimeout() || $ssh->getExitStatus()) {
-            $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $message;
+            $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $errorMessage;
             $this->logLastCommandAsError($errorMessage, $command);
 
             return false;
@@ -143,7 +165,7 @@ class SSHProcess
 
         // log if enabled
         if ($forceLogging) {
-            $this->logLastCommandAsSuccess($message, $command);
+            $this->logLastCommandAsSuccess($errorMessage, $command);
         }
 
         // all good
@@ -172,6 +194,18 @@ class SSHProcess
 
         // Combine user command back into string
         return implode(' ', $parameters);
+    }
+
+    /**
+     * @param string $username
+     * @param string $server
+     * @param string|array $command
+     *
+     * @return CommandContext
+     */
+    public function createCommand($username, $server, $command)
+    {
+        return new CommandContext($username, $server, $command);
     }
 
     /**
@@ -221,29 +255,28 @@ class SSHProcess
 
     /**
      * @param Net_SSH2 $sshSession
-     * @param string $remoteCommand
-     * @param string $prefixCommand
+     * @param CommandContext $command
      * @param array $env
      *
      * @return void
      */
-    private function runCommand(Net_SSH2 $sshSession, $remoteCommand, $prefixCommand, array $env = [])
+    private function runCommand(Net_SSH2 $sshSession, CommandContext $command, array $env = [])
     {
-        if ($prefixCommand) {
-            $remoteCommand = $prefixCommand . ' ' . $remoteCommand;
-        }
+        $actual = $command->command();
 
         // Add environment variables if possible
         if ($envSetters = $this->formatEnvSetters($env)) {
-            $remoteCommand = implode(' && ', [$envSetters, $remoteCommand]);
+            $actual = implode(' && ', [$envSetters, $actual]);
         }
 
         $sshSession->setTimeout($this->commandTimeout);
 
-        // Enable PTY for pretty colors
-        $sshSession->enablePTY();
+        if ($command->isInteractive()) {
+            // Enable PTY for pretty colors
+            $sshSession->enablePTY();
+        }
 
-        $sshSession->exec($remoteCommand);
+        $sshSession->exec($actual);
 
         $this->lastOutput = $sshSession->read();
         $this->lastErrorOutput = $sshSession->getStdError();
@@ -252,14 +285,16 @@ class SSHProcess
 
     /**
      * @param string $message
-     * @param string $command
+     * @param CommandContext $command
      *
      * @return void
      */
-    private function logLastCommandAsError($message, $command)
+    private function logLastCommandAsError($message, CommandContext $command)
     {
+        $sanitized = $command->sanitized() ? $command->sanitized() : $command->command();
+
         $context = array_merge($this->getLastStatus(), [
-            'command' => $command
+            'command' => $sanitized
         ]);
 
         $this->logger->event('failure', $message, $context);
@@ -267,14 +302,16 @@ class SSHProcess
 
     /**
      * @param string $message
-     * @param string $command
+     * @param CommandContext $command
      *
      * @return void
      */
-    private function logLastCommandAsSuccess($message, $command)
+    private function logLastCommandAsSuccess($message, CommandContext $command)
     {
+        $sanitized = $command->sanitized() ? $command->sanitized() : $command->command();
+
         $this->logger->event('success', $message, [
-            'command' => $command,
+            'command' => $sanitized,
             'output' => $this->lastOutput
         ]);
     }

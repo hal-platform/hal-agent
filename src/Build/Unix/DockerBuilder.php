@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Build\Unix;
 
 use QL\Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\CommandContext;
 use QL\Hal\Agent\Remoting\SSHProcess;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 
@@ -45,7 +46,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     const EVENT_MESSAGE = 'Run build command';
     const CONTAINER_WORKING_DIR = '/build';
     const DOCKER_SHELL = <<<SHELL
-sh -c '%s'
+bash -l -c '%s'
 SHELL;
 
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source';
@@ -158,7 +159,7 @@ SHELL;
         }
 
         // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($containerName, $owner, $group);
+        $this->enableEmergencyHandler([$this, 'cleanupContainer'], 'Clean up and shutdown Docker container', $containerName, $owner, $group);
 
         // 5. Run commands
         if (!$this->runCommands($containerName, $commands)) {
@@ -318,8 +319,6 @@ SHELL;
      */
     private function runCommands($containerName, array $commands)
     {
-        $remoter = $this->buildRemoter;
-
         $prefix = [
             $this->useSudoForDocker ? 'sudo docker exec' : 'docker exec',
             sprintf('"%s"', $containerName)
@@ -331,7 +330,12 @@ SHELL;
 
             $this->status('Running user build command inside Docker container');
 
-            if (!$response = $remoter($this->remoteUser, $this->remoteServer, $actual, [], true, $prefix, self::EVENT_MESSAGE)) {
+            $context = $this->remoter
+                ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $command])
+                ->withIsInteractive(true)
+                ->withSanitized($command);
+
+            if (!$response = $this->runBuildRemote($context, self::EVENT_MESSAGE)) {
                 return false;
             }
         }
@@ -352,8 +356,6 @@ SHELL;
      */
     private function cleanupContainer($containerName, $owner, $group)
     {
-        $this->status('Clean up and shutdown Docker container');
-
         $chown = sprintf('chown -R %s:%s "%s"', $owner, $group, self::CONTAINER_WORKING_DIR);
         $chown = [
             $this->useSudoForDocker ? 'sudo docker exec' : 'docker exec',
@@ -386,20 +388,8 @@ SHELL;
      */
     private function runRemote($command, $customMessage = '', $env = [])
     {
-        if (is_array($command)) {
-            $command = implode(' ', $command);
-        }
-
-        $remoter = $this->remoter;
-        return $remoter->runWithLoggingOnFailure(
-            $this->remoteUser,
-            $this->remoteServer,
-            $command,
-            $env,
-            $this->logDockerCommands,
-            null,
-            $customMessage
-        );
+        $command = $this->remoter->createCommand($this->remoteUser, $this->remoteServer, $command);
+        return $this->remoter->runWithLoggingOnFailure($command, $env, [$this->logDockerCommands, $customMessage]);
     }
 
     /**
@@ -409,40 +399,22 @@ SHELL;
      *
      * @return bool
      */
-    private function runBuildRemote($command, $customMessage = '', $env = [])
+    private function runBuildRemote($command, $customMessage = '')
     {
-        if (is_array($command)) {
-            $command = implode(' ', $command);
+        if (!$command instanceof CommandContext) {
+            $command = $this->remoter
+                ->createCommand($this->remoteUser, $this->remoteServer, $command)
+                ->withIsInteractive(true);
         }
 
-        $remoter = $this->buildRemoter;
-        return $remoter(
-            $this->remoteUser,
-            $this->remoteServer,
-            $command,
-            $env,
-            true,
-            null,
-            $customMessage
-        );
+        return $this->buildRemoter->run($command, [], [true, $customMessage]);
     }
 
     /**
      * OVERRIDE for EmergencyBuilderHandler for docker functionality.
      *
-     * @param bool $exitCode
-     *
-     * @return bool
-     */
-    private function bombout($status)
-    {
-        $this->clean();
-
-        return $status;
-    }
-
-    /**
-     * OVERRIDE for EmergencyBuilderHandler for docker functionality.
+     * @param callable $cleaner
+     * @param string $message
      *
      * @param string $containerName
      * @param string $owner
@@ -450,11 +422,11 @@ SHELL;
      *
      * @return null
      */
-    private function enableEmergencyHandler($containerName, $owner, $group)
+    private function enableEmergencyHandler(callable $cleaner, $message, $containerName, $owner, $group)
     {
-        $this->cleanup(function() use ($containerName, $owner, $group) {
-            $this->cleanupContainer($containerName, $owner, $group);
-        });
+        $this->cleanup(function() use ($cleaner, $containerName, $owner, $group) {
+            $cleaner($containerName, $owner, $group);
+        }, $message);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {

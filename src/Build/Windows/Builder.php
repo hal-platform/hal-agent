@@ -39,10 +39,13 @@ class Builder
     {
         $chdir = sprintf('cd "%s" &&', $remotePath);
 
-        $remoter = $this->remoter;
         foreach ($commands as $command) {
-            // $command = $remoter->sanitize($command);
-            if (!$response = $remoter($remoteUser, $remoteServer, $command, $env, true, $chdir, self::EVENT_MESSAGE)) {
+            $context = $this->remoter
+                ->createCommand($remoteUser, $remoteServer, [$chdir, $command])
+                ->withIsInteractive(true)
+                ->withSanitized($command);
+
+            if (!$response = $this->remoter->run($context, $env, [true, self::EVENT_MESSAGE])) {
                 return false;
             }
         }

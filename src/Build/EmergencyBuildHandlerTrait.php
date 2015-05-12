@@ -24,6 +24,11 @@ trait EmergencyBuildHandlerTrait
     private $emergencyCleaner = null;
 
     /**
+     * @type string
+     */
+    private $emergencyMessage = '';
+
+    /**
      * In case of error or critical failure, ensure that we clean up the build artifacts.
      *
      * Note that this is only called for exceptions and non-fatal errors.
@@ -42,17 +47,23 @@ trait EmergencyBuildHandlerTrait
      * Set or execute the emergency cleanup process
      *
      * @param callable|null $cleaner
+     * @param string $message
+     *
      * @return null
      */
-    public function cleanup(callable $cleaner = null)
+    public function cleanup(callable $cleaner = null, $message = '')
     {
-        if (func_num_args() === 1) {
+        if (func_num_args() > 0) {
             $this->emergencyCleaner = $cleaner;
-        } else {
-            if (is_callable($this->emergencyCleaner)) {
-                call_user_func($this->emergencyCleaner);
-                $this->emergencyCleaner = null;
+            $this->emergencyMessage = $message;
+
+        } elseif (is_callable($this->emergencyCleaner)) {
+            if ($this->emergencyMessage) {
+                $this->status($this->emergencyMessage);
             }
+
+            call_user_func($this->emergencyCleaner);
+            $this->emergencyCleaner = null;
         }
     }
 
@@ -65,48 +76,32 @@ trait EmergencyBuildHandlerTrait
     }
 
     /**
-     * @return void
-     */
-    private function clean()
-    {
-        $this->status('Cleaning up build server');
-
-        $this->cleanup();
-    }
-
-    /**
      * @param int $exitCode
      *
      * @return int
      */
     private function bombout($exitCode)
     {
-        $this->clean();
+        $this->cleanup();
 
         return $exitCode;
     }
 
     /**
+     * @param callable $cleaner
+     * @param string $message
+     *
      * @param string $user
      * @param string $server
      * @param string $path
      *
      * @return null
      */
-    private function enableEmergencyHandler($user, $server, $path)
+    private function enableEmergencyHandler(callable $cleaner, $message, $user, $server, $path)
     {
-        if (!property_exists($this, 'cleaner')) {
-            return;
-        }
-
-        if (!is_callable($this->cleaner)) {
-            return;
-        }
-
-        $cleaner = $this->cleaner;
         $this->cleanup(function() use ($cleaner, $user, $server, $path) {
             $cleaner($user, $server, $path);
-        });
+        }, $message);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {

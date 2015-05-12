@@ -99,18 +99,21 @@ class Exporter
     }
 
     /**
-     * @param string $buildUser
+     * @param string $remoteUser
      * @param string $remoteServer
      * @param string $remotePath
      *
      * @return bool
      */
-    private function createRemoteDir($buildUser, $remoteServer, $remotePath)
+    private function createRemoteDir($remoteUser, $remoteServer, $remotePath)
     {
-        $command = sprintf('if [ -d "%1$s" ]; then rm -r "%1$s"; fi; mkdir -p "%1$s"', $remotePath);
+        $command = sprintf('if [ -d "%1$s" ]; then \rm -r "%1$s"; fi; mkdir -p "%1$s"', $remotePath);
 
-        $remoter = $this->remoter;
-        if ($response = $remoter($buildUser, $remoteServer, $command, [], false)) {
+        $context = $this->remoter
+            ->createCommand($remoteUser, $remoteServer, $command)
+            ->withIsInteractive(true);
+
+        if ($response = $this->remoter->run($context, [], [false])) {
             return true;
         }
 
