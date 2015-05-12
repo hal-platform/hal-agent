@@ -24,7 +24,7 @@ class DockerBuilderConfigurator
     /**
      * @param DockerBuilder $builder
      */
-    public function configure($builder)
+    public function configure(DockerBuilder $builder)
     {
         if ($this->dockerSudo) {
             $builder->enableDockerSudo();

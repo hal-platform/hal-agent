@@ -218,7 +218,7 @@ SHELL;
         $this->status(sprintf('Building container "%s"', $fqImageName));
 
         $build = [
-            'docker build',
+            $this->useSudoForDocker ? 'sudo docker build' : 'docker build',
             sprintf('--tag="%s"', $fqImageName),
             sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName)
         ];
