@@ -75,17 +75,18 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->command,
             $this->pusher
         );
+        $deployer->setOutput($this->output);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
 
         $this->assertSame(0, $actual);
 
         $expected = <<<'OUTPUT'
-Deploying push by rsync
-Reading previous push data
-Running pre-push command
-Pushing code to server
-Running post-push command
+[Deploying - Rsync] Deploying push by rsync
+[Deploying - Rsync] Reading previous push data
+[Deploying - Rsync] Running pre-push command
+[Deploying - Rsync] Pushing code to server
+[Deploying - Rsync] Running post-push command
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -106,13 +107,14 @@ OUTPUT;
             $this->command,
             $this->pusher
         );
+        $deployer->setOutput($this->output);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
 
         $this->assertSame(100, $actual);
 
         $expected = <<<'OUTPUT'
-Deploying push by rsync
+[Deploying - Rsync] Deploying push by rsync
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -157,7 +159,7 @@ OUTPUT;
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(101, $actual);
     }
 
@@ -201,7 +203,7 @@ OUTPUT;
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(102, $actual);
     }
 
@@ -249,7 +251,7 @@ OUTPUT;
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(103, $actual);
     }
 }

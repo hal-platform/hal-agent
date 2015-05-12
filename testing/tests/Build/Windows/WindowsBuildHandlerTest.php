@@ -84,12 +84,12 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
         $this->assertSame(0, $actual);
 
         $expected = <<<'OUTPUT'
-Building on windows
-Validating windows configuration
-Exporting files to build server
-Running build command
-Importing files from build server
-Cleaning up remote windows build server
+[Building - Windows] Building on windows
+[Building - Windows] Validating windows configuration
+[Building - Windows] Exporting files to build server
+[Building - Windows] Running build command
+[Building - Windows] Importing files from build server
+[Shutdown] Cleaning up remote windows build server
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());

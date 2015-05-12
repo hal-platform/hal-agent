@@ -94,7 +94,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(0, $actual);
     }
 
@@ -166,7 +166,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(0, $actual);
     }
 
@@ -187,7 +187,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(200, $actual);
     }
 
@@ -224,7 +224,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(201, $actual);
     }
 
@@ -262,7 +262,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(202, $actual);
     }
 
@@ -321,7 +321,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(203, $actual);
     }
 
@@ -383,7 +383,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             $this->pusher
         );
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(204, $actual);
     }
 }

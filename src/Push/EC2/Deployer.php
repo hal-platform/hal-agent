@@ -68,7 +68,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return 300;
         }
 
-        if (!$instances = $this->finder($output, $properties)) {
+        if (!$instances = $this->finder($properties)) {
             $this->logger->event('failure', self::ERR_NO_INSTANCES);
             return 301;
         }
@@ -79,7 +79,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         }
 
         // push
-        if (!$this->push($output, $properties, $instances)) {
+        if (!$this->push($properties, $instances)) {
             return 302;
         }
 
@@ -93,12 +93,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return array|null
      */
-    private function finder(OutputInterface $output, array $properties)
+    private function finder(array $properties)
     {
         $this->status('Finding EC2 instances in pool', self::SECTION);
 
@@ -116,32 +115,12 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
-     * @param array $properties
-     *
-     * @return boolean
-     */
-    private function build(OutputInterface $output, array $properties)
-    {
-        if (!$properties['configuration']['build_transform']) {
-            $this->status('Skipping build command', self::SECTION);
-            return true;
-        }
-
-        $this->status('Running build command', self::SECTION);
-
-        $builder = $this->builder;
-        return $builder($output, $properties['configuration']['system'], $properties);
-    }
-
-    /**
-     * @param OutputInterface $output
      * @param array $properties
      * @param array $instances
      *
      * @return boolean
      */
-    private function push(OutputInterface $output, array $properties, array $instances)
+    private function push(array $properties, array $instances)
     {
         $this->status('Pushing code to EC2 instances', self::SECTION);
 

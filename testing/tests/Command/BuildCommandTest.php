@@ -90,7 +90,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
-Resolving build properties
+[Starting Build] Resolving build properties
 Build details could not be resolved.
 
 OUTPUT;
@@ -222,14 +222,14 @@ OUTPUT;
         $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
-Resolving build properties
-Found build: 1234
-Downloading github repository
-Unpacking github repository
-Reading .hal9000.yml
-Building
-Packing build into archive
-Moving build to archive
+[Starting Build] Resolving build properties
+[Starting Build] Found build: 1234
+[Starting Build] Downloading github repository
+[Starting Build] Unpacking github repository
+[Starting Build] Reading .hal9000.yml
+[Building] Building
+[Finishing Build] Packing build into archive
+[Finishing Build] Moving build to archive
 Success!
 
 OUTPUT;

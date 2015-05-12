@@ -89,12 +89,12 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
         $this->assertSame(0, $actual);
 
         $expected = <<<'OUTPUT'
-Building on unix
-Validating unix configuration
-Exporting files to build server
-Running build command
-Importing files from build server
-Cleaning up remote unix build server
+[Building - Unix] Building on unix
+[Building - Unix] Validating unix configuration
+[Building - Unix] Exporting files to build server
+[Building - Unix] Running build command
+[Building - Unix] Importing files from build server
+[Shutdown] Cleaning up remote unix build server
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());

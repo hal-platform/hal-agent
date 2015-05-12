@@ -73,20 +73,20 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         }
 
         // record code delta
-        $this->delta($output, $properties);
+        $this->delta($properties);
 
         // run pre push commands
-        if (!$this->prepush($output, $properties)) {
+        if (!$this->prepush($properties)) {
             return 101;
         }
 
         // sync code
-        if (!$this->push($output, $properties)) {
+        if (!$this->push($properties)) {
             return 102;
         }
 
         // run post push commands
-        if (!$this->postpush($output, $properties)) {
+        if (!$this->postpush($properties)) {
             return 103;
         }
 
@@ -95,12 +95,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function delta(OutputInterface $output, array $properties)
+    private function delta(array $properties)
     {
         $this->status('Reading previous push data', self::SECTION);
 
@@ -114,12 +113,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function prepush(OutputInterface $output, array $properties)
+    private function prepush(array $properties)
     {
         if (!$properties['configuration']['pre_push']) {
             $this->status('Skipping pre-push command', self::SECTION);
@@ -139,12 +137,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function push(OutputInterface $output, array $properties)
+    private function push(array $properties)
     {
         $this->status('Pushing code to server', self::SECTION);
 
@@ -160,12 +157,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function postpush(OutputInterface $output, array $properties)
+    private function postpush(array $properties)
     {
         if (!$properties['configuration']['post_push']) {
             $this->status('Skipping post-push command', self::SECTION);

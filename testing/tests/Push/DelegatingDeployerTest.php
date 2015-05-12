@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Push;
 
 use Mockery;
+use QL\Hal\Agent\Testing\DeployerStub;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -84,10 +85,13 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
 
     public function testDeployerSaysFail()
     {
+        $stub = new DeployerStub;
+        $stub->response = 999;
+
         $this->container
             ->shouldReceive('get')
             ->with('service.pushmethod', Mockery::any())
-            ->andReturn(function() {return 999;});
+            ->andReturn($stub);
 
         $this->logger
             ->shouldReceive('setStage')
@@ -106,10 +110,13 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
 
     public function testSuccess()
     {
+        $stub = new DeployerStub;
+        $stub->response = 0;
+
         $this->container
             ->shouldReceive('get')
             ->with('service.pushmethod', Mockery::any())
-            ->andReturn(function() {return 0;});
+            ->andReturn($stub);
 
         $this->logger
             ->shouldReceive('setStage')

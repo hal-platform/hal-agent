@@ -60,14 +60,15 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->andReturn(true);
 
         $deployer = new Deployer($this->logger, $this->finder, $this->pusher);
+        $deployer->setOutput($this->output);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(0, $actual);
 
         $expected = <<<'OUTPUT'
-Deploying push by EC2
-Finding EC2 instances in pool
-Pushing code to EC2 instances
+[Deploying - EC2] Deploying push by EC2
+[Deploying - EC2] Finding EC2 instances in pool
+[Deploying - EC2] Pushing code to EC2 instances
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -114,14 +115,15 @@ OUTPUT;
             ->once();
 
         $deployer = new Deployer($this->logger, $this->finder, $this->pusher);
+        $deployer->setOutput($this->output);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(0, $actual);
 
         $expected = <<<'OUTPUT'
-Deploying push by EC2
-Finding EC2 instances in pool
-Pushing code to EC2 instances
+[Deploying - EC2] Deploying push by EC2
+[Deploying - EC2] Finding EC2 instances in pool
+[Deploying - EC2] Pushing code to EC2 instances
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
@@ -138,7 +140,7 @@ OUTPUT;
 
         $deployer = new Deployer($this->logger, $this->finder, $this->pusher);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(300, $actual);
     }
 
@@ -173,7 +175,7 @@ OUTPUT;
 
         $deployer = new Deployer($this->logger, $this->finder, $this->pusher);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(301, $actual);
     }
 
@@ -210,7 +212,7 @@ OUTPUT;
 
         $deployer = new Deployer($this->logger, $this->finder, $this->pusher);
 
-        $actual = $deployer($this->output, $properties);
+        $actual = $deployer($properties);
         $this->assertSame(302, $actual);
     }
 }

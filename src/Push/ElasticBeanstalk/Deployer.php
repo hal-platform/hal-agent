@@ -85,12 +85,12 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return 200;
         }
 
-        if (!$this->health($output, $properties)) {
+        if (!$this->health($properties)) {
             return 201;
         }
 
         // create zip for s3
-        if (!$this->pack($output, $properties)) {
+        if (!$this->pack($properties)) {
             return 202;
         }
 
@@ -100,12 +100,12 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         }
 
         // upload version to S3
-        if (!$this->upload($output, $properties)) {
+        if (!$this->upload($properties)) {
             return 203;
         }
 
         // push
-        if (!$this->push($output, $properties)) {
+        if (!$this->push($properties)) {
             return 204;
         }
 
@@ -119,12 +119,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function health(OutputInterface $output, array $properties)
+    private function health(array $properties)
     {
         $this->status('Checking AWS environment health', self::SECTION);
 
@@ -143,12 +142,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function pack(OutputInterface $output, array $properties)
+    private function pack(array $properties)
     {
         $this->status('Packing build for S3', self::SECTION);
 
@@ -160,12 +158,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function upload(OutputInterface $output, array $properties)
+    private function upload(array $properties)
     {
         $this->status('Pushing code to S3', self::SECTION);
 
@@ -190,12 +187,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return boolean
      */
-    private function push(OutputInterface $output, array $properties)
+    private function push(array $properties)
     {
         $this->status('Deploying version to EB', self::SECTION);
 

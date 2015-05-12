@@ -7,12 +7,9 @@
 
 namespace QL\Hal\Agent\Push;
 
-use Symfony\Component\Console\Output\OutputInterface;
-
 interface DeployerInterface
 {
     /**
-     * @param OutputInterface $output
      * @param array $properties
      *
      * @return int
@@ -20,5 +17,5 @@ interface DeployerInterface
      *         0 success
      *         >=1 failure
      */
-    public function __invoke(OutputInterface $output, array $properties);
+    public function __invoke(array $properties);
 }

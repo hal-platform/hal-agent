@@ -85,7 +85,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
-Resolving push properties
+[Starting Deployment] Resolving push properties
 Push details could not be resolved.
 
 OUTPUT;
@@ -220,13 +220,13 @@ OUTPUT;
         $command->run($this->input, $this->output);
 
         $expected = <<<'OUTPUT'
-Resolving push properties
-Found push: 1234
-Moving archive to local storage
-Unpacking build archive
-Reading .hal9000.yml
-Running build transform command
-Deploying application
+[Starting Deployment] Resolving push properties
+[Starting Deployment] Found push: 1234
+[Starting Deployment] Moving archive to local storage
+[Starting Deployment] Unpacking build archive
+[Starting Deployment] Reading .hal9000.yml
+[Building] Running build transform command
+[Deploying] Deploying application
 Success!
 
 OUTPUT;
