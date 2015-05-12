@@ -192,7 +192,7 @@ SHELL;
         ];
 
         $dockerRunningCommand = [
-            $this->useSudoForDocker ? 'sudo docker info' : 'docker info'
+            $this->docker('info')
         ];
 
         if (!$isDockerImageValid = $this->runRemote($validateDockerSourceCommand, self::EVENT_VALIDATE_DOCKERSOURCE)) {
@@ -218,7 +218,7 @@ SHELL;
         $this->status(sprintf('Building container "%s"', $fqImageName));
 
         $build = [
-            $this->useSudoForDocker ? 'sudo docker build' : 'docker build',
+            $this->docker('build'),
             sprintf('--tag="%s"', $fqImageName),
             sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName)
         ];
@@ -285,7 +285,7 @@ SHELL;
         $this->status('Starting Docker container');
 
         $command = [
-            $this->useSudoForDocker ? 'sudo docker run' : 'docker run',
+            $this->docker('run'),
             '--detach=true',
             '--tty=true',
             '--interactive=true',
@@ -320,7 +320,7 @@ SHELL;
     private function runCommands($containerName, array $commands)
     {
         $prefix = [
-            $this->useSudoForDocker ? 'sudo docker exec' : 'docker exec',
+            $this->docker('exec'),
             sprintf('"%s"', $containerName)
         ];
         $prefix = implode(' ', $prefix);
@@ -358,18 +358,18 @@ SHELL;
     {
         $chown = sprintf('chown -R %s:%s "%s"', $owner, $group, self::CONTAINER_WORKING_DIR);
         $chown = [
-            $this->useSudoForDocker ? 'sudo docker exec' : 'docker exec',
+            $this->docker('exec'),
             sprintf('"%s"', $containerName),
             sprintf(self::DOCKER_SHELL, $chown)
         ];
 
         $kill = [
-            $this->useSudoForDocker ? 'sudo docker kill' : 'docker kill',
+            $this->docker('kill'),
             sprintf('"%s"', $containerName),
         ];
 
         $rm = [
-            $this->useSudoForDocker ? 'sudo docker rm' : 'docker rm',
+            $this->docker('rm'),
             sprintf('"%s"', $containerName),
         ];
 
@@ -408,6 +408,20 @@ SHELL;
         }
 
         return $this->buildRemoter->run($command, [], [true, $customMessage]);
+    }
+
+    /**
+     * @param string $command
+     *
+     * @return string
+     */
+    private function docker($command)
+    {
+        if ($this->useSudoForDocker) {
+            return 'sudo -E docker ' . $command;
+        }
+
+        return 'docker ' . $command;
     }
 
     /**

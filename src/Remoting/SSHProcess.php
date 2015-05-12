@@ -64,34 +64,6 @@ class SSHProcess
      * Note:
      * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
      *
-     * @param string $remoteUser
-     * @param string $remoteServer
-     * @param string $command
-     * @param array $env
-     * @param bool $isLoggingEnabled
-     * @param string $prefixCommand
-     * @param string $customMessage
-     *
-     * @return bool
-     */
-    public function DEADDEAD($remoteUser, $remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
-    {
-        if ($prefixCommand) {
-            $command = $prefixCommand . ' ' . $command;
-        }
-
-        $context = $this->createCommand($remoteUser, $remoteServer, $command);
-        if ($prefixCommand) {
-            $context->withSanitized($command);
-        }
-
-        return $this->run($context, $env, [$isLoggingEnabled, $customMessage]);
-    }
-
-    /**
-     * Note:
-     * Commands are not escaped or sanitized, and must be done first with the ->sanitize() method.
-     *
      * @param CommandContext $command
      * @param array $env
      * @param array $loggingContext
