@@ -24,11 +24,26 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class VerifyServerCommandsCommand extends Command
+class VerifyServerConnectionsCommand extends Command
 {
     use CommandTrait;
     use FormatterTrait;
     use SortingHelperTrait;
+
+    /**
+     * This is manually built so we can support incremental table rendering
+     */
+    const TABLE_HEADER = <<<STDOUT
++-------------+----------+-----------------------------------------------------+
+| Environment | Status   | Hostname                                            |
++-------------+----------+-----------------------------------------------------+
+STDOUT;
+    const TABLE_ROW = <<<STDOUT
+| %s | %s | %s |
+STDOUT;
+    const TABLE_SEPARATOR = <<<STDOUT
++-------------+----------+-----------------------------------------------------+
+STDOUT;
 
     const STATIC_HELP = <<<'HELP'
 <fg=cyan>Exit codes:</fg=cyan>
@@ -111,7 +126,7 @@ HELP;
         $environmentName = $input->getArgument('ENVIRONMENT_NAME') ?: '';
         $environment = null;
 
-        if ($environmentName && !$environment = $this->environmentRepo->findOneBy(['name' => strtolower($environmentName)])) {
+        if ($environmentName && !$environment = $this->environmentRepo->findOneBy(['key' => strtolower($environmentName)])) {
             return $this->failure($output, 1);
         }
 
@@ -122,16 +137,41 @@ HELP;
         }
 
         if (!$servers) {
-            $this->status($output, 'No servers to check?');
+            return $this->status($output, 'No servers to check?');
         }
 
         $environments = $this->sortServersIntoEnvironments($servers);
 
-        if (false) {
-            return $this->failure($output, 1);
+        $output->write(self::TABLE_HEADER, true);
+        foreach ($environments as $envName => $env) {
+            foreach ($env as $server) {
+                $row = $this->buildRow($server->getEnvironment()->getKey(), true, $server->getName());
+                $output->writeln($row);
+            }
+
+            $output->writeln(self::TABLE_SEPARATOR);
         }
 
-        return $this->success($output, 'Success!');
+        return $this->finish($output, 0);
+    }
+
+    /**
+     * @param string $env
+     * @param string $status
+     * @param string $hostname
+     *
+     * @return string
+     */
+    private function buildRow($env, $status, $hostname)
+    {
+        $display = $status ? '<info>PASS</info>' : '<error>FAIL</error>';
+        $display = sprintf('[ %s ]', $display);
+        return sprintf(
+            self::TABLE_ROW,
+            str_pad($env, 11),
+            str_pad($display, 8),
+            str_pad($hostname, 51)
+        );
     }
 
     /**
@@ -141,39 +181,41 @@ HELP;
      */
     private function sortServersIntoEnvironments(array $servers)
     {
+        $environments = [];
 
-    }
+        // Add servers to groupings
+        foreach ($servers as $server) {
+            $envName = $server->getEnvironment()->getKey();
 
-
-    /**
-     * @param Deployment[] $deployments
-     * @return array
-     */
-    private function environmentalizeDeployments(array $deployments)
-    {
-        // should be using server.order instead
-        $environments = [
-            'dev' => [],
-            'test' => [],
-            'beta' => [],
-            'prod' => []
-        ];
-
-        foreach ($deployments as $deployment) {
-            $env = $deployment->getServer()->getEnvironment()->getKey();
-
-            if (!array_key_exists($env, $environments)) {
-                $environments[$env] = [];
+            if (!array_key_exists($envName, $environments)) {
+                $environments[$envName] = [];
             }
 
-            $environments[$env][] = $deployment;
+            $environments[$envName][] = $server;
         }
 
-        $sorter = $this->deploymentSorter();
+        // sort envs
+        usort($environments, $this->envSorter());
+
+        // Sort servers within env
+        $sorter = $this->serverSorter();
         foreach ($environments as &$env) {
             usort($env, $sorter);
         }
 
         return $environments;
+    }
+
+    /**
+     * @return Closure
+     */
+    private function envSorter()
+    {
+        return function($a, $b) {
+            $envA = $a[0]->getEnvironment()->getOrder();
+            $envB = $b[0]->getEnvironment()->getOrder();
+
+            return ($envA < $envB) ? -1 : 1;
+        };
     }
 }

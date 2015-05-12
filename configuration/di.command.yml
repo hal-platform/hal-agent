@@ -36,6 +36,10 @@ services:
         class: 'QL\Hal\Agent\Command\LazyCommand'
         arguments: ['docker:refresh', 'command.docker.refresh', @service_container]
 
+    lazy.command.server.connections:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['server:connections', 'command.server.connections', @service_container]
+
     ####################################################################################################################
     # commands
     ####################################################################################################################
@@ -141,3 +145,10 @@ services:
             - %docker.source.repository%
             - %docker.source.reference%
 
+    command.server.connections:
+        class: 'QL\Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
+        arguments:
+            - 'server:connections'
+            - @server.repo
+            - @environment.repo
+            - @ssh.manager

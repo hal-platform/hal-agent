@@ -22,6 +22,14 @@ use Symfony\Component\Console\Output\OutputInterface;
  * docker rmi $(docker images | grep "^<none>" | awk '{print $3}')
  * ```
  *
+ *
+ * > sudo du -sh /var/lib/docker
+ * 1.3G    /var/lib/docker
+ *
+ * > df -ah /var
+ * Filesystem              Size  Used Avail Use% Mounted on
+ * /dev/mapper/vg00-lvvar  8.4G  1.7G  6.8G  20% /var
+ *
  * BUILT FOR COMMAND LINE ONLY
  */
 class NukeImagesCommand extends Command
