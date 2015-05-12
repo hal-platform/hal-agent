@@ -23,7 +23,7 @@ parameters:
     build.unix.server: 'localhost:2022'
 
     # temporary scratch on the build server
-    build.unix.temp: '/tmp/hal9000'
+    build.unix.temp: '/var/hal9000'
 
     # Docker configuration
     docker.option.sudo: false

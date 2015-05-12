@@ -23,7 +23,7 @@ parameters:
     build.unix.server: 'ql1haltsbld1'
 
     # temporary scratch on the build server
-    build.unix.temp: '/tmp/hal9000'
+    build.unix.temp: '/var/hal9000'
 
     ############################################################################
     # WINDOWS BUILDING

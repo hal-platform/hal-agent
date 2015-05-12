@@ -23,7 +23,7 @@ parameters:
     build.unix.server: 'ql1halprbld1'
 
     # temporary scratch on the build server
-    build.unix.temp: '/tmp/hal9000'
+    build.unix.temp: '/var/hal9000'
 
     # Docker configuration
     docker.option.sudo: true

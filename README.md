@@ -118,7 +118,7 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
 2. Build server setup
     * Docker must be installed (>=1.5).
     * **$user** must be able to sudo docker.
-    * `/tmp/hal9000` must exist and be owned by **$user**.
+    * `/var/hal9000` must exist and be owned by **$user**.
     * `/docker-images` must exist and be owned by **$user**.
 3. Deploy **docker images** to build server
     * The agent command "docker:refresh" will automatically do this (As long as the directory is present!).
