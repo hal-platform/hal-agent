@@ -66,6 +66,9 @@ parameters:
     database.server: 'prod.example.com'
     database.database: 'hal9000'
 
+    redis.server: 'prod.redis.example.com:6379'
+    redis.prefix: 'hal9000'
+
     ############################################################################
     # CREDENTIALS
     ############################################################################

@@ -70,6 +70,9 @@ parameters:
     email.notify:
         - 'hal@example.com'
 
+    redis.server: 'test.redis.example.com:6379'
+    redis.prefix: 'hal9000test'
+
     ############################################################################
     # CREDENTIALS
     ############################################################################
