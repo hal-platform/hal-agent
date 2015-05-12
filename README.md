@@ -111,10 +111,12 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
 - `$syncer` is the user code is rsynced through (Example: `codexfer`).
 
 1. Agent server setup
+    * `/var/hal9000agent` must exist and be owned by `$syncer:hal-agent`.
     * Deploy agent to **agent server**.
     * **$user** must be able to ssh (passwordless) to the dedicated **build server**.
     * **$user** must be able to ssh (passwordless) as $syncer to all deploy web/app servers.
     * `/tmp/hal9000` must exist and be owned by **$user**.
+    * `/builds/hal9000` must exist and be owned by **$user**. (`/builds/hal9000test` for test environment)
 2. Build server setup
     * Docker must be installed (>=1.5).
     * **$user** must be able to sudo docker.
