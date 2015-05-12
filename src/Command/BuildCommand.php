@@ -17,6 +17,8 @@ use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Remoting\SSHSessionManager;
 use QL\Hal\Agent\Symfony\GuzzleDownloadProgress;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -30,10 +32,15 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  * The amount of dependencies of this command is too damn high.
  */
-class BuildCommand extends Command
+class BuildCommand extends Command implements OutputAwareInterface
 {
     use CommandTrait;
     use FormatterTrait;
+    use OutputAwareTrait;
+
+    const SECTION_START = 'Starting Build';
+    const SECTION = 'Building';
+    const SECTION_FINISH = 'Finishing Build';
 
     /**
      * A list of all possible exit codes of this command
@@ -226,6 +233,8 @@ class BuildCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->setOutput($output);
+
         // expected build statuses
         // Waiting, Building, Success, Error, Removed
 
@@ -317,23 +326,12 @@ class BuildCommand extends Command
 
     /**
      * @param OutputInterface $output
-     * @param string $message
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
-    }
-
-    /**
-     * @param OutputInterface $output
      * @param string $buildId
      * @return array|null
      */
     private function resolve(OutputInterface $output, $buildId)
     {
-        $this->status($output, 'Resolving build properties');
+        $this->status('Resolving build properties', self::SECTION_START);
 
         $resolver = $this->resolver;
         return $resolver($buildId);
@@ -347,7 +345,7 @@ class BuildCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['build']);
-        $this->status($output, sprintf('Found build: %s', $properties['build']->getId()));
+        $this->status(sprintf('Found build: %s', $properties['build']->getId()), self::SECTION_START);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {
@@ -380,7 +378,7 @@ class BuildCommand extends Command
     {
         $this->progress->enableDownloadProgress($output);
 
-        $this->status($output, 'Downloading github repository');
+        $this->status('Downloading github repository', self::SECTION_START);
 
         $downloader = $this->downloader;
         return $downloader(
@@ -398,7 +396,7 @@ class BuildCommand extends Command
      */
     private function unpack(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Unpacking github repository');
+        $this->status('Unpacking github repository', self::SECTION_START);
 
         $unpacker = $this->unpacker;
         return $unpacker(
@@ -414,7 +412,7 @@ class BuildCommand extends Command
      */
     private function read(OutputInterface $output, array &$properties)
     {
-        $this->status($output, 'Reading .hal9000.yml');
+        $this->status('Reading .hal9000.yml', self::SECTION_START);
 
         $reader = $this->reader;
         return $reader(
@@ -431,11 +429,11 @@ class BuildCommand extends Command
     private function build(OutputInterface $output, array $properties)
     {
         if (!$properties['configuration']['build']) {
-            $this->status($output, 'Skipping building');
+            $this->status('Skipping building', self::SECTION);
             return true;
         }
 
-        $this->status($output, 'Building');
+        $this->status('Building', self::SECTION);
 
         $builder = $this->builder;
         return $builder(
@@ -453,7 +451,7 @@ class BuildCommand extends Command
      */
     private function pack(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Packing build into archive');
+        $this->status('Packing build into archive', self::SECTION_FINISH);
 
         $packer = $this->packer;
         return $packer(
@@ -470,7 +468,7 @@ class BuildCommand extends Command
      */
     private function move(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Moving build to archive');
+        $this->status('Moving build to archive', self::SECTION_FINISH);
 
         $mover = $this->mover;
         return $mover($properties['location']['tempArchive'], $properties['location']['archive']);

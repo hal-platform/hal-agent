@@ -9,17 +9,21 @@ namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Type\ServerEnumType;
-use Symfony\Component\Console\Output\OutputInterface;
 
-class Deployer implements DeployerInterface
+class Deployer implements DeployerInterface, OutputAwareInterface
 {
+    use OutputAwareTrait;
+
+    const SECTION = 'Deploying - EB';
     const STATUS = 'Deploying push by EB';
 
     const ERR_INVALID_DEPLOYMENT_SYSTEM = 'Elastic Beanstalk deployment system is not configured';
 
     const SKIP_PRE_PUSH = 'Skipping pre-push commands for EB deployment';
-    const SKIP_POST_PUSH = 'Skipping post-push commands for EBdeployment';
+    const SKIP_POST_PUSH = 'Skipping post-push commands for EB deployment';
     const ERR_ENVIRONMENT_HEALTH = 'Elastic Beanstalk environment is not ready';
 
     /**
@@ -71,9 +75,9 @@ class Deployer implements DeployerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $properties)
+    public function __invoke(array $properties)
     {
-        $this->status($output, self::STATUS);
+        $this->status(self::STATUS, self::SECTION);
 
         // sanity check
         if (!isset($properties[ServerEnumType::TYPE_EB])) {
@@ -122,7 +126,7 @@ class Deployer implements DeployerInterface
      */
     private function health(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Checking AWS environment health');
+        $this->status('Checking AWS environment health', self::SECTION);
 
         $health = $this->health;
         $health = $health(
@@ -146,7 +150,7 @@ class Deployer implements DeployerInterface
      */
     private function pack(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Packing build for S3');
+        $this->status('Packing build for S3', self::SECTION);
 
         $packer = $this->packer;
         return $packer(
@@ -163,7 +167,7 @@ class Deployer implements DeployerInterface
      */
     private function upload(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Pushing code to S3');
+        $this->status('Pushing code to S3', self::SECTION);
 
         $push = $properties['push'];
         $build = $properties['push']->getBuild();
@@ -193,7 +197,7 @@ class Deployer implements DeployerInterface
      */
     private function push(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Deploying version to EB');
+        $this->status('Deploying version to EB', self::SECTION);
 
         $push = $properties['push'];
         $build = $properties['push']->getBuild();
@@ -214,17 +218,5 @@ class Deployer implements DeployerInterface
             $push->getId(),
             $env->getKey()
         );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
     }
 }

@@ -16,6 +16,8 @@ use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\Unpacker;
 use QL\Hal\Agent\Utility\GithubDeploymenter;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -28,10 +30,15 @@ use Symfony\Component\Filesystem\Filesystem;
 /**
  * Push a previously built application to a server.
  */
-class PushCommand extends Command
+class PushCommand extends Command implements OutputAwareInterface
 {
     use CommandTrait;
     use FormatterTrait;
+    use OutputAwareTrait;
+
+    const SECTION_START = 'Starting Deployment';
+    const SECTION = 'Deploying';
+    const SECTION_BUILDING = 'Building';
 
     /**
      * A list of all possible exit codes of this command
@@ -213,6 +220,8 @@ class PushCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->setOutput($output);
+
         // expected push statuses
         // Waiting, Pushing, Error, Success
 
@@ -301,25 +310,13 @@ class PushCommand extends Command
 
     /**
      * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
-    }
-
-    /**
-     * @param OutputInterface $output
      * @param string $pushId
      *
      * @return array|null
      */
     private function resolve(OutputInterface $output, $pushId)
     {
-        $this->status($output, 'Resolving push properties');
+        $this->status('Resolving push properties', self::SECTION_START);
 
         $resolver = $this->resolver;
         return $resolver($pushId);
@@ -334,7 +331,7 @@ class PushCommand extends Command
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['push']);
-        $this->status($output, sprintf('Found push: %s', $properties['push']->getId()));
+        $this->status(sprintf('Found push: %s', $properties['push']->getId()), self::SECTION_START);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {
@@ -370,7 +367,7 @@ class PushCommand extends Command
      */
     private function move(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Moving archive to local storage');
+        $this->status('Moving archive to local storage', self::SECTION_START);
 
         $mover = $this->mover;
         return $mover($properties['location']['archive'], $properties['location']['tempArchive']);
@@ -384,7 +381,7 @@ class PushCommand extends Command
      */
     private function unpack(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Unpacking build archive');
+        $this->status('Unpacking build archive', self::SECTION_START);
 
         $unpacker = $this->unpacker;
         return $unpacker(
@@ -402,7 +399,7 @@ class PushCommand extends Command
      */
     private function read(OutputInterface $output, array &$properties)
     {
-        $this->status($output, 'Reading .hal9000.yml');
+        $this->status('Reading .hal9000.yml', self::SECTION_START);
 
         $reader = $this->reader;
         return $reader(
@@ -420,11 +417,11 @@ class PushCommand extends Command
     private function build(OutputInterface $output, array $properties)
     {
         if (!$properties['configuration']['build_transform']) {
-            $this->status($output, 'Skipping build transform command');
+            $this->status('Skipping build transform command', self::SECTION_BUILDING);
             return true;
         }
 
-        $this->status($output, 'Running build transform command');
+        $this->status('Running build transform command', self::SECTION_BUILDING);
 
         $builder = $this->builder;
 
@@ -444,7 +441,7 @@ class PushCommand extends Command
      */
     private function deploy(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Deploying application');
+        $this->status('Deploying application', self::SECTION);
 
         $deployer = $this->deployer;
         return $deployer($output, $properties['method'], $properties);

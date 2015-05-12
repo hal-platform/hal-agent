@@ -38,11 +38,13 @@ use QL\Hal\Agent\Symfony\OutputAwareInterface;
  */
 class DockerBuilder implements BuilderInterface, OutputAwareInterface
 {
+    // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
 
     /**
      * @type string
      */
+    const SECTION = 'Docker';
     const EVENT_MESSAGE = 'Run build command';
     const CONTAINER_WORKING_DIR = '/build';
     const DOCKER_SHELL = <<<SHELL
@@ -177,7 +179,7 @@ SHELL;
      */
     private function sanityCheck($imagesBasePath, $imageName)
     {
-        $this->status(sprintf('Validating specified Docker image "%s"', $imageName));
+        $this->status(sprintf('Validating specified Docker image "%s"', $imageName), self::SECTION);
 
         $imagePath = sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName);
         $dockerFilePath = sprintf('"%s/%s/Dockerfile"', rtrim($imagesBasePath, '/'), $imageName);
@@ -215,7 +217,7 @@ SHELL;
      */
     private function buildImage($imageName, $fqImageName, $imagesBasePath)
     {
-        $this->status(sprintf('Building container "%s"', $fqImageName));
+        $this->status(sprintf('Building container "%s"', $fqImageName), self::SECTION);
 
         $build = [
             $this->docker('build'),
@@ -237,7 +239,7 @@ SHELL;
      */
     private function getOwner($remotePath)
     {
-        $this->status('Grabbing Docker metadata');
+        $this->status('Grabbing Docker metadata', self::SECTION);
 
         $getOwnerNumber = [
             'ls -ldn',
@@ -282,7 +284,7 @@ SHELL;
      */
     private function startContainer($remotePath, $imageName, array $env)
     {
-        $this->status('Starting Docker container');
+        $this->status('Starting Docker container', self::SECTION);
 
         $command = [
             $this->docker('run'),
@@ -306,7 +308,7 @@ SHELL;
 
         $containerName = trim($this->remoter->getLastOutput());
 
-        $this->status(sprintf('Docker container "%s" started.', $containerName));
+        $this->status(sprintf('Docker container "%s" started.', $containerName), self::SECTION);
 
         return $containerName;
     }
@@ -328,7 +330,7 @@ SHELL;
         foreach ($commands as $command) {
             $actual = sprintf(self::DOCKER_SHELL, $command);
 
-            $this->status('Running user build command inside Docker container');
+            $this->status('Running user build command inside Docker container', self::SECTION);
 
             $context = $this->buildRemoter
                 ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])

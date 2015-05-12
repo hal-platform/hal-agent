@@ -9,11 +9,15 @@ namespace QL\Hal\Agent\Push\EC2;
 
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Type\ServerEnumType;
-use Symfony\Component\Console\Output\OutputInterface;
 
-class Deployer implements DeployerInterface
+class Deployer implements DeployerInterface, OutputAwareInterface
 {
+    use OutputAwareTrait;
+
+    const SECTION = 'Deploying - EC2';
     const STATUS = 'Deploying push by EC2';
     const ERR_INVALID_DEPLOYMENT_SYSTEM = 'EC2 deployment system is not configured';
 
@@ -54,9 +58,9 @@ class Deployer implements DeployerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $properties)
+    public function __invoke(array $properties)
     {
-        $this->status($output, self::STATUS);
+        $this->status(self::STATUS, self::SECTION);
 
         // sanity check
         if (!isset($properties[ServerEnumType::TYPE_EC2])) {
@@ -96,7 +100,7 @@ class Deployer implements DeployerInterface
      */
     private function finder(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Finding EC2 instances in pool');
+        $this->status('Finding EC2 instances in pool', self::SECTION);
 
         $finder = $this->finder;
         $instances = $finder(
@@ -120,11 +124,11 @@ class Deployer implements DeployerInterface
     private function build(OutputInterface $output, array $properties)
     {
         if (!$properties['configuration']['build_transform']) {
-            $this->status($output, 'Skipping build command');
+            $this->status('Skipping build command', self::SECTION);
             return true;
         }
 
-        $this->status($output, 'Running build command');
+        $this->status('Running build command', self::SECTION);
 
         $builder = $this->builder;
         return $builder($output, $properties['configuration']['system'], $properties);
@@ -139,7 +143,7 @@ class Deployer implements DeployerInterface
      */
     private function push(OutputInterface $output, array $properties, array $instances)
     {
-        $this->status($output, 'Pushing code to EC2 instances');
+        $this->status('Pushing code to EC2 instances', self::SECTION);
 
         $pusher = $this->pusher;
         return $pusher(
@@ -148,17 +152,5 @@ class Deployer implements DeployerInterface
             $properties['configuration']['exclude'],
             $instances
         );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
     }
 }

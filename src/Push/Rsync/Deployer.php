@@ -9,11 +9,15 @@ namespace QL\Hal\Agent\Push\Rsync;
 
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Type\ServerEnumType;
-use Symfony\Component\Console\Output\OutputInterface;
 
-class Deployer implements DeployerInterface
+class Deployer implements DeployerInterface, OutputAwareInterface
 {
+    use OutputAwareTrait;
+
+    const SECTION = 'Deploying - Rsync';
     const STATUS = 'Deploying push by rsync';
     const ERR_INVALID_DEPLOYMENT_SYSTEM = 'Rsync deployment system is not configured';
 
@@ -58,9 +62,9 @@ class Deployer implements DeployerInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(OutputInterface $output, array $properties)
+    public function __invoke(array $properties)
     {
-        $this->status($output, self::STATUS);
+        $this->status(self::STATUS, self::SECTION);
 
         // sanity check
         if (!isset($properties[ServerEnumType::TYPE_RSYNC])) {
@@ -98,7 +102,7 @@ class Deployer implements DeployerInterface
      */
     private function delta(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Reading previous push data');
+        $this->status('Reading previous push data', self::SECTION);
 
         $delta = $this->delta;
         return $delta(
@@ -118,11 +122,11 @@ class Deployer implements DeployerInterface
     private function prepush(OutputInterface $output, array $properties)
     {
         if (!$properties['configuration']['pre_push']) {
-            $this->status($output, 'Skipping pre-push command');
+            $this->status('Skipping pre-push command', self::SECTION);
             return true;
         }
 
-        $this->status($output, 'Running pre-push command');
+        $this->status('Running pre-push command', self::SECTION);
 
         $prepush = $this->serverCommand;
         return $prepush(
@@ -142,7 +146,7 @@ class Deployer implements DeployerInterface
      */
     private function push(OutputInterface $output, array $properties)
     {
-        $this->status($output, 'Pushing code to server');
+        $this->status('Pushing code to server', self::SECTION);
 
         $pusher = $this->pusher;
 
@@ -164,11 +168,11 @@ class Deployer implements DeployerInterface
     private function postpush(OutputInterface $output, array $properties)
     {
         if (!$properties['configuration']['post_push']) {
-            $this->status($output, 'Skipping post-push command');
+            $this->status('Skipping post-push command', self::SECTION);
             return true;
         }
 
-        $this->status($output, 'Running post-push command');
+        $this->status('Running post-push command', self::SECTION);
 
         $postpush = $this->serverCommand;
         return $postpush(
@@ -178,17 +182,5 @@ class Deployer implements DeployerInterface
             $properties['configuration']['post_push'],
             $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']
         );
-    }
-
-    /**
-     * @param OutputInterface $output
-     * @param string $message
-     *
-     * @return null
-     */
-    private function status(OutputInterface $output, $message)
-    {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
     }
 }

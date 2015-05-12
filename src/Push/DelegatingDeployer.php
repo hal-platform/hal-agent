@@ -8,6 +8,8 @@
 namespace QL\Hal\Agent\Push;
 
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Push\DeployerInterface;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -76,13 +78,17 @@ class DelegatingDeployer
         $deployer = $this->container->get($serviceId, ContainerInterface::NULL_ON_INVALID_REFERENCE);
 
         // Deployer must be invokeable
-        if (!is_callable($deployer)) {
+        if (!$deployer instanceof DeployerInterface) {
             return $this->explode($method);
         }
 
         $this->logger->setStage('pushing');
 
-        $this->exitCode = $deployer($output, $properties);
+        if ($deployer instanceof OutputAwareInterface) {
+            $deployer->setOutput($output);
+        }
+
+        $this->exitCode = $deployer($properties);
         return ($this->exitCode === 0);
     }
 

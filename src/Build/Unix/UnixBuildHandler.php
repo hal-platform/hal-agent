@@ -15,8 +15,10 @@ use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 
 class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
 {
+    // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
 
+    const SECTION = 'Building - Unix';
     const STATUS = 'Building on unix';
     const SERVER_TYPE = 'unix';
     const ERR_INVALID_BUILD_SYSTEM = 'Unix build system is not configured';
@@ -91,7 +93,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
      */
     public function __invoke(array $commands, array $properties)
     {
-        $this->status(self::STATUS);
+        $this->status(self::STATUS, self::SECTION);
 
         // sanity check
         if (!$this->sanityCheck($properties)) {
@@ -130,7 +132,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
      */
     private function sanityCheck(array $properties)
     {
-        $this->status('Validating unix configuration');
+        $this->status('Validating unix configuration', self::SECTION);
 
         if (!isset($properties[self::SERVER_TYPE])) {
             return false;
@@ -150,7 +152,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
      */
     private function export(array $properties)
     {
-        $this->status('Exporting files to build server');
+        $this->status('Exporting files to build server', self::SECTION);
 
         $localPath = $properties['location']['path'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
@@ -196,7 +198,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
      */
     private function build(array $properties, array $commands, array $decrypted)
     {
-        $this->status('Running build command');
+        $this->status('Running build command', self::SECTION);
 
         $dockerImage = $this->determineImage($properties['configuration']['system']);
 
@@ -226,7 +228,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
      */
     private function import(array $properties)
     {
-        $this->status('Importing files from build server');
+        $this->status('Importing files from build server', self::SECTION);
 
         $localPath = $properties['location']['path'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];

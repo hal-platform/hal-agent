@@ -36,13 +36,18 @@ trait OutputAwareTrait
 
     /**
      * @param string $message
+     * @param string $section
      *
      * @return void
      */
-    public function status($message)
+    public function status($message, $section = '')
     {
         if ($output = $this->getOutput()) {
-            $message = sprintf('<comment>%s</comment>', $message);
+            if ($section) {
+                $message = sprintf('[<comment>%s</comment>] %s', $section, $message);
+            } else {
+                $message = sprintf('<comment>%s</comment>', $message);
+            }
             $output->writeln($message);
         }
     }

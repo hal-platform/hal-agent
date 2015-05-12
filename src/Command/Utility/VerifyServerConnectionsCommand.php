@@ -57,6 +57,7 @@ HELP;
     private static $codes = [
         0 => 'Success',
         1 => 'Specified environment not found.',
+        2 => 'No servers found.'
     ];
 
     /**
@@ -137,7 +138,7 @@ HELP;
         }
 
         if (!$servers) {
-            return $this->status($output, 'No servers to check?');
+            return $this->failure($output, 2);
         }
 
         $environments = $this->sortServersIntoEnvironments($servers);

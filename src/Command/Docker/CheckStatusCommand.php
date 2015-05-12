@@ -81,8 +81,6 @@ HELP;
     {
         $argument = $input->getArgument('SAMPLE_ARG') ?: 'default';
 
-        $this->status($output, 'stdout status');
-
         if (false) {
             return $this->failure($output, 1);
         }

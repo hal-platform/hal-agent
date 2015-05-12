@@ -59,7 +59,7 @@ trait EmergencyBuildHandlerTrait
 
         } elseif (is_callable($this->emergencyCleaner)) {
             if ($this->emergencyMessage) {
-                $this->status($this->emergencyMessage);
+                $this->status($this->emergencyMessage, 'Shutdown');
             }
 
             call_user_func($this->emergencyCleaner);
