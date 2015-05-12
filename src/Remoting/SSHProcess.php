@@ -265,9 +265,9 @@ class SSHProcess
     {
         $sanitized = $command->sanitized() ? $command->sanitized() : $command->command();
 
-        $context = array_merge($this->getLastStatus(), [
+        $context = array_merge([
             'command' => $sanitized
-        ]);
+        ], $this->getLastStatus());
 
         $this->logger->event('failure', $message, $context);
     }
