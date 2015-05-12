@@ -152,3 +152,4 @@ services:
             - @server.repo
             - @environment.repo
             - @ssh.manager
+            - %push.rsync.remoteUser%

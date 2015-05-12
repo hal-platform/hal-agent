@@ -27,6 +27,7 @@ use QL\Hal\Core\Type\ServerEnumType;
 class Resolver
 {
     use DefaultConfigHelperTrait;
+    use HostnameValidatorTrait;
     use ResolverTrait;
 
     /**
@@ -365,31 +366,6 @@ class Resolver
         ]);
 
         return (count($concurrentSyncs) > 0);
-    }
-
-    /**
-     * Validate a hostname
-     *
-     * @param string $hostname
-     *
-     * @return string|null
-     */
-    private function validateHostname($hostname)
-    {
-        if (filter_var($hostname, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            return $hostname;
-        }
-
-        if ($hostname !== gethostbyname($hostname)) {
-            return $hostname;
-        }
-
-        $hostname = sprintf('%s.rockfin.com', $hostname);
-        if ($hostname !== gethostbyname($hostname)) {
-            return $hostname;
-        }
-
-        return null;
     }
 
     /**

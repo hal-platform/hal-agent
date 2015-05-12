@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright ©2014 Quicken Loans Inc. All rights reserved. Trade Secret,
+ * @copyright ©2015 Quicken Loans Inc. All rights reserved. Trade Secret,
  *    Confidential and Proprietary. Any dissemination outside of Quicken Loans
  *    is strictly prohibited.
  */
@@ -12,7 +12,10 @@ use QL\Hal\Core\Repository\EnvironmentRepository;
 use QL\Hal\Core\Repository\ServerRepository;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
+use QL\Hal\Agent\Push\HostnameValidatorTrait;
 use QL\Hal\Agent\Remoting\SSHSessionManager;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Agent\Utility\SortingHelperTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,10 +27,12 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class VerifyServerConnectionsCommand extends Command
+class VerifyServerConnectionsCommand extends Command implements OutputAwareInterface
 {
     use CommandTrait;
     use FormatterTrait;
+    use HostnameValidatorTrait;
+    use OutputAwareTrait;
     use SortingHelperTrait;
 
     /**
@@ -39,7 +44,7 @@ class VerifyServerConnectionsCommand extends Command
 +-------------+----------+-----------------------------------------------------+
 STDOUT;
     const TABLE_ROW = <<<STDOUT
-| %s | %s | %s |
+| %s | %s   | %s |
 STDOUT;
     const TABLE_SEPARATOR = <<<STDOUT
 +-------------+----------+-----------------------------------------------------+
@@ -76,24 +81,32 @@ HELP;
     private $sshManager;
 
     /**
+     * @type string
+     */
+    private $remoteUser;
+
+    /**
      * @param string $name
      * @param ServerRepository $serverRepo
      * @param EnvironmentRepository $environmentRepo
      * @param SSHSessionManager $sshManager
+     * @param string $remoteUser
      */
     public function __construct(
         $name,
         ServerRepository $serverRepo,
         EnvironmentRepository $environmentRepo,
-        SSHSessionManager $sshManager
+        SSHSessionManager $sshManager,
+        $remoteUser
     ) {
         parent::__construct($name);
 
         $this->serverRepo = $serverRepo;
         $this->environmentRepo = $environmentRepo;
         $this->sshManager = $sshManager;
-    }
 
+        $this->remoteUser = $remoteUser;
+    }
 
     /**
      * Configure the command
@@ -124,6 +137,8 @@ HELP;
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->setOutput($output);
+
         $environmentName = $input->getArgument('ENVIRONMENT_NAME') ?: '';
         $environment = null;
 
@@ -141,12 +156,39 @@ HELP;
             return $this->failure($output, 2);
         }
 
+        $output->writeln('');
+        $output->writeln(sprintf('Connecting as user: <comment>%s</comment>', $this->remoteUser));
+        if ($environment) {
+            $output->writeln(sprintf('Environment: <comment>%s</comment>', $environment->getKey()));
+        }
+
         $environments = $this->sortServersIntoEnvironments($servers);
 
         $output->write(self::TABLE_HEADER, true);
         foreach ($environments as $envName => $env) {
             foreach ($env as $server) {
-                $row = $this->buildRow($server->getEnvironment()->getKey(), true, $server->getName());
+
+                if ($server->getType() !== 'rsync') {
+                    $row = $this->buildRow($server->getEnvironment()->getKey(), sprintf('type: %s', $server->getType()));
+                    $output->writeln($row);
+                    continue;
+                }
+
+                $serverName = $server->getName();
+                $resolved = $this->validateHostname($serverName);
+
+                if ($resolved === null) {
+                    $success = false;
+                    $serverName = sprintf('cannot_resolve: %s', $serverName);
+
+                } else {
+                    $success = $this->attemptConnection($resolved);
+                    if ($serverName !== $resolved) {
+                        $serverName = sprintf('%s -> %s', $serverName, $resolved);
+                    }
+                }
+
+                $row = $this->buildRow($server->getEnvironment()->getKey(), $serverName, $success);
                 $output->writeln($row);
             }
 
@@ -157,20 +199,46 @@ HELP;
     }
 
     /**
+     * @param string $serverName
+     *
+     * @return bool
+     */
+    private function attemptConnection($serverName)
+    {
+        if (!$serverName) {
+            return false;
+        }
+
+        $session = $this->sshManager->createSession($this->remoteUser, $serverName);
+        if ($session) {
+            $this->sshManager->disconnectAll();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * @param string $env
-     * @param string $status
      * @param string $hostname
+     * @param bool|null $status
      *
      * @return string
      */
-    private function buildRow($env, $status, $hostname)
+    private function buildRow($env, $hostname, $status = null)
     {
-        $display = $status ? '<info>PASS</info>' : '<error>FAIL</error>';
-        $display = sprintf('[ %s ]', $display);
+        if ($status === null) {
+            $display = '<comment>SKIP</comment>';
+        } else {
+            $display = $status ? '<info>PASS</info>' : '<error>FAIL</error>';
+        }
+
+        $display = sprintf('[%s]', $display);
+
         return sprintf(
             self::TABLE_ROW,
             str_pad($env, 11),
-            str_pad($display, 8),
+            $display,
             str_pad($hostname, 51)
         );
     }
