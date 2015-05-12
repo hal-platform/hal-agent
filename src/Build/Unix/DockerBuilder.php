@@ -328,7 +328,8 @@ SHELL;
         $prefix = implode(' ', $prefix);
 
         foreach ($commands as $command) {
-            $actual = sprintf(self::DOCKER_SHELL, $command);
+            $escaped = escapeshellarg($command);
+            $actual = sprintf(self::DOCKER_SHELL, $escaped);
 
             $this->status('Running user build command inside Docker container', self::SECTION);
 
