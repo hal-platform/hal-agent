@@ -15,12 +15,23 @@ class ExporterTest extends PHPUnit_Framework_TestCase
     public $logger;
     public $syncer;
     public $remoter;
+    public $command;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->syncer = Mockery::mock('QL\Hal\Agent\Remoting\FileSyncManager');
         $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+
+        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->command
+            ->shouldReceive('withIsInteractive')
+            ->andReturn($this->command)
+            ->byDefault();
+        $this->command
+            ->shouldReceive('withSanitized')
+            ->andReturn($this->command)
+            ->byDefault();
     }
 
     public function testCreateTempBuildDirFails()
@@ -30,10 +41,16 @@ class ExporterTest extends PHPUnit_Framework_TestCase
             ->with('failure', Exporter::ERR_PREPARE_BUILD_DIR)
             ->once();
 
-        $expectedCommand = 'if [ -d "/remote/path" ]; then rm -r "/remote/path"; fi; mkdir -p "/remote/path"';
+        $expectedCommand = 'if [ -d "/remote/path" ]; then \rm -r "/remote/path"; fi; mkdir -p "/remote/path"';
+
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->with('sshuser', 'server', $expectedCommand, [], false)
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', $expectedCommand)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(1)
             ->andReturn(false);
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
@@ -56,8 +73,14 @@ class ExporterTest extends PHPUnit_Framework_TestCase
             ])->once();
 
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(1)
             ->andReturn(true);
+
         $this->syncer
             ->shouldReceive('buildOutgoingScp')
             ->andReturn(['scp', 'param1']);
@@ -96,8 +119,14 @@ class ExporterTest extends PHPUnit_Framework_TestCase
             ])->once();
 
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(1)
             ->andReturn(true);
+
         $this->syncer
             ->shouldReceive('buildOutgoingScp')
             ->andReturn(['scp', 'param1']);
@@ -132,7 +161,12 @@ class ExporterTest extends PHPUnit_Framework_TestCase
     public function testSuccess()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(1)
             ->andReturn(true);
         $this->syncer
             ->shouldReceive('buildOutgoingScp')

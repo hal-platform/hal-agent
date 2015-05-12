@@ -17,12 +17,28 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+
+        $this->command
+            ->shouldReceive('withIsInteractive')
+            ->with(true)
+            ->andReturn($this->command);
     }
 
     public function testSuccess()
     {
+        $this->command
+            ->shouldReceive('withSanitized')
+            ->with('command')
+            ->andReturn($this->command)
+            ->once();
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
             ->andReturn(true);
 
         $serverCommand = new ServerCommand($this->remoter);
@@ -32,8 +48,18 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
 
     public function testFail()
     {
+        $this->command
+            ->shouldReceive('withSanitized')
+            ->with('command')
+            ->andReturn($this->command)
+            ->once();
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
             ->andReturn(false);
 
         $serverCommand = new ServerCommand($this->remoter);
@@ -48,19 +74,33 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             'command2'
         ];
 
-        $env = [];
-        $prefixCommand = 'cd "path" &&';
+        $env = ['HERP' => 'DERP'];
+
+        $this->command
+            ->shouldReceive('withSanitized')
+            ->with('command1')
+            ->andReturn($this->command)
+            ->times(1);
+        $this->command
+            ->shouldReceive('withSanitized')
+            ->with('command2')
+            ->andReturn($this->command)
+            ->times(1);
 
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->with('sshuser', 'server', 'command1', $env, true, $prefixCommand)
-            ->andReturn(true)
-            ->once();
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command1'])
+            ->andReturn($this->command);
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->with('sshuser', 'server', 'command2', $env, true, $prefixCommand)
-            ->andReturn(false)
-            ->once();
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command2'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->with($this->command, $env, [true])
+            ->andReturn(true, false);
 
         $serverCommand = new ServerCommand($this->remoter);
         $success = $serverCommand('sshuser', 'server', 'path', $commands, $env);

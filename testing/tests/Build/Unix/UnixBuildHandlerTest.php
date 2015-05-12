@@ -94,7 +94,7 @@ Validating unix configuration
 Exporting files to build server
 Running build command
 Importing files from build server
-Cleaning up build server
+Cleaning up remote unix build server
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());

@@ -330,8 +330,8 @@ SHELL;
 
             $this->status('Running user build command inside Docker container');
 
-            $context = $this->remoter
-                ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $command])
+            $context = $this->buildRemoter
+                ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
                 ->withIsInteractive(true)
                 ->withSanitized($command);
 
@@ -402,7 +402,7 @@ SHELL;
     private function runBuildRemote($command, $customMessage = '')
     {
         if (!$command instanceof CommandContext) {
-            $command = $this->remoter
+            $command = $this->buildRemoter
                 ->createCommand($this->remoteUser, $this->remoteServer, $command)
                 ->withIsInteractive(true);
         }

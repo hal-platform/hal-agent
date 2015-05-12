@@ -74,10 +74,10 @@ class SSHProcess
      *
      * @return bool
      */
-    public function __invoke($remoteUser, $remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
+    public function DEADDEAD($remoteUser, $remoteServer, $command, array $env, $isLoggingEnabled = true, $prefixCommand = null, $customMessage = '')
     {
         if ($prefixCommand) {
-            $command = $command . ' ' . $prefixCommand;
+            $command = $prefixCommand . ' ' . $command;
         }
 
         $context = $this->createCommand($remoteUser, $remoteServer, $command);
@@ -115,7 +115,7 @@ class SSHProcess
         // timed out, bad exit
         if ($ssh->isTimeout() || $ssh->getExitStatus()) {
             if ($alwaysLog) {
-                $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $message;
+                $errorMessage = $ssh->isTimeout() ? self::ERR_COMMAND_TIMEOUT : $errorMessage;
                 $this->logLastCommandAsError($errorMessage, $command);
             }
 

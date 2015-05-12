@@ -27,7 +27,8 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), [
                 'maxTimeout' => '5 seconds',
-                'output' => 'test-output'
+                'output' => 'test-output',
+                'errorOutput' => 'err-output'
             ])->once();
 
         $this->syncer
@@ -37,7 +38,8 @@ class ImporterTest extends PHPUnit_Framework_TestCase
         $ex = Mockery::mock('Symfony\Component\Process\Exception\ProcessTimedOutException');
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => null,
-            'getOutput' => 'test-output'
+            'getOutput' => 'test-output',
+            'getErrorOutput' => 'err-output'
         ])->makePartial();
         $process
             ->shouldReceive('run')

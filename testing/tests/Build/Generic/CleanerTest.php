@@ -21,12 +21,18 @@ class CleanerTest extends PHPUnit_Framework_TestCase
 
     public function testRunCleaner()
     {
-        $expectedCommand = 'rm -r "/path"';
+        $expectedCommand = ['\rm -rf', '"/path"'];
 
+        $command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->with('sshuser', 'server', $expectedCommand, [], false)
-            ->andReturn(true);
+            ->shouldReceive('createCommand')
+            ->with('sshuser', 'server', $expectedCommand)
+            ->andReturn($command);
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->with($command, [], [false, 'Clean remote build server'])
+            ->andReturn(true)
+            ->once();
 
         $cleaner = new Cleaner($this->remoter);
 

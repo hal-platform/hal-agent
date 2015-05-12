@@ -15,6 +15,8 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
     public $logger;
     public $remoter;
     public $buildRemoter;
+    public $command;
+    public $buildCommand;
     public $dockerSourcesPath;
 
     public function setUp()
@@ -22,14 +24,31 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
         $this->buildRemoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+
+        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+
+        $this->buildCommand = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->buildCommand
+            ->shouldReceive('withIsInteractive')
+            ->andReturn($this->buildCommand)
+            ->byDefault();
+        $this->buildCommand
+            ->shouldReceive('withSanitized')
+            ->andReturn($this->buildCommand)
+            ->byDefault();
+
         $this->dockerSourcesPath = '/docker-images';
     }
 
     public function testSuccess()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(7)
+            ->shouldReceive('createCommand')
+            ->times(8)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(8)
             ->andReturn(true);
         $this->remoter
             ->shouldReceive('getLastOutput')
@@ -37,7 +56,11 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
             ->andReturn('owner', 'group', 'container-name');
 
         $this->buildRemoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(2)
+            ->andReturn($this->buildCommand);
+        $this->buildRemoter
+            ->shouldReceive('run')
             ->times(2)
             ->andReturn(true);
 
@@ -50,12 +73,17 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
     public function testFailAtSanityCheck()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->command);
+
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
             ->times(1)
             ->andReturn(false);
 
         $this->buildRemoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('run')
             ->never();
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
@@ -66,15 +94,25 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testFailAtBuildImage()
     {
-        $expectedCommand = 'docker build --tag="hal9000/unix" "/docker-images/unix"';
+        $expectedCommand = ['docker build', '--tag="hal9000/unix"', '"/docker-images/unix"'];
+
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(1)
+            ->shouldReceive('createCommand')
+            ->times(2)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(2)
             ->andReturn(true);
+
         $this->buildRemoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
             ->times(1)
-            ->with('builduser', 'buildserver', $expectedCommand, [], true, null, Mockery::any())
+            ->with('builduser', 'buildserver', $expectedCommand)
+            ->andReturn($this->buildCommand);
+        $this->buildRemoter
+            ->shouldReceive('run')
+            ->times(1)
             ->andReturn(false);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
@@ -85,34 +123,41 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testFailAtGetMeta()
     {
-        $expectedCommand = 'ls -ldn buildpath | awk \'{print $3}\'';
+        $expectedCommand1 = ['ls -ldn', 'buildpath', '| awk \'{print $3}\''];
+        $expectedCommand2 = ['ls -ldn', 'buildpath', '| awk \'{print $4}\''];
 
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->andReturn(true)
+            ->shouldReceive('createCommand')
+            ->times(2)
+            ->andReturn($this->command)
             ->ordered();
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->andReturn(true, true, true, false);
+
         $this->buildRemoter
-            ->shouldReceive('__invoke')
-            ->times(1)
+            ->shouldReceive('createCommand')
+            ->andReturn($this->buildCommand);
+        $this->buildRemoter
+            ->shouldReceive('run')
             ->andReturn(true);
 
         // meta
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->with('builduser', 'buildserver', $expectedCommand, [], false, null, Mockery::any())
-            ->andReturn(true)
+            ->shouldReceive('createCommand')
+            ->with('builduser', 'buildserver', $expectedCommand1)
+            ->andReturn($this->command)
+            ->ordered();
+        $this->remoter
+            ->shouldReceive('createCommand')
+            ->with('builduser', 'buildserver', $expectedCommand2)
+            ->andReturn($this->command)
             ->ordered();
         $this->remoter
             ->shouldReceive('getLastOutput')
             ->times(1)
             ->andReturn('builduser-owner');
-        $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->andReturn(false)
-            ->ordered();
+
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
 
@@ -122,7 +167,7 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testFailAtStartContainer()
     {
-        $expectedCommand = implode(' ', [
+        $expectedCommand = [
             'docker run',
             '--detach=true',
             '--tty=true',
@@ -132,24 +177,28 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
             '--env HAL_DERP',
             'hal9000/unix',
             'bash -l'
-        ]);
+        ];
 
+        // 2 - sanity check, 2 - meta
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->andReturn(true)
+            ->shouldReceive('createCommand')
+            ->times(4)
+            ->andReturn($this->command)
             ->ordered();
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(5)
+            ->andReturn(true, true, true, true, false);
         $this->buildRemoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->buildCommand);
+        $this->buildRemoter
+            ->shouldReceive('run')
             ->times(1)
             ->andReturn(true);
 
         // meta
-        $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(2)
-            ->andReturn(true)
-            ->ordered();
         $this->remoter
             ->shouldReceive('getLastOutput')
             ->times(2)
@@ -157,10 +206,10 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         // start
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
             ->times(1)
-            ->with('builduser', 'buildserver', $expectedCommand, ['HAL_DERP' => 'testing'], false, null, Mockery::any())
-            ->andReturn(false)
+            ->with('builduser', 'buildserver', $expectedCommand)
+            ->andReturn($this->command)
             ->ordered();
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
@@ -171,38 +220,44 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testFailAtRunCommand()
     {
-        $expectedPrefix = implode(' ', [
-            'docker exec',
-            '"container-name"'
-        ]);
+        $expectedCommand = [
+            'docker exec "container-name"',
+            "bash -l -c 'command'"
+        ];
 
-        $expectedCommand = "sh -c 'command'";
-
-        // build image
-        $this->buildRemoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->andReturn(true)
-            ->ordered();
-
-        // sanity, meta, start
+        // 2 - sanity check, 2 - meta, 1 - start, 3 cleanup
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(7)
-            ->andReturn(true)
-            ->ordered();
+            ->shouldReceive('createCommand')
+            ->times(8)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(8)
+            ->andReturn(true);
         $this->remoter
             ->shouldReceive('getLastOutput')
             ->times(3)
             ->andReturn('builduser-owner', 'builduser-group', 'container-name');
 
+        // build image
+        $this->buildRemoter
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->buildCommand)
+            ->ordered();
+
         // run
         $this->buildRemoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
             ->times(1)
-            ->with('builduser', 'buildserver', $expectedCommand, [], true, $expectedPrefix, Mockery::any())
-            ->andReturn(false)
+            ->with('builduser', 'buildserver', $expectedCommand)
+            ->andReturn($this->buildCommand)
             ->ordered();
+
+        $this->buildRemoter
+            ->shouldReceive('run')
+            ->times(2)
+            ->andReturn(true, false);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
         $action->disableShutdownHandler();
@@ -213,46 +268,49 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testMultipleCommandsAreRun()
     {
-        $expectedPrefix = implode(' ', [
-            'docker exec',
-            '"container-name"'
-        ]);
+        $prefix = 'docker exec "container-name"';
+        $expectedCommand1 = [$prefix, "bash -l -c 'command1'"];
+        $expectedCommand2 = [$prefix, "bash -l -c 'command2'"];
 
-        $expectedCommand1 = "sh -c 'command1'";
-        $expectedCommand2 = "sh -c 'command2'";
-
-        // build image
-        $this->buildRemoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->andReturn(true)
-            ->ordered();
-
-        // sanity, meta, start
+        // 2 - sanity check, 2 - meta, 1 - start, 3 cleanup
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->times(7)
-            ->andReturn(true)
-            ->ordered();
+            ->shouldReceive('createCommand')
+            ->times(8)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(8)
+            ->andReturn(true);
         $this->remoter
             ->shouldReceive('getLastOutput')
             ->times(3)
             ->andReturn('builduser-owner', 'builduser-group', 'container-name');
 
+        // build image
+        $this->buildRemoter
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->andReturn($this->buildCommand)
+            ->ordered();
+
         // run
         $this->buildRemoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
             ->times(1)
-            ->with('builduser', 'buildserver', $expectedCommand1, [], true, $expectedPrefix, Mockery::any())
-            ->andReturn(true)
+            ->with('builduser', 'buildserver', $expectedCommand1)
+            ->andReturn($this->buildCommand)
+            ->ordered();
+        $this->buildRemoter
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('builduser', 'buildserver', $expectedCommand2)
+            ->andReturn($this->buildCommand)
             ->ordered();
 
         $this->buildRemoter
-            ->shouldReceive('__invoke')
-            ->times(1)
-            ->with('builduser', 'buildserver', $expectedCommand2, [], true, $expectedPrefix, Mockery::any())
-            ->andReturn(true)
-            ->ordered();
+            ->shouldReceive('run')
+            ->times(3)
+            ->andReturn(true);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
         $action->disableShutdownHandler();

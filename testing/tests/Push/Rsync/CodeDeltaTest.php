@@ -20,13 +20,23 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess', ['__invoke' => false]);
+        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
         $this->commitApi = Mockery::mock('Github\Api\Repository\Commits');
         $this->parser = Mockery::mock('Symfony\Component\Yaml\Parser');
     }
 
     public function testCommandNotSuccessfulReturnsFalse()
     {
+        $this->remoter
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'hostname', ['cd "path"', '&&', 'cat .hal9000.push.yml'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->andReturn(false);
+
         $action = new CodeDelta($this->logger, $this->remoter, $this->parser, $this->commitApi);
         $success = $action('sshuser', 'hostname', 'path', []);
 
@@ -35,6 +45,15 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
 
     public function testOutputNotParseableReturnsFalse()
     {
+        $this->remoter
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'hostname', ['cd "path"', '&&', 'cat .hal9000.push.yml'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->andReturn(true);
+
         $this->remoter
             ->shouldReceive('getLastOutput')
             ->andReturn('bad-yaml');
@@ -52,8 +71,14 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
     public function testSourceNotParseableReturnsDefaultContext()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'hostname', ['cd "path"', '&&', 'cat .hal9000.push.yml'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
             ->andReturn(true);
+
         $this->remoter
             ->shouldReceive('getLastOutput')
             ->andReturn('test-output');
@@ -94,7 +119,12 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
     public function testCodeRedeployedMessage()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'hostname', ['cd "path"', '&&', 'cat .hal9000.push.yml'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
             ->andReturn(true);
         $this->remoter
             ->shouldReceive('getLastOutput')
@@ -135,7 +165,12 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
     public function testSourceParseableReturnsFullContext()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'hostname', ['cd "path"', '&&', 'cat .hal9000.push.yml'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
             ->andReturn(true);
         $this->remoter
             ->shouldReceive('getLastOutput')

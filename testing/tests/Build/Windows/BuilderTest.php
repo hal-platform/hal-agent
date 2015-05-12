@@ -13,16 +13,34 @@ use PHPUnit_Framework_TestCase;
 class BuilderTest extends PHPUnit_Framework_TestCase
 {
     public $remoter;
+    public $command;
 
     public function setUp()
     {
         $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+
+        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->command
+            ->shouldReceive('withIsInteractive')
+            ->andReturn($this->command)
+            ->byDefault();
+        $this->command
+            ->shouldReceive('withSanitized')
+            ->andReturn($this->command)
+            ->byDefault();
     }
 
     public function testSuccess()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(1)
+            ->with($this->command, [], [true, Builder::EVENT_MESSAGE])
             ->andReturn(true);
 
         $builder = new Builder($this->remoter);
@@ -33,7 +51,14 @@ class BuilderTest extends PHPUnit_Framework_TestCase
     public function testFail()
     {
         $this->remoter
-            ->shouldReceive('__invoke')
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(1)
+            ->with($this->command, [], [true, Builder::EVENT_MESSAGE])
             ->andReturn(false);
 
         $builder = new Builder($this->remoter);
@@ -49,18 +74,22 @@ class BuilderTest extends PHPUnit_Framework_TestCase
         ];
 
         $env = [];
-        $prefixCommand = 'cd "path" &&';
 
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->with('sshuser', 'server', 'command1', $env, true, $prefixCommand, Builder::EVENT_MESSAGE)
-            ->andReturn(true)
-            ->once();
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command1'])
+            ->andReturn($this->command);
         $this->remoter
-            ->shouldReceive('__invoke')
-            ->with('sshuser', 'server', 'command2', $env, true, $prefixCommand, Builder::EVENT_MESSAGE)
-            ->andReturn(false)
-            ->once();
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with('sshuser', 'server', ['cd "path" &&', 'command2'])
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('run')
+            ->times(2)
+            ->with($this->command, [], [true, Builder::EVENT_MESSAGE])
+            ->andReturn(true, false);
 
         $builder = new Builder($this->remoter);
         $success = $builder('sshuser', 'server', 'path', $commands, $env);

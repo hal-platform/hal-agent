@@ -30,13 +30,18 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
         $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
-        $success = $remoter('user', 'server', 'command', [], false, '');
+        $command = new CommandContext('user', 'server', 'command');
+        $success = $remoter->run($command, [], [false, '']);
         $this->assertSame(false, $success);
     }
 
     public function testCommandTimeout()
     {
-        $session = Mockery::mock('Net_SSH2', ['disconnect' => null]);
+        $session = Mockery::mock('Net_SSH2', [
+            'disconnect' => null,
+            'getStdError' => 'err-output',
+            'getExitStatus' => 0
+        ]);
         $this->ssh
             ->shouldReceive('createSession')
             ->with('user', 'server')
@@ -48,7 +53,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
             ->once();
         $session
             ->shouldReceive('enablePTY')
-            ->once();
+            ->never();
         $session
             ->shouldReceive('exec')
             ->with('command')
@@ -64,7 +69,8 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
         $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
-        $success = $remoter('user', 'server', 'command', [], false, '');
+        $command = new CommandContext('user', 'server', 'command');
+        $success = $remoter->run($command, [], [false, '']);
         $this->assertSame(false, $success);
     }
 
@@ -98,7 +104,8 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
         $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
-        $success = $remoter('user', 'server', 'deployscript', [], true, '');
+        $command = new CommandContext('user', 'server', 'deployscript');
+        $success = $remoter->run($command, [], [true, '']);
         $this->assertSame(false, $success);
     }
 
@@ -137,13 +144,19 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
         $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
-        $success = $remoter('user', 'server', 'deployscript', [], true, 'prefix cmd &&', 'custom msg');
+        $command = new CommandContext('user', 'server', ['prefix cmd &&', 'deployscript']);
+        $command->withSanitized('deployscript');
+        $success = $remoter->run($command, [], [true, 'custom msg']);
         $this->assertSame(false, $success);
     }
 
     public function testSuccessWithLogging()
     {
-        $session = Mockery::mock('Net_SSH2', ['disconnect' => null]);
+        $session = Mockery::mock('Net_SSH2', [
+            'disconnect' => null,
+            'getStdError' => '',
+            'getExitStatus' => 0
+        ]);
         $this->ssh
             ->shouldReceive('createSession')
             ->with('user', 'server')
@@ -168,13 +181,20 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
         $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
-        $success = $remoter('user', 'server', 'deployscript', [], true, 'prefix cmd &&', 'custom msg');
+        $command = new CommandContext('user', 'server', ['prefix cmd &&', 'deployscript']);
+        $command->withSanitized('deployscript');
+        $success = $remoter->run($command, [], [true, 'custom msg']);
         $this->assertSame(true, $success);
     }
 
     public function testSuccess()
     {
-        $session = Mockery::mock('Net_SSH2', ['disconnect' => null]);
+        $session = Mockery::mock('Net_SSH2', [
+            'disconnect' => null,
+            'getStdError' => '',
+            'getExitStatus' => 0
+        ]);
+
         $this->ssh
             ->shouldReceive('createSession')
             ->with('user', 'server')
@@ -192,7 +212,9 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
         $remoter = new SSHProcess($this->logger, $this->ssh, 5);
 
-        $success = $remoter('user', 'server', 'command', [], false, '');
+        $command = new CommandContext('user', 'server', ['command']);
+        $command->withSanitized('deployscript');
+        $success = $remoter->run($command, [], [false]);
         $this->assertSame(true, $success);
     }
 }
