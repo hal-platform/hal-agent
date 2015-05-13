@@ -7,10 +7,17 @@
 
 namespace QL\Hal\Agent\Command\Docker;
 
+use Doctrine\ORM\EntityManagerInterface;
+use MCP\DataType\Time\Clock;
+use QL\Hal\Core\Entity\AuditLog;
+use QL\Hal\Core\Entity\User;
+use QL\Hal\Core\Repository\AuditLogRepository;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
 use QL\Hal\Agent\Remoting\FileSyncManager;
 use QL\Hal\Agent\Github\ArchiveApi;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -22,10 +29,11 @@ use Symfony\Component\Process\ProcessBuilder;
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class UpdateSourcesCommand extends Command
+class UpdateSourcesCommand extends Command implements OutputAwareInterface
 {
     use CommandTrait;
     use FormatterTrait;
+    use OutputAwareTrait;
 
     const STATIC_HELP = <<<'HELP'
 <fg=cyan>Exit codes:</fg=cyan>
@@ -62,6 +70,16 @@ HELP;
     private $archiveApi;
 
     /**
+     * @type EntityManagerInterface
+     */
+    private $em;
+
+    /**
+     * @type Clock
+     */
+    private $clock;
+
+    /**
      * @type string
      */
     private $localTemp;
@@ -80,6 +98,8 @@ HELP;
      * @param FileSyncManager $fileSyncManager
      * @param ProcessBuilder $processBuilder
      * @param ArchiveApi $archiveApi
+     * @param EntityManagerInterface $em
+     * @param Clock $clock
      *
      * @param string $localTemp
      * @param string $unixBuildUser
@@ -94,10 +114,14 @@ HELP;
         FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
         ArchiveApi $archiveApi,
+        EntityManagerInterface $em,
+        Clock $clock,
+
         $localTemp,
         $unixBuildUser,
         $unixBuildServer,
         $unixDockerSourcePath,
+
         $defaultRepository,
         $defaultReference
     ) {
@@ -106,6 +130,8 @@ HELP;
         $this->fileSyncManager = $fileSyncManager;
         $this->processBuilder = $processBuilder;
         $this->archiveApi = $archiveApi;
+        $this->em = $em;
+        $this->clock = $clock;
 
         $this->localTemp = $localTemp;
         $this->unixBuildUser = $unixBuildUser;
@@ -143,25 +169,26 @@ HELP;
     }
 
     /**
-     * Run the command
-     *
      * @param InputInterface $input
      * @param OutputInterface $output
+     *
      * @return null
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->setOutput($output);
+
         $repository = $input->getArgument('GIT_REPOSITORY') ?: $this->defaultRepository;
         $reference = $input->getArgument('GIT_REFERENCE') ?: $this->defaultReference;
 
-        $this->status($output, sprintf('GitHub Repository: %s', $repository));
-        $this->status($output, sprintf('GitHub Reference: %s', $reference));
+        $this->status(sprintf('Repository: <info>%s</info>', $repository), 'GitHub');
+        $this->status(sprintf('Reference: <info>%s</info>', $reference), 'GitHub');
 
         $archive = sprintf('%s/docker-images.tar.gz', rtrim($this->localTemp, '/'));
         $tempDir = sprintf('%s/docker-images', rtrim($this->localTemp, '/'));
 
-        $this->status($output, sprintf('Archive Download: %s', $archive));
-        $this->status($output, sprintf('Temp Scratch: %s', $tempDir));
+        $this->status(sprintf('Download: <info>%s</info>', $archive), 'Temp');
+        $this->status(sprintf('Directory: <info>%s</info>', $tempDir), 'Temp');
 
         if (!$this->sanityCheck($output, $this->localTemp)) {
             return $this->failure($output, 1);
@@ -198,6 +225,9 @@ HELP;
             $this->cleanupArtifacts($tempDir, $archive);
             return $this->failure($output, 6);
         }
+
+        // Audit
+        $this->audit($repository, $reference);
 
         $this->cleanupArtifacts($tempDir, $archive);
         return $this->success($output, 'Dockerfiles refreshed!');
@@ -388,13 +418,32 @@ HELP;
     }
 
     /**
-     * @param OutputInterface $output
-     * @param string $message
-     * @return null
+     * @param string $repository
+     * @param string $reference
+     *
+     * @return void
      */
-    private function status(OutputInterface $output, $message)
+    private function audit($repository, $reference)
     {
-        $message = sprintf('<comment>%s</comment>', $message);
-        $output->writeln($message);
+        if (!$user = $this->em->find(User::CLASS, 9000)) {
+            return;
+        }
+
+        $suffix = (1 === preg_match('/^([a-f0-9]{40})$/', $reference)) ? 'commit' : 'tree';
+        $data = [
+            'repository' => $repository,
+            'reference' => $reference,
+            'github' => sprintf('http://git/%s/%s/%s', $repository, $suffix, $reference)
+        ];
+
+        $log = new AuditLog;
+        $log->setUser($user);
+        $log->setRecorded($this->clock->read());
+        $log->setEntity('DockerImages');
+        $log->setAction('UPDATE');
+        $log->setData(json_encode($data));
+
+        $this->em->persist($log);
+        $this->em->flush();
     }
 }

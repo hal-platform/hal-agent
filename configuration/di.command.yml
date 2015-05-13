@@ -138,6 +138,8 @@ services:
             - @ssh.filemanager
             - @utility.process.builder= # = signifies a prototype service
             - @github.archive
+            - @doctrine.em
+            - @clock
             - %environment.temp%
             - %build.unix.remoteUser%
             - %build.unix.server%
