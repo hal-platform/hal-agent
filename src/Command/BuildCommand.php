@@ -181,6 +181,7 @@ class BuildCommand extends Command implements OutputAwareInterface
         $this->artifacts = [];
 
         $this->enableShutdownHandler = true;
+        $this->jobStartTime = microtime(true);
     }
 
     /**
@@ -320,6 +321,8 @@ class BuildCommand extends Command implements OutputAwareInterface
         }
 
         $this->cleanup();
+        $this->outputMemoryUsage($output);
+        $this->outputTimer($output);
 
         return $exitCode;
     }
@@ -345,7 +348,10 @@ class BuildCommand extends Command implements OutputAwareInterface
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['build']);
-        $this->status(sprintf('Found build: %s', $properties['build']->getId()), self::SECTION_START);
+        $foundApp = sprintf('Application: <info>%s</info>', $properties['build']->getRepository()->getName());
+        $foundBuild = sprintf('Found build: <info>%s</info>', $properties['build']->getId());
+        $this->status($foundApp, self::SECTION_START);
+        $this->status($foundBuild, self::SECTION_START);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {

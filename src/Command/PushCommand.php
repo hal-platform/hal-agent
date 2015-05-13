@@ -167,6 +167,7 @@ class PushCommand extends Command implements OutputAwareInterface
         $this->artifacts = [];
 
         $this->enableShutdownHandler = true;
+        $this->jobStartTime = microtime(true);
     }
 
     /**
@@ -304,6 +305,8 @@ class PushCommand extends Command implements OutputAwareInterface
         }
 
         $this->cleanup();
+        $this->outputMemoryUsage($output);
+        $this->outputTimer($output);
 
         return $exitCode;
     }
@@ -331,7 +334,10 @@ class PushCommand extends Command implements OutputAwareInterface
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['push']);
-        $this->status(sprintf('Found push: %s', $properties['push']->getId()), self::SECTION_START);
+        $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->getRepository()->getName());
+        $foundPush = sprintf('Found push: <info>%s</info>', $properties['push']->getId());
+        $this->status($foundApp, self::SECTION_START);
+        $this->status($foundPush, self::SECTION_START);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {

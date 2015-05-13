@@ -48,7 +48,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     const EVENT_MESSAGE = 'Run build command';
     const CONTAINER_WORKING_DIR = '/build';
     const DOCKER_SHELL = <<<SHELL
-bash -l -c '%s'
+bash -l -c %s
 SHELL;
 
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source';
