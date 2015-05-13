@@ -98,6 +98,15 @@ Command            | Description
 `bin/worker-build` | Bash script for builds
 `bin/worker-push`  | Bash script for pushes
 
+### Crontab example
+```
+# Hal-agent Push Worker
+* * * * * /var/hal9000agent/bin/worker-push
+
+# Hal-agent Build Worker
+* * * * * /var/hal9000agent/bin/worker-build
+```
+
 ## Deployment
 
 `bin/deploy` must be run when deploying to an environment, as this copies environment specific settings to `config.env.yml`.

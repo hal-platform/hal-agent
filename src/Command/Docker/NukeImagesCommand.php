@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * ```
  * docker rmi $(docker images | grep "^<none>" | awk '{print $3}')
  * ```
- *
+ * docker images --filter "dangling=true" | xargs docker rmi
  *
  * > sudo du -sh /var/lib/docker
  * 1.3G    /var/lib/docker
