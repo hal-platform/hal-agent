@@ -328,8 +328,7 @@ SHELL;
         $prefix = implode(' ', $prefix);
 
         foreach ($commands as $command) {
-            $escaped = escapeshellarg($command);
-            $actual = sprintf(self::DOCKER_SHELL, $escaped);
+            $actual = $this->dockerEscaped($command);
 
             $this->status('Running user build command inside Docker container', self::SECTION);
 
@@ -363,7 +362,7 @@ SHELL;
         $chown = [
             $this->docker('exec'),
             sprintf('"%s"', $containerName),
-            sprintf(self::DOCKER_SHELL, $chown)
+            $this->dockerEscaped($chown)
         ];
 
         $kill = [
@@ -425,6 +424,17 @@ SHELL;
         }
 
         return 'docker ' . $command;
+    }
+
+    /**
+     * @param string $command
+     *
+     * @return string
+     */
+    private function dockerEscaped($command)
+    {
+        $escaped = escapeshellarg($command);
+        return sprintf(self::DOCKER_SHELL, $escaped);
     }
 
     /**
