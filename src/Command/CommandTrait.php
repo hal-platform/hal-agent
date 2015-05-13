@@ -120,7 +120,7 @@ trait CommandTrait
 
         $elapsed = '';
         if ($elapsedSeconds > 59) {
-            $elapsed = sprintf('%d minutes', floor($elapsedSeconds / 60));
+            $elapsed = sprintf('%d minutes ', floor($elapsedSeconds / 60));
         }
 
         $seconds = $elapsedSeconds % 60;
@@ -128,7 +128,7 @@ trait CommandTrait
             $elapsed .= sprintf('%d seconds', $seconds);
         }
 
-        $elapsed = sprintf('[<info>Time Elapsed</info>] %s', $elapsed);
+        $elapsed = sprintf('[<info>Time Elapsed</info>] %s', trim($elapsed));
         $output->writeln($elapsed);
     }
 }
