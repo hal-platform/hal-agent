@@ -35,6 +35,9 @@ services:
     lazy.command.docker.refresh:
         class: 'QL\Hal\Agent\Command\LazyCommand'
         arguments: ['docker:refresh', 'command.docker.refresh', @service_container]
+    lazy.command.docker.status:
+        class: 'QL\Hal\Agent\Command\LazyCommand'
+        arguments: ['docker:status', 'command.docker.status', @service_container]
 
     lazy.command.server.connections:
         class: 'QL\Hal\Agent\Command\LazyCommand'
@@ -146,6 +149,18 @@ services:
             - %docker.source.path%
             - %docker.source.repository%
             - %docker.source.reference%
+    command.docker.status:
+        class: 'QL\Hal\Agent\Command\Docker\CheckStatusCommand'
+        arguments:
+            - 'docker:status'
+            - @ssh.manager
+            - @redis
+            - @clock
+            - %build.unix.remoteUser%
+            - %build.unix.server%
+            - %docker.option.sudo%
+            - %environment.temp%
+            - %build.unix.temp%
 
     command.server.connections:
         class: 'QL\Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
@@ -154,4 +169,6 @@ services:
             - @server.repo
             - @environment.repo
             - @ssh.manager
+            - @redis
+            - @clock
             - %push.rsync.remoteUser%

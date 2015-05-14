@@ -172,7 +172,7 @@ HELP;
      * @param InputInterface $input
      * @param OutputInterface $output
      *
-     * @return null
+     * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {

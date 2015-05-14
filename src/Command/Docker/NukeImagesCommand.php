@@ -9,6 +9,8 @@ namespace QL\Hal\Agent\Command\Docker;
 
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -32,10 +34,11 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class NukeImagesCommand extends Command
+class NukeImagesCommand extends Command implements OutputAwareInterface
 {
     use CommandTrait;
     use FormatterTrait;
+    use OutputAwareTrait;
 
     const STATIC_HELP = <<<'HELP'
 <fg=cyan>Exit codes:</fg=cyan>
@@ -86,10 +89,12 @@ HELP;
      * @param InputInterface $input
      * @param OutputInterface $output
      *
-     * @return null
+     * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->setOutput($output);
+
         $argument = $input->getArgument('SAMPLE_ARG') ?: 'default';
 
         if (false) {

@@ -7,6 +7,8 @@
 
 namespace QL\Hal\Agent\Command\Utility;
 
+use MCP\DataType\Time\Clock;
+use Predis\Client as Predis;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Repository\EnvironmentRepository;
 use QL\Hal\Core\Repository\ServerRepository;
@@ -34,6 +36,8 @@ class VerifyServerConnectionsCommand extends Command implements OutputAwareInter
     use HostnameValidatorTrait;
     use OutputAwareTrait;
     use SortingHelperTrait;
+
+    const REDIS_KEY = 'agent-status:server';
 
     /**
      * This is manually built so we can support incremental table rendering
@@ -81,6 +85,16 @@ HELP;
     private $sshManager;
 
     /**
+     * @type Predis
+     */
+    private $predis;
+
+    /**
+     * @type Clock
+     */
+    private $clock;
+
+    /**
      * @type string
      */
     private $remoteUser;
@@ -90,6 +104,8 @@ HELP;
      * @param ServerRepository $serverRepo
      * @param EnvironmentRepository $environmentRepo
      * @param SSHSessionManager $sshManager
+     * @param Predis $predis
+     * @param Clock $clock
      * @param string $remoteUser
      */
     public function __construct(
@@ -97,6 +113,8 @@ HELP;
         ServerRepository $serverRepo,
         EnvironmentRepository $environmentRepo,
         SSHSessionManager $sshManager,
+        Predis $predis,
+        Clock $clock,
         $remoteUser
     ) {
         parent::__construct($name);
@@ -104,6 +122,8 @@ HELP;
         $this->serverRepo = $serverRepo;
         $this->environmentRepo = $environmentRepo;
         $this->sshManager = $sshManager;
+        $this->predis = $predis;
+        $this->clock = $clock;
 
         $this->remoteUser = $remoteUser;
     }
@@ -133,7 +153,7 @@ HELP;
      * @param InputInterface $input
      * @param OutputInterface $output
      *
-     * @return null
+     * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -163,13 +183,14 @@ HELP;
         }
 
         $environments = $this->sortServersIntoEnvironments($servers);
+        $statuses = [];
 
         $output->write(self::TABLE_HEADER, true);
-        foreach ($environments as $envName => $env) {
+        foreach ($environments as $env) {
             foreach ($env as $server) {
-
+                $envName = $server->getEnvironment()->getKey();
                 if ($server->getType() !== 'rsync') {
-                    $row = $this->buildRow($server->getEnvironment()->getKey(), sprintf('type: %s', $server->getType()));
+                    $row = $this->buildRow($envName, sprintf('type: %s', $server->getType()));
                     $output->writeln($row);
                     continue;
                 }
@@ -188,13 +209,20 @@ HELP;
                     }
                 }
 
-                $row = $this->buildRow($server->getEnvironment()->getKey(), $serverName, $success);
+                $statuses[] = [
+                    'server' => $serverName,
+                    'environment' => $envName,
+                    'status' => $success
+                ];
+
+                $row = $this->buildRow($envName, $serverName, $success);
                 $output->writeln($row);
             }
 
             $output->writeln(self::TABLE_SEPARATOR);
         }
 
+        $this->sendToRedis($statuses);
         return $this->finish($output, 0);
     }
 
@@ -286,5 +314,21 @@ HELP;
 
             return ($envA < $envB) ? -1 : 1;
         };
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return void
+     */
+    private function sendToRedis(array $data)
+    {
+        $json = json_encode($data);
+
+        // push onto list
+        $this->predis->lpush(self::REDIS_KEY, $json);
+
+        // trim the list to last 10 items
+        $this->predis->ltrim(self::REDIS_KEY, 0, 10);
     }
 }

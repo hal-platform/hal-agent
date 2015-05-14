@@ -16,6 +16,7 @@ services:
             - ['add', [@lazy.command.worker.build]]
             - ['add', [@lazy.command.worker.push]]
             - ['add', [@lazy.command.docker.refresh]]
+            - ['add', [@lazy.command.docker.status]]
             - ['add', [@lazy.command.server.connections]]
             - ['setDispatcher', [@dispatcher]]
     dispatcher:

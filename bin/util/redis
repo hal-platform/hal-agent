@@ -1,0 +1,31 @@
+#!/usr/bin/env php
+<?php
+
+namespace QL\Hal\Bin;
+
+use QL\Hal\Agent\Application\Di;
+
+$root = __DIR__ . '/../..';
+require_once $root . '/configuration/bootstrap.php';
+
+$container = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
+
+$redis = $container->get('redis');
+
+// $key = 'agent-status:docker';
+$key = 'agent-status:server';
+
+// get entire list
+$data = $redis->lrange($key, 0, 10);
+foreach ($data as $i => $stats) {
+    echo "\n" . ($i + 1) . ' ' . str_repeat('-', 78) . "\n";
+    $json = json_decode($stats, true);
+    print_r($json);
+}
+
+die;
+
+// get latest
+$data = $redis->lrange($key, 0);
+$json = json_decode($data, true);
+print_r($json);
