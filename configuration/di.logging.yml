@@ -17,6 +17,8 @@ services:
     logger.event.factory:
         class: 'QL\Hal\Agent\Logger\EventFactory'
         arguments: [@doctrine.em]
+        calls:
+            - ['setRedisHandler', [@redis]]
 
     logger.notifier:
         class: 'QL\Hal\Agent\Logger\Notifier'
