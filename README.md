@@ -34,15 +34,17 @@ bin/hal [command] [options] --help
 
 ## Available Commands
 
-Command          | Description
----------------- | -----------
-`build:create`   | Create a build job for an application based on an environment
-`build:build`    | Download, build, and archive a build
-`build:remove`   | Remove archive for a build.
-`push:create`    | Create a push job for an application based on a build and deployment
-`push:push`      | Push a built application to a server
-`builds:list`    | List all existing builds.
-`docker:refresh` | Refresh dockerfile sources on build server
+Command              | Description
+-------------------- | -----------
+`build:create`       | Create a build job for an application based on an environment
+`build:build`        | Download, build, and archive a build
+`build:remove`       | Remove archive for a build.
+`push:create`        | Create a push job for an application based on a build and deployment
+`push:push`          | Push a built application to a server
+`builds:list`        | List all existing builds.
+`docker:refresh`     | Refresh dockerfile sources on build server
+`docker:status`      | Get docker status and filesystem useage
+`server:connections` | Validate agent can talk to servers
 
 ## A note on `builds:list` and `build:remove`
 
@@ -105,6 +107,10 @@ Command            | Description
 
 # Hal-agent Build Worker
 * * * * * /var/hal9000agent/bin/worker-build
+
+# Health checks (every 4 hours)
+0 */4 * * * /var/hal9000agent/bin/hal docker:status
+0 */4 * * * /var/hal9000agent/bin/hal server:connections
 ```
 
 ## Deployment
@@ -131,6 +137,10 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
     * **$user** must be able to sudo docker.
     * `/var/hal9000` must exist and be owned by **$user**.
     * `/docker-images` must exist and be owned by **$user**.
+    * Disable the following option in `sudoers`: `Defaults requiretty`
+    * Allow **$user** to sudo docker on build box:
+        - `$user $SERVERNAME=(root) NOPASSWD:SETENV: /bin/docker,/usr/bin/docker,/usr/bin/du`
+        - `/usr/bin/du` for agent health checks.
 3. Deploy **docker images** to build server
     * The agent command "docker:refresh" will automatically do this (As long as the directory is present!).
 4. It should work
