@@ -43,11 +43,6 @@ services:
         class: 'QL\Hal\Agent\Command\LazyCommand'
         arguments: ['server:connections', 'command.server.connections', @service_container]
 
-    command.bin.path:
-        class: 'WUT'
-        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
-        arguments: [@root, '/bin']
-
     ####################################################################################################################
     # commands
     ####################################################################################################################
@@ -132,7 +127,7 @@ services:
             - @build.repo
             - @utility.process.builder= # = signifies a prototype service
             - @logger.mcp
-            - @command.bin.path
+            - @root
     command.worker.push:
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
@@ -141,7 +136,7 @@ services:
             - @doctrine.em
             - @utility.process.builder= # = signifies a prototype service
             - @logger.mcp
-            - @command.bin.path
+            - @root
 
     ####################################################################################################################
     # utility
