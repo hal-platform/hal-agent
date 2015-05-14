@@ -17,13 +17,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
     public $buildRepo;
-    public $em;
-    public $forker;
+    public $builder;
+    public $process;
     public $logger;
-
-    public $connection;
-    public $application;
-    public $command;
 
     public $input;
     public $output;
@@ -31,21 +27,9 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->forker = Mockery::mock('QL\Hal\Agent\Helper\ForkHelper');
+        $this->builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $this->process = Mockery::mock('Symfony\Component\Process\Process', ['stop' => null]);
         $this->logger = new MemoryLogger;
-
-        $this->connection = Mockery::mock('Doctrine\DBAL\Connection');
-
-        // omgwtfbbq
-        $this->application = Mockery::mock('Symfony\Component\Console\Application', [
-            'getHelperSet' => Mockery::mock('Symfony\Component\Console\Helper\HelperSet'),
-            'getDefinition' => Mockery::mock('Symfony\Component\Console\Input\InputDefinition', [
-                'getArguments' => [],
-                'getOptions' => []
-            ])
-        ]);
-        $this->command = Mockery::mock('Symfony\Component\Console\Command\Command');
 
         $this->input = new StringInput('');
         $this->output = new BufferedOutput;
@@ -59,75 +43,25 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new BuildCommand(
             'cmd',
-            'build-cmd',
             $this->buildRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
+            $this->builder,
+            $this->logger,
+            'workdir'
         );
 
         $command->run($this->input, $this->output);
-        $expected = <<<'OUTPUT'
-No waiting builds found.
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $expected = [
+            'No waiting builds found.'
+        ];
+
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
-    public function testConnectionIsResetWhenBuildForked()
-    {
-        $build1 = new Build;
-        $build1->setId('1234');
-
-        $this->buildRepo
-            ->shouldReceive('findBy')
-            ->andReturn([$build1]);
-
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
-
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(0);
-
-        // db connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->andReturn($this->connection);
-        $this->connection
-            ->shouldReceive('close')
-            ->once();
-        $this->connection
-            ->shouldReceive('connect')
-            ->once();
-
-        $this->command
-            ->shouldReceive('run')
-            ->andReturn(0);
-
-        $command = new BuildCommand(
-            'cmd',
-            'build-cmd',
-            $this->buildRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
-        );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
-
-        $expected = <<<'OUTPUT'
-Waiting builds: 1
-Starting build workers
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(0, $exitCode);
-    }
-
-    public function testParentOutputWithMultipleBuilds()
+    public function testOutputWithMultipleBuilds()
     {
         $build1 = new Build;
         $build1->setId('1234');
@@ -138,126 +72,61 @@ OUTPUT;
             ->shouldReceive('findBy')
             ->andReturn([$build1, $build2]);
 
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
+        $this->builder
+            ->shouldReceive([
+                'setWorkingDirectory' => $this->builder,
+                'setArguments' => $this->builder,
+                'setTimeout' => $this->builder
+            ]);
+        $this->builder
+            ->shouldReceive('getProcess')
+            ->times(2)
+            ->andReturn($this->process);
 
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(1)
+        $this->process
+            ->shouldReceive('start')
+            ->times(2);
+        $this->process
+            ->shouldReceive('isRunning')
+            ->times(3)
+            ->andReturn(false, true, false);
+        $this->process
+            ->shouldReceive('checkTimeout')
             ->once();
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(2)
-            ->once();
-
-        // parent never resets connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->never();
+        $this->process
+            ->shouldReceive('getExitCode')
+            ->times(2)
+            ->andReturn(0, 1);
+        $this->process
+            ->shouldReceive([
+                'getOutput' => 'output here',
+                'getErrorOutput' => ''
+            ]);
 
         $command = new BuildCommand(
             'cmd',
-            'build-cmd',
             $this->buildRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
+            $this->builder,
+            $this->logger,
+            'workdir'
         );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
+        $command->setSleepTime(1);
+        $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Waiting builds: 2
-Starting build workers
-Build ID 1234 started.
-Build ID 5555 started.
-All waiting builds have been started.
+        $expected = [
+            '[Worker] Waiting builds: 2',
+            '[Worker] Starting build: 1234',
+            '[Worker] Starting build: 5555',
+            'Build 1234 finished: success',
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(0, $exitCode);
-    }
+            '[Worker] Checking build status: 5555',
+            '[Worker] Waiting 1 seconds...',
+            'Build 5555 finished: error'
+        ];
 
-    public function testParentOutputWithForkFailure()
-    {
-        $build1 = new Build;
-        $build1->setId('1234');
-        $build2 = new Build;
-        $build2->setId('5555');
-
-        $this->buildRepo
-            ->shouldReceive('findBy')
-            ->andReturn([$build1, $build2]);
-
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
-
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(1)
-            ->once();
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(-1)
-            ->once();
-
-        // parent never resets connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->never();
-
-        $command = new BuildCommand(
-            'cmd',
-            'build-cmd',
-            $this->buildRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
-        );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
-
-        $expected = <<<'OUTPUT'
-Waiting builds: 2
-Starting build workers
-Build ID 1234 started.
-Could not fork a build worker.
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(1, $exitCode);
-    }
-
-    public function testBuildCommandNotFound()
-    {
-        $this->buildRepo
-            ->shouldReceive('findBy')
-            ->andReturn([new Build]);
-
-        $this->application
-            ->shouldReceive('find')
-            ->andReturnNull();
-
-        $command = new BuildCommand(
-            'cmd',
-            'build-cmd',
-            $this->buildRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
-        );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
-
-        $expected = <<<'OUTPUT'
-Build Command not found.
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(2, $exitCode);
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 }

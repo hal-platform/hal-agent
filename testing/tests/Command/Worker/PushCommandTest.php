@@ -19,12 +19,9 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 {
     public $pushRepo;
     public $em;
-    public $forker;
+    public $builder;
+    public $process;
     public $logger;
-
-    public $connection;
-    public $application;
-    public $command;
 
     public $input;
     public $output;
@@ -33,20 +30,9 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     {
         $this->pushRepo = Mockery::mock('QL\Hal\Core\Repository\PushRepository');
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->forker = Mockery::mock('QL\Hal\Agent\Helper\ForkHelper');
+        $this->builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $this->process = Mockery::mock('Symfony\Component\Process\Process', ['stop' => null]);
         $this->logger = new MemoryLogger;
-
-        $this->connection = Mockery::mock('Doctrine\DBAL\Connection');
-
-        // omgwtfbbq
-        $this->application = Mockery::mock('Symfony\Component\Console\Application', [
-            'getHelperSet' => Mockery::mock('Symfony\Component\Console\Helper\HelperSet'),
-            'getDefinition' => Mockery::mock('Symfony\Component\Console\Input\InputDefinition', [
-                'getArguments' => [],
-                'getOptions' => []
-            ])
-        ]);
-        $this->command = Mockery::mock('Symfony\Component\Console\Command\Command');
 
         $this->input = new StringInput('');
         $this->output = new BufferedOutput;
@@ -60,77 +46,19 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new PushCommand(
             'cmd',
-            'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker,
-            $this->logger
+            $this->builder,
+            $this->logger,
+            'workdir'
         );
 
         $command->run($this->input, $this->output);
-        $expected = <<<'OUTPUT'
-No waiting pushes found.
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $this->assertContains('No waiting pushes found.', $this->output->fetch());
     }
 
-    public function testConnectionIsResetWhenPushForked()
-    {
-        $deploy = new Deployment;
-        $push1 = new Push;
-        $push1->setId('1234');
-        $push1->setDeployment($deploy);
-
-        $this->pushRepo
-            ->shouldReceive('findBy')
-            ->andReturn([$push1]);
-
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
-
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(0);
-
-        // db connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->andReturn($this->connection);
-        $this->connection
-            ->shouldReceive('close')
-            ->once();
-        $this->connection
-            ->shouldReceive('connect')
-            ->once();
-
-        $this->command
-            ->shouldReceive('run')
-            ->andReturn(0);
-
-        $command = new PushCommand(
-            'cmd',
-            'push-cmd',
-            $this->pushRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
-        );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
-
-        $expected = <<<'OUTPUT'
-Waiting pushes: 1
-Starting push workers
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(0, $exitCode);
-    }
-
-    public function testParentOutputWithMultipleBuilds()
+    public function testOutputWithMultipleBuilds()
     {
         $deploy1 = new Deployment;
         $deploy1->setId('6666');
@@ -148,49 +76,59 @@ OUTPUT;
             ->shouldReceive('findBy')
             ->andReturn([$push1, $push2]);
 
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
+        $this->builder
+            ->shouldReceive([
+                'setWorkingDirectory' => $this->builder,
+                'setArguments' => $this->builder,
+                'setTimeout' => $this->builder
+            ]);
+        $this->builder
+            ->shouldReceive('getProcess')
+            ->times(2)
+            ->andReturn($this->process);
 
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(1)
-            ->once();
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(2)
-            ->once();
-
-        // parent never resets connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->never();
+        $this->process
+            ->shouldReceive('start')
+            ->times(2);
+        $this->process
+            ->shouldReceive('isRunning')
+            ->times(2)
+            ->andReturn(false);
+        $this->process
+            ->shouldReceive('getExitCode')
+            ->times(2)
+            ->andReturn(0, 1);
+        $this->process
+            ->shouldReceive([
+                'getOutput' => 'output here',
+                'getErrorOutput' => ''
+            ]);
 
         $command = new PushCommand(
             'cmd',
-            'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker,
-            $this->logger
+            $this->builder,
+            $this->logger,
+            'workdir'
         );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
+        $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Waiting pushes: 2
-Starting push workers
-Push ID 1234 started.
-Push ID 5555 started.
-All waiting pushes have been started.
+        $expected = [
+            '[Worker] Waiting pushes: 2',
+            '[Worker] Starting push: 1234',
+            '[Worker] Starting push: 5555',
+            'Build 1234 finished: success',
+            'Build 5555 finished: error',
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(0, $exitCode);
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
-    public function testParentOutputWithPushWithoutDeployment()
+    public function testOutputWithPushWithoutDeployment()
     {
         $push1 = new Push;
         $push1->setId('1234');
@@ -199,19 +137,6 @@ OUTPUT;
             ->shouldReceive('findBy')
             ->andReturn([$push1]);
 
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
-
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->never();
-
-        // parent never resets connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->never();
         $this->em
             ->shouldReceive('merge')
             ->with($push1)
@@ -222,115 +147,26 @@ OUTPUT;
 
         $command = new PushCommand(
             'cmd',
-            'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker,
-            $this->logger
+            $this->builder,
+            $this->logger,
+            'workdir'
         );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
+        $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Waiting pushes: 1
-Starting push workers
-Push ID 1234 error: It has no deployment target.
-All waiting pushes have been started.
+        $expected = [
+            '[Worker] Waiting pushes: 1',
+            '[Worker] Push 1234 has no deployment. Marking as error.',
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(0, $exitCode);
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
-    public function testParentOutputWithForkFailure()
-    {
-        $deploy1 = new Deployment;
-        $deploy1->setId('6666');
-        $deploy2 = new Deployment;
-        $deploy2->setId('8888');
-
-        $push1 = new Push;
-        $push1->setId('1234');
-        $push1->setDeployment($deploy1);
-        $push2 = new Push;
-        $push2->setId('5555');
-        $push2->setDeployment($deploy2);
-
-        $this->pushRepo
-            ->shouldReceive('findBy')
-            ->andReturn([$push1, $push2]);
-
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
-
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(1)
-            ->once();
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(-1)
-            ->once();
-
-        // parent never resets connection
-        $this->em
-            ->shouldReceive('getConnection')
-            ->never();
-
-        $command = new PushCommand(
-            'cmd',
-            'push-cmd',
-            $this->pushRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
-        );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
-
-        $expected = <<<'OUTPUT'
-Waiting pushes: 2
-Starting push workers
-Push ID 1234 started.
-Could not fork a push worker.
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(1, $exitCode);
-    }
-
-    public function testPushCommandNotFound()
-    {
-        $this->pushRepo
-            ->shouldReceive('findBy')
-            ->andReturn([new Push]);
-
-        $this->application
-            ->shouldReceive('find')
-            ->andReturnNull();
-
-        $command = new PushCommand(
-            'cmd',
-            'push-cmd',
-            $this->pushRepo,
-            $this->em,
-            $this->forker,
-            $this->logger
-        );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
-
-        $expected = <<<'OUTPUT'
-Push Command not found.
-
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(2, $exitCode);
-    }
-
-    public function testParentOutputWhenDuplicateDeploymentSkipsPush()
+    public function testOutputWhenDuplicateDeploymentSkipsPush()
     {
         $deploy1 = new Deployment;
         $deploy1->setId('6666');
@@ -346,36 +182,51 @@ OUTPUT;
             ->shouldReceive('findBy')
             ->andReturn([$push1, $push2]);
 
-        $this->application
-            ->shouldReceive('find')
-            ->andReturn($this->command);
+        $this->builder
+            ->shouldReceive([
+                'setWorkingDirectory' => $this->builder,
+                'setArguments' => $this->builder,
+                'setTimeout' => $this->builder
+            ]);
+        $this->builder
+            ->shouldReceive('getProcess')
+            ->once()
+            ->andReturn($this->process);
 
-        // fork
-        $this->forker
-            ->shouldReceive('fork')
-            ->andReturn(1)
+        $this->process
+            ->shouldReceive('start')
             ->once();
+        $this->process
+            ->shouldReceive('isRunning')
+            ->once()
+            ->andReturn(false);
+        $this->process
+            ->shouldReceive([
+                'getOutput' => 'output here',
+                'getErrorOutput' => '',
+                'getExitCode' => 0
+            ]);
 
         $command = new PushCommand(
             'cmd',
-            'push-cmd',
             $this->pushRepo,
             $this->em,
-            $this->forker,
-            $this->logger
+            $this->builder,
+            $this->logger,
+            'workdir'
         );
-        $command->setApplication($this->application);
-        $exitCode = $command->run($this->input, $this->output);
+        $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Waiting pushes: 2
-Starting push workers
-Push ID 1234 started.
-Push ID 5555 skipped: A push to deployment 6666 is already running.
-All waiting pushes have been started.
+        $expected = [
+            '[Worker] Waiting pushes: 2',
+            '[Worker] Starting push: 1234',
+            '[Worker] Skipping push: 5555 - A push to deployment 6666 is already running',
+            'Build 1234 finished: success'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame(0, $exitCode);
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 }

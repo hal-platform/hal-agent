@@ -51,4 +51,16 @@ trait OutputAwareTrait
             $output->writeln($message);
         }
     }
+
+    /**
+     * @param string $stdout
+     *
+     * @return void
+     */
+    private function write($stdout)
+    {
+        if ($output = $this->getOutput()) {
+            $output->writeln($stdout);
+        }
+    }
 }

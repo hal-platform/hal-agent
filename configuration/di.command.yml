@@ -43,6 +43,11 @@ services:
         class: 'QL\Hal\Agent\Command\LazyCommand'
         arguments: ['server:connections', 'command.server.connections', @service_container]
 
+    command.bin.path:
+        class: 'WUT'
+        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
+        arguments: [@root, '/bin']
+
     ####################################################################################################################
     # commands
     ####################################################################################################################
@@ -115,24 +120,32 @@ services:
             - @push.deployer
             - @utility.filesystem
             - @utility.github.deploymenter
+
+    ####################################################################################################################
+    # workers
+    ####################################################################################################################
+
     command.worker.build:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
-            - 'build:build'
             - @build.repo
-            - @doctrine.em
-            - @utility.forker
+            - @utility.process.builder= # = signifies a prototype service
             - @logger.mcp
+            - @command.bin.path
     command.worker.push:
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
-            - 'push:push'
             - @push.repo
             - @doctrine.em
-            - @utility.forker
+            - @utility.process.builder= # = signifies a prototype service
             - @logger.mcp
+            - @command.bin.path
+
+    ####################################################################################################################
+    # utility
+    ####################################################################################################################
 
     command.docker.refresh:
         class: 'QL\Hal\Agent\Command\Docker\UpdateSourcesCommand'

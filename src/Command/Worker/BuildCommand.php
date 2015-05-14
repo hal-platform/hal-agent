@@ -7,89 +7,109 @@
 
 namespace QL\Hal\Agent\Command\Worker;
 
-use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
-use QL\Hal\Agent\Helper\ForkHelper;
+use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\Process;
 
 /**
  * Cron worker that will pick up and build any available builds.
  *
  * BUILT FOR COMMAND LINE ONLY
  */
-class BuildCommand extends Command
+class BuildCommand extends Command implements OutputAwareInterface
 {
     use CommandTrait;
+    use OutputAwareTrait;
+    use WorkerTrait;
+
+    // 1 hour max
+    const MAX_JOB_TIMEOUT = 3600;
+
+    // Wait 5 seconds between checks
+    const DEFAULT_SLEEP_TIME = 5;
 
     /**
-     * A list of all possible exit codes of this command
-     *
-     * @var array
-     */
-    private static $codes = [
-        0 => 'All waiting builds have been started.',
-        1 => 'Could not fork a build worker.',
-        2 => 'Build Command not found.'
-    ];
-
-    /**
-     * @var string
-     */
-    private $buildCommand;
-
-    /**
-     * @var BuildRepository
+     * @type BuildRepository
      */
     private $buildRepo;
 
     /**
-     * @var EntityManager
+     * @type ProcessBuilder
      */
-    private $entityManager;
+    private $builder;
 
     /**
-     * @var ForkHelper
-     */
-    private $forker;
-
-    /**
-     * @var LoggerInterface
+     * @type LoggerInterface
      */
     private $logger;
 
     /**
+     * @type Process[]
+     */
+    private $processes;
+
+    /**
+     * @type string
+     */
+    private $workingDir;
+
+    /**
+     * Sleep time in seconds
+     *
+     * @type int
+     */
+    private $sleepTime;
+
+    /**
      * @param string $name
-     * @param string $buildCommand
      * @param BuildRepository $buildRepo
-     * @param EntityManager $entityManager
-     * @param ForkHelper $forker
+     * @param ProcessBuilder $builder
      * @param LoggerInterface $logger
+     * @param string $workingDir
      */
     public function __construct(
         $name,
-        $buildCommand,
         BuildRepository $buildRepo,
-        EntityManager $entityManager,
-        ForkHelper $forker,
-        LoggerInterface $logger
+        ProcessBuilder $builder,
+        LoggerInterface $logger,
+        $workingDir
     ) {
         parent::__construct($name);
-        $this->buildCommand = $buildCommand;
 
         $this->buildRepo = $buildRepo;
-        $this->entityManager = $entityManager;
-        $this->forker = $forker;
+        $this->builder = $builder;
         $this->logger = $logger;
+        $this->workingDir = $workingDir;
+
+        $this->sleepTime = self::DEFAULT_SLEEP_TIME;
+        $this->processes = [];
+
+        $this->startTimer();
     }
 
     /**
-     *  Configure the command
+     * @param int $seconds
+     *
+     * @return void
+     */
+    public function setSleepTime($seconds)
+    {
+        $seconds = (int) $seconds;
+        if ($seconds > 0 && $seconds < 30) {
+            $this->sleepTime = $seconds;
+        }
+    }
+
+    /**
+     * Configure the command
      */
     protected function configure()
     {
@@ -97,69 +117,76 @@ class BuildCommand extends Command
     }
 
     /**
-     *  Run the command
+     * @param InputInterface $input
+     * @param OutputInterface $output
      *
-     *  @param InputInterface $input
-     *  @param OutputInterface $output
-     *  @return null
+     * @return null
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->setOutput($output);
+
         if (!$builds = $this->buildRepo->findBy(['status' => 'Waiting'], null)) {
-            return $this->success($output, 'No waiting builds found.');
+            $this->write('No waiting builds found.');
+            return $this->finish($output, 0);
         }
 
-        $command = $this->getApplication()->find($this->buildCommand);
-        if (!$command instanceof Command) {
-            return $this->failure($output, 2);
-        }
-
-        $output->writeln(sprintf('Waiting builds: %s', count($builds)));
-        $output->writeln('<comment>Starting build workers</comment>');
+        $this->status(sprintf('Waiting builds: %s', count($builds)), 'Worker');
 
         foreach ($builds as $build) {
-            $pid = $this->forker->fork();
-            if ($pid === -1) {
-                return $this->failure($output, 1);
+            $id = $build->getId();
+            $command = [
+                'bin/hal',
+                'build:build',
+                $id
+            ];
 
-            } elseif ($pid === 0) {
-                // child
+            $process = $this->builder
+                ->setWorkingDirectory($this->workingDir)
+                ->setArguments($command)
+                ->setTimeout(self::MAX_JOB_TIMEOUT)
+                ->getProcess();
 
-                // re-seed random generator
-                mt_srand();
+            $this->status(sprintf('Starting build: <info>%s</info>', $id), 'Worker');
+            $this->processes[$id] = $process;
 
-                // reconnect db so the child has its own connection
-                $connection = $this->entityManager->getConnection();
-                $connection->close();
-                $connection->connect();
-
-                $input = new ArrayInput([
-                    'command' => $this->buildCommand,
-                    'BUILD_ID' => $build->getId()
-                ]);
-
-                return $command->run($input, new NullOutput);
-
-            } else {
-                $output->writeln(sprintf('Build ID %s started.', $build->getId()));
-            }
+            $process->start();
         }
 
-        return $this->success($output);
+        $this->wait();
+
+        return $this->finish($output, 0);
     }
 
     /**
-     * @param OutputInterface $output
-     * @param int $exitCode
-     * @return null
+     * @return void
      */
-    private function finish(OutputInterface $output, $exitCode)
+    private function wait()
     {
-        if ($exitCode !== 0) {
-            $message = (isset(static::$codes[$exitCode])) ? static::$codes[$exitCode] : 'An error occcured';
-            $this->logger->critical(sprintf('WORKER (Build) - %s', $message));
+        $allDone = true;
+        foreach ($this->processes as $id => $process) {
+            if ($process->isRunning()) {
+                try {
+                    $this->status(sprintf('Checking build status: <info>%s</info>', $id), 'Worker');
+
+                    $process->checkTimeout();
+                    $allDone = false;
+
+                } catch (ProcessTimedOutException $e) {
+                    $this->write($this->outputJob($id, $process, true));
+                    unset($this->processes[$id]);
+                }
+
+            } else {
+                $this->write($this->outputJob($id, $process, false));
+                unset($this->processes[$id]);
+            }
         }
 
-        return $exitCode;
+        if (!$allDone) {
+            $this->status(sprintf('Waiting %d seconds...', $this->sleepTime), 'Worker');
+            sleep($this->sleepTime);
+            $this->wait();
+        }
     }
 }
