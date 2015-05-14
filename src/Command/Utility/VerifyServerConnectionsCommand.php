@@ -222,7 +222,11 @@ HELP;
             $output->writeln(self::TABLE_SEPARATOR);
         }
 
-        $this->sendToRedis($statuses);
+        $this->sendToRedis([
+            'servers' => $statuses,
+            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC')
+        ]);
+
         return $this->finish($output, 0);
     }
 
