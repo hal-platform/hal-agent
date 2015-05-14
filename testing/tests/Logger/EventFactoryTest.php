@@ -74,7 +74,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $build = Mockery::mock('Ql\Hal\Core\Entity\Build');
+        $build = Mockery::mock('QL\Hal\Core\Entity\Build');
 
         $factory = new EventFactory($this->em);
         $factory->setBuild($build);
@@ -96,7 +96,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $push = Mockery::mock('Ql\Hal\Core\Entity\Push');
+        $push = Mockery::mock('QL\Hal\Core\Entity\Push');
 
         $factory = new EventFactory($this->em);
         $factory->setPush($push);
@@ -142,5 +142,59 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame('testing message', $spy->getMessage());
         $this->assertSame($expectedContext, $spy->getData());
+    }
+
+    public function testSerializedLogSentToRedisWithoutData()
+    {
+        $predis = Mockery::mock('Predis\Client');
+        $build = Mockery::mock('QL\Hal\Core\Entity\Build', [
+            'getId' => 'b2.1234'
+        ]);
+
+        $this->em
+            ->shouldReceive('persist')
+            ->once();
+
+        $spy = null;
+        $predis
+            ->shouldReceive('expire')
+            ->once();
+        $predis
+            ->shouldReceive('lpush')
+            ->with('event-logs:b2.1234', Mockery::on(function($v) use (&$spy) {
+                $spy = $v;
+                return true;
+            }));
+
+        $factory = new EventFactory($this->em);
+        $factory->setRedisHandler($predis);
+        $factory->setBuild($build);
+
+        $jsonable = new JsonableStub;
+        $stringable = new StringableStub;
+
+        $jsonable->data = ['json' => 'data'];
+        $stringable->output = 'test1234';
+
+        $factory->success('testing message', [
+            'data' => 'testing',
+            'bad_object' => new stdClass,
+            'json' => $jsonable,
+            'stringable' => $stringable
+        ]);
+
+        $expected = [
+            'id' => null,
+            'created' => null,
+            'event' => 'unknown',
+            'order' => 1,
+            'message' => 'testing message',
+            'status' => 'success',
+            'build' => 'b2.1234',
+            'push' => null,
+            'data' => '**DATA**'
+        ];
+
+        $this->assertSame($expected, json_decode($spy, true));
     }
 }

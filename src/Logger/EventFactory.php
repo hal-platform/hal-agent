@@ -7,8 +7,9 @@
 
 namespace QL\Hal\Agent\Logger;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use JsonSerializable;
+use Predis\Client as Predis;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\EventLog;
 use QL\Hal\Core\Entity\Push;
@@ -61,6 +62,9 @@ use QL\Hal\Core\Type\EventEnumType;
 
 class EventFactory
 {
+    const REDIS_LOG_KEY = 'event-logs:%s';
+    const REDIS_LOG_EXPIRY = 3600;
+
     /**
      * @type string
      */
@@ -72,9 +76,14 @@ class EventFactory
     private $entity;
 
     /**
-     * @type EntityManager
+     * @type EntityManagerInterface
      */
     private $entityManager;
+
+    /**
+     * @type Predis|null
+     */
+    private $predis;
 
     /**
      * @type EventLog[]
@@ -82,14 +91,27 @@ class EventFactory
     private $logs;
 
     /**
-     * @param EntityManager $entityManager
+     * @param EntityManagerInterface $entityManager
      */
-    public function __construct(EntityManager $entityManager)
+    public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
+        $this->predis = null;
 
         $this->currentStage = 'unknown';
         $this->logs = [];
+    }
+
+    /**
+     * If set, log meta data (not context) will be sent to redis INSTANTLY instead of waiting for logs to be flushed.
+     *
+     * @param Predis $predis
+     *
+     * @return void
+     */
+    public function setRedisHandler(Predis $predis)
+    {
+        $this->predis = $predis;
     }
 
     /**
@@ -196,7 +218,38 @@ class EventFactory
         $this->logs[] = $log;
         $this->entityManager->persist($log);
 
+        $this->trySendingToRedis($log);
+
         // flush?
+    }
+
+    /**
+     * @param EventLog $log
+     *
+     * @return void
+     */
+    private function trySendingToRedis(EventLog $log)
+    {
+        if ($this->predis === null) {
+            return;
+        }
+
+        $parent = null;
+        if ($log->getBuild()) $parent = $log->getBuild()->getId();
+        if ($log->getPush()) $parent = $log->getPush()->getId();
+
+        if (!$parent) {
+            return;
+        }
+
+        $key = sprintf(self::REDIS_LOG_KEY, $parent);
+
+        // encode the eventlog (this will skip data)
+        $data = json_encode($log);
+
+        // push onto list
+        $this->predis->lpush($key, $data);
+        $this->predis->expire($key, self::REDIS_LOG_EXPIRY);
     }
 
     /**
