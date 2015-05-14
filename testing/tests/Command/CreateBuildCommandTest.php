@@ -67,11 +67,14 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
 
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Repository not found.
+        $expected = [
+            'Repository not found.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testEnvironmentNotFound()
@@ -104,10 +107,13 @@ OUTPUT;
 
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Environment not found.
+        $expected = [
+            'Environment not found.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 }

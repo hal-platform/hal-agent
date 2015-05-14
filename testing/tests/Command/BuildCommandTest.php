@@ -89,12 +89,15 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-[Starting Build] Resolving build properties
-Build details could not be resolved.
+        $expected = [
+            '[Starting Build] Resolving build properties',
+            'Build details could not be resolved.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testSuccess()
@@ -110,7 +113,8 @@ OUTPUT;
             'setEnd' => null,
             'getId' => 1234,
             'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                'getKey' => null
+                'getKey' => null,
+                'getName' => 'derp'
             ]),
             'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
                 'getKey' => null
@@ -221,19 +225,22 @@ OUTPUT;
         $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-[Starting Build] Resolving build properties
-[Starting Build] Found build: 1234
-[Starting Build] Downloading github repository
-[Starting Build] Unpacking github repository
-[Starting Build] Reading .hal9000.yml
-[Building] Building
-[Finishing Build] Packing build into archive
-[Finishing Build] Moving build to archive
-Success!
+        $expected = [
+            '[Starting Build] Resolving build properties',
+            '[Starting Build] Found build: 1234',
+            '[Starting Build] Downloading github repository',
+            '[Starting Build] Unpacking github repository',
+            '[Starting Build] Reading .hal9000.yml',
+            '[Building] Building',
+            '[Finishing Build] Packing build into archive',
+            '[Finishing Build] Moving build to archive',
+            'Success!'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testEmergencyErrorHandling()

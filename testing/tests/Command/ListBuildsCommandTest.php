@@ -57,11 +57,14 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-No builds found.
+        $expected = [
+            'No builds found.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testBuildTableOutput()

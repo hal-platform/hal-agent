@@ -84,12 +84,15 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-[Starting Deployment] Resolving push properties
-Push details could not be resolved.
+        $expected = [
+            '[Starting Deployment] Resolving push properties',
+            'Push details could not be resolved.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testSuccess()
@@ -103,15 +106,15 @@ OUTPUT;
             'setStatus' => null,
             'setStart' => null,
             'setEnd' => null,
+            'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
+                'getName' => null
+            ]),
             'getDeployment' => Mockery::mock('QL\Hal\Core\Entity\Deployment', [
                 'getServer' => Mockery::mock('QL\Hal\Core\Entity\Server', [
                     'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
                         'getKey' => null
                     ]),
                     'getName' => null
-                ]),
-                'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                    'getKey' => null
                 ])
             ]),
             'getId' => 1234
@@ -219,18 +222,21 @@ OUTPUT;
         $command->disableShutdownHandler();
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-[Starting Deployment] Resolving push properties
-[Starting Deployment] Found push: 1234
-[Starting Deployment] Moving archive to local storage
-[Starting Deployment] Unpacking build archive
-[Starting Deployment] Reading .hal9000.yml
-[Building] Running build transform command
-[Deploying] Deploying application
-Success!
+        $expected = [
+            '[Starting Deployment] Resolving push properties',
+            '[Starting Deployment] Found push: 1234',
+            '[Starting Deployment] Moving archive to local storage',
+            '[Starting Deployment] Unpacking build archive',
+            '[Starting Deployment] Reading .hal9000.yml',
+            '[Building] Running build transform command',
+            '[Deploying] Deploying application',
+            'Success!'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testEmergencyErrorHandling()
@@ -264,9 +270,6 @@ OUTPUT;
             ->never();
         $this->logger
             ->shouldReceive('failure')
-            ->once();
-        $this->logger
-            ->shouldReceive('event')
             ->once();
         $this->logger
             ->shouldReceive('setStage')

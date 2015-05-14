@@ -167,7 +167,7 @@ class PushCommand extends Command implements OutputAwareInterface
         $this->artifacts = [];
 
         $this->enableShutdownHandler = true;
-        $this->jobStartTime = microtime(true);
+        $this->startTimer();
     }
 
     /**

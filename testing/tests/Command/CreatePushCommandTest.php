@@ -64,11 +64,14 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
 
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Build not found.
+        $expected = [
+            'Build not found.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 
     public function testDeploymentNotFound()
@@ -102,10 +105,13 @@ OUTPUT;
 
         $command->run($this->input, $this->output);
 
-        $expected = <<<'OUTPUT'
-Deployment not found.
+        $expected = [
+            'Deployment not found.'
+        ];
 
-OUTPUT;
-        $this->assertSame($expected, $this->output->fetch());
+        $output = $this->output->fetch();
+        foreach ($expected as $exp) {
+            $this->assertContains($exp, $output);
+        }
     }
 }

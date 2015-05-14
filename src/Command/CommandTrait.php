@@ -12,6 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 trait CommandTrait
 {
+    private $jobStartTime;
+
     /**
      * Override this method to provide custom logic unique to the command
      *
@@ -106,13 +108,21 @@ trait CommandTrait
     }
 
     /**
+     * @return void
+     */
+    private function startTimer()
+    {
+        $this->jobStartTime = microtime(true);
+    }
+
+    /**
      * @param OutputInterface $output
      *
      * @return void
      */
     private function outputTimer(OutputInterface $output)
     {
-        if (!isset($this->jobStartTime)) {
+        if (!$this->jobStartTime) {
             return;
         }
 
@@ -124,8 +134,13 @@ trait CommandTrait
         }
 
         $seconds = $elapsedSeconds % 60;
-        if ($seconds > 0) {
-            $elapsed .= sprintf('%d seconds', $seconds);
+        if ($seconds > 0 || !$elapsed) {
+            if (!$elapsed && $seconds == 0) {
+                $ms = ($elapsedSeconds - floor($elapsedSeconds)) * 100;
+                $elapsed .= sprintf('%s ms', floor($ms));
+            } else {
+                $elapsed .= sprintf('%d seconds', $seconds);
+            }
         }
 
         $elapsed = sprintf('[<info>Time Elapsed</info>] %s', trim($elapsed));
