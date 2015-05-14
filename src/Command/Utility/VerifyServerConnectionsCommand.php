@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Command\Utility;
 
+use DateTime;
 use MCP\DataType\Time\Clock;
 use Predis\Client as Predis;
 use QL\Hal\Core\Entity\Server;
