@@ -78,7 +78,7 @@ parameters:
     ############################################################################
 
     ssh.credentials:
-        - ['%build.unix.remoteUser%', '*', 'key:/home/%build.unix.remoteUser%/.ssh/id_rsa']
+        - ['%build.unix.remoteUser%', '%build.unix.server%', 'key:/home/%build.unix.remoteUser%/.ssh/%build.unix.server%']
         - ['%push.rsync.remoteUser%', '*', 'key:/home/%build.unix.remoteUser%/.ssh/id_rsa']
 
     aws.credentials.key: ''

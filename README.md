@@ -130,12 +130,14 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
     * Deploy agent to **agent server**.
     * **$user** must be able to ssh (passwordless) to the dedicated **build server**.
     * **$user** must be able to ssh (passwordless) as $syncer to all deploy web/app servers.
-    * `/tmp/hal9000` must exist and be owned by **$user**.
+    * `/tmp/hal9000` must exist and be owned by **$user**, it should be allocated **~10GB**.
+         - This is a temporary space while builds are running.
     * `/builds/hal9000` must exist and be owned by **$user**. (`/builds/hal9000test` for test environment)
 2. Build server setup
     * Docker must be installed (>=1.5).
     * **$user** must be able to sudo docker.
-    * `/var/hal9000` must exist and be owned by **$user**.
+    * `/var/hal9000` must exist and be owned by **$user**, it should be allocated **~10-20GB**.
+        - Docker images are stored here, as well as a temporary space while builds are running.
     * `/docker-images` must exist and be owned by **$user**.
     * Disable the following option in `sudoers`: `Defaults requiretty`
     * Allow **$user** to sudo docker on build box:
