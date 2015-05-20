@@ -60,6 +60,10 @@ services:
     doctrine.cache:
         class: 'Doctrine\Common\Cache\ArrayCache'
 
+    # @todo remove one of these
+    cache.doctrine:
+        class: 'Doctrine\Common\Cache\ArrayCache'
+
     doctrine.em.events:
         class: 'Doctrine\Common\EventManager'
         calls:

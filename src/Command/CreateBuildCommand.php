@@ -8,12 +8,12 @@
 namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityRepository;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Github\ReferenceResolver;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Repository\BuildRepository;
 use QL\Hal\Core\Repository\EnvironmentRepository;
-use QL\Hal\Core\Repository\RepositoryRepository;
 use QL\Hal\Core\Repository\UserRepository;
 use QL\Hal\Core\JobIdGenerator;
 use Symfony\Component\Console\Command\Command;
@@ -69,7 +69,7 @@ HELP;
     private $buildRepo;
 
     /**
-     * @var RepositoryRepository
+     * @var EntityRepository
      */
     private $repoRepo;
 
@@ -98,7 +98,7 @@ HELP;
      * @param EntityManager $entityManager
      * @param Clock $clock
      * @param BuildRepository $buildRepo
-     * @param RepositoryRepository $repoRepo
+     * @param EntityRepository $repoRepo
      * @param EnvironmentRepository $environmentRepo
      * @param UserRepository $userRepo
      * @param ReferenceResolver $refResolver
@@ -109,7 +109,7 @@ HELP;
         EntityManager $entityManager,
         Clock $clock,
         BuildRepository $buildRepo,
-        RepositoryRepository $repoRepo,
+        EntityRepository $repoRepo,
         EnvironmentRepository $environmentRepo,
         UserRepository $userRepo,
         ReferenceResolver $refResolver,
@@ -212,7 +212,11 @@ HELP;
         $build->setStatus('Waiting');
         $build->setRepository($repository);
         $build->setEnvironment($environment);
-        $build->setUser($user);
+
+        if ($user) {
+            $build->setUser($user);
+        }
+
         $build->setCommit($commitSha);
         $build->setBranch($ref);
 

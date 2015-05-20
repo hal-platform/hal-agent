@@ -7,13 +7,13 @@
 
 namespace QL\Hal\Agent\Command;
 
-use MCP\DataType\Time\TimePoint;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use MCP\DataType\Time\TimePoint;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Repository\BuildRepository;
 use QL\Hal\Core\Repository\EnvironmentRepository;
-use QL\Hal\Core\Repository\RepositoryRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -56,7 +56,7 @@ class ListBuildsCommand extends Command
     private $buildRepo;
 
     /**
-     * @var RepositoryRepository
+     * @var EntityRepository
      */
     private $repoRepo;
 
@@ -78,7 +78,7 @@ class ListBuildsCommand extends Command
     /**
      * @param string $name
      * @param BuildRepository $buildRepo
-     * @param RepositoryRepository $repoRepo
+     * @param EntityRepository $repoRepo
      * @param EnvironmentRepository $envRepo
      * @param Filesystem $filesystem
      * @param string $archivePath
@@ -86,7 +86,7 @@ class ListBuildsCommand extends Command
     public function __construct(
         $name,
         BuildRepository $buildRepo,
-        RepositoryRepository $repoRepo,
+        EntityRepository $repoRepo,
         EnvironmentRepository $envRepo,
         Filesystem $filesystem,
         $archivePath
