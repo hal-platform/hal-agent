@@ -17,6 +17,7 @@
     },
 
     "repositories": [
+        { "type": "vcs", "url": "http://git/web-core/hal-core" },
         {
             "type": "composer",
             "url": "http://composer/"
@@ -32,7 +33,7 @@
         "phpseclib/phpseclib": "0.3.9",
         "predis/predis": "~1.0",
         "psr/log": "*",
-        "ql/hal-core": "2.6.*",
+        "ql/hal-core": "dev-master",
         "ql/mcp-core": "1.0.*",
         "ql/mcp-logger": "1.2.*",
         "swiftmailer/swiftmailer": "5.2.*",

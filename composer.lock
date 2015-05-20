@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "9138fe0f1418b93135e833d3f9e394c3",
+    "hash": "935939438c85c4c5af7149dfb6723d4f",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1176,17 +1176,11 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.6.1",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "git@git:web-core/hal-core.git",
-                "reference": "6963d8bc1f331e3307ebededfe5bf93706a3ec27"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.6.1-f57dae.zip",
-                "reference": "6963d8bc1f331e3307ebededfe5bf93706a3ec27",
-                "shasum": "66e2492bf8c0761ff5648799882ba640e250fa36"
+                "url": "http://git/web-core/hal-core",
+                "reference": "4b83878a5309f08d3b8ae14d25cda8f6ad5d40a7"
             },
             "archive": {
                 "exclude": [
@@ -1197,11 +1191,11 @@
                 ]
             },
             "require": {
-                "doctrine/orm": "~2.4",
+                "doctrine/orm": "*",
                 "ext-openssl": "*",
                 "php-64bit": ">=5.4.0",
                 "ql/mcp-core": "*",
-                "ql/mcp-corp-account": "0.2.1"
+                "ql/mcp-corp-account": "*"
             },
             "require-dev": {
                 "phpunit/phpunit": "*",
@@ -1226,7 +1220,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2015-03-13 12:54:37"
+            "time": "2015-05-20 14:12:50"
         },
         {
             "name": "ql/mcp-core",
@@ -3075,7 +3069,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "ql/hal-core": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
