@@ -32,7 +32,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
         $this->envRepo = Mockery::mock('QL\Hal\Core\Repository\EnvironmentRepository');
-        $this->repoRepo = Mockery::mock('QL\Hal\Core\Repository\RepositoryRepository');
+        $this->repoRepo = Mockery::mock('Doctrine\ORM\EntityRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Repository\UserRepository');
         $this->resolver = Mockery::mock('QL\Hal\Agent\Github\ReferenceResolver');
         $this->unique = Mockery::mock('QL\Hal\Core\JobIdGenerator');

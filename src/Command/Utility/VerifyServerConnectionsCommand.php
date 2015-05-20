@@ -10,9 +10,9 @@ namespace QL\Hal\Agent\Command\Utility;
 use DateTime;
 use MCP\DataType\Time\Clock;
 use Predis\Client as Predis;
+use Doctrine\ORM\EntityRepository;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Repository\EnvironmentRepository;
-use QL\Hal\Core\Repository\ServerRepository;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
 use QL\Hal\Agent\Push\HostnameValidatorTrait;
@@ -71,7 +71,7 @@ HELP;
     ];
 
     /**
-     * @type ServerRepository
+     * @type EntityRepository
      */
     private $serverRepo;
 
@@ -102,7 +102,7 @@ HELP;
 
     /**
      * @param string $name
-     * @param ServerRepository $serverRepo
+     * @param EntityRepository $serverRepo
      * @param EnvironmentRepository $environmentRepo
      * @param SSHSessionManager $sshManager
      * @param Predis $predis
@@ -111,7 +111,7 @@ HELP;
      */
     public function __construct(
         $name,
-        ServerRepository $serverRepo,
+        EntityRepository $serverRepo,
         EnvironmentRepository $environmentRepo,
         SSHSessionManager $sshManager,
         Predis $predis,
