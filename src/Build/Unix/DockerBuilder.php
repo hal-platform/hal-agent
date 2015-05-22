@@ -13,29 +13,6 @@ use QL\Hal\Agent\Remoting\CommandContext;
 use QL\Hal\Agent\Remoting\SSHProcess;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 
-/**
- * SYSTEM PREP:
- *
- * 1. Make sure dockerfile source is present:
- * - sudo mkdir /docker-images && sudo chown -R hal9000test:hal-agent /docker-images
- * - sudo su hal9000test && cd /docker-images
- * - curl -v -L http://git/api/v3/repos/skluck/docker-images/tarball/master --output master.tar.gz
- * - tar -xzf master.tar.gz && rm master.tar.gz
- * - cd $(ls -d *\/ | grep SKluck) && mv {,.[!.],..?}* ..
- * - cd .. && rm -r $(ls -d *\/ | grep SKluck)
- *
- * 2. Make sure scratch is present:
- * - sudo su hal9000test
- * - mkdir /tmp/hal9000
- *
- * @todo  MANGLE USER COMMANDS
- *
- * bin/myscript 'arg1'
- * =>
- * bin/script '"'"'arg1'"'"'
- * =>
- * sh -c 'bin/script '"'"'arg1'"'"''
- */
 class DockerBuilder implements BuilderInterface, OutputAwareInterface
 {
     // Comes with OutputAwareTrait
