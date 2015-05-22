@@ -120,6 +120,14 @@ For development deployments, create a `config.env.yml` using `environment/dev.ym
 
 Unix builds require a docker-supported build server. `boot2docker` can be used for this purpose.
 
+## Development Setup
+
+For local development, you will want to setup boot2docker as your build server.
+
+1. Install rsync with `tce-load`
+    - `tce-load -wi rsync`
+2. Create `/docker-images` directory within boot2docker
+
 ### Unix Build Server Preparation
 
 - `$user` is the dedicated user that runs the agent (Example: `hal9000test`).
