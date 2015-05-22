@@ -129,7 +129,7 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
     * `/var/hal9000agent` must exist and be owned by `$syncer:hal-agent`.
     * Deploy agent to **agent server**.
     * **$user** must be able to ssh (passwordless) to the dedicated **build server**.
-    * **$user** must be able to ssh (passwordless) as $syncer to all deploy web/app servers.
+    * **$user** must be able to ssh (passwordless) as **$syncer** to all deploy web/app servers.
     * `/tmp/hal9000` must exist and be owned by **$user**, it should be allocated **~10GB**.
          - This is a temporary space while builds are running.
     * `/builds/hal9000` must exist and be owned by **$user**. (`/builds/hal9000test` for test environment)
