@@ -14,7 +14,9 @@ use MCP\DataType\Time\TimePoint;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Repository\BuildRepository;
 use QL\Hal\Core\Repository\EnvironmentRepository;
+use QL\Hal\Agent\Utility\ResolverTrait;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -29,12 +31,12 @@ class ListBuildsCommand extends Command
 {
     use CommandTrait;
     use FormatterTrait;
+    use ResolverTrait;
 
     /**
      * @var string
      */
     const TIMEZONE = 'America/Detroit';
-    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
     const PAGE_SIZE = 500;
 
     /**
@@ -71,11 +73,6 @@ class ListBuildsCommand extends Command
     private $filesystem;
 
     /**
-     * @var string
-     */
-    private $archivePath;
-
-    /**
      * @param string $name
      * @param BuildRepository $buildRepo
      * @param EntityRepository $repoRepo
@@ -97,7 +94,8 @@ class ListBuildsCommand extends Command
         $this->repoRepo = $repoRepo;
         $this->envRepo = $envRepo;
         $this->filesystem = $filesystem;
-        $this->archivePath = $archivePath;
+
+        $this->setArchivePath($archivePath);
     }
 
     /**
@@ -188,10 +186,9 @@ class ListBuildsCommand extends Command
     }
 
     /**
-     * Run the command
-     *
      * @param InputInterface $input
      * @param OutputInterface $output
+     *
      * @return null
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -291,69 +288,90 @@ class ListBuildsCommand extends Command
             return 0;
         }
 
-        // full table
-        $table = $this->getHelperSet()->get('table');
+        $rows = [];
+
+        foreach ($builds as $build) {
+            $data = [
+                $build->getStatus(),
+                $build->getCreated() ? $build->getCreated()->format('Y-m-d H:i:s', self::TIMEZONE) : null,
+                $build->getId(),
+                $build->getRepository()->getKey(),
+                $build->getEnvironment()->getKey()
+            ];
+
+            $sources = $this->generateArchiveLocations($build);
+
+            // Check for archive existence
+            if ($verify) {
+                if (!$sources) {
+                    $data[] = '';
+                    $data[] = '';
+
+                } elseif ($found = $this->findSource($sources)) {
+                    $size = filesize($found) / 1048576; // megabyte
+
+                    $data[] = $found;
+                    $data[] = round($size, 2);
+
+                } else {
+                    $file = explode(DIRECTORY_SEPARATOR, array_pop($sources));
+
+                    $data[] = sprintf('<error>%s not found!</error>', array_pop($file));
+                    $data[] = '';
+                }
+            } else {
+                $data[] = count($sources) ? array_shift($sources) : '';
+            }
+
+            $rows[] = $data;
+        }
+
+        $start = $page * self::PAGE_SIZE;
+        $output->writeln(sprintf('Displaying %s - %s out of %s: ', $start + 1, $start + $buildCount, $totalCount));
 
         $headers = ['Status', 'Created Time', 'Id', 'Repository', 'Environment', 'Archive'];
         if ($verify) {
             $headers[] = 'Size (MB)';
         }
 
-        foreach ($builds as $build) {
-            $data = [
-                $build->getStatus(),
-                $build->getCreated() ? $build->getCreated()->format('c', self::TIMEZONE) : null,
-                $build->getId(),
-                $build->getRepository()->getKey(),
-                $build->getEnvironment()->getKey()
-            ];
-
-            $archive = $this->generateArchiveLocation($build);
-            $data[] = $archive;
-
-            // Check for archive existence
-            if ($archive && $verify) {
-                if ($this->filesystem->exists($archive)) {
-                    // megabyte
-                    $mb = 1048576;
-                    $size = filesize($archive) / $mb;
-                    $data[] = round($size, 2);
-                } else {
-                    array_pop($data);
-                    $file = explode(DIRECTORY_SEPARATOR, $archive);
-                    $data[] = sprintf('<error>%s not found!</error>', array_pop($file));
-                    $data[] = '';
-                }
-            }
-
-            $table->addRow($data);
-        }
-
-        $start = $page * self::PAGE_SIZE;
-
-        $output->writeln(sprintf('Displaying %s - %s out of %s: ', $start + 1, $start + $buildCount, $totalCount));
-
+        $table = new Table($output);
         $table->setHeaders($headers);
+        $table->setRows($rows);
         $table->render($output);
 
         return 0;
     }
 
     /**
-     *  @param Build $build
-     *  @return string
+     * @param Build $build
+     *
+     * @return string[]
      */
-    private function generateArchiveLocation(Build $build)
+    private function generateArchiveLocations(Build $build)
     {
         if ($build->getStatus() !== 'Success') {
-            return '';
+            return [];
         }
 
-        return sprintf(
-            '%s%s%s',
-            rtrim($this->archivePath, '/'),
-            DIRECTORY_SEPARATOR,
-            sprintf(self::FS_ARCHIVE_PREFIX, $build->getId())
-        );
+        return [
+            $this->generateBuildArchiveFile($build->getId()),
+            $this->generateLegacyBuildArchiveFile($build->getId())
+        ];
+    }
+
+    /**
+     * @param string[] $sources
+     *
+     * @return string|null
+     */
+    private function findSource(array $sources)
+    {
+        foreach ($sources as $potentialSource) {
+            if ($this->filesystem->exists($potentialSource)) {
+                return $potentialSource;
+            }
+        }
+
+        return null;
     }
 }

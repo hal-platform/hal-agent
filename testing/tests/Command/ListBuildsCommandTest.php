@@ -107,12 +107,12 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
         $expected = <<<'OUTPUT'
 Displaying 1 - 2 out of 2: 
-+---------+---------------------------+------+------------+-------------+--------------------------+
-| Status  | Created Time              | Id   | Repository | Environment | Archive                  |
-+---------+---------------------------+------+------------+-------------+--------------------------+
-| Success | 2015-03-15T00:05:06-04:00 | 1234 | repo-name  | env-name    | path/hal9000-1234.tar.gz |
-| Waiting |                           | 5678 | repo-name  | env-name    |                          |
-+---------+---------------------------+------+------------+-------------+--------------------------+
++---------+---------------------+------+------------+-------------+--------------------------+
+| Status  | Created Time        | Id   | Repository | Environment | Archive                  |
++---------+---------------------+------+------------+-------------+--------------------------+
+| Success | 2015-03-15 00:05:06 | 1234 | repo-name  | env-name    | path/hal9000-1234.tar.gz |
+| Waiting |                     | 5678 | repo-name  | env-name    |                          |
++---------+---------------------+------+------------+-------------+--------------------------+
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
