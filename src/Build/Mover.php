@@ -26,15 +26,29 @@ class Mover
     }
 
     /**
-     * @param string $from
+     * Provide a list of potential sources. The first source found is used.
+     *
+     * @param string|string[] $from
      * @param string $to
      *
      * @return bool
      */
     public function __invoke($from, $to)
     {
+        if (!is_array($from)) {
+            $from = [$from];
+        }
+
+        if (!$source = $this->findSource($from)) {
+            $this->logger->event('failure', static::EVENT_MESSAGE, [
+                'sources' => $from
+            ]);
+
+            return false;
+        }
+
         try {
-            $this->filesystem->copy($from, $to, true);
+            $this->filesystem->copy($source, $to, true);
         } catch (IOException $e) {
             $this->logger->event('failure', static::EVENT_MESSAGE, [
                 'error' => $e->getMessage()
@@ -45,5 +59,21 @@ class Mover
 
         $this->logger->event('success', static::EVENT_MESSAGE);
         return true;
+    }
+
+    /**
+     * @param string[] $sources
+     *
+     * @return string|null
+     */
+    private function findSource($sources)
+    {
+        foreach ($sources as $potentialSource) {
+            if ($this->filesystem->exists($potentialSource)) {
+                return $potentialSource;
+            }
+        }
+
+        return null;
     }
 }

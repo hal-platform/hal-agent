@@ -7,7 +7,7 @@ parameters:
     hal.baseurl: 'http://hal9000/'
 
     # file path to store permanent archives of builds
-    environment.archive: '/builds/hal9000'
+    environment.archive: '/builds'
 
     # temporary scratch
     environment.temp: '/tmp/hal9000'

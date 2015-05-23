@@ -174,7 +174,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $environment->setKey('envname');
 
         $build = new Build;
-        $build->setId('8956');
+        $build->setId('b2.5tnbBn8');
         $build->setBranch('master');
         $build->setCommit('5555');
         $build->setRepository($repository);
@@ -207,7 +207,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'environmentVariables' => [
                     'HAL_HOSTNAME' => '127.0.0.1',
                     'HAL_PATH' => '/herp/derp',
-                    'HAL_BUILDID' => '8956',
+                    'HAL_BUILDID' => 'b2.5tnbBn8',
                     'HAL_COMMIT' => '5555',
                     'HAL_GITREF' => 'master',
                     'HAL_ENVIRONMENT' => 'envname',
@@ -235,7 +235,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
-                'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
+                'archive' => 'ARCHIVE_PATH/2015-02/hal9000-b2.5tnbBn8.tar.gz',
+                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b2.5tnbBn8.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
                 'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
             ],
@@ -247,7 +248,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ],
 
             'pushProperties' => [
-                'id' => '8956',
+                'id' => 'b2.5tnbBn8',
                 'source' => 'http://git/user1/repo1',
                 'env' => 'envname',
                 'user' => null,
@@ -305,7 +306,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $environment->setKey('envname');
 
         $build = new Build;
-        $build->setId('8956');
+        $build->setId('b9.1234');
         $build->setBranch('master');
         $build->setCommit('5555');
         $build->setRepository($repository);
@@ -353,7 +354,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
-                'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
+                'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
+                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
                 'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
             ],
@@ -365,7 +367,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ],
 
             'pushProperties' => [
-                'id' => '8956',
+                'id' => 'b9.1234',
                 'source' => 'http://git/user1/repo1',
                 'env' => 'envname',
                 'user' => null,
@@ -473,6 +475,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
+                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-8956.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
                 'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
             ],

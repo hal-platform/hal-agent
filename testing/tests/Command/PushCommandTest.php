@@ -160,6 +160,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
                 'location' => [
                     'path' => 'path/dir',
                     'archive' => 'path/file',
+                    'legacy_archive' => 'oldpath/file',
                     'tempArchive' => 'path/file2',
                 ],
 
@@ -294,6 +295,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
                 'location' => [
                     'path' => 'path/dir',
                     'archive' => 'path/file',
+                    'legacy_archive' => 'oldpath/file',
                     'tempArchive' => 'path/file2',
                 ],
 

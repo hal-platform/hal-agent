@@ -157,6 +157,8 @@ class Resolver
             'location' => [
                 'path' => $this->generateLocalTempPath($push->getId(), 'push'),
                 'archive' => $this->generateBuildArchiveFile($build->getId()),
+                'legacy_archive' => $this->generateLegacyBuildArchiveFile($build->getId()),
+
                 'tempArchive' => $this->generateTempBuildArchiveFile($push->getId(), 'push'),
 
                 // elastic beanstalk
