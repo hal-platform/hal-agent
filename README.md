@@ -102,11 +102,16 @@ Command            | Description
 
 ### Crontab example
 ```
+# default worker runs on 0 and 30
+# --alt runs on 15 and 45
+
 # Hal-agent Push Worker
 * * * * * /var/hal9000agent/bin/worker-push
+* * * * * /var/hal9000agent/bin/worker-push --alt
 
 # Hal-agent Build Worker
 * * * * * /var/hal9000agent/bin/worker-build
+* * * * * /var/hal9000agent/bin/worker-build --alt
 
 # Health checks (every 4 hours)
 0 */4 * * * /var/hal9000agent/bin/hal docker:status

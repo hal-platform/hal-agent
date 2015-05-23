@@ -11,8 +11,6 @@ use MCP\DataType\Time\TimePoint;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
-use Symfony\Component\Console\Helper\HelperSet;
-use Symfony\Component\Console\Helper\TableHelper;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -99,9 +97,6 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
             $this->filesystem,
             $this->archive
         );
-        $command->setHelperSet(new HelperSet([
-            new TableHelper
-        ]));
 
         $command->run($this->input, $this->output);
 
