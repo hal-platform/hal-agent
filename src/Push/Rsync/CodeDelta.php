@@ -99,7 +99,10 @@ class CodeDelta
             sprintf('cat %s', self::FS_DETAILS_FILE),
         ];
 
-        $context = $this->remoter->createCommand($remoteUser, $remoteServer, $command);
+        $context = $this->remoter
+            ->createCommand($remoteUser, $remoteServer, $command)
+            ->withIsInteractive(true);
+
         if (!$response = $this->remoter->run($context, [], [false])) {
             return false;
         }

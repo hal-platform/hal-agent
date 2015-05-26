@@ -22,6 +22,11 @@ class CodeDeltaTest extends PHPUnit_Framework_TestCase
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
         $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
         $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+
+        $this->command
+            ->shouldReceive('withIsInteractive')
+            ->andReturn($this->command);
+
         $this->commitApi = Mockery::mock('Github\Api\Repository\Commits');
         $this->parser = Mockery::mock('Symfony\Component\Yaml\Parser');
     }
