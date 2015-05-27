@@ -55,11 +55,11 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('enablePTY')
             ->never();
         $session
-            ->shouldReceive('exec')
-            ->with('command')
+            ->shouldReceive('enableQuietMode')
             ->once();
         $session
-            ->shouldReceive('read')
+            ->shouldReceive('exec')
+            ->with('command')
             ->andReturn('command output')
             ->once();
         $session
@@ -85,9 +85,8 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'enablePTY' => null,
-                'exec' => true,
-                'read' => 'test-output',
+                'enableQuietMode' => null,
+                'exec' => 'test-output',
                 'getExitStatus' => 127,
                 'isTimeout' => true,
                 'getStdError' => 'test-err'
@@ -120,8 +119,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'enablePTY' => null,
-                'read' => 'test-output',
+                'enableQuietMode' => null,
                 'getExitStatus' => 127,
                 'isTimeout' => false,
                 'getStdError' => 'test-err'
@@ -130,7 +128,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive('exec')
             ->with('prefix cmd && deployscript')
-            ->andReturn(false)
+            ->andReturn('test-output')
             ->once();
 
         $this->logger
@@ -165,9 +163,8 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'enablePTY' => null,
-                'exec' => null,
-                'read' => 'test-output',
+                'enableQuietMode' => null,
+                'exec' => 'test-output',
                 'getExitStatus' => 0,
                 'isTimeout' => false
             ]);
@@ -203,9 +200,8 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
         $session
             ->shouldReceive([
                 'setTimeout' => null,
-                'enablePTY' => null,
-                'exec' => null,
-                'read' => 'test-output',
+                'enableQuietMode' => null,
+                'exec' => 'test-output',
                 'getExitStatus' => 0,
                 'isTimeout' => false
             ]);

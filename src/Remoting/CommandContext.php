@@ -26,11 +26,6 @@ class CommandContext
     private $sanitizedCommand;
 
     /**
-     * @type bool
-     */
-    private $interactive;
-
-    /**
      * @param string $username
      * @param string $server
      * @param string|array $command
@@ -42,7 +37,6 @@ class CommandContext
         $this->command = $command;
 
         $this->sanitized = '';
-        $this->interactive = false;
     }
 
     /**
@@ -75,14 +69,6 @@ class CommandContext
     }
 
     /**
-     * @return bool
-     */
-    public function isInteractive()
-    {
-        return $this->interactive;
-    }
-
-    /**
      * @return string
      */
     public function sanitized()
@@ -97,16 +83,6 @@ class CommandContext
     public function withSanitized($sanitizedCommand)
     {
         $this->sanitized = $sanitizedCommand;
-        return $this;
-    }
-
-    /**
-     * @param bool $interactive
-     * @return self
-     */
-    public function withIsInteractive($interactive)
-    {
-        $this->interactive = $interactive;
         return $this;
     }
 }

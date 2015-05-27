@@ -113,8 +113,7 @@ class Exporter
         $command = sprintf('if [ -d "%1$s" ]; then \rm -r "%1$s"; fi; mkdir -p "%1$s"', $remotePath);
 
         $context = $this->remoter
-            ->createCommand($remoteUser, $remoteServer, $command)
-            ->withIsInteractive(true);
+            ->createCommand($remoteUser, $remoteServer, $command);
 
         if ($response = $this->remoter->run($context, [], [false])) {
             return true;

@@ -42,7 +42,6 @@ class Builder
         foreach ($commands as $command) {
             $context = $this->remoter
                 ->createCommand($remoteUser, $remoteServer, [$chdir, $command])
-                ->withIsInteractive(true)
                 ->withSanitized($command);
 
             if (!$response = $this->remoter->run($context, $env, [true, self::EVENT_MESSAGE])) {

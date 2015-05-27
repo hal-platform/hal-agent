@@ -311,7 +311,6 @@ SHELL;
 
             $context = $this->buildRemoter
                 ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
-                ->withIsInteractive(true)
                 ->withSanitized($command);
 
             if (!$response = $this->runBuildRemote($context, self::EVENT_MESSAGE)) {
@@ -382,8 +381,7 @@ SHELL;
     {
         if (!$command instanceof CommandContext) {
             $command = $this->buildRemoter
-                ->createCommand($this->remoteUser, $this->remoteServer, $command)
-                ->withIsInteractive(true);
+                ->createCommand($this->remoteUser, $this->remoteServer, $command);
         }
 
         return $this->buildRemoter->run($command, [], [true, $customMessage]);

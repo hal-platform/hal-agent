@@ -18,11 +18,6 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
     {
         $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
         $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
-
-        $this->command
-            ->shouldReceive('withIsInteractive')
-            ->with(true)
-            ->andReturn($this->command);
     }
 
     public function testSuccess()

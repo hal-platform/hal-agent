@@ -29,10 +29,6 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         $this->buildCommand = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
         $this->buildCommand
-            ->shouldReceive('withIsInteractive')
-            ->andReturn($this->buildCommand)
-            ->byDefault();
-        $this->buildCommand
             ->shouldReceive('withSanitized')
             ->andReturn($this->buildCommand)
             ->byDefault();

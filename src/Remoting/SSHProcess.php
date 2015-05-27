@@ -243,14 +243,13 @@ class SSHProcess
 
         $sshSession->setTimeout($this->commandTimeout);
 
-        if ($command->isInteractive()) {
-            // Enable PTY for pretty colors
-            $sshSession->enablePTY();
-        }
+        // Quiet mode ensures stdout and stderr remain separate.
+        // DO NOT COMBINE WITH ENABLEPTY
+        $sshSession->enableQuietMode();
 
-        $sshSession->exec($actual);
+        $output = $sshSession->exec($actual);
 
-        $this->lastOutput = $sshSession->read();
+        $this->lastOutput = $output;
         $this->lastErrorOutput = $sshSession->getStdError();
         $this->lastExitCode = $sshSession->getExitStatus();
     }
