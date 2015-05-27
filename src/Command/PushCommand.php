@@ -336,8 +336,10 @@ class PushCommand extends Command implements OutputAwareInterface
         $this->logger->start($properties['push']);
         $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->getRepository()->getName());
         $foundPush = sprintf('Found push: <info>%s</info>', $properties['push']->getId());
+        $foundBuild = sprintf('Found build: <info>%s</info>', $properties['push']->getBuild()->getId());
         $this->status($foundApp, self::SECTION_START);
         $this->status($foundPush, self::SECTION_START);
+        $this->status($foundBuild, self::SECTION_START);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {

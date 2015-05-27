@@ -117,7 +117,10 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
                     'getName' => null
                 ])
             ]),
-            'getId' => 1234
+            'getId' => 1234,
+            'getBuild' => Mockery::mock('QL\Hal\Core\Entity\Build', [
+                'getId' => 5678
+            ])
         ]);
 
         $this->logger
