@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Build;
 
+use Doctrine\ORM\EntityManagerInterface;
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
@@ -53,16 +54,16 @@ class Resolver
     private $encryptedResolver;
 
     /**
-     * @param BuildRepository $buildRepo
+     * @param EntityManagerInterface $em
      * @param BuildEnvironmentResolver $environmentResolver
      * @param EncryptedPropertyResolver $encryptedResolver
      */
     public function __construct(
-        BuildRepository $buildRepo,
+        EntityManagerInterface $em,
         BuildEnvironmentResolver $environmentResolver,
         EncryptedPropertyResolver $encryptedResolver
     ) {
-        $this->buildRepo = $buildRepo;
+        $this->buildRepo = $em->getRepository(Build::CLASS);
         $this->environmentResolver = $environmentResolver;
         $this->encryptedResolver = $encryptedResolver;
     }

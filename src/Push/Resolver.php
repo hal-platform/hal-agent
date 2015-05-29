@@ -7,6 +7,7 @@
 
 namespace QL\Hal\Agent\Push;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
@@ -89,7 +90,7 @@ class Resolver
 
     /**
      * @param EventLogger $logger
-     * @param PushRepository $pushRepo
+     * @param EntityManagerInterface $em
      * @param Clock $clock
      * @param BuildEnvironmentResolver $buildEnvironmentResolver
      * @param EncryptedPropertyResolver $encryptedResolver
@@ -99,7 +100,7 @@ class Resolver
      */
     public function __construct(
         EventLogger $logger,
-        PushRepository $pushRepo,
+        EntityManagerInterface $em,
         Clock $clock,
         BuildEnvironmentResolver $buildEnvironmentResolver,
         EncryptedPropertyResolver $encryptedResolver,
@@ -107,7 +108,7 @@ class Resolver
         $githubBaseUrl
     ) {
         $this->logger = $logger;
-        $this->pushRepo = $pushRepo;
+        $this->pushRepo = $em->getRepository(Push::CLASS);
         $this->clock = $clock;
         $this->buildEnvironmentResolver = $buildEnvironmentResolver;
         $this->encryptedResolver = $encryptedResolver;

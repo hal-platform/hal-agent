@@ -2,7 +2,7 @@ services:
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - @build.repo
+            - @doctrine.em
             - @utility.environment.resolver
             - @encrypted.resolver
         calls:

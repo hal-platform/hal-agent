@@ -4,7 +4,7 @@ services:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
             - @logger.event
-            - @push.repo
+            - @doctrine.em
             - @clock
             - @utility.environment.resolver
             - @encrypted.resolver
