@@ -152,7 +152,7 @@ services:
     encrypted.resolver:
         class: 'QL\Hal\Agent\Utility\EncryptedPropertyResolver'
         arguments:
-            - @encrypted.repo
+            - @doctrine.em
             - @logger.event
             - @service_container
 

@@ -297,7 +297,7 @@ HELP;
         }
 
         // sort envs
-        usort($environments, $this->envSorter());
+        usort($environments, $this->environmentSorter());
 
         // Sort servers within env
         $sorter = $this->serverSorter();
@@ -306,19 +306,6 @@ HELP;
         }
 
         return $environments;
-    }
-
-    /**
-     * @return Closure
-     */
-    private function envSorter()
-    {
-        return function($a, $b) {
-            $envA = $a[0]->getEnvironment()->getOrder();
-            $envB = $b[0]->getEnvironment()->getOrder();
-
-            return ($envA < $envB) ? -1 : 1;
-        };
     }
 
     /**

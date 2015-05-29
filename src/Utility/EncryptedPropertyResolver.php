@@ -8,10 +8,12 @@
 namespace QL\Hal\Agent\Utility;
 
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Exception;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
+use QL\Hal\Core\Entity\EncryptedProperty;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Repository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -45,16 +47,16 @@ class EncryptedPropertyResolver
     private $decrypter;
 
     /**
-     * @param EntityRepository $encryptedRepo
+     * @param EntityManagerInterface $em
      * @param EventLogger $logger
      * @param ContainerInterface $di
      */
     public function __construct(
-        EntityRepository $encryptedRepo,
+        EntityManagerInterface $em,
         EventLogger $logger,
         ContainerInterface $di
     ) {
-        $this->encryptedRepo = $encryptedRepo;
+        $this->encryptedRepo = $em->getRepository(EncryptedProperty::CLASS);
         $this->logger = $logger;
         $this->di = $di;
     }
