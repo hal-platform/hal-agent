@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Logger;
 use QL\Hal\Agent\Notifier\NotifierInterface;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Type\EventEnumType;
+use QL\Hal\Core\Type\EnumType\EventEnum;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Notifier
@@ -37,7 +37,7 @@ class Notifier
     {
         $this->di = $di;
 
-        $this->subscriptions = array_fill_keys(EventEnumType::values(), []);
+        $this->subscriptions = array_fill_keys(EventEnum::values(), []);
         $this->data = [];
     }
 

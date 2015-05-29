@@ -8,12 +8,13 @@
 namespace QL\Hal\Agent\Command;
 
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use MCP\DataType\Time\TimePoint;
 use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Repository\BuildRepository;
-use QL\Hal\Core\Repository\EnvironmentRepository;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -34,7 +35,7 @@ class ListBuildsCommand extends Command
     use ResolverTrait;
 
     /**
-     * @var string
+     * @type string
      */
     const TIMEZONE = 'America/Detroit';
     const PAGE_SIZE = 500;
@@ -42,7 +43,7 @@ class ListBuildsCommand extends Command
     /**
      * A list of all possible exit codes of this command
      *
-     * @var array
+     * @type array
      */
     private static $codes = [
         0 => 'Success!',
@@ -53,46 +54,35 @@ class ListBuildsCommand extends Command
     ];
 
     /**
-     * @var BuildRepository
+     * @type EntityRepository
      */
     private $buildRepo;
-
-    /**
-     * @var EntityRepository
-     */
     private $repoRepo;
-
-    /**
-     * @var EnvironmentRepository
-     */
     private $envRepo;
 
     /**
-     * @var Filesystem
+     * @type Filesystem
      */
     private $filesystem;
 
     /**
      * @param string $name
-     * @param BuildRepository $buildRepo
-     * @param EntityRepository $repoRepo
-     * @param EnvironmentRepository $envRepo
+     * @param EntityManagerInterface $em
      * @param Filesystem $filesystem
      * @param string $archivePath
      */
     public function __construct(
         $name,
-        BuildRepository $buildRepo,
-        EntityRepository $repoRepo,
-        EnvironmentRepository $envRepo,
+        EntityManagerInterface $em,
         Filesystem $filesystem,
         $archivePath
     ) {
         parent::__construct($name);
 
-        $this->buildRepo = $buildRepo;
-        $this->repoRepo = $repoRepo;
-        $this->envRepo = $envRepo;
+        $this->buildRepo = $em->getRepository(Build::CLASS);
+        $this->repoRepo = $em->getRepository(Repository::CLASS);
+        $this->envRepo = $em->getRepository(Environment::CLASS);
+
         $this->filesystem = $filesystem;
 
         $this->setArchivePath($archivePath);

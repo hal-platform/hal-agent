@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Command\Worker;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
@@ -82,24 +83,22 @@ class PushCommand extends Command
 
     /**
      * @param string $name
-     * @param PushRepository $pushRepo
-     * @param EntityManagerInterface $entityManager
+     * @param EntityManagerInterface $em
      * @param ProcessBuilder $builder
      * @param LoggerInterface $logger
      * @param string $workingDir
      */
     public function __construct(
         $name,
-        PushRepository $pushRepo,
-        EntityManagerInterface $entityManager,
+        EntityManagerInterface $em,
         ProcessBuilder $builder,
         LoggerInterface $logger,
         $workingDir
     ) {
         parent::__construct($name);
 
-        $this->pushRepo = $pushRepo;
-        $this->entityManager = $entityManager;
+        $this->pushRepo = $em->getRepository(Push::CLASS);
+        $this->em = $em;
         $this->builder = $builder;
         $this->logger = $logger;
         $this->workingDir = $workingDir;
@@ -230,8 +229,8 @@ class PushCommand extends Command
         $this->status(sprintf('Push %s has no deployment. Marking as error.', $push->getId()), 'Worker');
 
         $push->setStatus('Error');
-        $this->entityManager->merge($push);
-        $this->entityManager->flush();
+        $this->em->merge($push);
+        $this->em->flush();
     }
 
     /**

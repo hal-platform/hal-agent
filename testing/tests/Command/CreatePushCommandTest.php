@@ -11,6 +11,9 @@ use PHPUnit_Framework_TestCase;
 use MCP\DataType\Time\Clock;
 use Mockery;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
+use QL\Hal\Core\Entity\Push;
+use QL\Hal\Core\Entity\User;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -34,6 +37,24 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
         $this->deployRepo = Mockery::mock('QL\Hal\Core\Repository\DeploymentRepository');
         $this->pushRepo = Mockery::mock('QL\Hal\Core\Repository\PushRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Repository\UserRepository');
+
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Build::CLASS)
+            ->andReturn($this->buildRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Deployment::CLASS)
+            ->andReturn($this->deployRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Push::CLASS)
+            ->andReturn($this->pushRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(User::CLASS)
+            ->andReturn($this->userRepo);
+
         $this->clock = new Clock('now', 'UTC');
         $this->unique = Mockery::mock('QL\Hal\Core\JobIdGenerator');
 
@@ -55,10 +76,6 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
             'derp:cmd',
             $this->em,
             $this->clock,
-            $this->buildRepo,
-            $this->deployRepo,
-            $this->pushRepo,
-            $this->userRepo,
             $this->unique
         );
 
@@ -96,10 +113,6 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
             'derp:cmd',
             $this->em,
             $this->clock,
-            $this->buildRepo,
-            $this->deployRepo,
-            $this->pushRepo,
-            $this->userRepo,
             $this->unique
         );
 

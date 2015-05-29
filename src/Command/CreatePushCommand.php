@@ -7,13 +7,13 @@
 
 namespace QL\Hal\Agent\Command;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use MCP\DataType\Time\Clock;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Repository\BuildRepository;
-use QL\Hal\Core\Repository\DeploymentRepository;
-use QL\Hal\Core\Repository\PushRepository;
-use QL\Hal\Core\Repository\UserRepository;
+use QL\Hal\Core\Entity\User;
 use QL\Hal\Core\JobIdGenerator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -32,7 +32,7 @@ class CreatePushCommand extends Command
     /**
      * A list of all possible exit codes of this command
      *
-     * @var array
+     * type array
      */
     private static $codes = [
         0 => 'Success',
@@ -43,68 +43,50 @@ class CreatePushCommand extends Command
     ];
 
     /**
-     * @var EntityManager
+     * type EntityManagerInterface
      */
-    private $entityManager;
+    private $em;
 
     /**
-     * @var Clock
+     * type Clock
      */
     private $clock;
 
     /**
-     * @var BuildRepository
+     * type EntityRepository
      */
     private $buildRepo;
-
-    /**
-     * @var DeploymentRepository
-     */
     private $deploymentRepo;
-
-    /**
-     * @var PushRepository
-     */
     private $pushRepo;
-
-    /**
-     * @var UserRepository
-     */
     private $userRepo;
 
     /**
-     * @var JobIdGenerator
+     * type JobIdGenerator
      */
     private $unique;
 
     /**
      * @param string $name
-     * @param EntityManager $entityManager
+     * @param EntityManagerInterface $em
      * @param Clock $clock
-     * @param BuildRepository $buildRepo
-     * @param DeploymentRepository $deploymentRepo
-     * @param PushRepository $pushRepo
-     * @param UserRepository $userRepo
      * @param JobIdGenerator $unique
      */
     public function __construct(
         $name,
-        EntityManager $entityManager,
+        EntityManagerInterface $em,
         Clock $clock,
-        BuildRepository $buildRepo,
-        DeploymentRepository $deploymentRepo,
-        PushRepository $pushRepo,
-        UserRepository $userRepo,
         JobIdGenerator $unique
     ) {
         parent::__construct($name);
 
-        $this->entityManager = $entityManager;
         $this->clock = $clock;
-        $this->buildRepo = $buildRepo;
-        $this->deploymentRepo = $deploymentRepo;
-        $this->pushRepo = $pushRepo;
-        $this->userRepo = $userRepo;
+
+        $this->em = $em;
+        $this->buildRepo = $em->getRepository(Build::CLASS);
+        $this->deploymentRepo = $em->getRepository(Deployment::CLASS);
+        $this->pushRepo = $em->getRepository(Push::CLASS);
+        $this->userRepo = $em->getRepository(User::CLASS);
+
         $this->unique = $unique;
     }
 

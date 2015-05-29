@@ -7,6 +7,10 @@
 
 namespace QL\Hal\Agent\Command;
 
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Repository;
+use QL\Hal\Core\Entity\User;
 use PHPUnit_Framework_TestCase;
 use MCP\DataType\Time\Clock;
 use Mockery;
@@ -34,6 +38,25 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->envRepo = Mockery::mock('QL\Hal\Core\Repository\EnvironmentRepository');
         $this->repoRepo = Mockery::mock('Doctrine\ORM\EntityRepository');
         $this->userRepo = Mockery::mock('QL\Hal\Core\Repository\UserRepository');
+
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Build::CLASS)
+            ->andReturn($this->buildRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Environment::CLASS)
+            ->andReturn($this->envRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Repository::CLASS)
+            ->andReturn($this->repoRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(User::CLASS)
+            ->andReturn($this->userRepo);
+
+
         $this->resolver = Mockery::mock('QL\Hal\Agent\Github\ReferenceResolver');
         $this->unique = Mockery::mock('QL\Hal\Core\JobIdGenerator');
         $this->clock = new Clock('now', 'UTC');
@@ -57,10 +80,6 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             'derp:cmd',
             $this->em,
             $this->clock,
-            $this->buildRepo,
-            $this->repoRepo,
-            $this->envRepo,
-            $this->userRepo,
             $this->resolver,
             $this->unique
         );
@@ -97,10 +116,6 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             'derp:cmd',
             $this->em,
             $this->clock,
-            $this->buildRepo,
-            $this->repoRepo,
-            $this->envRepo,
-            $this->userRepo,
             $this->resolver,
             $this->unique
         );

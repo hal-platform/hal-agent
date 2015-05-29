@@ -20,7 +20,7 @@ use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Repository\PushRepository;
-use QL\Hal\Core\Type\ServerEnumType;
+use QL\Hal\Core\Type\EnumType\ServerEnum;
 
 /**
  * Resolve push properties from user and environment input
@@ -264,17 +264,17 @@ class Resolver
 
         $properties = [];
 
-        if ($method === ServerEnumType::TYPE_RSYNC) {
+        if ($method === ServerEnum::TYPE_RSYNC) {
             $properties[$method] = $this->buildRsyncProperties($build, $deployment, $server);
 
-        } elseif ($method === ServerEnumType::TYPE_EB) {
+        } elseif ($method === ServerEnum::TYPE_EB) {
 
             $properties[$method] = [
                 'application' => $repository->getEbName(),
                 'environment' => $deployment->getEbEnvironment()
             ];
 
-        } elseif ($method === ServerEnumType::TYPE_EC2) {
+        } elseif ($method === ServerEnum::TYPE_EC2) {
 
             $properties[$method] = [
                 'pool' => $deployment->getEc2Pool(),
@@ -386,11 +386,11 @@ class Resolver
             return;
         }
 
-        if ($method === ServerEnumType::TYPE_EB) {
+        if ($method === ServerEnum::TYPE_EB) {
             throw new PushException(self::ERR_EB_NOPE);
         }
 
-        if ($method === ServerEnumType::TYPE_EC2) {
+        if ($method === ServerEnum::TYPE_EC2) {
             throw new PushException(self::ERR_EC2_NOPE);
         }
     }

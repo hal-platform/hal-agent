@@ -16,7 +16,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class BuildCommandTest extends PHPUnit_Framework_TestCase
 {
+    public $em;
     public $buildRepo;
+
     public $builder;
     public $process;
     public $logger;
@@ -27,6 +29,10 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
+        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+            'getRepository' => $this->buildRepo
+        ]);
+
         $this->builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
         $this->process = Mockery::mock('Symfony\Component\Process\Process', ['stop' => null]);
         $this->logger = new MemoryLogger;
@@ -43,7 +49,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new BuildCommand(
             'cmd',
-            $this->buildRepo,
+            $this->em,
             $this->builder,
             $this->logger,
             'workdir'
@@ -105,7 +111,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new BuildCommand(
             'cmd',
-            $this->buildRepo,
+            $this->em,
             $this->builder,
             $this->logger,
             'workdir'

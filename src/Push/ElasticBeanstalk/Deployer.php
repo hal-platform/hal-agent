@@ -11,7 +11,7 @@ use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\ServerEnumType;
+use QL\Hal\Core\Type\EnumType\ServerEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -80,7 +80,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnumType::TYPE_EB])) {
+        if (!isset($properties[ServerEnum::TYPE_EB])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 200;
         }
@@ -129,8 +129,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $health = $this->health;
         $health = $health(
-            $properties[ServerEnumType::TYPE_EB]['application'],
-            $properties[ServerEnumType::TYPE_EB]['environment']
+            $properties[ServerEnum::TYPE_EB]['application'],
+            $properties[ServerEnum::TYPE_EB]['environment']
         );
 
         if ($health['status'] !== 'Ready') {
@@ -207,8 +207,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $pusher = $this->pusher;
         return $pusher(
-            $properties[ServerEnumType::TYPE_EB]['application'],
-            $properties[ServerEnumType::TYPE_EB]['environment'],
+            $properties[ServerEnum::TYPE_EB]['application'],
+            $properties[ServerEnum::TYPE_EB]['environment'],
             $s3version,
             $build->getId(),
             $push->getId(),

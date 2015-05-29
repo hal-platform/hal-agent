@@ -11,7 +11,7 @@ use Doctrine\ORM\EntityManager;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Type\EventStatusEnumType;
+use QL\Hal\Core\Type\EnumType\EventStatusEnum;
 
 /**
  * Handles starting and finishing jobs - e.g. Changing the status of a build or push.
@@ -98,7 +98,7 @@ class EventLogger
      */
     public function event($status, $message = '', array $context = [])
     {
-        $statuses = EventStatusEnumType::values();
+        $statuses = EventStatusEnum::values();
         if (!in_array($status, $statuses)) {
             // error?
             return;

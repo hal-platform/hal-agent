@@ -15,6 +15,7 @@ use QL\Hal\Core\Entity\Repository;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
+    public $em;
     public $buildRepo;
     public $envResolver;
     public $encryptedResolver;
@@ -22,6 +23,10 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
+        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+            'getRepository' => $this->buildRepo
+        ]);
+
         $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
         $this->encryptedResolver = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
     }
@@ -35,7 +40,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $action = new Resolver($this->buildRepo, $this->envResolver, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->envResolver, $this->encryptedResolver);
 
         $properties = $action('1234');
     }
@@ -53,7 +58,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('find')
             ->andReturn($build);
 
-        $action = new Resolver($this->buildRepo, $this->envResolver, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->envResolver, $this->encryptedResolver);
 
         $properties = $action('1234');
     }
@@ -111,7 +116,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getEncryptedPropertiesWithSources')
             ->andReturn([]);
 
-        $action = new Resolver($this->buildRepo, $this->envResolver, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->envResolver, $this->encryptedResolver);
         $action->setLocalTempPath('testdir');
         $action->setArchivePath('ARCHIVE_PATH');
 

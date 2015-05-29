@@ -20,6 +20,7 @@ use QL\Hal\Core\Entity\Server;
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
+    public $em;
     public $repo;
     public $clock;
     public $envResolver;
@@ -31,6 +32,10 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->repo = Mockery::mock('QL\Hal\Core\Repository\PushRepository', [
             'find' => null,
             'findBy' => []
+        ]);
+
+        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+            'getRepository' => $this->repo
         ]);
 
         $this->clock = new Clock('now', 'UTC');
@@ -48,7 +53,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     {
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $this->clock,
             $this->envResolver,
             $this->encryptedResolver,
@@ -74,7 +79,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $this->clock,
             $this->envResolver,
             $this->encryptedResolver,
@@ -105,7 +110,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $this->clock,
             $this->envResolver,
             $this->encryptedResolver,
@@ -149,7 +154,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $clock,
             $this->envResolver,
             $this->encryptedResolver,
@@ -271,7 +276,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $clock,
             $this->envResolver,
             $this->encryptedResolver,
@@ -390,7 +395,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $clock,
             $this->envResolver,
             $this->encryptedResolver,
@@ -510,7 +515,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
         $action = new Resolver(
             $this->logger,
-            $this->repo,
+            $this->em,
             $clock,
             $this->envResolver,
             $this->encryptedResolver,

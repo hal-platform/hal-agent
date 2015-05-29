@@ -7,14 +7,14 @@
 
 namespace QL\Hal\Agent\Command;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Github\ReferenceResolver;
 use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Repository\BuildRepository;
-use QL\Hal\Core\Repository\EnvironmentRepository;
-use QL\Hal\Core\Repository\UserRepository;
+use QL\Hal\Core\Entity\Repository;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\User;
 use QL\Hal\Core\JobIdGenerator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -54,75 +54,57 @@ HELP;
     ];
 
     /**
-     * @var EntityManager
+     * @type EntityManagerInterface
      */
-    private $entityManager;
+    private $em;
 
     /**
-     * @var Clock
+     * @type Clock
      */
     private $clock;
 
     /**
-     * @var BuildRepository
+     * @type EntityRepository
      */
     private $buildRepo;
-
-    /**
-     * @var EntityRepository
-     */
-    private $repoRepo;
-
-    /**
-     * @var EnvironmentRepository
-     */
+    private $applicationRepo;
     private $environmentRepo;
-
-    /**
-     * @var UserRepository
-     */
     private $userRepo;
 
     /**
-     * @var ReferenceResolver
+     * @type ReferenceResolver
      */
     private $refResolver;
 
     /**
-     * @var JobIdGenerator
+     * @type JobIdGenerator
      */
     private $unique;
 
     /**
      * @param string $name
-     * @param EntityManager $entityManager
+     * @param EntityManagerInterface $em
      * @param Clock $clock
-     * @param BuildRepository $buildRepo
-     * @param EntityRepository $repoRepo
-     * @param EnvironmentRepository $environmentRepo
-     * @param UserRepository $userRepo
      * @param ReferenceResolver $refResolver
      * @param JobIdGenerator $unique
      */
     public function __construct(
         $name,
-        EntityManager $entityManager,
+        EntityManagerInterface $em,
         Clock $clock,
-        BuildRepository $buildRepo,
-        EntityRepository $repoRepo,
-        EnvironmentRepository $environmentRepo,
-        UserRepository $userRepo,
         ReferenceResolver $refResolver,
         JobIdGenerator $unique
     ) {
         parent::__construct($name);
 
-        $this->entityManager = $entityManager;
         $this->clock = $clock;
-        $this->buildRepo = $buildRepo;
-        $this->repoRepo = $repoRepo;
-        $this->environmentRepo = $environmentRepo;
-        $this->userRepo = $userRepo;
+
+        $this->em = $em;
+        $this->buildRepo = $em->getRepository(Build::CLASS);
+        $this->applicationRepo = $em->getRepository(Repository::CLASS);
+        $this->environmentRepo = $em->getRepository(Environment::CLASS);
+        $this->userRepo = $em->getRepository(User::CLASS);
+
         $this->refResolver = $refResolver;
         $this->unique = $unique;
     }
@@ -183,7 +165,7 @@ HELP;
         $ref = $input->getArgument('GIT_REFERENCE');
         $userId = $input->getArgument('USER_ID');
 
-        if (!$repository = $this->repoRepo->find($repositoryId)) {
+        if (!$repository = $this->applicationRepo->find($repositoryId)) {
             return $this->failure($output, 1);
         }
 
@@ -222,8 +204,8 @@ HELP;
 
         $this->dupeCatcher($build);
 
-        $this->entityManager->persist($build);
-        $this->entityManager->flush();
+        $this->em->persist($build);
+        $this->em->flush();
 
         if ($input->getOption('porcelain')) {
             $output->writeln($build->getId());

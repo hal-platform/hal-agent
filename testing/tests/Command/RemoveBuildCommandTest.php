@@ -24,8 +24,10 @@ class RemoveBuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
+        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+            'getRepository' => $this->buildRepo
+        ]);
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
         $this->archive = 'path';
 
@@ -45,7 +47,6 @@ class RemoveBuildCommandTest extends PHPUnit_Framework_TestCase
         $command = new RemoveBuildCommand(
             'derp:cmd',
             $this->em,
-            $this->buildRepo,
             $this->filesystem,
             $this->archive
         );
@@ -74,7 +75,6 @@ OUTPUT;
         $command = new RemoveBuildCommand(
             'derp:cmd',
             $this->em,
-            $this->buildRepo,
             $this->filesystem,
             $this->archive
         );
@@ -114,7 +114,6 @@ OUTPUT;
         $command = new RemoveBuildCommand(
             'derp:cmd',
             $this->em,
-            $this->buildRepo,
             $this->filesystem,
             $this->archive
         );

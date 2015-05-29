@@ -19,6 +19,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 {
     public $pushRepo;
     public $em;
+
     public $builder;
     public $process;
     public $logger;
@@ -29,7 +30,9 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->pushRepo = Mockery::mock('QL\Hal\Core\Repository\PushRepository');
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
+        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+            'getRepository' => $this->pushRepo
+        ]);
         $this->builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
         $this->process = Mockery::mock('Symfony\Component\Process\Process', ['stop' => null]);
         $this->logger = new MemoryLogger;
@@ -46,7 +49,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new PushCommand(
             'cmd',
-            $this->pushRepo,
             $this->em,
             $this->builder,
             $this->logger,
@@ -106,7 +108,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new PushCommand(
             'cmd',
-            $this->pushRepo,
             $this->em,
             $this->builder,
             $this->logger,
@@ -147,7 +148,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new PushCommand(
             'cmd',
-            $this->pushRepo,
             $this->em,
             $this->builder,
             $this->logger,
@@ -209,7 +209,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new PushCommand(
             'cmd',
-            $this->pushRepo,
             $this->em,
             $this->builder,
             $this->logger,

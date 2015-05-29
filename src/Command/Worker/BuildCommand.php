@@ -7,11 +7,13 @@
 
 namespace QL\Hal\Agent\Command\Worker;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Psr\Log\LoggerInterface;
+use QL\Hal\Core\Entity\Build;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -37,7 +39,7 @@ class BuildCommand extends Command implements OutputAwareInterface
     const DEFAULT_SLEEP_TIME = 5;
 
     /**
-     * @type BuildRepository
+     * @type EntityRepository
      */
     private $buildRepo;
 
@@ -70,21 +72,21 @@ class BuildCommand extends Command implements OutputAwareInterface
 
     /**
      * @param string $name
-     * @param BuildRepository $buildRepo
+     * @param EntityManagerInterface $em
      * @param ProcessBuilder $builder
      * @param LoggerInterface $logger
      * @param string $workingDir
      */
     public function __construct(
         $name,
-        BuildRepository $buildRepo,
+        EntityManagerInterface $em,
         ProcessBuilder $builder,
         LoggerInterface $logger,
         $workingDir
     ) {
         parent::__construct($name);
 
-        $this->buildRepo = $buildRepo;
+        $this->buildRepo = $em->getRepository(Build::CLASS);
         $this->builder = $builder;
         $this->logger = $logger;
         $this->workingDir = $workingDir;

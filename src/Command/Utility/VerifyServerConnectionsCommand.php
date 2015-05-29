@@ -8,11 +8,12 @@
 namespace QL\Hal\Agent\Command\Utility;
 
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use MCP\DataType\Time\Clock;
 use Predis\Client as Predis;
-use Doctrine\ORM\EntityRepository;
+use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Server;
-use QL\Hal\Core\Repository\EnvironmentRepository;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
 use QL\Hal\Agent\Push\HostnameValidatorTrait;
@@ -74,10 +75,6 @@ HELP;
      * @type EntityRepository
      */
     private $serverRepo;
-
-    /**
-     * @type EnvironmentRepository
-     */
     private $environmentRepo;
 
     /**
@@ -102,8 +99,7 @@ HELP;
 
     /**
      * @param string $name
-     * @param EntityRepository $serverRepo
-     * @param EnvironmentRepository $environmentRepo
+     * @param EntityManagerInterface $em
      * @param SSHSessionManager $sshManager
      * @param Predis $predis
      * @param Clock $clock
@@ -111,8 +107,7 @@ HELP;
      */
     public function __construct(
         $name,
-        EntityRepository $serverRepo,
-        EnvironmentRepository $environmentRepo,
+        EntityManagerInterface $em,
         SSHSessionManager $sshManager,
         Predis $predis,
         Clock $clock,
@@ -120,8 +115,8 @@ HELP;
     ) {
         parent::__construct($name);
 
-        $this->serverRepo = $serverRepo;
-        $this->environmentRepo = $environmentRepo;
+        $this->serverRepo = $em->getRepository(Server::CLASS);
+        $this->environmentRepo = $em->getRepository(Environment::CLASS);
         $this->sshManager = $sshManager;
         $this->predis = $predis;
         $this->clock = $clock;
@@ -297,7 +292,7 @@ HELP;
         }
 
         // sort envs
-        usort($environments, $this->environmentSorter());
+        uasort($environments, $this->envSorter());
 
         // Sort servers within env
         $sorter = $this->serverSorter();
@@ -306,6 +301,38 @@ HELP;
         }
 
         return $environments;
+    }
+
+    /**
+     * @return Closure
+     */
+    private function envSorter()
+    {
+        $sortOrder = [
+            'dev' => 0,
+            'test' => 1,
+            'beta' => 2,
+            'prod' => 3
+        ];
+
+        return function($a, $b) use ($sortOrder) {
+
+            $firstA = reset($a);
+            $firstB = reset($b);
+
+            $aName = $firstA->getName();
+            $bName = $firstB->getName();
+
+            $aOrder = isset($sortOrder[$aName]) ? $sortOrder[$aName] : 999;
+            $bOrder = isset($sortOrder[$bName]) ? $sortOrder[$bName] : 999;
+
+            if ($aOrder === $bOrder) {
+                return 0;
+            }
+
+            return ($aOrder > $bOrder);
+
+        };
     }
 
     /**

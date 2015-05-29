@@ -13,7 +13,7 @@ use Predis\Client as Predis;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\EventLog;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Type\EventEnumType;
+use QL\Hal\Core\Type\EnumType\EventEnum;
 
 /**
  * This makes attaching logs to events very simple.
@@ -174,7 +174,7 @@ class EventFactory
      */
     public function setStage($stage)
     {
-        if (!in_array($stage, EventEnumType::values())) {
+        if (!in_array($stage, EventEnum::values())) {
             // error?
             return;
         }

@@ -11,7 +11,7 @@ use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\ServerEnumType;
+use QL\Hal\Core\Type\EnumType\ServerEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -67,7 +67,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnumType::TYPE_RSYNC])) {
+        if (!isset($properties[ServerEnum::TYPE_RSYNC])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 100;
         }
@@ -105,9 +105,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $delta = $this->delta;
         return $delta(
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
             $properties['pushProperties']
         );
     }
@@ -128,11 +128,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $prepush = $this->serverCommand;
         return $prepush(
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['pre_push'],
-            $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']
+            $properties[ServerEnum::TYPE_RSYNC]['environmentVariables']
         );
     }
 
@@ -149,9 +149,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $pusher(
             $properties['location']['path'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['exclude']
         );
     }
@@ -172,11 +172,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $postpush = $this->serverCommand;
         return $postpush(
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnumType::TYPE_RSYNC]['remotePath'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['post_push'],
-            $properties[ServerEnumType::TYPE_RSYNC]['environmentVariables']
+            $properties[ServerEnum::TYPE_RSYNC]['environmentVariables']
         );
     }
 }

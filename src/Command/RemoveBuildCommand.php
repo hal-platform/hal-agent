@@ -7,9 +7,9 @@
 
 namespace QL\Hal\Agent\Command;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -35,7 +35,7 @@ class RemoveBuildCommand extends Command
     /**
      * A list of all possible exit codes of this command
      *
-     * @var array
+     * @type array
      */
     private static $codes = [
         0 => 'Archive removed.',
@@ -43,42 +43,41 @@ class RemoveBuildCommand extends Command
     ];
 
     /**
-     * @var EntityManager
+     * @type EntityManagerInterface
      */
-    private $entityManager;
+    private $em;
 
     /**
-     * @var BuildRepository
+     * @type EntityRepository
      */
     private $buildRepo;
 
     /**
-     * @var Filesystem
+     * @type Filesystem
      */
     private $filesystem;
 
     /**
-     * @var string
+     * @type string
      */
     private $archivePath;
 
     /**
      * @param string $name
-     * @param EntityManager $entityManager
-     * @param BuildRepository $buildRepo
+     * @param EntityManagerInterface $em
      * @param Filesystem $filesystem
      * @param string $archivePath
      */
     public function __construct($name,
-        EntityManager $entityManager,
-        BuildRepository $buildRepo,
+        EntityManagerInterface $em,
         Filesystem $filesystem,
         $archivePath
     ) {
         parent::__construct($name);
 
-        $this->entityManager = $entityManager;
-        $this->buildRepo = $buildRepo;
+        $this->em = $em;
+        $this->buildRepo = $em->getRepository(Build::CLASS);
+
         $this->filesystem = $filesystem;
         $this->archivePath = $archivePath;
     }
@@ -171,8 +170,8 @@ class RemoveBuildCommand extends Command
 
         // Update entity
         $build->setStatus('Removed');
-        $this->entityManager->merge($build);
-        $this->entityManager->flush();
+        $this->em->merge($build);
+        $this->em->flush();
 
         // remove file
         if (!$this->filesystem->exists($archive)) {

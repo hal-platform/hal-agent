@@ -11,7 +11,7 @@ use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\ServerEnumType;
+use QL\Hal\Core\Type\EnumType\ServerEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -63,7 +63,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnumType::TYPE_EC2])) {
+        if (!isset($properties[ServerEnum::TYPE_EC2])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 300;
         }
@@ -103,7 +103,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $finder = $this->finder;
         $instances = $finder(
-            $properties[ServerEnumType::TYPE_EC2]['pool'],
+            $properties[ServerEnum::TYPE_EC2]['pool'],
             InstanceFinder::RUNNING
         );
 
@@ -127,7 +127,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $pusher = $this->pusher;
         return $pusher(
             $properties['location']['path'],
-            $properties[ServerEnumType::TYPE_EC2]['remotePath'],
+            $properties[ServerEnum::TYPE_EC2]['remotePath'],
             $properties['configuration']['exclude'],
             $instances
         );

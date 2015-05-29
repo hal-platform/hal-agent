@@ -53,10 +53,6 @@ services:
             - 'build:create'
             - @doctrine.em
             - @clock
-            - @build.repo
-            - @repository.repo
-            - @environment.repo
-            - @user.repo
             - @utility.referenceResolver
             - @utility.id.generator
     command.build.build:
@@ -79,16 +75,13 @@ services:
         arguments:
             - 'build:remove'
             - @doctrine.em
-            - @build.repo
             - @utility.filesystem
             - %environment.archive%
     command.builds.list:
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
             - 'builds:list'
-            - @build.repo
-            - @repository.repo
-            - @environment.repo
+            - @doctrine.em
             - @utility.filesystem
             - %environment.archive%
     command.push.create:
@@ -97,10 +90,6 @@ services:
             - 'push:create'
             - @doctrine.em
             - @clock
-            - @build.repo
-            - @deployment.repo
-            - @push.repo
-            - @user.repo
             - @utility.id.generator
     command.push.push:
         class: 'QL\Hal\Agent\Command\PushCommand'
@@ -124,7 +113,7 @@ services:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
-            - @build.repo
+            - @doctrine.em
             - @utility.process.builder= # = signifies a prototype service
             - @logger.mcp
             - @root
@@ -132,7 +121,6 @@ services:
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
-            - @push.repo
             - @doctrine.em
             - @utility.process.builder= # = signifies a prototype service
             - @logger.mcp
@@ -174,8 +162,7 @@ services:
         class: 'QL\Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
         arguments:
             - 'server:connections'
-            - @server.repo
-            - @environment.repo
+            - @doctrine.em
             - @ssh.manager
             - @redis
             - @clock

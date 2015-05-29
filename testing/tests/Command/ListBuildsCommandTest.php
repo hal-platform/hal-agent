@@ -11,14 +11,18 @@ use MCP\DataType\Time\TimePoint;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Repository;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 {
+    public $em;
     public $buildRepo;
     public $repoRepo;
     public $envRepo;
+
     public $filesystem;
     public $archive;
 
@@ -27,9 +31,25 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
         $this->repoRepo = Mockery::mock('Doctrine\ORM\EntityRepository');
         $this->envRepo = Mockery::mock('QL\Hal\Core\Repository\EnvironmentRepository');
+
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Build::CLASS)
+            ->andReturn($this->buildRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Repository::CLASS)
+            ->andReturn($this->repoRepo);
+        $this->em
+            ->shouldReceive('getRepository')
+            ->with(Environment::CLASS)
+            ->andReturn($this->envRepo);
+
+
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
         $this->archive = 'path';
 
@@ -46,9 +66,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new ListBuildsCommand(
             'derp:cmd',
-            $this->buildRepo,
-            $this->repoRepo,
-            $this->envRepo,
+            $this->em,
             $this->filesystem,
             $this->archive
         );
@@ -91,9 +109,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
         $command = new ListBuildsCommand(
             'derp:cmd',
-            $this->buildRepo,
-            $this->repoRepo,
-            $this->envRepo,
+            $this->em,
             $this->filesystem,
             $this->archive
         );
