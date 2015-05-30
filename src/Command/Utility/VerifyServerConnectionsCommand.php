@@ -205,7 +205,7 @@ HELP;
                     }
                 }
 
-                $statuses[] = [
+                $statuses[$server->getId()] = [
                     'server' => $serverName,
                     'environment' => $envName,
                     'status' => $success
