@@ -1,0 +1,20 @@
+services:
+    doctrine.proxy.dir:
+        class: 'DOES_NOT_MATTER'
+        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
+        arguments: [@root, '/.doctrine']
+
+    doctrine.cache:
+        class: 'Doctrine\Common\Cache\ArrayCache'
+
+    doctrine.em.events:
+        class: 'Doctrine\Common\EventManager'
+        calls:
+            - ['addEventListener', [['prePersist'], @doctrine.persist.listener]]
+
+    doctrine.random:
+        class: 'QL\Hal\Core\RandomGenerator'
+
+    doctrine.persist.listener:
+        class: 'QL\Hal\Core\Listener\DoctrinePersistListener'
+        arguments: [@clock, @doctrine.random]

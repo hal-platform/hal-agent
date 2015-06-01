@@ -1,10 +1,6 @@
 imports:
     - resource: ../vendor/ql/hal-core/config/hal-core.yml
     - resource: di.yml
-    - resource: di.command.yml
-    - resource: di.build.yml
-    - resource: di.push.yml
-    - resource: di.logging.yml
     - resource: config.global.yml
     - resource: config.env.yml
 

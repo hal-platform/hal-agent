@@ -1,3 +1,11 @@
+imports:
+    - resource: di.command.yml
+    - resource: di.build.yml
+    - resource: di.push.yml
+    - resource: services/services.aws.yml
+    - resource: services/services.doctrine.yml
+    - resource: services/services.github.yml
+    - resource: services/services.logging.yml
 services:
 
     root:
@@ -47,34 +55,6 @@ services:
         arguments:
             - %redis.server%
             - {prefix: '%redis.prefix%:'}
-
-    ####################################################################################################################
-    # doctrine
-    ####################################################################################################################
-
-    doctrine.proxy.dir:
-        class: 'DOES_NOT_MATTER'
-        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
-        arguments: [@root, '/.doctrine']
-
-    doctrine.cache:
-        class: 'Doctrine\Common\Cache\ArrayCache'
-
-    # @todo remove one of these
-    cache.doctrine:
-        class: 'Doctrine\Common\Cache\ArrayCache'
-
-    doctrine.em.events:
-        class: 'Doctrine\Common\EventManager'
-        calls:
-            - ['addEventListener', [['prePersist'], @doctrine.persist.listener]]
-
-    doctrine.random:
-        class: 'QL\Hal\Core\RandomGenerator'
-
-    doctrine.persist.listener:
-        class: 'QL\Hal\Core\DoctrinePersistListener'
-        arguments: [@clock, @doctrine.random]
 
     ####################################################################################################################
     # utility / shared
@@ -155,85 +135,3 @@ services:
             - @doctrine.em
             - @logger.event
             - @service_container
-
-    ####################################################################################################################
-    # github
-    ####################################################################################################################
-
-    github.archive:
-        class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments: [@github.client]
-
-    github.references:
-        class: 'Github\Api\GitData\References'
-        arguments: [@github.client]
-    github.commits:
-        class: 'Github\Api\Repository\Commits'
-        arguments: [@github.client]
-    github.pullRequests:
-        class: 'Github\Api\PullRequest'
-        arguments: [@github.client]
-
-    github.deployments:
-        class: 'QL\Hal\Agent\Github\DeploymentsApi'
-        arguments:
-            - @guzzle
-            - %github.baseurl.api%
-
-    github.client:
-        class: 'Github\Client'
-        arguments: [@github.httpClient]
-    github.httpClient:
-        class: 'Github\HttpClient\HttpClient'
-        arguments: [[], @github.guzzleHttpClient]
-        calls:
-            - ['authenticate', [%github.token%, null, 'http_token']]
-    github.guzzleHttpClient:
-        class: 'Guzzle\Http\Client'
-        arguments:
-            - %github.baseurl.api%
-            -
-                curl.options:
-                    progress: true
-
-    ####################################################################################################################
-    # aws
-    ####################################################################################################################
-
-    aws.credentials.cache:
-        class: 'Guzzle\Cache\DoctrineCacheAdapter'
-        arguments: [@aws.credentials.cache.source]
-    aws.credentials.cache.source:
-        # class: 'Doctrine\Common\Cache\FilesystemCache'
-        # arguments: ['/tmp/cache']
-        class: 'Doctrine\Common\Cache\ArrayCache'
-
-    aws.eb:
-        class: 'Aws\ElasticBeanstalk\ElasticBeanstalkClient'
-        factory: ['Aws\ElasticBeanstalk\ElasticBeanstalkClient', 'factory']
-        arguments:
-            -
-                credentials.cache: @aws.credentials.cache
-                region: %aws.region%
-                key: %aws.credentials.key%
-                secret: %aws.credentials.secret%
-
-    aws.s3:
-        class: 'Aws\S3\S3Client'
-        factory: ['Aws\S3\S3Client', 'factory']
-        arguments:
-            -
-                credentials.cache: @aws.credentials.cache
-                region: %aws.region%
-                key: %aws.credentials.key%
-                secret: %aws.credentials.secret%
-
-    aws.ec2:
-        class: 'Aws\Ec2\Ec2Client'
-        factory: ['Aws\Ec2\Ec2Client', 'factory']
-        arguments:
-            -
-                credentials.cache: @aws.credentials.cache
-                region: %aws.region%
-                key: %aws.credentials.key%
-                secret: %aws.credentials.secret%

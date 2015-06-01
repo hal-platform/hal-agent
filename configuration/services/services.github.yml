@@ -1,0 +1,37 @@
+services:
+
+    github.archive:
+        class: 'QL\Hal\Agent\Github\ArchiveApi'
+        arguments: [@github.client]
+
+    github.references:
+        class: 'Github\Api\GitData\References'
+        arguments: [@github.client]
+    github.commits:
+        class: 'Github\Api\Repository\Commits'
+        arguments: [@github.client]
+    github.pullRequests:
+        class: 'Github\Api\PullRequest'
+        arguments: [@github.client]
+
+    github.deployments:
+        class: 'QL\Hal\Agent\Github\DeploymentsApi'
+        arguments:
+            - @guzzle
+            - %github.baseurl.api%
+
+    github.client:
+        class: 'Github\Client'
+        arguments: [@github.httpClient]
+    github.httpClient:
+        class: 'Github\HttpClient\HttpClient'
+        arguments: [[], @github.guzzleHttpClient]
+        calls:
+            - ['authenticate', [%github.token%, null, 'http_token']]
+    github.guzzleHttpClient:
+        class: 'Guzzle\Http\Client'
+        arguments:
+            - %github.baseurl.api%
+            -
+                curl.options:
+                    progress: true
