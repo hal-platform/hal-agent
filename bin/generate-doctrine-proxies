@@ -4,14 +4,17 @@
 namespace QL\Hal\Bin;
 
 use QL\Hal\Agent\Application\Di;
-use QL\Hal\Agent\Application\DoctrineProxyGenerator;
+use QL\Hal\Core\Utility\DoctrineProxyGenerator;
 
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 $di = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
 
-$generator = new DoctrineProxyGenerator($di);
+$generator = $di->get('doctrine.proxy.generator');
 
-if (!$generator()) {
+$success = $generator();
+echo $generator->output();
+
+if (!$success) {
     exit(1);
 }

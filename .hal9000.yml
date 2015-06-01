@@ -1,2 +1,3 @@
+system: docker:php5.6
 exclude: []
 build: 'bin/deploy'
