@@ -8,16 +8,16 @@
 namespace QL\Hal\Agent\Build;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
 use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Utility\ResolverTrait;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Repository;
-use QL\Hal\Core\Repository\BuildRepository;
 
 /**
  * Resolve build properties from user and environment input
@@ -39,7 +39,7 @@ class Resolver
     const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
 
     /**
-     * @type BuildRepository
+     * @type EntityRepository
      */
     private $buildRepo;
 
@@ -81,34 +81,34 @@ class Resolver
             throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildId));
         }
 
-        if ($build->getStatus() !== 'Waiting') {
-            throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->getStatus()));
+        if ($build->status() !== 'Waiting') {
+            throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->status()));
         }
 
         $properties = [
             'build' => $build,
 
             // default, overwritten by .hal9000.yml
-            'configuration' => $this->buildDefaultConfiguration($build->getRepository()),
+            'configuration' => $this->buildDefaultConfiguration($build->application()),
 
             'location' => [
-                'download' => $this->generateRepositoryDownloadFile($build->getId()),
-                'path' => $this->generateLocalTempPath($build->getId(), 'build'),
-                'archive' => $this->generateBuildArchiveFile($build->getId()),
-                'tempArchive' => $this->generateTempBuildArchiveFile($build->getId(), 'build')
+                'download' => $this->generateRepositoryDownloadFile($build->id()),
+                'path' => $this->generateLocalTempPath($build->id(), 'build'),
+                'archive' => $this->generateBuildArchiveFile($build->id()),
+                'tempArchive' => $this->generateTempBuildArchiveFile($build->id(), 'build')
             ],
 
             'github' => [
-                'user' => $build->getRepository()->getGithubUser(),
-                'repo' => $build->getRepository()->getGithubRepo(),
-                'reference' => $build->getCommit()
+                'user' => $build->application()->githubOwner(),
+                'repo' => $build->application()->githubRepo(),
+                'reference' => $build->commit()
             ]
         ];
 
         // Get encrypted properties for use in build, with sources as well (for logging)
         $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
-            $build->getRepository(),
-            $build->getEnvironment()
+            $build->application(),
+            $build->environment()
         );
         $properties = array_merge($properties, $encryptedProperties);
 

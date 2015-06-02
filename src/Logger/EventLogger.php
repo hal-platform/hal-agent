@@ -148,8 +148,8 @@ class EventLogger
     public function failure()
     {
         if ($this->isInProgress()) {
-            $this->entity->setStatus('Error');
-            $this->entity->setEnd($this->clock->read());
+            $this->entity->withStatus('Error');
+            $this->entity->withEnd($this->clock->read());
             $this->entityManager->merge($this->entity);
 
             $this->setStage('failure');
@@ -167,8 +167,8 @@ class EventLogger
     public function success()
     {
         if ($this->isInProgress()) {
-            $this->entity->setStatus('Success');
-            $this->entity->setEnd($this->clock->read());
+            $this->entity->withStatus('Success');
+            $this->entity->withEnd($this->clock->read());
             $this->entityManager->merge($this->entity);
 
             $this->setStage('success');
@@ -186,12 +186,12 @@ class EventLogger
             return false;
         }
 
-        if ($this->entity instanceof Build && $this->entity->getStatus() === 'Building') {
+        if ($this->entity instanceof Build && $this->entity->status() === 'Building') {
             return true;
         }
 
 
-        if ($this->entity instanceof Push && $this->entity->getStatus() === 'Pushing') {
+        if ($this->entity instanceof Push && $this->entity->status() === 'Pushing') {
             return true;
         }
 
@@ -223,8 +223,8 @@ class EventLogger
     private function startBuild(Build $build)
     {
         $this->entity = $build;
-        $this->entity->setStatus('Building');
-        $this->entity->setStart($this->clock->read());
+        $this->entity->withStatus('Building');
+        $this->entity->withStart($this->clock->read());
 
         $this->factory->setBuild($build);
     }
@@ -237,8 +237,8 @@ class EventLogger
     private function startPush(Push $push)
     {
         $this->entity = $push;
-        $this->entity->setStatus('Pushing');
-        $this->entity->setStart($this->clock->read());
+        $this->entity->withStatus('Pushing');
+        $this->entity->withStart($this->clock->read());
 
         $this->factory->setPush($push);
     }

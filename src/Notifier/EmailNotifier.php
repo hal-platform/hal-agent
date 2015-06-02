@@ -67,22 +67,22 @@ class EmailNotifier implements NotifierInterface
         }
 
         // skip if no email
-        if (!$to = $data['repository']->getEmail()) {
+        if (!$to = $data['application']->email()) {
             return;
         }
 
         if ($data['push'] instanceof Push) {
-            $target = $data['server']->getName();
-            if ($data['server']->getType() === ServerEnum::TYPE_EB) {
-                $target = sprintf('EB:%s', $data['deployment']->getEbEnvironment());
+            $target = $data['server']->name();
+            if ($data['server']->type() === ServerEnum::TYPE_EB) {
+                $target = sprintf('EB:%s', $data['deployment']->ebEnvironment());
 
-            } elseif ($data['server']->getType() === ServerEnum::TYPE_EC2) {
-                $target = sprintf('EC2:%s', $data['deployment']->getEc2Pool());
+            } elseif ($data['server']->type() === ServerEnum::TYPE_EC2) {
+                $target = sprintf('EC2:%s', $data['deployment']->ec2Pool());
             }
 
-            $subject = sprintf(self::PUSH_MESSAGE, $data['icon'], $data['repository']->getKey(), $data['environment']->getKey(), $target);
+            $subject = sprintf(self::PUSH_MESSAGE, $data['icon'], $data['application']->key(), $data['environment']->name(), $target);
         } else {
-            $subject = sprintf(self::BUILD_MESSAGE, $data['icon'], $data['repository']->getKey(), $data['environment']->getKey());
+            $subject = sprintf(self::BUILD_MESSAGE, $data['icon'], $data['application']->key(), $data['environment']->name());
         }
 
         $isHighPriority = ($data['status'] === false);

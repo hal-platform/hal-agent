@@ -9,6 +9,12 @@ namespace QL\Hal\Agent\Logger;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Push;
+use QL\Hal\Core\Entity\Server;
 
 class NotifierTest extends PHPUnit_Framework_TestCase
 {
@@ -61,9 +67,9 @@ class NotifierTest extends PHPUnit_Framework_TestCase
         $build = Mockery::mock('QL\Hal\Core\Entity\Build');
         $build
             ->shouldReceive([
-                'getStatus' => 'Success',
-                'getRepository' => 'repo',
-                'getEnvironment' => 'env'
+                'status' => 'Success',
+                'application' => 'repo',
+                'environment' => 'env'
             ]);
 
         $notifier = new Notifier($this->di);
@@ -92,39 +98,31 @@ class NotifierTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('get')
             ->andReturn($notifierService);
 
-        $push = Mockery::mock('QL\Hal\Core\Entity\Push');
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build');
-        $server = Mockery::mock('QL\Hal\Core\Entity\Server');
-        $deployment = Mockery::mock('QL\Hal\Core\Entity\Deployment');
-        $repo = Mockery::mock('QL\Hal\Core\Entity\Repository');
-        $env = Mockery::mock('QL\Hal\Core\Entity\Environment');
+        $server = Mockery::mock(Server::CLASS);
+        $application = Mockery::mock(Application::CLASS);
+        $environment = Mockery::mock(Environment::CLASS);
 
-        $push
-            ->shouldReceive('getStatus')
-            ->andReturn('Success');
-        $push
-            ->shouldReceive('getBuild')
-            ->andReturn($build);
-        $push
-            ->shouldReceive('getDeployment')
-            ->andReturn($deployment);
-        $build
-            ->shouldReceive('getRepository')
-            ->andReturn($repo);
-        $build
-            ->shouldReceive('getEnvironment')
-            ->andReturn($env);
-        $deployment
-            ->shouldReceive('getServer')
-            ->andReturn($server);
+        $build = Mockery::mock(Build::CLASS, [
+            'application' => $application,
+            'environment' => $environment
+        ]);
+        $deployment = Mockery::mock(Deployment::CLASS, [
+            'server' => $server
+        ]);
+
+        $push = Mockery::mock(Push::CLASS, [
+            'status' => 'Success',
+            'build' => $build,
+            'deployment' => $deployment
+        ]);
 
         $expectedContext = [
             'event' => 'push.success',
             'status' => true,
             'build' => $build,
             'push' => $push,
-            'repository' => $repo,
-            'environment' => $env,
+            'application' => $application,
+            'environment' => $environment,
             'deployment' => $deployment,
             'server' => $server
         ];
@@ -137,10 +135,9 @@ class NotifierTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expectedContext['status'], $spy['status']);
         $this->assertSame($expectedContext['build'], $spy['build']);
         $this->assertSame($expectedContext['push'], $spy['push']);
-        $this->assertSame($expectedContext['repository'], $spy['repository']);
+        $this->assertSame($expectedContext['application'], $spy['application']);
         $this->assertSame($expectedContext['environment'], $spy['environment']);
         $this->assertSame($expectedContext['deployment'], $spy['deployment']);
         $this->assertSame($expectedContext['server'], $spy['server']);
     }
-
 }

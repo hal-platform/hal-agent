@@ -10,11 +10,11 @@ namespace QL\Hal\Agent\Push;
 use Mockery;
 use MCP\DataType\Time\Clock;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
@@ -71,7 +71,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     public function testPushNotCorrectStatus()
     {
         $push = new Push;
-        $push->setStatus('Poo');
+        $push->withStatus('Poo');
 
         $this->repo
             ->shouldReceive('find')
@@ -96,10 +96,9 @@ class ResolverTest extends PHPUnit_Framework_TestCase
      */
     public function testPushFindsActiveDeployment()
     {
-        $deployment = new Deployment;
-        $push = new Push;
-        $push->setStatus('Waiting');
-        $push->setDeployment($deployment);
+        $push = (new Push)
+            ->withStatus('Waiting')
+            ->withDeployment(new Deployment);
 
         $this->repo
             ->shouldReceive('find')
@@ -127,21 +126,17 @@ class ResolverTest extends PHPUnit_Framework_TestCase
      */
     public function testElasticBeanstalkSanityCheckFails()
     {
-        $environment = new Environment;
-        $server = new Server;
-        $deployment = new Deployment;
-        $repo = new Repository;
-
-        $build = new Build;
-        $push = new Push;
-
-        $push->setStatus('Waiting');
-        $push->setRepository($repo);
-        $push->setDeployment($deployment);
-        $push->setBuild($build);
-
-        $server->setType('elasticbeanstalk');
-        $deployment->setServer($server);
+        $push = (new Push)
+            ->withStatus('Waiting')
+            ->withApplication(new Application)
+            ->withBuild(new Build)
+            ->withDeployment(
+                (new Deployment)
+                    ->withServer(
+                        (new Server)
+                            ->withType('elasticbeanstalk')
+                    )
+            );
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
 
@@ -167,38 +162,39 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     public function testRsyncSuccess()
     {
-        $repository = new Repository;
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setBuildTransformCmd('bin/build-transform');
-        $repository->setPrePushCmd('bin/pre');
-        $repository->setPostPushCmd('bin/post');
-        $repository->setKey('repokey');
+        $app = (new Application)
+            ->withKey('repokey')
+            ->withGithubOwner('user1')
+            ->withGithubRepo('repo1');
 
-        $environment = new Environment;
-        $environment->setKey('envname');
+        $app->setBuildTransformCmd('bin/build-transform');
+        $app->setPrePushCmd('bin/pre');
+        $app->setPostPushCmd('bin/post');
 
-        $build = new Build;
-        $build->setId('b2.5tnbBn8');
-        $build->setBranch('master');
-        $build->setCommit('5555');
-        $build->setRepository($repository);
-        $build->setEnvironment($environment);
-
-        $server = new Server;
-        $server->setName('127.0.0.1');
-        $server->setType('rsync');
-
-        $deployment = new Deployment;
-        $deployment->setPath('/herp/derp');
-        $deployment->setServer($server);
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setStatus('Waiting');
-        $push->setBuild($build);
-        $push->setDeployment($deployment);
-        $push->setRepository($repository);
+        $push = (new Push)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withApplication($app)
+            ->withBuild(
+                (new Build)
+                    ->withId('b2.5tnbBn8')
+                    ->withBranch('master')
+                    ->withCommit('5555')
+                    ->withApplication($app)
+                    ->withEnvironment(
+                        (new Environment)
+                            ->withName('envname')
+                    )
+            )
+            ->withDeployment(
+                (new Deployment)
+                    ->withPath('/herp/derp')
+                    ->withServer(
+                        (new Server)
+                            ->withType('rsync')
+                            ->withName('127.0.0.1')
+                    )
+            );
 
         $expected = [
             'method' => 'rsync',
@@ -298,38 +294,39 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     public function testElasticBeanstalkSuccess()
     {
-        $repository = new Repository;
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setBuildTransformCmd('bin/build-transform');
-        $repository->setPrePushCmd('bin/pre');
-        $repository->setPostPushCmd('bin/post');
-        $repository->setKey('repokey');
-        $repository->setEbName('eb_name');
+        $app = (new Application)
+            ->withKey('repokey')
+            ->withGithubOwner('user1')
+            ->withGithubRepo('repo1')
+            ->withEbName('eb_name');
 
-        $environment = new Environment;
-        $environment->setKey('envname');
+        $app->setBuildTransformCmd('bin/build-transform');
+        $app->setPrePushCmd('bin/pre');
+        $app->setPostPushCmd('bin/post');
 
-        $build = new Build;
-        $build->setId('b9.1234');
-        $build->setBranch('master');
-        $build->setCommit('5555');
-        $build->setRepository($repository);
-        $build->setEnvironment($environment);
-
-        $server = new Server;
-        $server->setType('elasticbeanstalk');
-
-        $deployment = new Deployment;
-        $deployment->setServer($server);
-        $deployment->setEbEnvironment('e-ididid');
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setStatus('Waiting');
-        $push->setBuild($build);
-        $push->setDeployment($deployment);
-        $push->setRepository($repository);
+        $push = (new Push)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withApplication($app)
+            ->withBuild(
+                (new Build)
+                    ->withId('b9.1234')
+                    ->withBranch('master')
+                    ->withCommit('5555')
+                    ->withApplication($app)
+                    ->withEnvironment(
+                        (new Environment)
+                            ->withName('envname')
+                    )
+            )
+            ->withDeployment(
+                (new Deployment)
+                    ->withEbEnvironment('e-ididid')
+                    ->withServer(
+                        (new Server)
+                            ->withType('elasticbeanstalk')
+                    )
+            );
 
         $expected = [
             'method' => 'elasticbeanstalk',
@@ -418,38 +415,40 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     public function testEc2Success()
     {
-        $repository = new Repository;
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setBuildTransformCmd('bin/build-transform');
-        $repository->setPrePushCmd('bin/pre');
-        $repository->setPostPushCmd('bin/post');
-        $repository->setKey('repokey');
+        $app = (new Application)
+            ->withKey('repokey')
+            ->withGithubOwner('user1')
+            ->withGithubRepo('repo1')
+            ->withEbName('eb_name');
 
-        $environment = new Environment;
-        $environment->setKey('envname');
+        $app->setBuildTransformCmd('bin/build-transform');
+        $app->setPrePushCmd('bin/pre');
+        $app->setPostPushCmd('bin/post');
 
-        $build = new Build;
-        $build->setId('8956');
-        $build->setBranch('master');
-        $build->setCommit('5555');
-        $build->setRepository($repository);
-        $build->setEnvironment($environment);
-
-        $server = new Server;
-        $server->setType('ec2');
-
-        $deployment = new Deployment;
-        $deployment->setServer($server);
-        $deployment->setEc2Pool('pool_name');
-        $deployment->setPath('/ec2/path/var/www');
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setStatus('Waiting');
-        $push->setBuild($build);
-        $push->setDeployment($deployment);
-        $push->setRepository($repository);
+        $push = (new Push)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withApplication($app)
+            ->withBuild(
+                (new Build)
+                    ->withId('8956')
+                    ->withBranch('master')
+                    ->withCommit('5555')
+                    ->withApplication($app)
+                    ->withEnvironment(
+                        (new Environment)
+                            ->withName('envname')
+                    )
+            )
+            ->withDeployment(
+                (new Deployment)
+                    ->withEc2Pool('pool_name')
+                    ->withPath('/ec2/path/var/www')
+                    ->withServer(
+                        (new Server)
+                            ->withType('ec2')
+                    )
+            );
 
         $expected = [
             'method' => 'ec2',

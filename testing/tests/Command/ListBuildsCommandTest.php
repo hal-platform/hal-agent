@@ -10,9 +10,9 @@ namespace QL\Hal\Agent\Command;
 use MCP\DataType\Time\TimePoint;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Repository;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -20,7 +20,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 {
     public $em;
     public $buildRepo;
-    public $repoRepo;
+    public $applicationRepo;
     public $envRepo;
 
     public $filesystem;
@@ -33,7 +33,7 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
     {
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
         $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
-        $this->repoRepo = Mockery::mock('Doctrine\ORM\EntityRepository');
+        $this->applicationRepo = Mockery::mock('Doctrine\ORM\EntityRepository');
         $this->envRepo = Mockery::mock('QL\Hal\Core\Repository\EnvironmentRepository');
 
         $this->em
@@ -42,8 +42,8 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn($this->buildRepo);
         $this->em
             ->shouldReceive('getRepository')
-            ->with(Repository::CLASS)
-            ->andReturn($this->repoRepo);
+            ->with(Application::CLASS)
+            ->andReturn($this->applicationRepo);
         $this->em
             ->shouldReceive('getRepository')
             ->with(Environment::CLASS)
@@ -85,21 +85,21 @@ class ListBuildsCommandTest extends PHPUnit_Framework_TestCase
 
     public function testBuildTableOutput()
     {
-        $environment = Mockery::mock('QL\Hal\Core\Entity\Environment', ['getKey' => 'env-name']);
-        $repository = Mockery::mock('QL\Hal\Core\Entity\Repository', ['getKey' => 'repo-name']);
+        $environment = Mockery::mock('QL\Hal\Core\Entity\Environment', ['name' => 'env-name']);
+        $application = Mockery::mock('QL\Hal\Core\Entity\Application', ['key' => 'repo-name']);
 
-        $build1 = new Build;
-        $build1->setRepository($repository);
-        $build1->setEnvironment($environment);
-        $build1->setId('1234');
-        $build1->setStatus('Success');
-        $build1->setCreated(new TimePoint(2015, 3, 15, 4, 5, 6, 'UTC'));
+        $build1 = (new Build)
+            ->withApplication($application)
+            ->withEnvironment($environment)
+            ->withId('1234')
+            ->withStatus('Success')
+            ->withCreated(new TimePoint(2015, 3, 15, 4, 5, 6, 'UTC'));
 
-        $build2 = new Build;
-        $build2->setRepository($repository);
-        $build2->setEnvironment($environment);
-        $build2->setId('5678');
-        $build2->setStatus('Waiting');
+        $build2 = (new Build)
+            ->withApplication($application)
+            ->withEnvironment($environment)
+            ->withId('5678')
+            ->withStatus('Waiting');
 
         $this->buildRepo
             ->shouldReceive('matching')

@@ -7,16 +7,16 @@
 
 namespace QL\Hal\Agent\Utility;
 
-use QL\Hal\Core\Entity\Repository;
+use QL\Hal\Core\Entity\Application;
 
 trait DefaultConfigHelperTrait
 {
     /**
-     * @param Repository $repository
+     * @param Application $application
      *
      * @return array
      */
-    private function buildDefaultConfiguration(Repository $repository)
+    private function buildDefaultConfiguration(Application $application)
     {
         return [
             'system' => 'unix',
@@ -26,10 +26,10 @@ trait DefaultConfigHelperTrait
                 'data/'
             ],
 
-            'build' => $this->arrayizeCommand($repository->getBuildCmd()),
-            'build_transform' => $this->arrayizeCommand($repository->getBuildTransformCmd()),
-            'pre_push' => $this->arrayizeCommand($repository->getPrePushCmd()),
-            'post_push' => $this->arrayizeCommand($repository->getPostPushCmd())
+            'build' => $this->arrayizeCommand($application->getBuildCmd()),
+            'build_transform' => $this->arrayizeCommand($application->getBuildTransformCmd()),
+            'pre_push' => $this->arrayizeCommand($application->getPrePushCmd()),
+            'post_push' => $this->arrayizeCommand($application->getPostPushCmd())
         ];
     }
 

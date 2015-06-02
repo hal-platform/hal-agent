@@ -70,9 +70,9 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public function testOutputWithMultipleBuilds()
     {
         $build1 = new Build;
-        $build1->setId('1234');
+        $build1->withId('1234');
         $build2 = new Build;
-        $build2->setId('5555');
+        $build2->withId('5555');
 
         $this->buildRepo
             ->shouldReceive('findBy')

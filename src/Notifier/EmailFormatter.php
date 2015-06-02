@@ -41,7 +41,7 @@ class EmailFormatter
             // status
             // build
             // push
-            // repository
+            // application
             // environment
             // server
 
@@ -60,27 +60,27 @@ class EmailFormatter
             $title = sprintf('[%s] %s update', $data['icon'], $type);
         }
 
-        $githubRepo = sprintf('%s/%s', $data['repository']->getGithubUser(), $data['repository']->getGithubRepo());
-        list($githubUrl, $githubHuman) = $this->formatGithubRef($githubRepo, $data['build']->getBranch(), $data['build']->getCommit());
+        $githubRepo = sprintf('%s/%s', $data['application']->githubOwner(), $data['application']->githubRepo());
+        list($githubUrl, $githubHuman) = $this->formatGithubRef($githubRepo, $data['build']->branch(), $data['build']->commit());
 
         $context = array_merge($data, [
             'title' => $title,
 
-            'is_success' => ($entity->getStatus() === 'Success'),
+            'is_success' => ($entity->status() === 'Success'),
             'is_push' => ($entity instanceof Push),
 
-            'username' => $entity->getUser() ? $entity->getUser()->getHandle() : 'Unknown',
+            'username' => $entity->user() ? $entity->user()->handle() : 'Unknown',
 
             'github' => [
                 'repo' => $githubRepo,
-                'ref' => $data['build']->getBranch(),
-                'commit' => $data['build']->getCommit(),
+                'ref' => $data['build']->branch(),
+                'commit' => $data['build']->commit(),
                 'human' => $githubHuman,
                 'ref_url' => $githubUrl
             ],
 
             'filesize' => $this->findFileSizes($data),
-            'time' => $this->formatTime($entity->getStart(), $entity->getEnd())
+            'time' => $this->formatTime($entity->start(), $entity->end())
         ]);
 
         return $this->twig->render($context);

@@ -143,7 +143,7 @@ class CreatePushCommand extends Command
             return $this->failure($output, 1);
         }
 
-        if ($build->getStatus() !== 'Success') {
+        if ($build->status() !== 'Success') {
             return $this->failure($output, 2);
         }
 
@@ -156,14 +156,14 @@ class CreatePushCommand extends Command
             return $this->failure($output, 8);
         }
 
-        $push = new Push;
-        $push->setId($this->unique->generatePushId());
-        $push->setCreated($this->clock->read());
-        $push->setStatus('Waiting');
-        $push->setBuild($build);
-        $push->setDeployment($deployment);
-        $push->setRepository($build->getRepository());
-        $push->setUser($user);
+        $push = (new Push)
+            ->withId($this->unique->generatePushId())
+            ->withCreated($this->clock->read())
+            ->withStatus('Waiting')
+            ->withBuild($build)
+            ->withDeployment($deployment)
+            ->withRepository($build->application())
+            ->withUser($user);
 
         $this->dupeCatcher($push);
 
@@ -171,10 +171,10 @@ class CreatePushCommand extends Command
         $this->entityManager->flush();
 
         if ($input->getOption('porcelain')) {
-            $output->writeln($push->getId());
+            $output->writeln($push->id());
 
         } else {
-            $this->success($output, sprintf('Push created: %s', $push->getId()));
+            $this->success($output, sprintf('Push created: %s', $push->id()));
         }
     }
 
@@ -184,11 +184,10 @@ class CreatePushCommand extends Command
      */
     private function dupeCatcher(Push $push)
     {
-        $dupe = $this->pushRepo->findBy(['id' => [$push->getId()]]);
+        $dupe = $this->pushRepo->findBy(['id' => [$push->id()]]);
         if ($dupe) {
-            $push->setId($this->unique->generatePushId());
+            $push->withId($this->unique->generatePushId());
             $this->dupeCatcher($push);
         }
     }
-
 }

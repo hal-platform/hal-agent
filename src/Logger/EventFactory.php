@@ -193,25 +193,25 @@ class EventFactory
     {
         $count = count($this->logs) + 1;
 
-        $log = new EventLog;
-        $log->setStatus($type);
-        $log->setEvent($this->currentStage);
-        $log->setOrder($count);
+        $log = (new EventLog)
+            ->withStatus($type)
+            ->withEvent($this->currentStage)
+            ->withOrder($count);
 
         if ($message) {
-            $log->setMessage($message);
+            $log->withMessage($message);
         }
 
         $context = $this->sanitizeContext($context);
         if ($context) {
-            $log->setData($context);
+            $log->withData($context);
         }
 
         if ($this->entity instanceof Build) {
-            $log->setBuild($this->entity);
+            $log->withBuild($this->entity);
 
         } elseif ($this->entity instanceof Push) {
-            $log->setPush($this->entity);
+            $log->withPush($this->entity);
         }
 
         // persist
@@ -235,8 +235,8 @@ class EventFactory
         }
 
         $parent = null;
-        if ($log->getBuild()) $parent = $log->getBuild()->getId();
-        if ($log->getPush()) $parent = $log->getPush()->getId();
+        if ($log->build()) $parent = $log->build()->id();
+        if ($log->push()) $parent = $log->push()->id();
 
         if (!$parent) {
             return;

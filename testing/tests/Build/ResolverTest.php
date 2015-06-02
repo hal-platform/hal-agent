@@ -9,9 +9,9 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Repository;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
@@ -52,7 +52,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     public function testBuildNotCorrectStatus()
     {
         $build = new Build;
-        $build->setStatus('Poo');
+        $build->withStatus('Poo');
 
         $this->buildRepo
             ->shouldReceive('find')
@@ -130,22 +130,22 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     private function createMockBuild()
     {
-        $environment = new Environment;
-        $environment->setKey('envkey');
+        $app = (new Application)
+            ->withGithubOwner('user1')
+            ->withGithubRepo('repo1')
+            ->withKey('repokey');
+        $app->setBuildCmd('derp');
 
-        $repository = new Repository;
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setBuildCmd('derp');
-        $repository->setKey('repokey');
-
-        $build = new Build;
-        $build->setId('1234');
-        $build->setStatus('Waiting');
-        $build->setEnvironment($environment);
-        $build->setRepository($repository);
-        $build->setBranch('master');
-        $build->setCommit('5555');
+        $build = (new Build)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withEnvironment(
+                (new Environment)
+                    ->withName('envkey')
+            )
+            ->withApplication($app)
+            ->withBranch('master')
+            ->withCommit('5555');
 
         return $build;
     }

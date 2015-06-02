@@ -91,7 +91,7 @@ OUTPUT;
     public function testMissingArchiveStillUpdatesEntity()
     {
         $build = new Build;
-        $build->setStatus('Success');
+        $build->withStatus('Success');
 
         $this->buildRepo
             ->shouldReceive('find')
@@ -125,6 +125,6 @@ Archive for build "1" was already removed.
 
 OUTPUT;
         $this->assertSame($expected, $this->output->fetch());
-        $this->assertSame('Removed', $build->getStatus());
+        $this->assertSame('Removed', $build->status());
     }
 }

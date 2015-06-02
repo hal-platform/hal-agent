@@ -14,10 +14,10 @@ use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
 use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
 use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Agent\Utility\ResolverTrait;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Repository\PushRepository;
 use QL\Hal\Core\Type\EnumType\ServerEnum;
@@ -130,20 +130,20 @@ class Resolver
             throw new PushException(sprintf(self::ERR_NOT_FOUND, $pushId));
         }
 
-        if ($push->getStatus() !== 'Waiting') {
-            throw new PushException(sprintf(self::ERR_BAD_STATUS, $pushId, $push->getStatus()));
+        if ($push->status() !== 'Waiting') {
+            throw new PushException(sprintf(self::ERR_BAD_STATUS, $pushId, $push->status()));
         }
 
-        if ($this->hasConcurrentDeployment($push->getDeployment())) {
+        if ($this->hasConcurrentDeployment($push->deployment())) {
             throw new PushException(sprintf(self::ERR_CLOBBERING_TIME, $pushId));
         }
 
-        $deployment = $push->getDeployment();
-        $build = $push->getBuild();
-        $repository = $push->getRepository();
-        $server = $deployment->getServer();
+        $deployment = $push->deployment();
+        $build = $push->build();
+        $application = $push->application();
+        $server = $deployment->server();
 
-        $method = $server->getType();
+        $method = $server->type();
 
         $this->validateAWSConfiguration($method);
 
@@ -153,31 +153,31 @@ class Resolver
             'method' => $method,
 
             // default, overwritten by .hal9000.yml
-            'configuration' => $this->buildDefaultConfiguration($repository),
+            'configuration' => $this->buildDefaultConfiguration($application),
 
             'location' => [
-                'path' => $this->generateLocalTempPath($push->getId(), 'push'),
-                'archive' => $this->generateBuildArchiveFile($build->getId()),
-                'legacy_archive' => $this->generateLegacyBuildArchiveFile($build->getId()),
+                'path' => $this->generateLocalTempPath($push->id(), 'push'),
+                'archive' => $this->generateBuildArchiveFile($build->id()),
+                'legacy_archive' => $this->generateLegacyBuildArchiveFile($build->id()),
 
-                'tempArchive' => $this->generateTempBuildArchiveFile($push->getId(), 'push'),
+                'tempArchive' => $this->generateTempBuildArchiveFile($push->id(), 'push'),
 
                 // elastic beanstalk
-                'tempZipArchive' => $this->generateTempZipArchiveFile($push->getId()),
+                'tempZipArchive' => $this->generateTempZipArchiveFile($push->id()),
             ],
 
             'pushProperties' => [
-                'id' => $build->getId(),
+                'id' => $build->id(),
                 'source' => sprintf(
                     '%s/%s/%s',
                     rtrim($this->githubBaseUrl, '/'),
-                    $repository->getGithubUser(),
-                    $repository->getGithubRepo()
+                    $application->githubOwner(),
+                    $application->githubRepo()
                 ),
-                'env' => $build->getEnvironment()->getKey(),
-                'user' => $push->getUser() ? $push->getUser()->getHandle() : null,
-                'reference' => $build->getBranch(),
-                'commit' => $build->getCommit(),
+                'env' => $build->environment()->name(),
+                'user' => $push->user() ? $push->user()->handle() : null,
+                'reference' => $build->branch(),
+                'commit' => $build->commit(),
                 'date' => $this->clock->read()->format('c', 'America/Detroit')
             ]
         ];
@@ -195,8 +195,8 @@ class Resolver
 
         // Get encrypted properties for use in build_transform, with sources as well (for logging)
         $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
-            $build->getRepository(),
-            $build->getEnvironment()
+            $build->application(),
+            $build->environment()
         );
         $properties = array_merge($properties, $encryptedProperties);
 
@@ -257,10 +257,10 @@ class Resolver
      */
     private function buildDeploymentSystemProperties($method, Push $push)
     {
-        $deployment = $push->getDeployment();
-        $build = $push->getBuild();
-        $repository = $push->getRepository();
-        $server = $deployment->getServer();
+        $deployment = $push->deployment();
+        $build = $push->build();
+        $application = $push->application();
+        $server = $deployment->server();
 
         $properties = [];
 
@@ -270,15 +270,15 @@ class Resolver
         } elseif ($method === ServerEnum::TYPE_EB) {
 
             $properties[$method] = [
-                'application' => $repository->getEbName(),
-                'environment' => $deployment->getEbEnvironment()
+                'application' => $application->ebName(),
+                'environment' => $deployment->ebEnvironment()
             ];
 
         } elseif ($method === ServerEnum::TYPE_EC2) {
 
             $properties[$method] = [
-                'pool' => $deployment->getEc2Pool(),
-                'remotePath' => $deployment->getPath()
+                'pool' => $deployment->ec2Pool(),
+                'remotePath' => $deployment->path()
             ];
         }
 
@@ -295,7 +295,7 @@ class Resolver
     private function buildRsyncProperties(Build $build, Deployment $deployment, Server $server)
     {
         // validate remote hostname
-        $serverName = $server->getName();
+        $serverName = $server->name();
         if (!$hostname = $this->validateHostname($serverName)) {
             $this->logger->event('failure', sprintf(self::ERR_HOSTNAME_RESOLUTION, $serverName));
 
@@ -305,20 +305,20 @@ class Resolver
 
         $env = [
             'HAL_HOSTNAME' => $hostname,
-            'HAL_PATH' => $deployment->getPath(),
+            'HAL_PATH' => $deployment->path(),
 
-            'HAL_BUILDID' => $build->getId(),
-            'HAL_COMMIT' => $build->getCommit(),
-            'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_REPO' => $build->getRepository()->getKey()
+            'HAL_BUILDID' => $build->id(),
+            'HAL_COMMIT' => $build->commit(),
+            'HAL_GITREF' => $build->branch(),
+            'HAL_ENVIRONMENT' => $build->environment()->name(),
+            'HAL_REPO' => $build->application()->key()
         ];
 
         return [
             'remoteUser' => $this->sshUser,
             'remoteServer' => $hostname,
-            'remotePath' => $deployment->getPath(),
-            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->getPath()),
+            'remotePath' => $deployment->path(),
+            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->path()),
             'environmentVariables' => $env
         ];
     }

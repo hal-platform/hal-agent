@@ -10,6 +10,12 @@ namespace QL\Hal\Agent\Command;
 use Exception;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Push;
+use QL\Hal\Core\Entity\Repository;
+use QL\Hal\Core\Entity\Server;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -101,25 +107,27 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             'PUSH_ID' => '1'
         ]);
 
-        $push = Mockery::mock('QL\Hal\Core\Entity\Push', [
-            'getStatus' => null,
-            'setStatus' => null,
-            'setStart' => null,
-            'setEnd' => null,
-            'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                'getName' => null
+        $push = Mockery::mock(Push::CLASS, [
+            'status' => null,
+
+            'withStatus' => null,
+            'withStart' => null,
+            'withEnd' => null,
+
+            'application' => Mockery::mock(Repository::CLASS, [
+                'name' => null
             ]),
-            'getDeployment' => Mockery::mock('QL\Hal\Core\Entity\Deployment', [
-                'getServer' => Mockery::mock('QL\Hal\Core\Entity\Server', [
-                    'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
-                        'getKey' => null
+            'deployment' => Mockery::mock(Deployment::CLASS, [
+                'server' => Mockery::mock(Server::CLASS, [
+                    'environment' => Mockery::mock(Environment::CLASS, [
+                        'name' => null
                     ]),
-                    'getName' => null
+                    'name' => null
                 ])
             ]),
-            'getId' => 1234,
-            'getBuild' => Mockery::mock('QL\Hal\Core\Entity\Build', [
-                'getId' => 5678
+            'id' => 1234,
+            'build' => Mockery::mock(Build::CLASS, [
+                'id' => 5678
             ])
         ]);
 
@@ -249,21 +257,23 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             'PUSH_ID' => '1'
         ]);
 
-        $push = Mockery::mock('QL\Hal\Core\Entity\Push', [
-            'getStatus' => 'Pushing',
-            'setStart' => null,
-            'getDeployment' => Mockery::mock('QL\Hal\Core\Entity\Deployment', [
-                'getServer' => Mockery::mock('QL\Hal\Core\Entity\Server', [
-                    'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
-                        'getKey' => null
+        $push = Mockery::mock(Push::CLASS, [
+            'status' => 'Pushing',
+
+            'withStart' => null,
+
+            'deployment' => Mockery::mock(Deployment::CLASS, [
+                'server' => Mockery::mock(Server::CLASS, [
+                    'environment' => Mockery::mock(Environment::CLASS, [
+                        'name' => null
                     ]),
-                    'getName' => null
+                    'name' => null
                 ]),
-                'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                    'getKey' => null
-                ])
+                'application' => Mockery::mock(Repository::CLASS, [
+                    'name' => null
+                ]),
             ]),
-            'getId' => 1234
+            'id' => 1234
         ]);
 
         $this->logger

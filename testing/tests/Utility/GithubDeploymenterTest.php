@@ -9,11 +9,11 @@ namespace QL\Hal\Agent\Utility;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Entity\User;
 
@@ -42,9 +42,8 @@ class GithubDeploymenterTest extends PHPUnit_Framework_TestCase
 
     public function testCreatingWithoutTokenFailsGracefully()
     {
-        $user = new User;
-        $push = $this->createMockPush();
-        $push->setUser($user);
+        $push = $this->createMockPush()
+            ->withUser(new User);
 
         $this->api
             ->shouldReceive('createDeployment')
@@ -58,12 +57,13 @@ class GithubDeploymenterTest extends PHPUnit_Framework_TestCase
 
     public function testCreatingDeploymentFailure()
     {
-        $user = new User;
-        $user->setHandle('testuser');
-        $user->setGithubToken('token1234');
+        $push = $this->createMockPush()
+            ->withUser(
+                (new User)
+                    ->withHandle('testuser')
+                    ->withGithubToken('token1234')
 
-        $push = $this->createMockPush();
-        $push->setUser($user);
+            );
 
         $this->api
             ->shouldReceive('createDeployment')
@@ -86,12 +86,13 @@ class GithubDeploymenterTest extends PHPUnit_Framework_TestCase
 
     public function testCreatingDeploymentSuccess()
     {
-        $user = new User;
-        $user->setHandle('testuser');
-        $user->setGithubToken('token1234');
+        $push = $this->createMockPush()
+            ->withUser(
+                (new User)
+                    ->withHandle('testuser')
+                    ->withGithubToken('token1234')
 
-        $push = $this->createMockPush();
-        $push->setUser($user);
+            );
 
         $this->api
             ->shouldReceive('createDeployment')
@@ -126,10 +127,12 @@ class GithubDeploymenterTest extends PHPUnit_Framework_TestCase
 
     public function testCreatingBadStatusFailsGracefully()
     {
-        $user = new User;
-        $user->setGithubToken('token1234');
-        $push = $this->createMockPush();
-        $push->setUser($user);
+        $push = $this->createMockPush()
+            ->withUser(
+                (new User)
+                    ->withGithubToken('token1234')
+
+            );
 
         $this->api
             ->shouldReceive('createDeployment')
@@ -148,12 +151,13 @@ class GithubDeploymenterTest extends PHPUnit_Framework_TestCase
 
     public function testCreatingDeploymentStatusSuccess()
     {
-        $user = new User;
-        $user->setHandle('testuser');
-        $user->setGithubToken('token1234');
+        $push = $this->createMockPush()
+            ->withUser(
+                (new User)
+                    ->withHandle('testuser')
+                    ->withGithubToken('token1234')
 
-        $push = $this->createMockPush();
-        $push->setUser($user);
+            );
 
         $this->api
             ->shouldReceive('createDeployment')
@@ -181,32 +185,32 @@ class GithubDeploymenterTest extends PHPUnit_Framework_TestCase
 
     private function createMockPush()
     {
-        $environment = new Environment;
-        $environment->setKey('envname');
+        $push = (new Push)
+            ->withId('push-1234')
+            ->withApplication(
+                (new Application)
+                    ->withGithubOwner('user1')
+                    ->withGithubRepo('repo1')
+                    ->withKey('repokey')
+            )
+            ->withDeployment(
+                (new Deployment)
+                    ->withServer(
+                        (new Server)
+                            ->withName('testserver1')
+                            ->withEnvironment(
+                                (new Environment)
+                                    ->withName('envname')
+                            )
+                    )
+            )
+            ->withBuild(
+                (new Build)
+                    ->withId('build-1234')
+                    ->withCommit('5555')
 
-        $repository = new Repository;
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setKey('repokey');
-
-        $build = new Build;
-        $build->setId('build-1234');
-        $build->setCommit('5555');
-
-        $server = new Server;
-        $server->setName('testserver1');
-        $server->setEnvironment($environment);
-
-        $deployment = new Deployment;
-        $deployment->setServer($server);
-
-        $push = new Push;
-        $push->setId('push-1234');
-        $push->setRepository($repository);
-        $push->setDeployment($deployment);
-        $push->setBuild($build);
+            );
 
         return $push;
     }
-
 }

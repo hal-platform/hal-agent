@@ -10,6 +10,9 @@ namespace QL\Hal\Agent\Command;
 use Exception;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Environment;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -106,18 +109,18 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             'BUILD_ID' => '1'
         ]);
 
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build', [
-            'getStatus' => null,
-            'setStatus' => null,
-            'setStart' => null,
-            'setEnd' => null,
-            'getId' => 1234,
-            'getRepository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                'getKey' => null,
-                'getName' => 'derp'
+        $build = Mockery::mock(Build::CLASS, [
+            'status' => null,
+            'withStatus' => null,
+            'withStart' => null,
+            'withEnd' => null,
+            'id' => 1234,
+            'application' => Mockery::mock(Application::CLASS, [
+                'key' => null,
+                'name' => 'derp'
             ]),
-            'getEnvironment' => Mockery::mock('QL\Hal\Core\Entity\Environment', [
-                'getKey' => null
+            'environment' => Mockery::mock(Environment::CLASS, [
+                'name' => null
             ])
         ]);
 

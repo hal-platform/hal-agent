@@ -61,32 +61,32 @@ class GithubDeploymenter
         $this->currentPush = $this->currentDeploymentId = null;
 
         // no user used
-        if (!$user = $push->getUser()) {
+        if (!$user = $push->user()) {
             return false;
         }
 
         // hal does not have github auth
-        if (!$githubToken = $user->getGithubToken()) {
+        if (!$githubToken = $user->githubToken()) {
             return false;
         }
 
-        $server = $push->getDeployment()->getServer();
-        $env = $server->getEnvironment()->getKey();
-        $server = $server->getName();
+        $server = $push->deployment()->server();
+        $env = $server->environment()->name();
+        $server = $server->name();
 
         $description = sprintf(
             '%s requested Build %s be deployed to %s (%s)',
-            $user->getHandle(),
-            $push->getBuild()->getId(),
+            $user->handle(),
+            $push->build()->id(),
             $env,
             $server
         );
 
         $id = $this->deploymentsApi->createDeployment(
-            $push->getRepository()->getGithubUser(),
-            $push->getRepository()->getGithubRepo(),
+            $push->application()->githubOwner(),
+            $push->application()->githubRepo(),
             $githubToken,
-            $push->getBuild()->getCommit(),
+            $push->build()->commit(),
             $env,
             $description
         );
@@ -122,12 +122,12 @@ class GithubDeploymenter
         }
 
         // no user used
-        if (!$user = $push->getUser()) {
+        if (!$user = $push->user()) {
             return;
         }
 
         // hal does not have github auth
-        if (!$githubToken = $user->getGithubToken()) {
+        if (!$githubToken = $user->githubToken()) {
             return;
         }
 
@@ -135,26 +135,26 @@ class GithubDeploymenter
             return;
         }
 
-        $server = $push->getDeployment()->getServer();
-        $env = $server->getEnvironment()->getKey();
-        $server = $server->getName();
+        $server = $push->deployment()->server();
+        $env = $server->environment()->name();
+        $server = $server->name();
 
         $pushUrl = sprintf(
             '%s/pushes/%s',
             rtrim($this->halBaseUrl, '/'),
-            $push->getId()
+            $push->id()
         );
 
         $description = sprintf(
             self::$statusDescriptions[$status],
-            $push->getBuild()->getId(),
+            $push->build()->id(),
             $env,
             $server
         );
 
         $this->deploymentsApi->createDeploymentStatus(
-            $push->getRepository()->getGithubUser(),
-            $push->getRepository()->getGithubRepo(),
+            $push->application()->githubOwner(),
+            $push->application()->githubRepo(),
             $githubToken,
             $deploymentId,
             $status,

@@ -136,7 +136,7 @@ class BuildCommand extends Command implements OutputAwareInterface
         $this->status(sprintf('Waiting builds: %s', count($builds)), 'Worker');
 
         foreach ($builds as $build) {
-            $id = $build->getId();
+            $id = $build->id();
             $command = [
                 'bin/hal',
                 'build:build',

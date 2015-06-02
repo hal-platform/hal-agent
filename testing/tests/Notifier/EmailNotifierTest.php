@@ -9,6 +9,10 @@ namespace QL\Hal\Agent\Notifier;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
+use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Entity\Push;
+use QL\Hal\Core\Entity\Server;
 use Swift_Message;
 
 class EmailNotifierTest extends PHPUnit_Framework_TestCase
@@ -44,13 +48,13 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
 
         $data = [
             'status' => true,
-            'repository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                'getKey' => 'repokey',
-                'getEmail' => 'test@example.com'
+            'application' => Mockery::mock(Application::CLASS, [
+                'key' => 'repokey',
+                'email' => 'test@example.com'
             ]),
-            'environment' => Mockery::mock('QL\Hal\Core\Entity\Environment', ['getKey' => 'envkey']),
-            'server' => Mockery::mock('QL\Hal\Core\Entity\Server', ['getName' => 'servername', 'getType' => 'rsync']),
-            'push' => Mockery::mock('QL\Hal\Core\Entity\Push')
+            'environment' => Mockery::mock(Environment::CLASS, ['name' => 'envkey']),
+            'server' => Mockery::mock(Server::CLASS, ['name' => 'servername', 'type' => 'rsync']),
+            'push' => Mockery::mock(Push::CLASS)
         ];
 
         $notifier->send('event.name', $data);
@@ -79,11 +83,12 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
 
         $data = [
             'status' => false,
-            'repository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                'getKey' => 'repokey',
-                'getEmail' => 'test@example.com'
+
+            'application' => Mockery::mock(Application::CLASS, [
+                'key' => 'repokey',
+                'email' => 'test@example.com'
             ]),
-            'environment' => Mockery::mock('QL\Hal\Core\Entity\Environment', ['getKey' => 'envkey']),
+            'environment' => Mockery::mock(Environment::CLASS, ['name' => 'envkey']),
             'server' => null,
             'push' => null
         ];
@@ -105,11 +110,11 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
 
         $data = [
             'status' => false,
-            'repository' => Mockery::mock('QL\Hal\Core\Entity\Repository', [
-                'getKey' => 'repokey',
-                'getEmail' => ''
+            'application' => Mockery::mock(Application::CLASS, [
+                'key' => 'repokey',
+                'email' => ''
             ]),
-            'environment' => Mockery::mock('QL\Hal\Core\Entity\Environment', ['getKey' => 'envkey']),
+            'environment' => Mockery::mock(Environment::CLASS, ['name' => 'envkey']),
             'server' => null,
             'push' => null
         ];

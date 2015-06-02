@@ -55,22 +55,22 @@ trait SortingHelperTrait
             '#';
 
         return function($a, $b) use ($regex) {
-            $serverA = $a->getName();
-            $serverB = $b->getName();
+            $serverA = $a->name();
+            $serverB = $b->name();
 
             // same server
-            if ($a->getId() === $b->getId()) {
+            if ($a->id() === $b->id()) {
                 return 0;
             }
 
             // put rsync at top
-            if ($a->getType() === ServerEnum::TYPE_RSYNC xor $b->getType() === ServerEnum::TYPE_RSYNC) {
-                return ($a->getType() === ServerEnum::TYPE_RSYNC) ? -1 : 1;
+            if ($a->type() === ServerEnum::TYPE_RSYNC xor $b->type() === ServerEnum::TYPE_RSYNC) {
+                return ($a->type() === ServerEnum::TYPE_RSYNC) ? -1 : 1;
             }
 
             // put eb above ec2
-            if ($a->getType() !== ServerEnum::TYPE_RSYNC && $b->getType() !== ServerEnum::TYPE_RSYNC) {
-                return ($a->getType() === ServerEnum::TYPE_EB) ? -1 : 1;
+            if ($a->type() !== ServerEnum::TYPE_RSYNC && $b->type() !== ServerEnum::TYPE_RSYNC) {
+                return ($a->type() === ServerEnum::TYPE_EB) ? -1 : 1;
             }
 
             $isA = preg_match($regex, $serverA, $matchesA);

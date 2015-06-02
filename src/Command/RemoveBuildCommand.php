@@ -169,7 +169,7 @@ class RemoveBuildCommand extends Command
         }
 
         // Update entity
-        $build->setStatus('Removed');
+        $build->withStatus('Removed');
         $this->em->merge($build);
         $this->em->flush();
 
@@ -189,7 +189,7 @@ class RemoveBuildCommand extends Command
      */
     private function generateArchiveLocation(Build $build)
     {
-        if ($build->getStatus() !== 'Success') {
+        if ($build->status() !== 'Success') {
             return '';
         }
 
@@ -197,7 +197,7 @@ class RemoveBuildCommand extends Command
             '%s%s%s',
             rtrim($this->archivePath, '/'),
             DIRECTORY_SEPARATOR,
-            sprintf(self::FS_ARCHIVE_PREFIX, $build->getId())
+            sprintf(self::FS_ARCHIVE_PREFIX, $build->id())
         );
     }
 }

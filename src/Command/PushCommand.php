@@ -334,9 +334,9 @@ class PushCommand extends Command implements OutputAwareInterface
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['push']);
-        $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->getRepository()->getName());
-        $foundPush = sprintf('Found push: <info>%s</info>', $properties['push']->getId());
-        $foundBuild = sprintf('Found build: <info>%s</info>', $properties['push']->getBuild()->getId());
+        $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->application()->name());
+        $foundPush = sprintf('Found push: <info>%s</info>', $properties['push']->id());
+        $foundBuild = sprintf('Found build: <info>%s</info>', $properties['push']->build()->id());
         $this->status($foundApp, self::SECTION_START);
         $this->status($foundPush, self::SECTION_START);
         $this->status($foundBuild, self::SECTION_START);

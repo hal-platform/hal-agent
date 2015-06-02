@@ -9,10 +9,10 @@ namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DeployerTest extends PHPUnit_Framework_TestCase
@@ -37,20 +37,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
     public function testSuccess()
     {
-        $repo = new Repository;
-        $repo->setId('repo_id');
-
-        $environment = new Environment;
-        $environment->setKey('envname');
-
-        $build = new Build;
-        $build->setId('8956');
-        $build->setEnvironment($environment);
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setBuild($build);
-        $push->setRepository($repo);
+        $push = $this->buildMockPush();
 
         $properties = [
             'push' => $push,
@@ -100,20 +87,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
     public function testPushCommandsAreLoggedAndSkipped()
     {
-        $repo = new Repository;
-        $repo->setId('repo_id');
-
-        $environment = new Environment;
-        $environment->setKey('envname');
-
-        $build = new Build;
-        $build->setId('8956');
-        $build->setEnvironment($environment);
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setBuild($build);
-        $push->setRepository($repo);
+        $push = $this->buildMockPush();
 
         $properties = [
             'push' => $push,
@@ -268,20 +242,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
     public function testUploaderFails()
     {
-        $repo = new Repository;
-        $repo->setId('repo_id');
-
-        $environment = new Environment;
-        $environment->setKey('envname');
-
-        $build = new Build;
-        $build->setId('8956');
-        $build->setEnvironment($environment);
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setBuild($build);
-        $push->setRepository($repo);
+        $push = $this->buildMockPush();
 
         $properties = [
             'push' => $push,
@@ -327,20 +288,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
     public function testPusherFails()
     {
-        $repo = new Repository;
-        $repo->setId('repo_id');
-
-        $environment = new Environment;
-        $environment->setKey('envname');
-
-        $build = new Build;
-        $build->setId('8956');
-        $build->setEnvironment($environment);
-
-        $push = new Push;
-        $push->setId('1234');
-        $push->setBuild($build);
-        $push->setRepository($repo);
+        $push = $this->buildMockPush();
 
         $properties = [
             'push' => $push,
@@ -385,5 +333,25 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $actual = $deployer($properties);
         $this->assertSame(204, $actual);
+    }
+
+    private function buildMockPush()
+    {
+        $push = (new Push)
+            ->withId('1234')
+            ->withBuild(
+                (new Build)
+                    ->withId('8956')
+                    ->withEnvironment(
+                        (new Environment)
+                            ->withName('envname')
+                    )
+            )
+            ->withApplication(
+                (new Application)
+                    ->withId('repo_id')
+            );
+
+        return $push;
     }
 }

@@ -436,12 +436,12 @@ HELP;
             'github' => sprintf('http://git/%s/%s/%s', $repository, $suffix, $reference)
         ];
 
-        $log = new AuditLog;
-        $log->setUser($user);
-        $log->setRecorded($this->clock->read());
-        $log->setEntity('DockerImages');
-        $log->setAction('UPDATE');
-        $log->setData(json_encode($data));
+        $log = (new AuditLog)
+            ->withUser($user)
+            ->withRecorded($this->clock->read())
+            ->withEntity('DockerImages')
+            ->withAction('UPDATE')
+            ->withData(json_encode($data));
 
         $this->em->persist($log);
         $this->em->flush();

@@ -12,9 +12,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use MCP\DataType\Time\TimePoint;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Agent\Utility\ResolverTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -57,7 +57,7 @@ class ListBuildsCommand extends Command
      * @type EntityRepository
      */
     private $buildRepo;
-    private $repoRepo;
+    private $applicationRepo;
     private $envRepo;
 
     /**
@@ -80,7 +80,7 @@ class ListBuildsCommand extends Command
         parent::__construct($name);
 
         $this->buildRepo = $em->getRepository(Build::CLASS);
-        $this->repoRepo = $em->getRepository(Repository::CLASS);
+        $this->applicationRepo = $em->getRepository(Application::CLASS);
         $this->envRepo = $em->getRepository(Environment::CLASS);
 
         $this->filesystem = $filesystem;
@@ -109,10 +109,10 @@ class ListBuildsCommand extends Command
                 'Filter by environment name.'
             )
             ->addOption(
-                'repository',
+                'application',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Filter by repository ID.'
+                'Filter by application ID.'
             )
             ->addOption(
                 'older-than',
@@ -186,7 +186,7 @@ class ListBuildsCommand extends Command
         // filters
         $status = $input->getOption('status');
         $environment = $input->getOption('environment');
-        $repository = $input->getOption('repository');
+        $application = $input->getOption('application');
         $older = $input->getOption('older-than');
 
         // flags
@@ -209,16 +209,16 @@ class ListBuildsCommand extends Command
             $criteria->andWhere(Criteria::expr()->eq('status', $status));
         }
 
-        if ($repository) {
-            if (!$repository = $this->repoRepo->findOneBy(['id' => $repository])) {
+        if ($application) {
+            if (!$application = $this->applicationRepo->findOneBy(['id' => $application])) {
                 return $this->failure($output, 2);
             }
 
-            $criteria->andWhere(Criteria::expr()->eq('repository', $repository));
+            $criteria->andWhere(Criteria::expr()->eq('application', $application));
         }
 
         if ($environment) {
-            if (!$env = $this->envRepo->findOneBy(['key' => $environment])) {
+            if (!$env = $this->envRepo->findOneBy(['name' => $environment])) {
                 return $this->failure($output, 3);
             }
 
@@ -269,9 +269,9 @@ class ListBuildsCommand extends Command
             foreach ($builds as $build) {
                 if ($porcelainSpaces) {
                     $delimiter = ($c++ > 0) ? ' ' : '';
-                    $output->write($delimiter . $build->getId());
+                    $output->write($delimiter . $build->id());
                 } else {
-                    $output->writeln($build->getId());
+                    $output->writeln($build->id());
                 }
             }
 
@@ -282,11 +282,11 @@ class ListBuildsCommand extends Command
 
         foreach ($builds as $build) {
             $data = [
-                $build->getStatus(),
-                $build->getCreated() ? $build->getCreated()->format('Y-m-d H:i:s', self::TIMEZONE) : null,
-                $build->getId(),
-                $build->getRepository()->getKey(),
-                $build->getEnvironment()->getKey()
+                $build->status(),
+                $build->created() ? $build->created()->format('Y-m-d H:i:s', self::TIMEZONE) : null,
+                $build->id(),
+                $build->application()->key(),
+                $build->environment()->name()
             ];
 
             $sources = $this->generateArchiveLocations($build);
@@ -339,13 +339,13 @@ class ListBuildsCommand extends Command
      */
     private function generateArchiveLocations(Build $build)
     {
-        if ($build->getStatus() !== 'Success') {
+        if ($build->status() !== 'Success') {
             return [];
         }
 
         return [
-            $this->generateBuildArchiveFile($build->getId()),
-            $this->generateLegacyBuildArchiveFile($build->getId())
+            $this->generateBuildArchiveFile($build->id()),
+            $this->generateLegacyBuildArchiveFile($build->id())
         ];
     }
 

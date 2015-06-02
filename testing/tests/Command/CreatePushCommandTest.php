@@ -94,7 +94,7 @@ class CreatePushCommandTest extends PHPUnit_Framework_TestCase
     public function testDeploymentNotFound()
     {
         $build = new Build;
-        $build->setStatus('Success');
+        $build->withStatus('Success');
 
         $this->buildRepo
             ->shouldReceive('find')

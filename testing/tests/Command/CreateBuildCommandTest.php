@@ -7,9 +7,9 @@
 
 namespace QL\Hal\Agent\Command;
 
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\User;
 use PHPUnit_Framework_TestCase;
 use MCP\DataType\Time\Clock;
@@ -49,7 +49,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn($this->envRepo);
         $this->em
             ->shouldReceive('getRepository')
-            ->with(Repository::CLASS)
+            ->with(Application::CLASS)
             ->andReturn($this->repoRepo);
         $this->em
             ->shouldReceive('getRepository')
@@ -64,14 +64,14 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $this->output = new BufferedOutput;
     }
 
-    public function testRepositoryNotFound()
+    public function testApplicationNotFound()
     {
         $this->repoRepo
             ->shouldReceive('find')
             ->andReturnNull();
 
         $this->input = new ArrayInput([
-            'REPOSITORY_ID' => '1',
+            'APPLICATION_ID' => '1',
             'ENVIRONMENT_ID' => '2',
             'GIT_REFERENCE' => '3'
         ]);
@@ -87,7 +87,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
         $command->run($this->input, $this->output);
 
         $expected = [
-            'Repository not found.'
+            'Application not found.'
         ];
 
         $output = $this->output->fetch();
@@ -107,8 +107,8 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             ->andReturnNull();
 
         $this->input = new ArrayInput([
-            'REPOSITORY_ID' => '1',
-            'ENVIRONMENT_ID' => '$this->unique',
+            'APPLICATION_ID' => '1',
+            'ENVIRONMENT_ID' => '2',
             'GIT_REFERENCE' => '3'
         ]);
 

@@ -118,18 +118,18 @@ class Notifier
     private function prepareData($event, $entity)
     {
         $status = null;
-        if ($entity->getStatus() === 'Success') {
+        if ($entity->status() === 'Success') {
             $status = true;
 
-        } elseif ($entity->getStatus() === 'Error') {
+        } elseif ($entity->status() === 'Error') {
             $status = false;
         }
 
         if ($entity instanceof Push) {
-            $build = $entity->getBuild();
+            $build = $entity->build();
             $push = $entity;
-            $deployment = $push->getDeployment();
-            $server = $deployment->getServer();
+            $deployment = $push->deployment();
+            $server = $deployment->server();
         } else {
             $build = $entity;
             $push = null;
@@ -137,15 +137,15 @@ class Notifier
             $server = null;
         }
 
-        $repo = $build->getRepository();
-        $env = $build->getEnvironment();
+        $application = $build->application();
+        $env = $build->environment();
 
         return array_merge($this->data, [
             'event' => $event,
             'status' => $status, // null, true, false
             'build' => $build,
             'push' => $push,
-            'repository' => $repo,
+            'application' => $application,
             'environment' => $env,
             'deployment' => $deployment,
             'server' => $server

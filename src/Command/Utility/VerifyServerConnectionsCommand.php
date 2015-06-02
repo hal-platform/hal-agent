@@ -175,7 +175,7 @@ HELP;
         $output->writeln('');
         $output->writeln(sprintf('Connecting as user: <comment>%s</comment>', $this->remoteUser));
         if ($environment) {
-            $output->writeln(sprintf('Environment: <comment>%s</comment>', $environment->getKey()));
+            $output->writeln(sprintf('Environment: <comment>%s</comment>', $environment->name()));
         }
 
         $environments = $this->sortServersIntoEnvironments($servers);
@@ -184,14 +184,14 @@ HELP;
         $output->write(self::TABLE_HEADER, true);
         foreach ($environments as $env) {
             foreach ($env as $server) {
-                $envName = $server->getEnvironment()->getKey();
-                if ($server->getType() !== 'rsync') {
-                    $row = $this->buildRow($envName, sprintf('type: %s', $server->getType()));
+                $envName = $server->environment()->name();
+                if ($server->type() !== 'rsync') {
+                    $row = $this->buildRow($envName, sprintf('type: %s', $server->type()));
                     $output->writeln($row);
                     continue;
                 }
 
-                $serverName = $server->getName();
+                $serverName = $server->name();
                 $resolved = $this->validateHostname($serverName);
 
                 if ($resolved === null) {
@@ -205,7 +205,7 @@ HELP;
                     }
                 }
 
-                $statuses[$server->getId()] = [
+                $statuses[$server->id()] = [
                     'server' => $serverName,
                     'environment' => $envName,
                     'status' => $success
@@ -282,7 +282,7 @@ HELP;
 
         // Add servers to groupings
         foreach ($servers as $server) {
-            $envName = $server->getEnvironment()->getKey();
+            $envName = $server->environment()->name();
 
             if (!array_key_exists($envName, $environments)) {
                 $environments[$envName] = [];
@@ -320,8 +320,8 @@ HELP;
             $firstA = reset($a);
             $firstB = reset($b);
 
-            $aName = $firstA->getName();
-            $bName = $firstB->getName();
+            $aName = $firstA->name();
+            $bName = $firstB->name();
 
             $aOrder = isset($sortOrder[$aName]) ? $sortOrder[$aName] : 999;
             $bOrder = isset($sortOrder[$bName]) ? $sortOrder[$bName] : 999;

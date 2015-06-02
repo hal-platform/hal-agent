@@ -9,6 +9,8 @@ namespace QL\Hal\Agent\Logger;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Push;
 
 class EventLoggerTest extends PHPUnit_Framework_TestCase
 {
@@ -84,7 +86,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         //     ->with('end', 'service.name')
         //     ->once();
 
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build', ['setStatus' => null, 'setStart' => null]);
+        $build = Mockery::mock(Build::CLASS, ['withStatus' => null, 'withStart' => null]);
 
         $this->factory
             ->shouldReceive('setBuild')
@@ -115,7 +117,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->with('push.end', 'service.name')
             ->once();
 
-        $push = Mockery::mock('QL\Hal\Core\Entity\Push', ['setStatus' => null, 'setStart' => null]);
+        $push = Mockery::mock(Push::CLASS, ['withStatus' => null, 'withStart' => null]);
 
         $this->factory
             ->shouldReceive('setPush');
@@ -134,11 +136,11 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
 
     public function testPushIsSuccess()
     {
-        $push = Mockery::mock('QL\Hal\Core\Entity\Push', [
-            'setStatus' => null,
-            'setStart' => null,
-            'setEnd' => null,
-            'getStatus' => 'Pushing'
+        $push = Mockery::mock(Push::CLASS, [
+            'withStatus' => null,
+            'withStart' => null,
+            'withEnd' => null,
+            'status' => 'Pushing'
         ]);
 
         $this->notifier
@@ -167,11 +169,11 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
 
     public function testBuildIsFailure()
     {
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build', [
-            'setStatus' => null,
-            'setStart' => null,
-            'setEnd' => null,
-            'getStatus' => 'Building'
+        $build = Mockery::mock(Build::CLASS, [
+            'withStatus' => null,
+            'withStart' => null,
+            'withEnd' => null,
+            'status' => 'Building'
         ]);
 
         $this->notifier
@@ -197,5 +199,4 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $logger->start($build);
         $logger->failure();
     }
-
 }

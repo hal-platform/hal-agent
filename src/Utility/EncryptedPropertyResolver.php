@@ -13,9 +13,9 @@ use Doctrine\ORM\EntityRepository;
 use Exception;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\EncryptedProperty;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Repository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -117,15 +117,15 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param Repository $repo
+     * @param Application $application
      * @param Environment $environment
      *
      * @return array
      */
-    public function getProperties(Repository $repo, Environment $environment)
+    public function getProperties(Application $application, Environment $environment)
     {
         $criteria = (new Criteria)
-            ->where(Criteria::expr()->eq('repository', $repo))
+            ->where(Criteria::expr()->eq('application', $application))
             ->andWhere(
                 Criteria::expr()->orX(
                     Criteria::expr()->eq('environment', $environment),
@@ -144,7 +144,7 @@ class EncryptedPropertyResolver
 
         $encrypted = [];
         foreach ($properties->toArray() as $property) {
-            $encrypted[$property->getName()] = $property;
+            $encrypted[$property->name()] = $property;
         }
 
         ksort($encrypted);
@@ -153,18 +153,18 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param Repository $repository
+     * @param Application $application
      * @param Environment $environment
      *
      * @return array
      */
-    public function getEncryptedPropertiesWithSources(Repository $repository, Environment $environment)
+    public function getEncryptedPropertiesWithSources(Application $application, Environment $environment)
     {
         $data = [
             'encrypted' => []
         ];
 
-        if (!$properties = $this->getProperties($repository, $environment)) {
+        if (!$properties = $this->getProperties($application, $environment)) {
             return $data;
         }
 
@@ -173,15 +173,15 @@ class EncryptedPropertyResolver
 
         // format encrypted for use by build step
         array_walk($encrypted, function(&$v) {
-            $v = $v->getData();
+            $v = $v->data();
         });
 
         // format encrypted sources for logs
         array_walk($sources, function(&$v) {
 
             $from = 'global';
-            if ($env = $v->getEnvironment()) {
-                $from = $env->getKey();
+            if ($env = $v->environment()) {
+                $from = $env->name();
             }
             $v = sprintf('Resolved from %s', $from);
         });

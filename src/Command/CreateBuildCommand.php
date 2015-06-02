@@ -11,8 +11,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Github\ReferenceResolver;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\User;
 use QL\Hal\Core\JobIdGenerator;
@@ -47,7 +47,7 @@ HELP;
      */
     private static $codes = [
         0 => 'Success',
-        1 => 'Repository not found.',
+        1 => 'Application not found.',
         2 => 'Environment not found.',
         4 => 'User not found.',
         8 => 'Invalid git reference specified.'
@@ -101,7 +101,7 @@ HELP;
 
         $this->em = $em;
         $this->buildRepo = $em->getRepository(Build::CLASS);
-        $this->applicationRepo = $em->getRepository(Repository::CLASS);
+        $this->applicationRepo = $em->getRepository(Application::CLASS);
         $this->environmentRepo = $em->getRepository(Environment::CLASS);
         $this->userRepo = $em->getRepository(User::CLASS);
 
@@ -117,9 +117,9 @@ HELP;
         $this
             ->setDescription('Deploy a previously built application to a server.')
             ->addArgument(
-                'REPOSITORY_ID',
+                'APPLICATION_ID',
                 InputArgument::REQUIRED,
-                'The ID of the repository to build.'
+                'The ID of the application to build.'
             )
             ->addArgument(
                 'ENVIRONMENT_ID',
@@ -160,12 +160,12 @@ HELP;
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $repositoryId = $input->getArgument('REPOSITORY_ID');
+        $applicationId = $input->getArgument('APPLICATION_ID');
         $environmentId = $input->getArgument('ENVIRONMENT_ID');
         $ref = $input->getArgument('GIT_REFERENCE');
         $userId = $input->getArgument('USER_ID');
 
-        if (!$repository = $this->applicationRepo->find($repositoryId)) {
+        if (!$application = $this->applicationRepo->find($applicationId)) {
             return $this->failure($output, 1);
         }
 
@@ -179,8 +179,8 @@ HELP;
         }
 
         $commitSha = $this->refResolver->resolve(
-            $repository->getGithubUser(),
-            $repository->getGithubRepo(),
+            $application->githubOwner(),
+            $application->githubRepo(),
             $ref
         );
 
@@ -188,19 +188,19 @@ HELP;
             return $this->failure($output, 8);
         }
 
-        $build = new Build;
-        $build->setId($this->unique->generateBuildId());
-        $build->setCreated($this->clock->read());
-        $build->setStatus('Waiting');
-        $build->setRepository($repository);
-        $build->setEnvironment($environment);
+        $build = (new Build)
+            ->withId($this->unique->generateBuildId())
+            ->withCreated($this->clock->read())
+            ->withStatus('Waiting')
+            ->withapplication($application)
+            ->withEnvironment($environment)
+
+            ->withCommit($commitSha)
+            ->withBranch($ref);
 
         if ($user) {
-            $build->setUser($user);
+            $build->withUser($user);
         }
-
-        $build->setCommit($commitSha);
-        $build->setBranch($ref);
 
         $this->dupeCatcher($build);
 
@@ -208,10 +208,10 @@ HELP;
         $this->em->flush();
 
         if ($input->getOption('porcelain')) {
-            $output->writeln($build->getId());
+            $output->writeln($build->id());
 
         } else {
-            $this->success($output, sprintf('Build created: %s', $build->getId()));
+            $this->success($output, sprintf('Build created: %s', $build->id()));
         }
     }
 
@@ -221,9 +221,9 @@ HELP;
      */
     private function dupeCatcher(Build $build)
     {
-        $dupe = $this->buildRepo->findBy(['id' => [$build->getId()]]);
+        $dupe = $this->buildRepo->findBy(['id' => [$build->id()]]);
         if ($dupe) {
-            $build->setId($this->unique->generateBuildId());
+            $build->withId($this->unique->generateBuildId());
             $this->dupeCatcher($build);
         }
     }

@@ -9,6 +9,9 @@ namespace QL\Hal\Agent\Logger;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Push;
+use QL\Hal\Core\Entity\EventLog;
 use QL\Hal\Agent\Testing\JsonableStub;
 use QL\Hal\Agent\Testing\StringableStub;
 use stdClass;
@@ -35,11 +38,11 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
         $factory = new EventFactory($this->em);
         $factory->info();
 
-        $this->assertInstanceOf('QL\Hal\Core\Entity\EventLog', $spy);
+        $this->assertInstanceOf(EventLog::CLASS, $spy);
 
-        $this->assertSame('info', $spy->getStatus());
-        $this->assertSame('unknown', $spy->getEvent());
-        $this->assertSame(1, $spy->getOrder());
+        $this->assertSame('info', $spy->status());
+        $this->assertSame('unknown', $spy->event());
+        $this->assertSame(1, $spy->order());
     }
 
     public function testOrderIsRecorded()
@@ -58,9 +61,9 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
         $factory->failure();
         $factory->success();
 
-        $this->assertSame(1, $spies[0]->getOrder());
-        $this->assertSame(2, $spies[1]->getOrder());
-        $this->assertSame(3, $spies[2]->getOrder());
+        $this->assertSame(1, $spies[0]->order());
+        $this->assertSame(2, $spies[1]->order());
+        $this->assertSame(3, $spies[2]->order());
     }
 
     public function testBuildIsAttached()
@@ -74,15 +77,15 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build');
+        $build = Mockery::mock(Build::CLASS);
 
         $factory = new EventFactory($this->em);
         $factory->setBuild($build);
         $factory->setStage('build.end');
         $factory->success();
 
-        $this->assertSame($build, $spy->getBuild());
-        $this->assertSame('build.end', $spy->getEvent());
+        $this->assertSame($build, $spy->build());
+        $this->assertSame('build.end', $spy->event());
     }
 
     public function testPushIsAttached()
@@ -96,15 +99,15 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $push = Mockery::mock('QL\Hal\Core\Entity\Push');
+        $push = Mockery::mock(Push::CLASS);
 
         $factory = new EventFactory($this->em);
         $factory->setPush($push);
         $factory->setStage('push.end');
         $factory->success();
 
-        $this->assertSame($push, $spy->getPush());
-        $this->assertSame('push.end', $spy->getEvent());
+        $this->assertSame($push, $spy->push());
+        $this->assertSame('push.end', $spy->event());
     }
 
     public function testFullLogCreated()
@@ -140,15 +143,15 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
             'Stringable' => 'test1234'
         ];
 
-        $this->assertSame('testing message', $spy->getMessage());
-        $this->assertSame($expectedContext, $spy->getData());
+        $this->assertSame('testing message', $spy->message());
+        $this->assertSame($expectedContext, $spy->data());
     }
 
     public function testSerializedLogSentToRedisWithoutData()
     {
         $predis = Mockery::mock('Predis\Client');
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build', [
-            'getId' => 'b2.1234'
+        $build = Mockery::mock(Build::CLASS, [
+            'id' => 'b2.1234'
         ]);
 
         $this->em

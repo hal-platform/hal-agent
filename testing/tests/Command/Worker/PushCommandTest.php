@@ -62,17 +62,19 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function testOutputWithMultipleBuilds()
     {
-        $deploy1 = new Deployment;
-        $deploy1->setId('6666');
-        $deploy2 = new Deployment;
-        $deploy2->setId('8888');
+        $push1 = (new Push)
+            ->withId('1234')
+            ->withDeployment(
+                (new Deployment)
+                    ->withId('6666')
+            );
 
-        $push1 = new Push;
-        $push1->setId('1234');
-        $push1->setDeployment($deploy1);
-        $push2 = new Push;
-        $push2->setId('5555');
-        $push2->setDeployment($deploy2);
+        $push2 = (new Push)
+            ->withId('5555')
+            ->withDeployment(
+                (new Deployment)
+                    ->withId('8888')
+            );
 
         $this->pushRepo
             ->shouldReceive('findBy')
@@ -132,7 +134,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     public function testOutputWithPushWithoutDeployment()
     {
         $push1 = new Push;
-        $push1->setId('1234');
+        $push1->withId('1234');
 
         $this->pushRepo
             ->shouldReceive('findBy')
@@ -168,15 +170,16 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function testOutputWhenDuplicateDeploymentSkipsPush()
     {
-        $deploy1 = new Deployment;
-        $deploy1->setId('6666');
+        $deploy1 = (new Deployment)
+            ->withId('6666');
 
-        $push1 = new Push;
-        $push1->setId('1234');
-        $push1->setDeployment($deploy1);
-        $push2 = new Push;
-        $push2->setId('5555');
-        $push2->setDeployment($deploy1);
+        $push1 = (new Push)
+            ->withId('1234')
+            ->withDeployment($deploy1);
+
+        $push2 = (new Push)
+            ->withId('5555')
+            ->withDeployment($deploy1);
 
         $this->pushRepo
             ->shouldReceive('findBy')

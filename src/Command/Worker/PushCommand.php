@@ -148,7 +148,7 @@ class PushCommand extends Command
         $this->status(sprintf('Waiting pushes: %s', count($pushes)), 'Worker');
 
         foreach ($pushes as $push) {
-            $id = $push->getId();
+            $id = $push->id();
             $command = [
                 'bin/hal',
                 'push:push',
@@ -156,16 +156,16 @@ class PushCommand extends Command
             ];
 
             // Skip pushes without deployment target
-            if (!$push->getDeployment()) {
+            if (!$push->deployment()) {
                 $this->stopWeirdPush($push);
                 continue;
             }
 
             // Every time the worker runs we need to ensure all deployments spawned are unique.
             // This helps prevent concurrent syncs.
-            if ($this->hasConcurrentDeployment($push->getDeployment())) {
-                $deploymentId = $push->getDeployment()->getId();
-                $msg = sprintf('Skipping push: <info>%s</info> - A push to deployment <info>%s</info> is already running', $push->getId(), $deploymentId);
+            if ($this->hasConcurrentDeployment($push->deployment())) {
+                $deploymentId = $push->deployment()->id();
+                $msg = sprintf('Skipping push: <info>%s</info> - A push to deployment <info>%s</info> is already running', $push->id(), $deploymentId);
                 $this->status($msg, 'Worker');
                 continue;
             }
@@ -226,9 +226,9 @@ class PushCommand extends Command
      */
     private function stopWeirdPush(Push $push)
     {
-        $this->status(sprintf('Push %s has no deployment. Marking as error.', $push->getId()), 'Worker');
+        $this->status(sprintf('Push %s has no deployment. Marking as error.', $push->id()), 'Worker');
 
-        $push->setStatus('Error');
+        $push->withStatus('Error');
         $this->em->merge($push);
         $this->em->flush();
     }
@@ -240,11 +240,11 @@ class PushCommand extends Command
      */
     private function hasConcurrentDeployment(Deployment $deployment)
     {
-        if (isset($this->deploymentCache[$deployment->getId()])) {
+        if (isset($this->deploymentCache[$deployment->id()])) {
             return true;
         }
 
-        $this->deploymentCache[$deployment->getId()] = true;
+        $this->deploymentCache[$deployment->id()] = true;
         return false;
     }
 }

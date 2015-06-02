@@ -60,7 +60,7 @@ class BuildEnvironmentResolver
      */
     public function getBuildProperties(Build $build)
     {
-        $uniqueId = sprintf('build-%s', $build->getId());
+        $uniqueId = sprintf('build-%s', $build->id());
 
         $properties = array_merge(
             $this->getUnixProperties($build, $uniqueId),
@@ -79,11 +79,11 @@ class BuildEnvironmentResolver
      */
     public function getPushProperties(Push $push)
     {
-        $uniqueId = sprintf('push-%s', $push->getId());
+        $uniqueId = sprintf('push-%s', $push->id());
 
         $properties = array_merge(
-            $this->getUnixProperties($push->getBuild(), $uniqueId),
-            $this->getWindowsProperties($push->getBuild(), $uniqueId)
+            $this->getUnixProperties($push->build(), $uniqueId),
+            $this->getWindowsProperties($push->build(), $uniqueId)
         );
 
         return $properties;
@@ -135,11 +135,11 @@ class BuildEnvironmentResolver
         }
 
         $env = [
-            'HAL_BUILDID' => $build->getId(),
-            'HAL_COMMIT' => $build->getCommit(),
-            'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_REPO' => $build->getRepository()->getKey()
+            'HAL_BUILDID' => $build->id(),
+            'HAL_COMMIT' => $build->commit(),
+            'HAL_GITREF' => $build->branch(),
+            'HAL_ENVIRONMENT' => $build->environment()->name(),
+            'HAL_REPO' => $build->application()->key()
         ];
 
         $properties = [
@@ -168,11 +168,11 @@ class BuildEnvironmentResolver
         }
 
         $env = [
-            'HAL_BUILDID' => $build->getId(),
-            'HAL_COMMIT' => $build->getCommit(),
-            'HAL_GITREF' => $build->getBranch(),
-            'HAL_ENVIRONMENT' => $build->getEnvironment()->getKey(),
-            'HAL_REPO' => $build->getRepository()->getKey()
+            'HAL_BUILDID' => $build->id(),
+            'HAL_COMMIT' => $build->commit(),
+            'HAL_GITREF' => $build->branch(),
+            'HAL_ENVIRONMENT' => $build->environment()->name(),
+            'HAL_REPO' => $build->application()->key()
         ];
 
         $properties = [

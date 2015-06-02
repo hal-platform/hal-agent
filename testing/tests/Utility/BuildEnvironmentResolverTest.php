@@ -9,10 +9,10 @@ namespace QL\Hal\Agent\Utility;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository;
 
 class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
 {
@@ -63,9 +63,9 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
     {
         $build = $this->createMockBuild();
 
-        $push = new Push;
-        $push->setId(4321);
-        $push->setBuild($build);
+        $push = (new Push)
+            ->withId(4321)
+            ->withBuild($build);
 
         $processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
 
@@ -95,23 +95,23 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
 
     private function createMockBuild()
     {
-        $environment = new Environment;
-        $environment->setKey('envkey');
+        $app = (new Application)
+            ->withId(1234)
+            ->withKey('repokey')
+            ->withGithubOwner('user1')
+            ->withGithubOwner('repo1');
+        $app->setBuildCmd('derp');
 
-        $repository = new Repository;
-        $repository->setId(1234);
-        $repository->setGithubUser('user1');
-        $repository->setGithubRepo('repo1');
-        $repository->setBuildCmd('derp');
-        $repository->setKey('repokey');
-
-        $build = new Build;
-        $build->setId('1234');
-        $build->setStatus('Waiting');
-        $build->setEnvironment($environment);
-        $build->setRepository($repository);
-        $build->setBranch('master');
-        $build->setCommit('5555');
+        $build = (new Build)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withEnvironment(
+                (new Environment)
+                    ->withName('envkey')
+            )
+            ->withApplication($app)
+            ->withBranch('master')
+            ->withCommit('5555');
 
         return $build;
     }

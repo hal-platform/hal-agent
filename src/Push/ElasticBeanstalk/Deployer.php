@@ -167,22 +167,22 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Pushing code to S3', self::SECTION);
 
         $push = $properties['push'];
-        $build = $properties['push']->getBuild();
-        $env = $build->getEnvironment();
+        $build = $properties['push']->build();
+        $env = $build->environment();
 
         $s3version = sprintf(
             '%s/%s',
-            $properties['push']->getRepository()->getId(),
-            $push->getId()
+            $properties['push']->application()->id(),
+            $push->id()
         );
 
         $uploader = $this->uploader;
         return $uploader(
             $properties['location']['tempZipArchive'],
             $s3version,
-            $build->getId(),
-            $push->getId(),
-            $env->getKey()
+            $build->id(),
+            $push->id(),
+            $env->name()
         );
     }
 
@@ -196,13 +196,13 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Deploying version to EB', self::SECTION);
 
         $push = $properties['push'];
-        $build = $properties['push']->getBuild();
-        $env = $build->getEnvironment();
+        $build = $properties['push']->build();
+        $env = $build->environment();
 
         $s3version = sprintf(
             '%s/%s',
-            $properties['push']->getRepository()->getId(),
-            $push->getId()
+            $properties['push']->application()->id(),
+            $push->id()
         );
 
         $pusher = $this->pusher;
@@ -210,9 +210,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             $properties[ServerEnum::TYPE_EB]['application'],
             $properties[ServerEnum::TYPE_EB]['environment'],
             $s3version,
-            $build->getId(),
-            $push->getId(),
-            $env->getKey()
+            $build->id(),
+            $push->id(),
+            $env->name()
         );
     }
 }
