@@ -17,4 +17,4 @@ services:
 
     doctrine.persist.listener:
         class: 'QL\Hal\Core\Listener\DoctrinePersistListener'
-        arguments: [@clock, @doctrine.random]
+        arguments: [@clock]
