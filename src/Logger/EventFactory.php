@@ -78,7 +78,12 @@ class EventFactory
     /**
      * @type EntityManagerInterface
      */
-    private $entityManager;
+    private $em;
+
+    /**
+     * @type callable
+     */
+    private $random;
 
     /**
      * @type Predis|null
@@ -91,11 +96,13 @@ class EventFactory
     private $logs;
 
     /**
-     * @param EntityManagerInterface $entityManager
+     * @param EntityManagerInterface $em
+     * @param callable $random
      */
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $em, callable $random)
     {
-        $this->entityManager = $entityManager;
+        $this->em = $em;
+        $this->random = $random;
         $this->predis = null;
 
         $this->currentStage = 'unknown';
@@ -193,7 +200,8 @@ class EventFactory
     {
         $count = count($this->logs) + 1;
 
-        $log = (new EventLog)
+        $id = call_user_func($this->random);
+        $log = (new EventLog($id))
             ->withStatus($type)
             ->withEvent($this->currentStage)
             ->withOrder($count);
@@ -216,7 +224,7 @@ class EventFactory
 
         // persist
         $this->logs[] = $log;
-        $this->entityManager->persist($log);
+        $this->em->persist($log);
 
         $this->trySendingToRedis($log);
 
