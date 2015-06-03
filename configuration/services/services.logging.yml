@@ -16,7 +16,7 @@ services:
             - @clock
     logger.event.factory:
         class: 'QL\Hal\Agent\Logger\EventFactory'
-        arguments: [@doctrine.em]
+        arguments: [@doctrine.em, @doctrine.random]
         calls:
             - ['setRedisHandler', [@redis]]
 

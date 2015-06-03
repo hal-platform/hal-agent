@@ -80,6 +80,11 @@ HELP;
     private $clock;
 
     /**
+     * @type callable
+     */
+    private $random;
+
+    /**
      * @type string
      */
     private $localTemp;
@@ -100,6 +105,7 @@ HELP;
      * @param ArchiveApi $archiveApi
      * @param EntityManagerInterface $em
      * @param Clock $clock
+     * @param callable $random
      *
      * @param string $localTemp
      * @param string $unixBuildUser
@@ -116,6 +122,7 @@ HELP;
         ArchiveApi $archiveApi,
         EntityManagerInterface $em,
         Clock $clock,
+        callable $random,
 
         $localTemp,
         $unixBuildUser,
@@ -132,6 +139,7 @@ HELP;
         $this->archiveApi = $archiveApi;
         $this->em = $em;
         $this->clock = $clock;
+        $this->random = $random;
 
         $this->localTemp = $localTemp;
         $this->unixBuildUser = $unixBuildUser;
@@ -436,7 +444,8 @@ HELP;
             'github' => sprintf('http://git/%s/%s/%s', $repository, $suffix, $reference)
         ];
 
-        $log = (new AuditLog)
+        $id = call_user_func($this->random);
+        $log = (new AuditLog($id))
             ->withUser($user)
             ->withRecorded($this->clock->read())
             ->withEntity('DockerImages')

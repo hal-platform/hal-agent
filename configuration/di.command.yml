@@ -139,6 +139,7 @@ services:
             - @github.archive
             - @doctrine.em
             - @clock
+            - @doctrine.random
             - %environment.temp%
             - %build.unix.remoteUser%
             - %build.unix.server%
