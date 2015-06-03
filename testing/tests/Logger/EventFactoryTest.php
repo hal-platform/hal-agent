@@ -19,10 +19,14 @@ use stdClass;
 class EventFactoryTest extends PHPUnit_Framework_TestCase
 {
     public $em;
+    public $random;
 
     public function setUp()
     {
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
+        $this->random = function() {
+            return 42;
+        };
     }
 
     public function testDefaultStageIsUnknown()
@@ -35,7 +39,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em);
+        $factory = new EventFactory($this->em, $this->random);
         $factory->info();
 
         $this->assertInstanceOf(EventLog::CLASS, $spy);
@@ -56,7 +60,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em);
+        $factory = new EventFactory($this->em, $this->random);
         $factory->info();
         $factory->failure();
         $factory->success();
@@ -79,7 +83,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
 
         $build = Mockery::mock(Build::CLASS);
 
-        $factory = new EventFactory($this->em);
+        $factory = new EventFactory($this->em, $this->random);
         $factory->setBuild($build);
         $factory->setStage('build.end');
         $factory->success();
@@ -101,7 +105,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
 
         $push = Mockery::mock(Push::CLASS);
 
-        $factory = new EventFactory($this->em);
+        $factory = new EventFactory($this->em, $this->random);
         $factory->setPush($push);
         $factory->setStage('push.end');
         $factory->success();
@@ -121,7 +125,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em);
+        $factory = new EventFactory($this->em, $this->random);
 
         $jsonable = new JsonableStub;
         $stringable = new StringableStub;
@@ -169,7 +173,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em);
+        $factory = new EventFactory($this->em, $this->random);
         $factory->setRedisHandler($predis);
         $factory->setBuild($build);
 
@@ -187,7 +191,7 @@ class EventFactoryTest extends PHPUnit_Framework_TestCase
         ]);
 
         $expected = [
-            'id' => null,
+            'id' => 42,
             'created' => null,
             'event' => 'unknown',
             'order' => 1,
