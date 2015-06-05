@@ -17,11 +17,11 @@
     },
 
     "repositories": [
-        { "type": "vcs", "url": "http://git/web-core/hal-core" },
         {
             "type": "composer",
             "url": "http://composer/"
-        }
+        },
+        { "type": "vcs", "url": "http://git/web-core/hal-core" }
     ],
     "require": {
         "aws/aws-sdk-php": "2.7.*",
@@ -37,14 +37,14 @@
         "ql/mcp-core": "1.0.*",
         "ql/mcp-logger": "1.2.*",
         "swiftmailer/swiftmailer": "5.2.*",
-        "symfony/config": "2.6.*",
-        "symfony/console": "2.6.*",
-        "symfony/debug": "2.6.*",
-        "symfony/dependency-injection": "2.6.*",
-        "symfony/event-dispatcher": "2.6.*",
-        "symfony/filesystem": "2.6.*",
-        "symfony/process": "2.6.*",
-        "symfony/yaml": "2.6.*",
+        "symfony/config": "2.7.*",
+        "symfony/console": "2.7.*",
+        "symfony/debug": "2.7.*",
+        "symfony/dependency-injection": "2.7.*",
+        "symfony/event-dispatcher": "2.7.*",
+        "symfony/filesystem": "2.7.*",
+        "symfony/process": "2.7.*",
+        "symfony/yaml": "2.7.*",
         "twig/twig": "~1.15"
     },
     "require-dev": {
