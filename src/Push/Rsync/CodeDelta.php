@@ -100,8 +100,7 @@ class CodeDelta
         ];
 
         $context = $this->remoter
-            ->createCommand($remoteUser, $remoteServer, $command)
-            ->withIsInteractive(true);
+            ->createCommand($remoteUser, $remoteServer, $command);
 
         if (!$response = $this->remoter->run($context, [], [false])) {
             return false;
