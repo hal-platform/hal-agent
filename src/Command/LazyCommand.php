@@ -204,7 +204,7 @@ class LazyCommand extends Command
         return $this->lazyProxy(__FUNCTION__, func_get_args());
     }
 
-    public function getSynopsis()
+    public function getSynopsis($short = false)
     {
         return $this->proxy(__FUNCTION__, func_get_args());
     }
