@@ -38,8 +38,7 @@ services:
 
     notifier.email.template:
         class: 'Twig_Template'
-        factory_service: 'notifier.email.environment'
-        factory_method: 'loadTemplate'
+        factory: [@notifier.email.environment, 'loadTemplate']
         arguments: ['email.twig']
 
     notifier.email.environment:
@@ -116,6 +115,5 @@ services:
           - ['setDefaultProperty', ['machineName', 'localhost']]
     logger.mcp.serverIp:
         class: 'MCP\DataType\IPv4Address'
-        factory_class: 'MCP\DataType\IPv4Address'
-        factory_method: 'create'
+        factory: ['MCP\DataType\IPv4Address', 'create']
         arguments: ['0.0.0.0']
