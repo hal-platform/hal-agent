@@ -441,7 +441,8 @@ HELP;
         $data = [
             'repository' => $repository,
             'reference' => $reference,
-            'github' => sprintf('http://git/%s/%s/%s', $repository, $suffix, $reference)
+            'github' => sprintf('http://git/%s/%s/%s', $repository, $suffix, $reference),
+            'agent' => gethostname()
         ];
 
         $id = call_user_func($this->random);

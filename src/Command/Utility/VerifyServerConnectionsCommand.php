@@ -40,6 +40,7 @@ class VerifyServerConnectionsCommand extends Command implements OutputAwareInter
     use SortingHelperTrait;
 
     const REDIS_KEY = 'agent-status:server';
+    const REDIS_LIST_SIZE = 20;
 
     /**
      * This is manually built so we can support incremental table rendering
@@ -220,7 +221,8 @@ HELP;
 
         $this->sendToRedis([
             'servers' => $statuses,
-            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC')
+            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC'),
+            'generated_by' => gethostname()
         ]);
 
         return $this->finish($output, 0);
@@ -348,6 +350,6 @@ HELP;
         $this->predis->lpush(self::REDIS_KEY, $json);
 
         // trim the list to last 10 items
-        $this->predis->ltrim(self::REDIS_KEY, 0, 10);
+        $this->predis->ltrim(self::REDIS_KEY, 0, self::REDIS_LIST_SIZE);
     }
 }

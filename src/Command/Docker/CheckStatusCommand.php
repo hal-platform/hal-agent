@@ -35,6 +35,8 @@ class CheckStatusCommand extends Command implements OutputAwareInterface
     use OutputAwareTrait;
 
     const REDIS_KEY = 'agent-status:docker';
+    const REDIS_LIST_SIZE = 20;
+
     const TIMEOUT = 10;
     const DOCKER_DIR = '/var/lib/docker';
 
@@ -192,7 +194,8 @@ HELP;
             'agent' => $agent,
             'builder' => $builder,
             'docker' => $docker,
-            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC')
+            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC'),
+            'generated_by' => gethostname()
         ]);
 
         return 0;
@@ -294,6 +297,6 @@ HELP;
         $this->predis->lpush(self::REDIS_KEY, $json);
 
         // trim the list to last 10 items
-        $this->predis->ltrim(self::REDIS_KEY, 0, 10);
+        $this->predis->ltrim(self::REDIS_KEY, 0, self::REDIS_LIST_SIZE);
     }
 }
