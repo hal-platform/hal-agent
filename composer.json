@@ -33,10 +33,13 @@
         "phpseclib/phpseclib": "0.3.9",
         "predis/predis": "~1.0",
         "psr/log": "*",
-        "ql/hal-core": "2.7.*@beta",
+
+        "ql/hal-core": "2.7.*",
         "ql/mcp-core": "1.0.*",
         "ql/mcp-logger": "1.2.*",
+
         "swiftmailer/swiftmailer": "5.2.*",
+
         "symfony/config": "2.7.*",
         "symfony/console": "2.7.*",
         "symfony/debug": "2.7.*",
@@ -45,6 +48,7 @@
         "symfony/filesystem": "2.7.*",
         "symfony/process": "2.7.*",
         "symfony/yaml": "2.7.*",
+
         "twig/twig": "~1.15"
     },
     "require-dev": {
