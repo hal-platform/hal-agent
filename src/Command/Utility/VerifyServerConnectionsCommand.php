@@ -159,7 +159,7 @@ HELP;
         $environmentName = $input->getArgument('ENVIRONMENT_NAME') ?: '';
         $environment = null;
 
-        if ($environmentName && !$environment = $this->environmentRepo->findOneBy(['key' => strtolower($environmentName)])) {
+        if ($environmentName && !$environment = $this->environmentRepo->findOneBy(['name' => strtolower($environmentName)])) {
             return $this->failure($output, 1);
         }
 
