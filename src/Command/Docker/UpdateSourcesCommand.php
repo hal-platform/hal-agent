@@ -448,7 +448,7 @@ HELP;
         $id = call_user_func($this->random);
         $log = (new AuditLog($id))
             ->withUser($user)
-            ->withRecorded($this->clock->read())
+            ->withCreated($this->clock->read())
             ->withEntity('DockerImages')
             ->withAction('UPDATE')
             ->withData(json_encode($data));
