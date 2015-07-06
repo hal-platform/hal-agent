@@ -70,6 +70,11 @@ class SSHSessionManager
     private $errors;
 
     /**
+     * @type callable
+     */
+    private $errorHandler;
+
+    /**
      * @param EventLogger $logger
      * @param CredentialWallet $credentials
      */
@@ -81,6 +86,8 @@ class SSHSessionManager
         $this->credentials = $credentials;
 
         $this->activeSessions = $this->errors = [];
+
+        $this->errorHandler = $this->getDefaultErrorHandler();
     }
 
     /**
@@ -129,11 +136,11 @@ class SSHSessionManager
 
         // Login failure
         if (!$isLoggedIn) {
-            $this->runCommandWithErrorHandling([$ssh, 'disconnect']);
 
-            $this->errors = array_merge($this->errors, $ssh->getErrors());
-            if ($this->errors) {
-                $context['errors'] = $this->errors;
+            $this->runCommandWithSilencedErrors([$ssh, 'disconnect']);
+
+            if ($errors = $this->getErrors()) {
+                $context['errors'] = $errors;
             }
 
             $this->logger->event('failure', self::ERR_CONNECT_SERVER, $context);
@@ -158,6 +165,37 @@ class SSHSessionManager
         }
 
         $this->activeSessions = [];
+    }
+
+    /**
+     * Custom error handler to wrap and capture notices from phpseclib
+     */
+    public function recordError($errno, $errstr, $errfile = '', $errline = 0, array $errcontext = [])
+    {
+        $this->errors[] = sprintf('SSH %s: %s', static::$errorLevels[$errno], $errstr);
+        return true;
+    }
+
+    /**
+     * @param callable|null $errorHandler
+     *
+     * @return void
+     */
+    public function setCustomErrorHandler(callable $errorHandler = null)
+    {
+        if ($errorHandler === null) {
+            $this->errorHandler = $this->getDefaultErrorHandler();
+        } else {
+            $this->errorHandler = $errorHandler;
+        }
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getErrors()
+    {
+        return $this->errors;
     }
 
     /**
@@ -196,7 +234,29 @@ class SSHSessionManager
         $this->errors = [];
 
         // Set custom handler
-        set_error_handler([$this, 'recordError'], \E_ALL);
+        set_error_handler($this->errorHandler, \E_ALL);
+
+        // Run phpseclib command
+        $response = call_user_func_array($command, $args);
+
+        // Restore previous handler
+        restore_error_handler();
+
+        return $response;
+    }
+
+    /**
+     * @param callable $command
+     * @param array $args
+     *
+     * @return mixed
+     */
+    private function runCommandWithSilencedErrors(callable $command, array $args = [])
+    {
+        $errorHandler = function() {};
+
+        // Set custom handler
+        set_error_handler($errorHandler, \E_ALL);
 
         // Run phpseclib command
         $response = call_user_func_array($command, $args);
@@ -229,11 +289,10 @@ class SSHSessionManager
     }
 
     /**
-     * Custom error handler to wrap and capture notices from phpseclib
+     * @return callable
      */
-    public function recordError($errno, $errstr, $errfile = '', $errline = 0, array $errcontext = [])
+    protected function getDefaultErrorHandler()
     {
-        $this->errors[] = sprintf('SSH %s: %s', static::$errorLevels[$errno], $errstr);
-        return true;
+        return [$this, 'recordError'];
     }
 }

@@ -135,8 +135,9 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'user' => 'username123456789',
             'server' => 'server123456789',
             'errors' => [
-                'SSH User Notice: Connection closed prematurely',
-                'SSH Warning: fclose() expects parameter 1 to be resource, boolean given'
+                'SSH Warning: fsockopen(): php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known',
+                'SSH Warning: fsockopen(): unable to connect to server123456789:22 (php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known)',
+                'SSH User Notice: Cannot connect to server123456789:22. Error 0. php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known'
             ]
         ];
 

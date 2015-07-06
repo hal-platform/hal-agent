@@ -14,6 +14,7 @@ use MCP\DataType\Time\Clock;
 use Predis\Client as Predis;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Server;
+use QL\Hal\Core\Utility\SortingTrait;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
 use QL\Hal\Agent\Push\HostnameValidatorTrait;
@@ -37,7 +38,7 @@ class VerifyServerConnectionsCommand extends Command implements OutputAwareInter
     use FormatterTrait;
     use HostnameValidatorTrait;
     use OutputAwareTrait;
-    use SortingHelperTrait;
+    use SortingTrait;
 
     const REDIS_KEY = 'agent-status:server';
     const REDIS_LIST_SIZE = 20;
@@ -46,15 +47,13 @@ class VerifyServerConnectionsCommand extends Command implements OutputAwareInter
      * This is manually built so we can support incremental table rendering
      */
     const TABLE_HEADER = <<<STDOUT
-+-------------+----------+-----------------------------------------------------+
-| Environment | Status   | Hostname                                            |
-+-------------+----------+-----------------------------------------------------+
+| Environment | Status   | Hostname                                            |                                       |
 STDOUT;
     const TABLE_ROW = <<<STDOUT
-| %s | %s   | %s |
+| %s | %s | %s | %s |
 STDOUT;
     const TABLE_SEPARATOR = <<<STDOUT
-+-------------+----------+-----------------------------------------------------+
++-------------+----------+-----------------------------------------------------+---------------------------------------+
 STDOUT;
 
     const STATIC_HELP = <<<'HELP'
@@ -156,82 +155,202 @@ HELP;
     {
         $this->setOutput($output);
 
-        $environmentName = $input->getArgument('ENVIRONMENT_NAME') ?: '';
-        $environment = null;
-
-        if ($environmentName && !$environment = $this->environmentRepo->findOneBy(['name' => strtolower($environmentName)])) {
-            return $this->failure($output, 1);
+        $res = $this->getServers($input->getArgument('ENVIRONMENT_NAME'));
+        if (is_int($res)) {
+            return $this->failure($output, $res);
         }
 
-        if ($environment) {
-            $servers = $this->serverRepo->findBy(['environment' => $environment]);
-        } else {
-            $servers = $this->serverRepo->findAll();
+        list($environment, $servers) = $res;
+
+        $this->displayMeta($environment);
+
+        $serverByEnv = $this->sortServersIntoEnvironments($servers);
+        $statuses = $this->testConnections($serverByEnv);
+
+        // Only send to redis if checking status of all servers
+        if (!$environment) {
+            $this->sendToRedis($statuses);
         }
-
-        if (!$servers) {
-            return $this->failure($output, 2);
-        }
-
-        $output->writeln('');
-        $output->writeln(sprintf('Connecting as user: <comment>%s</comment>', $this->remoteUser));
-        if ($environment) {
-            $output->writeln(sprintf('Environment: <comment>%s</comment>', $environment->name()));
-        }
-
-        $environments = $this->sortServersIntoEnvironments($servers);
-        $statuses = [];
-
-        $output->write(self::TABLE_HEADER, true);
-        foreach ($environments as $env) {
-            foreach ($env as $server) {
-                $envName = $server->environment()->name();
-                if ($server->type() !== 'rsync') {
-                    $row = $this->buildRow($envName, sprintf('type: %s', $server->type()));
-                    $output->writeln($row);
-                    continue;
-                }
-
-                $serverName = $server->name();
-                $resolved = $this->validateHostname($serverName);
-
-                if ($resolved === null) {
-                    $success = false;
-                    $serverName = sprintf('cannot_resolve: %s', $serverName);
-
-                } else {
-                    $success = $this->attemptConnection($resolved);
-                    if ($serverName !== $resolved) {
-                        $serverName = sprintf('%s -> %s', $serverName, $resolved);
-                    }
-                }
-
-                $statuses[$server->id()] = [
-                    'server' => $serverName,
-                    'environment' => $envName,
-                    'status' => $success
-                ];
-
-                $row = $this->buildRow($envName, $serverName, $success);
-                $output->writeln($row);
-            }
-
-            $output->writeln(self::TABLE_SEPARATOR);
-        }
-
-        $this->sendToRedis([
-            'servers' => $statuses,
-            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC'),
-            'generated_by' => gethostname()
-        ]);
 
         return $this->finish($output, 0);
     }
 
     /**
+     * @param string $string
+     * @param string $status
+     * @param string $hostname
+     * @param string $detail
+     *
+     * @return string
+     */
+    private function buildRow($env, $status, $hostname, $detail)
+    {
+        $row = sprintf(
+            self::TABLE_ROW,
+            str_pad($env, 12),
+            str_pad($status, 6),
+            str_pad($hostname, 40),
+            str_pad($detail, 40)
+        );
+
+        return $row;
+    }
+
+    /**
+     * @return string
+     */
+    private function buildDivider()
+    {
+        return $this->buildRow(
+            str_repeat('-', 12),
+            str_repeat('-', 6),
+            str_repeat('-', 40),
+            str_repeat('-', 40)
+        );
+    }
+
+    /**
+     * @param Environment|null $environment
+     *
+     * @return void
+     */
+    private function displayMeta(Environment $environment = null)
+    {
+        $this->getOutput()->writeln('');
+        $this->getOutput()->writeln(sprintf('Connecting as user: <comment>%s</comment>', $this->remoteUser));
+
+        if ($environment) {
+            $this->getOutput()->writeln(sprintf('Environment: <comment>%s</comment>', $environment->name()));
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function displayTableHeader()
+    {
+        $divider = $this->buildDivider();
+
+        $row = $this->buildRow(
+            'Environment',
+            'Status',
+            'Hostname',
+            'Detail'
+        );
+
+        $this->getOutput()->writeln('');
+        $this->getOutput()->writeln($row);
+        $this->getOutput()->writeln($divider);
+    }
+
+    /**
+     * @param string $env
+     *
+     * @return array|int
+     */
+    private function getServers($env)
+    {
+        $environment = null;
+        if ($env && !$environment = $this->environmentRepo->findOneBy(['name' => strtolower($env)])) {
+            return 1;
+        }
+
+        $servers = ($environment) ? $this->serverRepo->findBy(['environment' => $environment]) : $this->serverRepo->findAll();
+
+        if (!$servers) {
+            return 2;
+        }
+
+        return [$environment, $servers];
+    }
+
+    /**
+     * @param array $environments
+     *
+     * @return array
+     */
+    public function testConnections(array $environments)
+    {
+        $statuses = [];
+
+        $this->displayTableHeader();
+
+        $blankDivider = $this->buildRow('', '', '', '');
+
+        foreach ($environments as $env) {
+            foreach ($env as $server) {
+
+                // Skip non-rsync
+                if ($server->type() !== 'rsync') {
+                    $this->displayRow(
+                        $server->environment()->name(),
+                        null,
+                        $server->type(),
+                        ''
+                    );
+
+                    continue;
+                }
+
+                $status = $this->checkServerStatus($server);
+                $statuses[$server->id()] = $status;
+
+                $this->displayRow($status['environment'], $status['status'], $status['server'], $status['detail']);
+            }
+
+            $this->getOutput()->writeln($blankDivider);
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * @param Server $server
+     *
+     * @return array
+     */
+    private function checkServerStatus(Server $server)
+    {
+        $serverName = $server->name();
+
+        // Slice off port if provided
+        $serverName = strtok($serverName, ':');
+        $port = strtok(':');
+
+        $detail = '';
+
+        if (!$host = $this->validateHostname($serverName)) {
+            $detail = 'Cannot resolve hostname.';
+            $status = false;
+        } else {
+
+            if ($port !== false) {
+                $host .= sprintf(':%d', $port);
+            }
+
+            if ($server->name() !== $host) {
+                $detail = sprintf('Resolved: %s', $host);
+            }
+
+            $status = $this->attemptConnection($host);
+            if (is_array($status)) {
+                $detail = implode($status, ' ');
+                $status = false;
+            }
+        }
+
+        return [
+            'environment' => $server->environment()->name(),
+            'server' => $server->name(),
+            'status' => $status,
+            'detail' => $detail
+        ];
+    }
+
+    /**
      * @param string $serverName
      *
-     * @return bool
+     * @return bool|array
      */
     private function attemptConnection($serverName)
     {
@@ -240,22 +359,25 @@ HELP;
         }
 
         $session = $this->sshManager->createSession($this->remoteUser, $serverName);
+        $errors = $this->sshManager->getErrors();
+
         if ($session) {
             $this->sshManager->disconnectAll();
             return true;
         }
 
-        return false;
+        return $errors;
     }
 
     /**
      * @param string $env
-     * @param string $hostname
      * @param bool|null $status
+     * @param string $hostname
+     * @param string $detail
      *
-     * @return string
+     * @return void
      */
-    private function buildRow($env, $hostname, $status = null)
+    private function displayRow($env, $status, $hostname, $detail)
     {
         if ($status === null) {
             $display = '<comment>SKIP</comment>';
@@ -265,12 +387,9 @@ HELP;
 
         $display = sprintf('[%s]', $display);
 
-        return sprintf(
-            self::TABLE_ROW,
-            str_pad($env, 11),
-            $display,
-            str_pad($hostname, 51)
-        );
+        $row = $this->buildRow($env, $display, $hostname, $detail);
+
+        $this->getOutput()->writeln($row);
     }
 
     /**
@@ -282,68 +401,51 @@ HELP;
     {
         $environments = [];
 
+        foreach ($servers as $server) {
+            $environments[$server->environment()->id()] = $server->environment();
+        }
+
+        $environments = array_values($environments);
+        usort($environments, $this->environmentSorter());
+
+        $serverByEnv = [];
+        foreach ($environments as $environment) {
+            $serverByEnv[$environment->name()] = [];
+        }
+
         // Add servers to groupings
         foreach ($servers as $server) {
             $envName = $server->environment()->name();
 
-            if (!array_key_exists($envName, $environments)) {
-                $environments[$envName] = [];
+            if (!array_key_exists($envName, $serverByEnv)) {
+                $serverByEnv[$envName] = [];
             }
 
-            $environments[$envName][] = $server;
+            $serverByEnv[$envName][] = $server;
         }
-
-        // sort envs
-        uasort($environments, $this->envSorter());
 
         // Sort servers within env
         $sorter = $this->serverSorter();
-        foreach ($environments as &$env) {
+        foreach ($serverByEnv as &$env) {
             usort($env, $sorter);
         }
 
-        return $environments;
+        return $serverByEnv;
     }
 
     /**
-     * @return Closure
-     */
-    private function envSorter()
-    {
-        $sortOrder = [
-            'dev' => 0,
-            'test' => 1,
-            'beta' => 2,
-            'prod' => 3
-        ];
-
-        return function($a, $b) use ($sortOrder) {
-
-            $firstA = reset($a);
-            $firstB = reset($b);
-
-            $aName = $firstA->name();
-            $bName = $firstB->name();
-
-            $aOrder = isset($sortOrder[$aName]) ? $sortOrder[$aName] : 999;
-            $bOrder = isset($sortOrder[$bName]) ? $sortOrder[$bName] : 999;
-
-            if ($aOrder === $bOrder) {
-                return 0;
-            }
-
-            return ($aOrder > $bOrder);
-
-        };
-    }
-
-    /**
-     * @param array $data
+     * @param array $statuses
      *
      * @return void
      */
-    private function sendToRedis(array $data)
+    private function sendToRedis(array $statuses)
     {
+        $data = [
+            'servers' => $statuses,
+            'generated' => $this->clock->read()->format(DateTime::ISO8601, 'UTC'),
+            'generated_by' => gethostname()
+        ];
+
         $json = json_encode($data);
 
         // push onto list
