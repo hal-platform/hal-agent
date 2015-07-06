@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "bc0f7003084ca8338c19913dcb2a689e",
+    "hash": "176a6d131a1dedaca22a607f2bb86467",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1176,17 +1176,11 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.7.0",
+            "version": "2.7.1",
             "source": {
                 "type": "git",
-                "url": "git@git:web-core/hal-core.git",
-                "reference": "93727bcf6ddac0a8886c9dcf51c225ea2d24e934"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.7.0-e7f0d9.zip",
-                "reference": "93727bcf6ddac0a8886c9dcf51c225ea2d24e934",
-                "shasum": "0ee52cc260f8a79fa5f95ad9802ca47c17618631"
+                "url": "http://git/web-core/hal-core",
+                "reference": "730713dd3e85c34bb0becadac8c018a153624d96"
             },
             "archive": {
                 "exclude": [
@@ -1227,7 +1221,7 @@
                 }
             ],
             "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2015-06-15 11:50:15"
+            "time": "2015-07-06 12:02:57"
         },
         {
             "name": "ql/mcp-core",
