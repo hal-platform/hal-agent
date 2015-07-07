@@ -162,13 +162,13 @@ class CreatePushCommand extends Command
             ->withStatus('Waiting')
             ->withBuild($build)
             ->withDeployment($deployment)
-            ->withRepository($build->application())
+            ->withApplication($build->application())
             ->withUser($user);
 
         $this->dupeCatcher($push);
 
-        $this->entityManager->persist($push);
-        $this->entityManager->flush();
+        $this->em->persist($push);
+        $this->em->flush();
 
         if ($input->getOption('porcelain')) {
             $output->writeln($push->id());
