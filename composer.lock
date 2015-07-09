@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "176a6d131a1dedaca22a607f2bb86467",
+    "hash": "3473fbda6fce6c36e0b85f8020f70fa0",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -75,16 +75,16 @@
         },
         {
             "name": "doctrine/annotations",
-            "version": "v1.2.4",
+            "version": "v1.2.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/annotations.git",
-                "reference": "b5202eb9e83f8db52e0e58867e0a46e63be8332e"
+                "reference": "f4a91702ca3cd2e568c3736aa031ed00c3752af4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/annotations/zipball/b5202eb9e83f8db52e0e58867e0a46e63be8332e",
-                "reference": "b5202eb9e83f8db52e0e58867e0a46e63be8332e",
+                "url": "https://api.github.com/repos/doctrine/annotations/zipball/f4a91702ca3cd2e568c3736aa031ed00c3752af4",
+                "reference": "f4a91702ca3cd2e568c3736aa031ed00c3752af4",
                 "shasum": ""
             },
             "require": {
@@ -139,7 +139,7 @@
                 "docblock",
                 "parser"
             ],
-            "time": "2014-12-23 22:40:37"
+            "time": "2015-06-17 12:21:22"
         },
         {
             "name": "doctrine/cache",
@@ -1179,8 +1179,14 @@
             "version": "2.7.1",
             "source": {
                 "type": "git",
-                "url": "http://git/web-core/hal-core",
+                "url": "git@git:web-core/hal-core.git",
                 "reference": "730713dd3e85c34bb0becadac8c018a153624d96"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "http://composer/dist/ql-hal-core-2.7.1-10c580.zip",
+                "reference": "730713dd3e85c34bb0becadac8c018a153624d96",
+                "shasum": "8a08247705cc7cadf1b4e8ff43de8046de6b3d03"
             },
             "archive": {
                 "exclude": [
@@ -1225,23 +1231,21 @@
         },
         {
             "name": "ql/mcp-core",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "git@git:mcp/mcp-core.git",
-                "reference": "460c2390f77253a0991f37328774e0c68dd7ebbf"
+                "reference": "2b42798f65fe241b3106eb64cbf2ce9ed3ae5d99"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-mcp-core-1.0.1-578aad.zip",
-                "reference": "460c2390f77253a0991f37328774e0c68dd7ebbf",
-                "shasum": "4ab925396c0ef4d2adbdfc58716fb6ef536b26a8"
+                "url": "http://composer/dist/ql-mcp-core-1.0.2-f5950f.zip",
+                "reference": "2b42798f65fe241b3106eb64cbf2ce9ed3ae5d99",
+                "shasum": "23b131d318970552c031524ec3fa47a5a8520809"
             },
             "archive": {
                 "exclude": [
-                    "/bin",
                     "/tests",
-                    "/pakefile",
                     "/phpunit.xml.dist"
                 ]
             },
@@ -1256,13 +1260,12 @@
             },
             "require-dev": {
                 "phpunit/php-invoker": "*",
-                "phpunit/phpunit": "*",
-                "squizlabs/php_codesniffer": "*"
+                "phpunit/phpunit": "*"
             },
             "type": "library",
             "autoload": {
-                "psr-0": {
-                    "MCP\\DataType\\": "src"
+                "psr-4": {
+                    "MCP\\": "src\\"
                 }
             },
             "license": [
@@ -1271,35 +1274,29 @@
             "authors": [
                 {
                     "name": "Matt Nagi",
-                    "email": "mattnagi@quickenloans.com",
-                    "role": "Tech Lead",
-                    "homepage": "http://rwprofile/MySite/Public.aspx?accountname=MI%5cMNagi"
+                    "email": "mattnagi@quickenloans.com"
                 }
             ],
             "description": "Provides various 'data type' style classes: GUID, HttpUrl, IPv4Address, USAddress, and date/time related functionality.",
-            "homepage": "http://git/mnagi/mcp-core",
-            "support": {
-                "email": "mattnagi@quickenloans.com",
-                "issues": "http://git/mnagi/mcp-core/issues",
-                "source": "http://git/mnagi/mcp-core"
-            },
-            "time": "2013-10-15 17:53:16"
+            "homepage": "http://git/mcp/mcp-core",
+            "time": "2015-07-02 17:19:53"
         },
         {
             "name": "ql/mcp-corp-account",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "git@git:mcp/mcp-corp-account.git",
-                "reference": "ec69e42b8d354b3c51f03509fca8bbeab7a3f428"
+                "reference": "e5207f9fd0c43b90cc438b608c72c5dfe85f121b"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-mcp-corp-account-1.1.0-9eb8ac.zip",
-                "reference": "ec69e42b8d354b3c51f03509fca8bbeab7a3f428",
-                "shasum": "5756b0500f560e6af1ae10d1982b14cf16596bf6"
+                "url": "http://composer/dist/ql-mcp-corp-account-1.1.1-2b0737.zip",
+                "reference": "e5207f9fd0c43b90cc438b608c72c5dfe85f121b",
+                "shasum": "caf87a271e8bb222c9926be8d493e6cf087e0c10"
             },
             "require": {
+                "ext-ldap": "*",
                 "php": ">=5.4.0",
                 "ql/mcp-core": "*",
                 "zendframework/zend-ldap": "*"
@@ -1326,57 +1323,53 @@
             ],
             "description": "Handles authenticating a username/password to Quicken Loans' corporate set of usernames and passwords. Note that this will NOT work for any public facing websites (yet). This will only work for internal QL applications.",
             "homepage": "http://git/mcp/mcp-corp-account",
-            "time": "2015-06-10 12:08:17"
+            "time": "2015-07-08 22:23:23"
         },
         {
             "name": "ql/mcp-logger",
-            "version": "1.2.0",
+            "version": "2.1.0",
             "source": {
                 "type": "git",
                 "url": "git@git:mcp/mcp-logger.git",
-                "reference": "107ae5ec4a74a20b7ba83bfbb9ef88bb1a3b8f7a"
+                "reference": "b6ac82778f67e151801ed19d5af34574b2b76a06"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-mcp-logger-1.2.0-dfec33.zip",
-                "reference": "107ae5ec4a74a20b7ba83bfbb9ef88bb1a3b8f7a",
-                "shasum": "ca96a0dee5aeb1b462298d5625df77aafdf4bac0"
+                "url": "http://composer/dist/ql-mcp-logger-2.1.0-a24b6e.zip",
+                "reference": "b6ac82778f67e151801ed19d5af34574b2b76a06",
+                "shasum": "1b9977e53cd0ce003e307cf5214bc5dc78c85390"
             },
             "archive": {
                 "exclude": [
-                    "/bin",
-                    "/fixtures",
                     "/phpunit.xml.dist",
-                    "src/MCP/Testing",
-                    "/tests"
+                    "/testing"
                 ]
             },
             "require": {
-                "ext-date": "*",
                 "ext-xmlwriter": "*",
                 "php": ">=5.4.0",
-                "ql/mcp-core": "1.*"
-            },
-            "conflict": {
-                "ql/mcp": "*"
+                "ql/mcp-core": "1.*",
+                "ql/uri-template": "1.*"
             },
             "require-dev": {
+                "aws/aws-sdk-php": "^3.0",
                 "guzzle/http": "*",
+                "guzzlehttp/guzzle": "5.*",
                 "mockery/mockery": ">=0.8",
                 "phpunit/php-invoker": "*",
                 "phpunit/phpunit": "*",
                 "psr/log": "*"
             },
             "suggest": {
-                "ext-http": "Required for HttpRequest-based service",
-                "guzzle/http": "Required for Guzzle-based service",
+                "aws/aws-sdk-php": "Required to use Kinesis Service",
+                "guzzlehttp/guzzle": "Required for Guzzle-based service",
                 "psr/log": "Required to use the included PSR-3 logger"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "MCP\\Service\\Logger\\": "src/Logger",
-                    "MCP\\Testing\\": "src/Testing"
+                    "MCP\\Logger\\": "src",
+                    "MCP\\Logger\\Testing\\": "testing/src"
                 }
             },
             "license": [
@@ -1384,41 +1377,69 @@
             ],
             "authors": [
                 {
-                    "name": "Matt Nagi",
-                    "email": "mattnagi@quickenloans.com",
-                    "role": "Tech Lead"
-                },
-                {
-                    "name": "Steven Snider",
-                    "email": "stevensnider@quickenloans.com",
-                    "role": "Contributor"
-                },
-                {
-                    "name": "Steve Kluck",
-                    "email": "stevekluck@quickenloans.com",
-                    "role": "Contributor"
+                    "name": "IT Team Web Core",
+                    "email": "itteamwebcore@quickenloans.com"
                 }
             ],
-            "description": "Library for handling Core Logger within Quicken Loans.",
-            "support": {
-                "email": "stevekluck@quickenloans.com",
-                "issues": "http://git/mnagi/mcp-logger/issues",
-                "source": "http://git/mnagi/mcp-logger"
-            },
-            "time": "2014-04-22 20:32:30"
+            "description": "Library for handling PHP Logging within Quicken Loans.",
+            "homepage": "http://git/mcp/mcp-logger",
+            "time": "2015-07-01 17:09:53"
         },
         {
-            "name": "react/promise",
-            "version": "v2.2.0",
+            "name": "ql/uri-template",
+            "version": "1.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/reactphp/promise.git",
-                "reference": "365fcee430dfa4ace1fbc75737ca60ceea7eeeef"
+                "url": "https://github.com/QuickenLoans/uri-template.git",
+                "reference": "4b6b5cf150625ef0274ffa45b0588416ae545c65"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/promise/zipball/365fcee430dfa4ace1fbc75737ca60ceea7eeeef",
-                "reference": "365fcee430dfa4ace1fbc75737ca60ceea7eeeef",
+                "url": "https://api.github.com/repos/QuickenLoans/uri-template/zipball/4b6b5cf150625ef0274ffa45b0588416ae545c65",
+                "reference": "4b6b5cf150625ef0274ffa45b0588416ae545c65",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ctype": "*",
+                "ext-mbstring": "*",
+                "php": ">=5.4.0"
+            },
+            "require-dev": {
+                "phpunit/php-invoker": "*",
+                "phpunit/phpunit": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "QL\\UriTemplate": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Matt Nagi",
+                    "email": "mattnagi@quickenloans.com"
+                }
+            ],
+            "description": "An implementation of RFC 6570 level 4",
+            "homepage": "https://github.com/QuickenLoans/uri-template",
+            "time": "2013-08-28 18:35:46"
+        },
+        {
+            "name": "react/promise",
+            "version": "v2.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/reactphp/promise.git",
+                "reference": "3b6fca09c7d56321057fa8867c8dbe1abf648627"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/reactphp/promise/zipball/3b6fca09c7d56321057fa8867c8dbe1abf648627",
+                "reference": "3b6fca09c7d56321057fa8867c8dbe1abf648627",
                 "shasum": ""
             },
             "require": {
@@ -1445,11 +1466,11 @@
             "authors": [
                 {
                     "name": "Jan Sorgalla",
-                    "email": "jsorgalla@googlemail.com"
+                    "email": "jsorgalla@gmail.com"
                 }
             ],
             "description": "A lightweight implementation of CommonJS Promises/A for PHP",
-            "time": "2014-12-30 13:32:42"
+            "time": "2015-07-03 13:48:55"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -2186,7 +2207,7 @@
             ],
             "authors": [
                 {
-                    "name": "Padraic Brady",
+                    "name": "Pádraic Brady",
                     "email": "padraic.brady@gmail.com",
                     "homepage": "http://blog.astrumfutura.com"
                 },
@@ -2323,16 +2344,16 @@
         },
         {
             "name": "phpunit/php-code-coverage",
-            "version": "2.1.5",
+            "version": "2.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "be2286cb8c7e1773eded49d9719219e6f74f9e3e"
+                "reference": "07e27765596d72c378a6103e80da5d84e802f1e4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/be2286cb8c7e1773eded49d9719219e6f74f9e3e",
-                "reference": "be2286cb8c7e1773eded49d9719219e6f74f9e3e",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/07e27765596d72c378a6103e80da5d84e802f1e4",
+                "reference": "07e27765596d72c378a6103e80da5d84e802f1e4",
                 "shasum": ""
             },
             "require": {
@@ -2381,7 +2402,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-06-09 13:05:42"
+            "time": "2015-06-30 06:52:35"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -2432,16 +2453,16 @@
         },
         {
             "name": "phpunit/php-text-template",
-            "version": "1.2.0",
+            "version": "1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-text-template.git",
-                "reference": "206dfefc0ffe9cebf65c413e3d0e809c82fbf00a"
+                "reference": "31f8b717e51d9a2afca6c9f046f5d69fc27c8686"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/206dfefc0ffe9cebf65c413e3d0e809c82fbf00a",
-                "reference": "206dfefc0ffe9cebf65c413e3d0e809c82fbf00a",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/31f8b717e51d9a2afca6c9f046f5d69fc27c8686",
+                "reference": "31f8b717e51d9a2afca6c9f046f5d69fc27c8686",
                 "shasum": ""
             },
             "require": {
@@ -2450,20 +2471,17 @@
             "type": "library",
             "autoload": {
                 "classmap": [
-                    "Text/"
+                    "src/"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
-            "include-path": [
-                ""
-            ],
             "license": [
                 "BSD-3-Clause"
             ],
             "authors": [
                 {
                     "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
+                    "email": "sebastian@phpunit.de",
                     "role": "lead"
                 }
             ],
@@ -2472,7 +2490,7 @@
             "keywords": [
                 "template"
             ],
-            "time": "2014-01-30 17:20:04"
+            "time": "2015-06-21 13:50:34"
         },
         {
             "name": "phpunit/php-timer",
@@ -2517,16 +2535,16 @@
         },
         {
             "name": "phpunit/php-token-stream",
-            "version": "1.4.2",
+            "version": "1.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-token-stream.git",
-                "reference": "db63be1159c81df649cd0260e30249a586d4129e"
+                "reference": "7a9b0969488c3c54fd62b4d504b3ec758fd005d9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/db63be1159c81df649cd0260e30249a586d4129e",
-                "reference": "db63be1159c81df649cd0260e30249a586d4129e",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/7a9b0969488c3c54fd62b4d504b3ec758fd005d9",
+                "reference": "7a9b0969488c3c54fd62b4d504b3ec758fd005d9",
                 "shasum": ""
             },
             "require": {
@@ -2562,7 +2580,7 @@
             "keywords": [
                 "tokenizer"
             ],
-            "time": "2015-06-12 07:34:24"
+            "time": "2015-06-19 03:43:16"
         },
         {
             "name": "phpunit/phpunit",
@@ -2638,16 +2656,16 @@
         },
         {
             "name": "phpunit/phpunit-mock-objects",
-            "version": "2.3.4",
+            "version": "2.3.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit-mock-objects.git",
-                "reference": "92408bb1968a81b3217a6fdf6c1a198da83caa35"
+                "reference": "1c330b1b6e1ea8fd15f2fbea46770576e366855c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/92408bb1968a81b3217a6fdf6c1a198da83caa35",
-                "reference": "92408bb1968a81b3217a6fdf6c1a198da83caa35",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/1c330b1b6e1ea8fd15f2fbea46770576e366855c",
+                "reference": "1c330b1b6e1ea8fd15f2fbea46770576e366855c",
                 "shasum": ""
             },
             "require": {
@@ -2689,7 +2707,7 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2015-06-11 15:55:48"
+            "time": "2015-07-04 05:41:32"
         },
         {
             "name": "sebastian/comparator",
@@ -3029,16 +3047,16 @@
         },
         {
             "name": "sebastian/version",
-            "version": "1.0.5",
+            "version": "1.0.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/version.git",
-                "reference": "ab931d46cd0d3204a91e1b9a40c4bc13032b58e4"
+                "reference": "58b3a85e7999757d6ad81c787a1fbf5ff6c628c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/ab931d46cd0d3204a91e1b9a40c4bc13032b58e4",
-                "reference": "ab931d46cd0d3204a91e1b9a40c4bc13032b58e4",
+                "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/58b3a85e7999757d6ad81c787a1fbf5ff6c628c6",
+                "reference": "58b3a85e7999757d6ad81c787a1fbf5ff6c628c6",
                 "shasum": ""
             },
             "type": "library",
@@ -3060,7 +3078,7 @@
             ],
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2015-02-24 06:35:25"
+            "time": "2015-06-21 13:59:46"
         }
     ],
     "aliases": [],

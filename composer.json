@@ -9,7 +9,6 @@
         "psr-4": { "QL\\Hal\\Agent\\": "src/", "QL\\Hal\\Agent\\Testing\\": "testing/src" }
     },
     "repositories": [
-        { "type": "vcs", "url": "http://git/web-core/hal-core" },
         { "type": "composer", "url": "http://composer/" }
     ],
 
