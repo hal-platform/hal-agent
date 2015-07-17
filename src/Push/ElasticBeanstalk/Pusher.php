@@ -30,28 +30,15 @@ class Pusher
     private $logger;
 
     /**
-     * @type ElasticBeanstalkClient
-     */
-    private $eb;
-
-    /**
-     * @type string
-     */
-    private $s3BuildsBucket;
-
-    /**
      * @param EventLogger $logger
-     * @param ElasticBeanstalkClient $eb
-     * @param string $s3BuildsBucket
      */
-    public function __construct(EventLogger $logger, ElasticBeanstalkClient $eb, $s3BuildsBucket)
+    public function __construct(EventLogger $logger)
     {
         $this->logger = $logger;
-        $this->eb = $eb;
-        $this->s3BuildsBucket = $s3BuildsBucket;
     }
 
     /**
+     * @param ElasticBeanstalkClient $eb
      * @param string $awsApplication
      * @param string $awsEnvironment
      * @param string $s3version
@@ -61,34 +48,45 @@ class Pusher
      *
      * @return boolean
      */
-    public function __invoke($awsApplication, $awsEnvironment, $s3version, $buildId, $pushId, $environmentKey)
-    {
+    public function __invoke(
+        ElasticBeanstalkClient $eb
+        $awsApplication,
+        $awsEnvironment,
+        $s3bucket,
+        $s3version,
+        $buildId,
+        $pushId,
+        $environmentKey
+    ) {
         $context = [
             'AWS application' => $awsApplication,
             'AWS environment' => $awsEnvironment,
             'version' => $pushId,
+
+            'bucket' => $s3bucket
             'object' => $s3version
         ];
 
-        // Error out if version already exists
-        if ($this->doesVersionAlreadyExist($awsApplication, $pushId, $s3version, $context)) {
-            return false;
-        }
-
         try {
-            # create version
-            $this->eb->createApplicationVersion([
+
+            // Error out if version already exists
+            if ($this->doesVersionAlreadyExist($eb, $awsApplication, $pushId, $context)) {
+                return false;
+            }
+
+            // create version
+            $eb->createApplicationVersion([
                 'ApplicationName' => $awsApplication,
                 'VersionLabel' => $pushId,
-                'Description' => "Build $buildId, Env $environmentKey",
+                'Description' => sprintf('Build %s, Env %s', $buildId, $environmentKey),
                 'SourceBundle' => [
-                    'S3Bucket' => $this->s3BuildsBucket,
+                    'S3Bucket' => $s3bucket,
                     'S3Key' => $s3version
                 ]
             ]);
 
-            # update environment
-            $this->eb->updateEnvironment([
+            // update environment
+            $eb->updateEnvironment([
                 'EnvironmentId' => $awsEnvironment,
                 'VersionLabel' => $pushId
             ]);
@@ -101,7 +99,7 @@ class Pusher
         }
 
         // Wait for deployment to finish
-        if (!$this->wait($awsApplication, $awsEnvironment, $context)) {
+        if (!$this->wait($eb, $awsApplication, $awsEnvironment, $context)) {
             // unknown if deployment succeeded.
             // Log the timeout and continue.
             return true;
@@ -112,16 +110,16 @@ class Pusher
     }
 
     /**
+     * @param ElasticBeanstalkClient $eb
      * @param string $awsApplication
      * @param string $pushId
-     * @param string $s3version
      * @param array $context
      *
      * @return bool
      */
-    private function doesVersionAlreadyExist($awsApplication, $pushId, $s3version, array $context)
+    private function doesVersionAlreadyExist(ElasticBeanstalkClient $eb, $awsApplication, $pushId, array $context)
     {
-        $versions = $this->eb->describeApplicationVersions([
+        $versions = $eb->describeApplicationVersions([
             'ApplicationName' => $awsApplication,
             'VersionLabels' => [$pushId]
         ]);
@@ -136,16 +134,17 @@ class Pusher
     }
 
     /**
+     * @param ElasticBeanstalkClient $eb
      * @param string $awsApplication
      * @param string $awsEnvironment
      * @param array $context
      *
      * @return bool
      */
-    private function wait($awsApplication, $awsEnvironment, $context)
+    private function wait(ElasticBeanstalkClient $eb, $awsApplication, $awsEnvironment, $context)
     {
         try {
-            $this->eb->waitUntilEnvironmentReady([
+            $eb->waitUntilEnvironmentReady([
                 'ApplicationName' => $awsApplication,
                 'EnvironmentIds' => [$awsEnvironment],
                 'waiter.interval' => self::WAITER_INTERVAL,

@@ -7,6 +7,9 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
+use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
+use Aws\S3\S3Client;
+use QL\Hal\Agent\Push\AWSAuthenticator;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
@@ -32,6 +35,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $logger;
 
     /**
+     * @type AWSAuthenticator
+     */
+    private $authenticator;
+
+    /**
      * @type HealthChecker
      */
     private $health;
@@ -53,6 +61,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
     /**
      * @param EventLogger $logger
+     * @param AWSAuthenticator $authenticator
      * @param HealthChecker $health
      * @param Packer $packer
      * @param Uploader $uploader
@@ -60,12 +69,15 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      */
     public function __construct(
         EventLogger $logger,
+        AWSAuthenticator $authenticator,
         HealthChecker $health,
         Packer $packer,
         Uploader $uploader,
         Pusher $pusher
     ) {
         $this->logger = $logger;
+        $this->authenticator = $authenticator;
+
         $this->health = $health;
         $this->packer = $packer;
         $this->uploader = $uploader;
@@ -85,13 +97,20 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return 200;
         }
 
-        if (!$this->health($properties)) {
+        // authenticate
+        if (!$clients = $this->authenticate($properties)) {
             return 201;
+        }
+
+        list($eb, $s3) = $clients;
+
+        if (!$this->health($eb, $properties)) {
+            return 202;
         }
 
         // create zip for s3
         if (!$this->pack($properties)) {
-            return 202;
+            return 203;
         }
 
         // SKIP pre-push commands
@@ -100,13 +119,13 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         }
 
         // upload version to S3
-        if (!$this->upload($properties)) {
-            return 203;
+        if (!$this->upload($s3, $properties)) {
+            return 204;
         }
 
         // push
-        if (!$this->push($properties)) {
-            return 204;
+        if (!$this->push($eb, $properties)) {
+            return 205;
         }
 
         // SKIP post-push commands
@@ -147,20 +166,52 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
+        if (!array_key_exists('bucket', $properties)) {
+            return false;
+        }
+
         return true;
     }
 
     /**
      * @param array $properties
      *
+     * @return array|null
+     */
+    private function authenticate(array $properties)
+    {
+        $this->status('Authenticating with AWS', self::SECTION);
+
+        $eb = $this->authenticator->getEB(
+            $properties[ServerEnum::TYPE_EB]['region'],
+            $properties[ServerEnum::TYPE_EB]['credential']
+        );
+
+        if (!$eb) return null;
+
+        $s3 = $this->authenticator->getS3(
+            $properties[ServerEnum::TYPE_EB]['region'],
+            $properties[ServerEnum::TYPE_EB]['credential']
+        );
+
+        if (!$s3) return null;
+
+        return [$eb, $s3];
+    }
+
+    /**
+     * @param ElasticBeanstalkClient $eb
+     * @param array $properties
+     *
      * @return boolean
      */
-    private function health(array $properties)
+    private function health(ElasticBeanstalkClient $eb, array $properties)
     {
         $this->status('Checking AWS environment health', self::SECTION);
 
         $health = $this->health;
         $health = $health(
+            $eb,
             $properties[ServerEnum::TYPE_EB]['application'],
             $properties[ServerEnum::TYPE_EB]['environment']
         );
@@ -190,11 +241,12 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
+     * @param S3Client $s3
      * @param array $properties
      *
      * @return boolean
      */
-    private function upload(array $properties)
+    private function upload(S3Client $s3, array $properties)
     {
         $this->status('Pushing code to S3', self::SECTION);
 
@@ -210,7 +262,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $uploader = $this->uploader;
         return $uploader(
+            $s3,
             $properties['location']['tempZipArchive'],
+            $properties[ServerEnum::TYPE_EB]['bucket'],
             $s3version,
             $build->id(),
             $push->id(),
@@ -219,11 +273,12 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
+     * @param ElasticBeanstalkClient $eb
      * @param array $properties
      *
      * @return boolean
      */
-    private function push(array $properties)
+    private function push(ElasticBeanstalkClient $eb, array $properties)
     {
         $this->status('Deploying version to EB', self::SECTION);
 
@@ -239,8 +294,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $pusher = $this->pusher;
         return $pusher(
+            $eb,
             $properties[ServerEnum::TYPE_EB]['application'],
             $properties[ServerEnum::TYPE_EB]['environment'],
+            $properties[ServerEnum::TYPE_EB]['bucket'],
             $s3version,
             $build->id(),
             $push->id(),

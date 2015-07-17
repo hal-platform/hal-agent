@@ -35,27 +35,15 @@ class HealthChecker
     const NON_STANDARD_MULTIPLE = 'Too Many Cooks';
 
     /**
-     * @type ElasticBeanstalkClient
-     */
-    private $eb;
-
-    /**
      * @param ElasticBeanstalkClient $eb
-     */
-    public function __construct(ElasticBeanstalkClient $eb)
-    {
-        $this->eb = $eb;
-    }
-
-    /**
      * @param string $applicationName
      * @param string $environmentId
      *
      * @return array
      */
-    public function __invoke($applicationName, $environmentId)
+    public function __invoke(ElasticBeanstalkClient $eb, $applicationName, $environmentId)
     {
-        $environments = $this->eb->describeEnvironments([
+        $environments = $eb->describeEnvironments([
             'ApplicationName' => $applicationName,
             'EnvironmentIds' => [$environmentId]
         ]);

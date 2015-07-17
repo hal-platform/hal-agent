@@ -30,31 +30,17 @@ class Uploader
     private $logger;
 
     /**
-     * @type S3Client
-     */
-    private $s3;
-
-    /**
-     * @type string
-     */
-    private $s3BuildsBucket;
-
-    /**
      * @type callable
      */
     private $fileStreamer;
 
     /**
      * @param EventLogger $logger
-     * @param S3Client $s3
-     * @param string $s3BuildsBucket
      * @param callable $fileStreamer
      */
-    public function __construct(EventLogger $logger, S3Client $s3, $s3BuildsBucket, callable $fileStreamer = null)
+    public function __construct(EventLogger $logger, callable $fileStreamer = null)
     {
         $this->logger = $logger;
-        $this->s3 = $s3;
-        $this->s3BuildsBucket = $s3BuildsBucket;
 
         if ($fileStreamer === null) {
             $fileStreamer = $this->getDefaultFileStreamer();
@@ -64,7 +50,9 @@ class Uploader
     }
 
     /**
+     * @param S3Client $s3
      * @param string $tempZipArchive
+     * @param string $s3bucket
      * @param string $s3version
      * @param string $buildId
      * @param string $pushId
@@ -72,23 +60,24 @@ class Uploader
      *
      * @return boolean
      */
-    public function __invoke($tempZipArchive, $s3version, $buildId, $pushId, $environmentKey)
+    public function __invoke(S3Client $s3, $tempZipArchive, $s3bucket, $s3version, $buildId, $pushId, $environmentKey)
     {
         $fileHandle = call_user_func($this->fileStreamer, $tempZipArchive, 'r+');
 
         $context = [
+            'bucket' => $s3bucket
             'object' => $s3version
         ];
 
-        // Error out if object already exists
-        if ($this->s3->doesObjectExist($this->s3BuildsBucket, $s3version)) {
-            $this->logger->event('failure', self::ERR_ALREADY_EXISTS, $context);
-            return false;
-        }
-
         try {
-            $object = $this->s3->upload(
-                $this->s3BuildsBucket,
+            // Error out if object already exists
+            if ($s3->doesObjectExist($s3bucket, $s3version)) {
+                $this->logger->event('failure', self::ERR_ALREADY_EXISTS, $context);
+                return false;
+            }
+
+            $object = $s3->upload(
+                $s3bucket,
                 $s3version,
                 $fileHandle,
                 'private',
@@ -110,7 +99,7 @@ class Uploader
         }
 
         // Wait for object to be accessible
-        if (!$this->wait($s3version, $context)) {
+        if (!$this->wait($s3, $s3bucket, $s3version, $context)) {
             return false;
         }
 
@@ -119,17 +108,19 @@ class Uploader
     }
 
     /**
-     * @param string $s3version
+     * @param S3Client $s3
+     * @param string $bucket
+     * @param string $file
      * @param array $context
      *
      * @return bool
      */
-    private function wait($s3version, array $context)
+    private function wait(S3Client $s3, $bucket, $file, array $context)
     {
         try {
-            $this->s3->waitUntil('ObjectExists', [
-                'Bucket' => $this->s3BuildsBucket,
-                'Key' => $s3version,
+            $s3->waitUntil('ObjectExists', [
+                'Bucket' => $bucket,
+                'Key' => $file,
                 'waiter.interval' => self::WAITER_INTERVAL,
                 'waiter.max_attempts' => self::WAITER_ATTEMPTS
             ]);

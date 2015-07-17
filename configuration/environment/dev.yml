@@ -47,10 +47,6 @@ parameters:
 
     push.rsync.remoteUser: ''
 
-    aws.region: 'us-west-2'
-    aws.s3.builds: ''
-    aws.ec2.user: 'ec2-user'
-
     ############################################################################
     # DATABASE / NOTIFICATIONS
     ############################################################################
@@ -82,10 +78,6 @@ parameters:
         - ['%build.unix.remoteUser%', '*', 'key:/path/to/id_boot2docker']
         - ['%build.windows.remoteUser%', '*', 'key:/path/to/id_rsa']
         - ['%push.rsync.remoteUser%', '*', 'key:/path/to/id_rsa']
-
-    # dont ever commit, dont be stupid
-    aws.credentials.key: ''
-    aws.credentials.secret: ''
 
     ############################################################################
     # ENCRYPTION

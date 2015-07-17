@@ -29,12 +29,7 @@ parameters:
     docker.option.sudo: false
     docker.option.debug: false
 
-    aws.region: ''
-    aws.s3.builds: ''
-    aws.ec2.user: ''
-
-    aws.credentials.key: ''
-    aws.credentials.secret: ''
+    aws.ec2.user: 'ec2-user'
 
     # Replaced by env
     database.username: ''

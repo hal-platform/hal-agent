@@ -9,6 +9,8 @@ namespace QL\Hal\Agent\Push;
 
 use Aws\Common\Enum\Region;
 use Aws\Common\Exception\AwsExceptionInterface;
+use Aws\Ec2\Ec2Client;
+use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
 use Exception;
 use QL\Hal\Agent\Logger\EventLogger;
@@ -55,6 +57,21 @@ class AWSAuthenticator
      * @param string $region
      * @param AWSCredential|null $credential
      *
+     * @return ElasticBeanstalkClient|null
+     */
+    public function getEB($region, $credential)
+    {
+        if (!$credentials = $this->getCredentials($region, $credential)) {
+            return null;
+        }
+
+        return ElasticBeanstalkClient::factory($credentials);
+    }
+
+    /**
+     * @param string $region
+     * @param AWSCredential|null $credential
+     *
      * @return S3Client|null
      */
     public function getS3($region, $credential)
@@ -63,17 +80,22 @@ class AWSAuthenticator
             return null;
         }
 
-        list($key, $secret) = $credentials;
+        return S3Client::factory($credentials);
+    }
 
-        $s3 = S3Client::factory([
-            'region' => $region,
-            'credentials' => [
-                'key' => $key,
-                'secret' => $secret
-            ]
-        ]);
+    /**
+     * @param string $region
+     * @param AWSCredential|null $credential
+     *
+     * @return Ec2Client|null
+     */
+    public function getEC2($region, $credential)
+    {
+        if (!$credentials = $this->getCredentials($region, $credential)) {
+            return null;
+        }
 
-        return $s3;
+        return Ec2Client::factory($credentials);
     }
 
     /**
@@ -102,7 +124,13 @@ class AWSAuthenticator
             return null;
         }
 
-        return [$credential->key(), $secret];
+        return [
+            'region' => $region,
+            'credentials' => [
+                'key' => $credential->key(),
+                'secret' => $secret
+            ]
+        ];
     }
 
     /**

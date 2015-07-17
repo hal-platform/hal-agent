@@ -61,14 +61,16 @@ class PushCommand extends Command implements OutputAwareInterface
         104 => 'Post push command failed.',
 
         200 => 'Required properties for EB are missing.',
-        201 => 'Elastic Beanstalk environment is not ready.',
-        202 => 'Build could not be packed for S3.',
-        203 => 'Upload to S3 failed.',
-        204 => 'Deploying application to EB failed.',
+        201 => 'Failed to authenticate with AWS.',
+        202 => 'Elastic Beanstalk environment is not ready.',
+        203 => 'Build could not be packed for S3.',
+        204 => 'Upload to S3 failed.',
+        205 => 'Deploying application to EB failed.',
 
         300 => 'Required properties for EC2 are missing.',
-        301 => 'No EC2 instances found.',
-        302 => 'EC2 push failed.',
+        301 => 'Failed to authenticate with AWS.',
+        302 => 'No EC2 instances found.',
+        303 => 'EC2 push failed.',
 
         400 => 'Required properties for S3 are missing.',
         401 => 'Failed to authenticate with AWS.',

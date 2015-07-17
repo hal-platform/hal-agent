@@ -29,11 +29,6 @@ class InstanceFinder
     const TAG_NAME_FOR_POOL = 'hal_pool';
 
     /**
-     * @type Ec2Client
-     */
-    private $ec2;
-
-    /**
      * @type int
      */
     private static $instanceStates = [
@@ -46,24 +41,17 @@ class InstanceFinder
     ];
 
     /**
-     * @param Ec2Client $ec2
-     */
-    public function __construct(Ec2Client $ec2)
-    {
-        $this->ec2 = $ec2;
-    }
-
-    /**
      * Find instances in a pool, optionally filter by their state.
      *
      * @see http://docs.aws.amazon.com/aws-sdk-php/latest/class-Aws.Ec2.Ec2Client.html#_describeInstances
      *
+     * @param Ec2Client $ec2
      * @param string $pool
      * @param string $state
      *
      * @return array
      */
-    public function __invoke($pool, $state = null)
+    public function __invoke(Ec2Client $ec2, $pool, $state = null)
     {
         $tagQuery = sprintf('tag:%s', self::TAG_NAME_FOR_POOL);
         $filters = [
@@ -75,7 +63,7 @@ class InstanceFinder
             $filters[] = ['Name' => 'instance-state-code', 'Values' => [$state]];
         }
 
-        $reservations = $this->ec2->describeInstances([
+        $reservations = $ec2->describeInstances([
             'Filters' => $filters
         ]);
 

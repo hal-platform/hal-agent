@@ -7,6 +7,8 @@
 
 namespace QL\Hal\Agent\Push\EC2;
 
+use Aws\Ec2\Ec2Client;
+use QL\Hal\Agent\Push\AWSAuthenticator;
 use QL\Hal\Agent\Push\DeployerInterface;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
@@ -31,6 +33,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $logger;
 
     /**
+     * @type AWSAuthenticator
+     */
+    private $authenticator;
+
+    /**
      * @type InstanceFinder
      */
     private $finder;
@@ -42,15 +49,19 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
     /**
      * @param EventLogger $logger
+     * @param AWSAuthenticator $authenticator
      * @param InstanceFinder $finder
      * @param Pusher $pusher
      */
     public function __construct(
         EventLogger $logger,
+        AWSAuthenticator $authenticator,
         InstanceFinder $finder,
         Pusher $pusher
     ) {
         $this->logger = $logger;
+        $this->authenticator = $authenticator;
+
         $this->finder = $finder;
         $this->pusher = $pusher;
     }
@@ -68,9 +79,14 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return 300;
         }
 
-        if (!$instances = $this->finder($properties)) {
-            $this->logger->event('failure', self::ERR_NO_INSTANCES);
+        // authenticate
+        if (!$ec2 = $this->authenticate($properties)) {
             return 301;
+        }
+
+        if (!$instances = $this->finder($ec2, $properties)) {
+            $this->logger->event('failure', self::ERR_NO_INSTANCES);
+            return 302;
         }
 
         // SKIP pre-push commands
@@ -80,7 +96,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         // push
         if (!$this->push($properties, $instances)) {
-            return 302;
+            return 303;
         }
 
         // SKIP post-push commands
@@ -123,14 +139,31 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     /**
      * @param array $properties
      *
+     * @return Ec2Client|null
+     */
+    private function authenticate(array $properties)
+    {
+        $this->status('Authenticating with AWS', self::SECTION);
+
+        return $this->authenticator->getEC2(
+            $properties[ServerEnum::TYPE_EC2]['region'],
+            $properties[ServerEnum::TYPE_EC2]['credential']
+        );
+    }
+
+    /**
+     * @param Ec2Client $ec2
+     * @param array $properties
+     *
      * @return array|null
      */
-    private function finder(array $properties)
+    private function finder(Ec2Client $ec2, array $properties)
     {
         $this->status('Finding EC2 instances in pool', self::SECTION);
 
         $finder = $this->finder;
         $instances = $finder(
+            $ec2,
             $properties[ServerEnum::TYPE_EC2]['pool'],
             InstanceFinder::RUNNING
         );

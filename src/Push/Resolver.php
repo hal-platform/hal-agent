@@ -49,9 +49,6 @@ class Resolver
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
     const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
 
-    const ERR_EB_NOPE = 'Cannot deploy to EB. AWS has not been configured.';
-    const ERR_EC2_NOPE = 'Cannot deploy to EC2. AWS has not been configured.';
-
     /**
      * @type EventLogger
      */
@@ -150,8 +147,6 @@ class Resolver
 
         $method = $server->type();
 
-        $this->validateAWSConfiguration($method);
-
         $properties = [
             'build' => $build,
             'push' => $push,
@@ -215,22 +210,6 @@ class Resolver
     }
 
     /**
-     * Set the aws credentials.
-     *
-     * Not actually used. Just sanity checked when a push is trying to deploy to EB.
-     *
-     * @param string $awsKey
-     * @param string $awsSecret
-     *
-     * @return null
-     */
-    public function setAwsCredentials($awsKey, $awsSecret)
-    {
-        $this->awsKey = $awsKey;
-        $this->awsSecret = $awsSecret;
-    }
-
-    /**
      * @param array $properties
      *
      * @return void
@@ -282,7 +261,8 @@ class Resolver
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
                 'application' => $application->ebName(),
-                'environment' => $deployment->ebEnvironment()
+                'environment' => $deployment->ebEnvironment(),
+                'bucket' => $deployment->s3bucket()
             ];
 
         } elseif ($method === ServerEnum::TYPE_EC2) {
@@ -417,29 +397,5 @@ class Resolver
         ]);
 
         return (count($concurrentSyncs) > 0);
-    }
-
-    /**
-     * Sanity check to make sure AWS keys have been configured.
-     *
-     * @param string $method
-     *
-     * @throws PushException
-     *
-     * @return null
-     */
-    private function validateAWSConfiguration($method)
-    {
-        if ($this->awsKey && $this->awsSecret) {
-            return;
-        }
-
-        if ($method === ServerEnum::TYPE_EB) {
-            throw new PushException(self::ERR_EB_NOPE);
-        }
-
-        if ($method === ServerEnum::TYPE_EC2) {
-            throw new PushException(self::ERR_EC2_NOPE);
-        }
     }
 }

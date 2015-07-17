@@ -13,7 +13,6 @@ services:
         calls:
             - ['setLocalTempPath', [%environment.temp%]]
             - ['setArchivePath', [%environment.archive%]]
-            - ['setAwsCredentials', [%aws.credentials.key%, %aws.credentials.secret%]]
 
     push.mover:
         class: 'QL\Hal\Agent\Push\Mover'
@@ -65,6 +64,7 @@ services:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Deployer'
         arguments:
             - @logger.event
+            - @push.aws.authenticator
             - @push.elasticbeanstalk.healthchecker
             - @push.elasticbeanstalk.packer
             - @push.elasticbeanstalk.uploader
@@ -72,7 +72,6 @@ services:
 
     push.elasticbeanstalk.healthchecker:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
-        arguments: [@aws.eb]
 
     push.elasticbeanstalk.packer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Packer'
@@ -85,15 +84,11 @@ services:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Uploader'
         arguments:
             - @logger.event
-            - @aws.s3
-            - %aws.s3.builds%
 
     push.elasticbeanstalk.pusher:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Pusher'
         arguments:
             - @logger.event
-            - @aws.eb
-            - %aws.s3.builds%
 
     ####################################################################################################################
     # rsync
@@ -151,12 +146,12 @@ services:
         class: 'QL\Hal\Agent\Push\EC2\Deployer'
         arguments:
             - @logger.event
+            - @push.aws.authenticator
             - @push.ec2.instance.finder
             - @push.ec2.pusher
 
     push.ec2.instance.finder:
         class: 'QL\Hal\Agent\Push\EC2\InstanceFinder'
-        arguments: [@aws.ec2]
 
     push.ec2.pusher:
         class: 'QL\Hal\Agent\Push\EC2\Pusher'
@@ -174,15 +169,9 @@ services:
         class: 'QL\Hal\Agent\Push\S3\Deployer'
         arguments:
             - @logger.event
-            - @push.s3.authenticator
+            - @push.aws.authenticator
             - @push.s3.packer
             - @push.s3.uploader
-
-    push.s3.authenticator:
-        class: 'QL\Hal\Agent\Push\AWSAuthenticator'
-        arguments:
-            - @logger.event
-            - @service_container
 
     push.s3.packer:
         class: 'QL\Hal\Agent\Push\S3\Packer'
@@ -200,6 +189,12 @@ services:
     ####################################################################################################################
     # private services used only by push actions
     ####################################################################################################################
+
+    push.aws.authenticator:
+        class: 'QL\Hal\Agent\Push\AWSAuthenticator'
+        arguments:
+            - @logger.event
+            - @service_container
 
     yaml.dumper:
         class: 'Symfony\Component\Yaml\Dumper'

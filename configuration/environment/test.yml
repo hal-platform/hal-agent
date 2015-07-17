@@ -47,10 +47,6 @@ parameters:
 
     push.rsync.remoteUser: ''
 
-    aws.region: 'us-west-2'
-    aws.s3.builds: ''
-    aws.ec2.user: 'ec2-user'
-
     ############################################################################
     # DATABASE / NOTIFICATIONS
     ############################################################################
@@ -80,9 +76,6 @@ parameters:
     ssh.credentials:
         - ['%build.unix.remoteUser%', '%build.unix.server%', 'key:/home/%build.unix.remoteUser%/.ssh/%build.unix.server%']
         - ['%push.rsync.remoteUser%', '*', 'key:/home/%build.unix.remoteUser%/.ssh/id_rsa']
-
-    aws.credentials.key: ''
-    aws.credentials.secret: ''
 
     ############################################################################
     # ENCRYPTION
