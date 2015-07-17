@@ -80,7 +80,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_EB])) {
+        if (!isset($properties[ServerEnum::TYPE_EB]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_EB])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 200;
         }
@@ -116,6 +116,38 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         // success
         return 0;
+    }
+
+    /**
+     * @param array $properties
+     *
+     * @return bool
+     */
+    private function verifyConfiguration($properties)
+    {
+        $this->status('Verifying EB configuration', self::SECTION);
+
+        if (!is_array($properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('region', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('credential', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('application', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('environment', $properties)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

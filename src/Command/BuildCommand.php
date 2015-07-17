@@ -348,9 +348,13 @@ class BuildCommand extends Command implements OutputAwareInterface
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['build']);
+
         $foundApp = sprintf('Application: <info>%s</info>', $properties['build']->application()->name());
-        $foundBuild = sprintf('Found build: <info>%s</info>', $properties['build']->id());
+        $foundEnv = sprintf('Environment: <info>%s</info>', $properties['build']->environment()->name());
+        $foundBuild = sprintf('Build: <info>%s</info>', $properties['build']->id());
+
         $this->status($foundApp, self::SECTION_START);
+        $this->status($foundEnv, self::SECTION_START);
         $this->status($foundBuild, self::SECTION_START);
 
         // Set emergency handler in case of super fatal

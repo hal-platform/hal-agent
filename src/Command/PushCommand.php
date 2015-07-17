@@ -69,6 +69,11 @@ class PushCommand extends Command implements OutputAwareInterface
         300 => 'Required properties for EC2 are missing.',
         301 => 'No EC2 instances found.',
         302 => 'EC2 push failed.',
+
+        400 => 'Required properties for S3 are missing.',
+        401 => 'Failed to authenticate with AWS.',
+        402 => 'Build could not be packed for S3.',
+        403 => 'Upload to S3 failed.',
     ];
 
     /**
@@ -334,10 +339,14 @@ class PushCommand extends Command implements OutputAwareInterface
     private function prepare(OutputInterface $output, array $properties)
     {
         $this->logger->start($properties['push']);
+
         $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->application()->name());
+        $foundEnv = sprintf('Environment: <info>%s</info>', $properties['push']->build()->environment()->name());
         $foundPush = sprintf('Found push: <info>%s</info>', $properties['push']->id());
         $foundBuild = sprintf('Found build: <info>%s</info>', $properties['push']->build()->id());
+
         $this->status($foundApp, self::SECTION_START);
+        $this->status($foundEnv, self::SECTION_START);
         $this->status($foundPush, self::SECTION_START);
         $this->status($foundBuild, self::SECTION_START);
 

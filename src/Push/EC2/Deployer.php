@@ -63,7 +63,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_EC2])) {
+        if (!isset($properties[ServerEnum::TYPE_EC2]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_EC2])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 300;
         }
@@ -90,6 +90,34 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         // success
         return 0;
+    }
+
+    /**
+     * @param array $properties
+     *
+     * @return bool
+     */
+    private function verifyConfiguration($properties)
+    {
+        $this->status('Verifying EC2 configuration', self::SECTION);
+
+        if (!is_array($properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('region', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('credential', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('pool', $properties)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

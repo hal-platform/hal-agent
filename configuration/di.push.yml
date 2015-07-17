@@ -55,8 +55,11 @@ services:
                 rsync: push.rsync.deployer
                 elasticbeanstalk: push.elasticbeanstalk.deployer
                 ec2: push.ec2.deployer
+                s3: push.s3.deployer
 
-    # elastic beanstalk
+    ####################################################################################################################
+    # elasticbeanstalk
+    ####################################################################################################################
 
     push.elasticbeanstalk.deployer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Deployer'
@@ -92,7 +95,9 @@ services:
             - @aws.eb
             - %aws.s3.builds%
 
+    ####################################################################################################################
     # rsync
+    ####################################################################################################################
 
     push.rsync.deployer:
         class: 'QL\Hal\Agent\Push\Rsync\Deployer'
@@ -138,7 +143,10 @@ services:
             - @ssh.manager
             - %timeout.standard%
 
+    ####################################################################################################################
     # ec2
+    ####################################################################################################################
+
     push.ec2.deployer:
         class: 'QL\Hal\Agent\Push\EC2\Deployer'
         arguments:
@@ -158,7 +166,40 @@ services:
             - %aws.ec2.user%
             - %timeout.push.ec2%
 
+    ####################################################################################################################
+    # s3
+    ####################################################################################################################
+
+    push.s3.deployer:
+        class: 'QL\Hal\Agent\Push\S3\Deployer'
+        arguments:
+            - @logger.event
+            - @push.s3.authenticator
+            - @push.s3.packer
+            - @push.s3.uploader
+
+    push.s3.authenticator:
+        class: 'QL\Hal\Agent\Push\AWSAuthenticator'
+        arguments:
+            - @logger.event
+            - @service_container
+
+    push.s3.packer:
+        class: 'QL\Hal\Agent\Push\S3\Packer'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filepacking%
+
+    push.s3.uploader:
+        class: 'QL\Hal\Agent\Push\S3\Uploader'
+        arguments:
+            - @logger.event
+
+    ####################################################################################################################
     # private services used only by push actions
+    ####################################################################################################################
 
     yaml.dumper:
         class: 'Symfony\Component\Yaml\Dumper'

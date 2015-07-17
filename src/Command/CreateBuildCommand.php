@@ -117,14 +117,14 @@ HELP;
         $this
             ->setDescription('Deploy a previously built application to a server.')
             ->addArgument(
-                'APPLICATION_ID',
+                'APPLICATION',
                 InputArgument::REQUIRED,
-                'The ID of the application to build.'
+                'The ID or key of the application to build.'
             )
             ->addArgument(
-                'ENVIRONMENT_ID',
+                'ENVIRONMENT',
                 InputArgument::REQUIRED,
-                'The ID of the environment to build for.'
+                'The ID or name of the environment to build.'
             )
             ->addArgument(
                 'GIT_REFERENCE',
@@ -160,16 +160,16 @@ HELP;
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $applicationId = $input->getArgument('APPLICATION_ID');
-        $environmentId = $input->getArgument('ENVIRONMENT_ID');
+        $application = $input->getArgument('APPLICATION');
+        $environment = $input->getArgument('ENVIRONMENT');
         $ref = $input->getArgument('GIT_REFERENCE');
         $userId = $input->getArgument('USER_ID');
 
-        if (!$application = $this->applicationRepo->find($applicationId)) {
+        if (!$application = $this->findApplication($application)) {
             return $this->failure($output, 1);
         }
 
-        if (!$environment = $this->environmentRepo->find($environmentId)) {
+        if (!$environment = $this->findEnvironment($environment)) {
             return $this->failure($output, 2);
         }
 
@@ -213,6 +213,46 @@ HELP;
         } else {
             $this->success($output, sprintf('Build created: %s', $build->id()));
         }
+    }
+
+    /**
+     * Find application from ID or key
+     *
+     * @param string $app
+     *
+     * @return Application|null
+     */
+    private function findApplication($app)
+    {
+        if ($application = $this->applicationRepo->find($app)) {
+            return $application;
+        }
+
+        if ($application = $this->applicationRepo->findOneBy(['key' => $app])) {
+            return $application;
+        }
+
+        return null;
+    }
+
+    /**
+     * Find environment from ID or name
+     *
+     * @param string $env
+     *
+     * @return Environment|null
+     */
+    private function findEnvironment($env)
+    {
+        if ($environment = $this->environmentRepo->find($env)) {
+            return $environment;
+        }
+
+        if ($environment = $this->environmentRepo->findOneBy(['name' => $env])) {
+            return $environment;
+        }
+
+        return null;
     }
 
     /**

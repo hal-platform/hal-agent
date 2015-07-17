@@ -39,6 +39,11 @@ class Resolver
     /**
      * @type string
      */
+    const TAR_FILE = 'hal9000-push-%s.tar.gz';
+
+    /**
+     * @type string
+     */
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
@@ -164,6 +169,9 @@ class Resolver
 
                 // elastic beanstalk
                 'tempZipArchive' => $this->generateTempZipArchiveFile($push->id()),
+
+                // s3
+                'tempTarArchive' => $this->generateTempTarArchiveFile($push->id()),
             ],
 
             'pushProperties' => [
@@ -270,6 +278,9 @@ class Resolver
         } elseif ($method === ServerEnum::TYPE_EB) {
 
             $properties[$method] = [
+                'region' => $server->name(),
+                'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
+
                 'application' => $application->ebName(),
                 'environment' => $deployment->ebEnvironment()
             ];
@@ -277,8 +288,32 @@ class Resolver
         } elseif ($method === ServerEnum::TYPE_EC2) {
 
             $properties[$method] = [
+                'region' => $server->name(),
+                'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
+
                 'pool' => $deployment->ec2Pool(),
                 'remotePath' => $deployment->path()
+            ];
+
+        } elseif ($method === ServerEnum::TYPE_S3) {
+
+            $buildid = $build->id();
+            $pushid = $push->id();
+            $date = $this->clock->read()->format('YYYY-MM-DD', 'UTC');
+
+            $file = sprintf('%s.tar.gz', $pushid);
+            if ($file = $deployment->s3file()) {
+                $file = str_replace('$BUILDID', $buildid, $file);
+                $file = str_replace('$PUSHID', $pushid, $file);
+                $file = str_replace('$DATE', $date, $file);
+            }
+
+            $properties[$method] = [
+                'region' => $server->name(),
+                'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
+
+                'bucket' => $deployment->s3bucket(),
+                'file' => $file
             ];
         }
 
@@ -335,6 +370,7 @@ class Resolver
         return [
             $properties['location']['tempArchive'],
             $properties['location']['tempZipArchive'],
+            $properties['location']['tempTarArchive'],
             $properties['location']['path']
         ];
     }
@@ -349,6 +385,18 @@ class Resolver
     private function generateTempZipArchiveFile($id)
     {
         return $this->getLocalTempPath() . sprintf(static::ZIP_FILE, $id);
+    }
+
+    /**
+     * Generate a temporary target for the zip archive (Used for EB Deployments)
+     *
+     * @param string $id
+     *
+     * @return string
+     */
+    private function generateTempTarArchiveFile($id)
+    {
+        return $this->getLocalTempPath() . sprintf(static::TAR_FILE, $id);
     }
 
     /**
