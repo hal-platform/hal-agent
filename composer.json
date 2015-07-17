@@ -9,11 +9,18 @@
         "psr-4": { "QL\\Hal\\Agent\\": "src/", "QL\\Hal\\Agent\\Testing\\": "testing/src" }
     },
     "repositories": [
+        { "type": "git", "url": "http://git/web-core/hal-core.git" },
         { "type": "composer", "url": "http://composer/" }
     ],
 
     "require": {
-        "php-64bit": ">=5.4.0",
+        "php-64bit": ">=5.5.0",
+
+        "ext-curl": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-pdo_sqlite": "*",
 
         "aws/aws-sdk-php": "2.7.*",
         "doctrine/orm": "~2.5",
@@ -26,18 +33,19 @@
         "swiftmailer/swiftmailer": "5.2.*",
         "twig/twig": "~1.15",
 
-        "ql/hal-core": "2.7.1",
-        "ql/mcp-core": "~1.0",
+        "ql/hal-core":   "dev-master",
+
+        "ql/mcp-core":   "~1.0",
         "ql/mcp-logger": "~2.0",
 
-        "symfony/config": "2.7.*",
-        "symfony/console": "2.7.*",
-        "symfony/debug": "2.7.*",
-        "symfony/dependency-injection": "2.7.*",
-        "symfony/event-dispatcher": "2.7.*",
-        "symfony/filesystem": "2.7.*",
-        "symfony/process": "2.7.*",
-        "symfony/yaml": "2.7.*"
+        "symfony/config":                "~2.7",
+        "symfony/console":               "~2.7",
+        "symfony/debug":                 "~2.7",
+        "symfony/dependency-injection":  "~2.7",
+        "symfony/event-dispatcher":      "~2.7",
+        "symfony/filesystem":            "~2.7",
+        "symfony/process":               "~2.7",
+        "symfony/yaml":                  "~2.7"
     },
     "require-dev": {
         "mockery/mockery": "*",
