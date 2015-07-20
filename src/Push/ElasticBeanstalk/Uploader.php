@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
-use Aws\Common\Exception\AwsExceptionInterface;
+use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use QL\Hal\Agent\Logger\EventLogger;
 
@@ -92,7 +92,7 @@ class Uploader
                 ]
             );
 
-        } catch (AwsExceptionInterface $e) {
+        } catch (AwsException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);
             return false;
@@ -125,7 +125,7 @@ class Uploader
                 'waiter.max_attempts' => self::WAITER_ATTEMPTS
             ]);
 
-        } catch (AwsExceptionInterface $e) {
+        } catch (AwsException $e) {
             $context = array_merge($context, [
                 'wait time' => sprintf('%d seconds', self::WAITER_INTERVAL * self::WAITER_ATTEMPTS),
                 'error' => $e->getMessage()

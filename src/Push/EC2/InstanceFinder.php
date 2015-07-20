@@ -43,7 +43,7 @@ class InstanceFinder
     /**
      * Find instances in a pool, optionally filter by their state.
      *
-     * @see http://docs.aws.amazon.com/aws-sdk-php/latest/class-Aws.Ec2.Ec2Client.html#_describeInstances
+     * @see http://docs.aws.amazon.com/aws-sdk-php/v3/api/api-ec2-2015-04-15.html#describeinstances
      *
      * @param Ec2Client $ec2
      * @param string $pool

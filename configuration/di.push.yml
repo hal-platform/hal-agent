@@ -195,6 +195,7 @@ services:
         arguments:
             - @logger.event
             - @service_container
+            - @aws
 
     yaml.dumper:
         class: 'Symfony\Component\Yaml\Dumper'

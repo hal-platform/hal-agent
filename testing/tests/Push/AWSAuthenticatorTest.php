@@ -11,6 +11,7 @@ use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Crypto\CryptoException;
 use RuntimeException;
+use Aws\Sdk;
 use Aws\Ec2\Ec2Client;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
@@ -21,6 +22,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
     private $di;
     private $decrypter;
     private $credentials;
+    private $aws;
 
     public function setUp()
     {
@@ -29,6 +31,9 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
 
         $this->credentials = Mockery::mock('QL\Hal\Core\Entity\Credential\AWSCredential');
         $this->decrypter = Mockery::mock('QL\Hal\Core\Crypto\Decrypter');
+
+        // can't mock :(
+        $this->aws = new Sdk(['version' => 'latest']);
     }
 
     public function testRegionInvalid()
@@ -40,7 +45,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ])
             ->once();
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getEB('badregion', null);
 
         $this->assertSame(null, $service);
@@ -53,7 +58,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('failure', AWSAuthenticator::ERR_INVALID_CREDENTIAL)
             ->once();
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getEC2('us-east-1', null);
 
         $this->assertSame(null, $service);
@@ -70,7 +75,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('failure', AWSAuthenticator::ERR_INVALID_SECRET)
             ->once();
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getS3('us-east-1', $this->credentials);
 
         $this->assertSame(null, $service);
@@ -94,7 +99,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('failure', AWSAuthenticator::ERR_MISCONFIGURED_ENCRYPTION)
             ->once();
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getEC2('us-east-1', $this->credentials);
 
         $this->assertSame(null, $service);
@@ -119,7 +124,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('failure', AWSAuthenticator::ERR_INVALID_SECRET)
             ->once();
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getEC2('us-east-1', $this->credentials);
 
         $this->assertSame(null, $service);
@@ -142,7 +147,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('derp')
             ->andReturn('underp');
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getEB('us-east-1', $this->credentials);
 
         $this->assertInstanceOf(ElasticBeanstalkClient::CLASS, $service);
@@ -165,7 +170,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('derp')
             ->andReturn('underp');
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getEC2('us-east-1', $this->credentials);
 
         $this->assertInstanceOf(Ec2Client::CLASS, $service);
@@ -188,7 +193,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
             ->with('derp')
             ->andReturn('underp');
 
-        $authenticator = new AWSAuthenticator($this->logger, $this->di);
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
         $service = $authenticator->getS3('us-east-1', $this->credentials);
 
         $this->assertInstanceOf(S3Client::CLASS, $service);

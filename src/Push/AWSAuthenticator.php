@@ -7,8 +7,8 @@
 
 namespace QL\Hal\Agent\Push;
 
-use Aws\Common\Enum\Region;
-use Aws\Common\Exception\AwsExceptionInterface;
+use Aws\Sdk;
+use Aws\Exception\AwsException;
 use Aws\Ec2\Ec2Client;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
@@ -40,19 +40,43 @@ class AWSAuthenticator
     private $di;
 
     /**
+     * @type Sdk
+     */
+    private $aws;
+
+    /**
      * @type Decrypter|null
      */
     private $decrypter;
 
     /**
+     * Hardcoded, since Enums were removed in aws sdk 3.0
+     *
+     * @type string[]
+     */
+    private static $awsRegions = [
+        'ap-northeast-1',
+        'ap-southeast-2',
+        'ap-southeast-1',
+        'cn-north-1',
+        'eu-central-1',
+        'eu-west-1',
+        'us-east-1',
+        'us-west-1',
+        'us-west-2',
+        'sa-east-1',
+    ];
+
+    /**
      * @param EventLogger $logger
      * @param ContainerInterface $di
-     * @param callable $fileStreamer
+     * @param Sdk $aws
      */
-    public function __construct(EventLogger $logger, ContainerInterface $di)
+    public function __construct(EventLogger $logger, ContainerInterface $di, Sdk $aws)
     {
         $this->logger = $logger;
         $this->di = $di;
+        $this->aws = $aws;
     }
 
     /**
@@ -67,7 +91,7 @@ class AWSAuthenticator
             return null;
         }
 
-        return ElasticBeanstalkClient::factory($credentials);
+        return $this->aws->createElasticBeanstalk($credentials);
     }
 
     /**
@@ -82,7 +106,7 @@ class AWSAuthenticator
             return null;
         }
 
-        return Ec2Client::factory($credentials);
+        return $this->aws->createEc2($credentials);
     }
 
     /**
@@ -97,7 +121,7 @@ class AWSAuthenticator
             return null;
         }
 
-        return S3Client::factory($credentials);
+        return $this->aws->createS3($credentials);
     }
 
     /**
@@ -108,7 +132,7 @@ class AWSAuthenticator
      */
     public function getCredentials($region, $credential)
     {
-        if (!in_array($region, Region::values(), true)) {
+        if (!in_array($region, self::$awsRegions, true)) {
             $this->logger->event('failure', self::ERR_INVALID_REGION, [
                 'specified_region' => $region
             ]);
