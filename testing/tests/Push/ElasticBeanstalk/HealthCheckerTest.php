@@ -12,16 +12,16 @@ use PHPUnit_Framework_TestCase;
 
 class HealthCheckerTest extends PHPUnit_Framework_TestCase
 {
-    public $ebs;
+    public $eb;
 
     public function setUp()
     {
-        $this->ebs = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $this->eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
     }
 
     public function testSuccess()
     {
-        $this->ebs
+        $this->eb
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
@@ -31,8 +31,8 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
                 ['Status' => 'Terminated', 'Health' => 'Red']
             ]]);
 
-        $checker = new HealthChecker($this->ebs);
-        $actual = $checker('appName', 'envId');
+        $checker = new HealthChecker;
+        $actual = $checker($this->eb, 'appName', 'envId');
 
         $this->assertSame('Terminated', $actual['status']);
         $this->assertSame('Red', $actual['health']);
@@ -40,7 +40,7 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
 
     public function testWeirdResponse()
     {
-        $this->ebs
+        $this->eb
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
@@ -48,8 +48,8 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ])
             ->andReturn([]);
 
-        $checker = new HealthChecker($this->ebs);
-        $actual = $checker('appName', 'envId');
+        $checker = new HealthChecker;
+        $actual = $checker($this->eb, 'appName', 'envId');
 
         $this->assertSame(HealthChecker::NON_STANDARD_MISSING, $actual['status']);
         $this->assertSame('Grey', $actual['health']);
@@ -57,7 +57,7 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
 
     public function testNoEnvFound()
     {
-        $this->ebs
+        $this->eb
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
@@ -66,8 +66,8 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ->andReturn(['Environments' => [
             ]]);
 
-        $checker = new HealthChecker($this->ebs);
-        $actual = $checker('appName', 'envId');
+        $checker = new HealthChecker;
+        $actual = $checker($this->eb, 'appName', 'envId');
 
         $this->assertSame(HealthChecker::NON_STANDARD_MISSING, $actual['status']);
         $this->assertSame('Grey', $actual['health']);
@@ -75,7 +75,7 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
 
     public function testTooManyEnvsFound()
     {
-        $this->ebs
+        $this->eb
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
@@ -86,8 +86,8 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
                 ['derp2'],
             ]]);
 
-        $checker = new HealthChecker($this->ebs);
-        $actual = $checker('appName', 'envId');
+        $checker = new HealthChecker;
+        $actual = $checker($this->eb, 'appName', 'envId');
 
         $this->assertSame(HealthChecker::NON_STANDARD_MULTIPLE, $actual['status']);
         $this->assertSame('Grey', $actual['health']);

@@ -120,7 +120,7 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
                 'name' => 'derp'
             ]),
             'environment' => Mockery::mock(Environment::CLASS, [
-                'name' => null
+                'name' => 'beta'
             ])
         ]);
 
@@ -230,7 +230,9 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
         $expected = [
             '[Starting Build] Resolving build properties',
-            '[Starting Build] Found build: 1234',
+            '[Starting Build] Application: derp',
+            '[Starting Build] Environment: beta',
+            '[Starting Build] Build: 1234',
             '[Starting Build] Downloading github repository',
             '[Starting Build] Unpacking github repository',
             '[Starting Build] Reading .hal9000.yml',

@@ -49,7 +49,7 @@ class Pusher
      * @return boolean
      */
     public function __invoke(
-        ElasticBeanstalkClient $eb
+        ElasticBeanstalkClient $eb,
         $awsApplication,
         $awsEnvironment,
         $s3bucket,
@@ -63,7 +63,7 @@ class Pusher
             'AWS environment' => $awsEnvironment,
             'version' => $pushId,
 
-            'bucket' => $s3bucket
+            'bucket' => $s3bucket,
             'object' => $s3version
         ];
 

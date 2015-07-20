@@ -115,7 +115,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             'withEnd' => null,
 
             'application' => Mockery::mock(Repository::CLASS, [
-                'name' => null
+                'name' => 'test_app'
             ]),
             'deployment' => Mockery::mock(Deployment::CLASS, [
                 'server' => Mockery::mock(Server::CLASS, [
@@ -127,7 +127,10 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ]),
             'id' => 1234,
             'build' => Mockery::mock(Build::CLASS, [
-                'id' => 5678
+                'id' => 5678,
+                'environment' => Mockery::mock(Environment::CLASS, [
+                    'name' => 'test'
+                ])
             ])
         ]);
 
@@ -236,7 +239,10 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
         $expected = [
             '[Starting Deployment] Resolving push properties',
-            '[Starting Deployment] Found push: 1234',
+            '[Starting Deployment] Application: test_app',
+            '[Starting Deployment] Environment: test',
+            '[Starting Deployment] Push: 1234',
+            '[Starting Deployment] Build: 5678',
             '[Starting Deployment] Moving archive to local storage',
             '[Starting Deployment] Unpacking build archive',
             '[Starting Deployment] Reading .hal9000.yml',

@@ -170,6 +170,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
+        if (!array_key_exists('file', $properties)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -252,23 +256,17 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $push = $properties['push'];
         $build = $properties['push']->build();
-        $env = $build->environment();
-
-        $s3version = sprintf(
-            '%s/%s',
-            $properties['push']->application()->id(),
-            $push->id()
-        );
+        $environment = $build->environment();
 
         $uploader = $this->uploader;
         return $uploader(
             $s3,
             $properties['location']['tempZipArchive'],
             $properties[ServerEnum::TYPE_EB]['bucket'],
-            $s3version,
+            $properties[ServerEnum::TYPE_EB]['file'],
             $build->id(),
             $push->id(),
-            $env->name()
+            $environment->name()
         );
     }
 
@@ -284,13 +282,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $push = $properties['push'];
         $build = $properties['push']->build();
-        $env = $build->environment();
-
-        $s3version = sprintf(
-            '%s/%s',
-            $properties['push']->application()->id(),
-            $push->id()
-        );
+        $environment = $build->environment();
 
         $pusher = $this->pusher;
         return $pusher(
@@ -298,10 +290,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             $properties[ServerEnum::TYPE_EB]['application'],
             $properties[ServerEnum::TYPE_EB]['environment'],
             $properties[ServerEnum::TYPE_EB]['bucket'],
-            $s3version,
+            $properties[ServerEnum::TYPE_EB]['file'],
             $build->id(),
             $push->id(),
-            $env->name()
+            $environment->name()
         );
     }
 }

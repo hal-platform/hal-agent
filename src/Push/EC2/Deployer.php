@@ -133,6 +133,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
+        if (!array_key_exists('remotePath', $properties)) {
+            return false;
+        }
+
         return true;
     }
 

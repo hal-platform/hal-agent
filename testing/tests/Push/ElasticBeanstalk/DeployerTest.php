@@ -29,6 +29,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $this->output = new BufferedOutput;
         $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
 
+        $this->authenticator = Mockery::mock('QL\Hal\Agent\Push\AWSAuthenticator');
         $this->health = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker');
         $this->packer = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Packer');
         $this->uploader = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Uploader');
@@ -42,8 +43,12 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $properties = [
             'push' => $push,
             'elasticbeanstalk' => [
+                'region' => '',
+                'credential' => '',
                 'application' => '',
-                'environment' => ''
+                'environment' => '',
+                'bucket' => '',
+                'file' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -60,6 +65,15 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
+        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $this->authenticator
+            ->shouldReceive('getEB')
+            ->andReturn($eb);
+        $this->authenticator
+            ->shouldReceive('getS3')
+            ->andReturn($s3);
+
         $this->health
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Ready', 'health' => '']);
@@ -75,6 +89,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -92,8 +107,12 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $properties = [
             'push' => $push,
             'elasticbeanstalk' => [
-                'application' => '',
-                'environment' => ''
+                'region' => '',
+                'credential' => '',
+                'application' => 'test_app',
+                'environment' => 'test_env_id',
+                'bucket' => 'eb_bucket',
+                'file' => 'eb_file',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -105,22 +124,34 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '',
-                'tempZipArchive' => ''
+                'tempZipArchive' => '/local/build.zip'
             ],
             'environmentVariables' => []
         ];
 
+        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $this->authenticator
+            ->shouldReceive('getEB')
+            ->andReturn($eb);
+        $this->authenticator
+            ->shouldReceive('getS3')
+            ->andReturn($s3);
+
         $this->health
             ->shouldReceive('__invoke')
+            ->with($eb, 'test_app', 'test_env_id')
             ->andReturn(['status' => 'Ready', 'health' => '']);
         $this->packer
             ->shouldReceive('__invoke')
             ->andReturn(true);
         $this->uploader
             ->shouldReceive('__invoke')
+            ->with($s3, '/local/build.zip', 'eb_bucket', 'eb_file', '8956', '1234', 'envname')
             ->andReturn(true);
         $this->pusher
             ->shouldReceive('__invoke')
+            ->with($eb, 'test_app', 'test_env_id', 'eb_bucket', 'eb_file', '8956', '1234', 'envname')
             ->andReturn(true);
 
         $this->logger
@@ -134,6 +165,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -155,6 +187,34 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
+            $this->health,
+            $this->packer,
+            $this->uploader,
+            $this->pusher
+        );
+
+        $actual = $deployer($properties);
+        $this->assertSame(200, $actual);
+    }
+
+    public function testMissingRequiredPropertyFails()
+    {
+        $properties = [
+            'elasticbeanstalk' => [
+                'region' => '',
+                'credential' => ''
+            ]
+        ];
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Deployer::ERR_INVALID_DEPLOYMENT_SYSTEM)
+            ->once();
+
+        $deployer = new Deployer(
+            $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -169,8 +229,12 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     {
         $properties = [
             'elasticbeanstalk' => [
+                'region' => '',
+                'credential' => '',
                 'application' => '',
-                'environment' => ''
+                'environment' => '',
+                'bucket' => '',
+                'file' => '',
             ],
             'pushProperties' => [],
             'configuration' => [],
@@ -180,6 +244,11 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'environmentVariables' => []
         ];
+
+        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $this->authenticator
+            ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
         $this->health
             ->shouldReceive('__invoke')
@@ -192,6 +261,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -199,15 +269,19 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         );
 
         $actual = $deployer($properties);
-        $this->assertSame(201, $actual);
+        $this->assertSame(202, $actual);
     }
 
     public function testPackerFails()
     {
         $properties = [
             'elasticbeanstalk' => [
+                'region' => '',
+                'credential' => '',
                 'application' => '',
-                'environment' => ''
+                'environment' => '',
+                'bucket' => '',
+                'file' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -221,6 +295,11 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
+        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $this->authenticator
+            ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
+
         $this->health
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Ready', 'health' => 'Grey']);
@@ -230,6 +309,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -237,7 +317,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         );
 
         $actual = $deployer($properties);
-        $this->assertSame(202, $actual);
+        $this->assertSame(203, $actual);
     }
 
     public function testUploaderFails()
@@ -247,8 +327,12 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $properties = [
             'push' => $push,
             'elasticbeanstalk' => [
+                'region' => '',
+                'credential' => '',
                 'application' => '',
-                'environment' => ''
+                'environment' => '',
+                'bucket' => '',
+                'file' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -263,6 +347,11 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'environmentVariables' => []
         ];
+
+        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $this->authenticator
+            ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
         $this->health
             ->shouldReceive('__invoke')
@@ -276,6 +365,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -283,7 +373,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         );
 
         $actual = $deployer($properties);
-        $this->assertSame(203, $actual);
+        $this->assertSame(204, $actual);
     }
 
     public function testPusherFails()
@@ -293,8 +383,12 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $properties = [
             'push' => $push,
             'elasticbeanstalk' => [
+                'region' => '',
+                'credential' => '',
                 'application' => '',
-                'environment' => ''
+                'environment' => '',
+                'bucket' => '',
+                'file' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -309,6 +403,11 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'environmentVariables' => []
         ];
+
+        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $this->authenticator
+            ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
         $this->health
             ->shouldReceive('__invoke')
@@ -325,6 +424,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $deployer = new Deployer(
             $this->logger,
+            $this->authenticator,
             $this->health,
             $this->packer,
             $this->uploader,
@@ -332,7 +432,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         );
 
         $actual = $deployer($properties);
-        $this->assertSame(204, $actual);
+        $this->assertSame(205, $actual);
     }
 
     private function buildMockPush()

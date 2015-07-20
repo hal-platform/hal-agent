@@ -70,9 +70,13 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('find')
             ->andReturnNull();
 
+        $this->repoRepo
+            ->shouldReceive('findOneBy')
+            ->andReturnNull();
+
         $this->input = new ArrayInput([
-            'APPLICATION_ID' => '1',
-            'ENVIRONMENT_ID' => '2',
+            'APPLICATION' => '1',
+            'ENVIRONMENT' => '2',
             'GIT_REFERENCE' => '3'
         ]);
 
@@ -106,9 +110,13 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('find')
             ->andReturnNull();
 
+        $this->envRepo
+            ->shouldReceive('findOneBy')
+            ->andReturnNull();
+
         $this->input = new ArrayInput([
-            'APPLICATION_ID' => '1',
-            'ENVIRONMENT_ID' => '2',
+            'APPLICATION' => '1',
+            'ENVIRONMENT' => '2',
             'GIT_REFERENCE' => '3'
         ]);
 

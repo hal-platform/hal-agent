@@ -27,6 +27,8 @@ class AWSAuthenticator
     const ERR_INVALID_SECRET = 'Missing credentials. AWS deployments require access secret.';
     const ERR_MISCONFIGURED_ENCRYPTION = 'A serious error occured while decrypting. HAL Agent may not be configured correctly.';
 
+    const DECRYPTER_SERVICE = 'decrypter';
+
     /**
      * @type EventLogger
      */
@@ -72,21 +74,6 @@ class AWSAuthenticator
      * @param string $region
      * @param AWSCredential|null $credential
      *
-     * @return S3Client|null
-     */
-    public function getS3($region, $credential)
-    {
-        if (!$credentials = $this->getCredentials($region, $credential)) {
-            return null;
-        }
-
-        return S3Client::factory($credentials);
-    }
-
-    /**
-     * @param string $region
-     * @param AWSCredential|null $credential
-     *
      * @return Ec2Client|null
      */
     public function getEC2($region, $credential)
@@ -96,6 +83,21 @@ class AWSAuthenticator
         }
 
         return Ec2Client::factory($credentials);
+    }
+
+    /**
+     * @param string $region
+     * @param AWSCredential|null $credential
+     *
+     * @return S3Client|null
+     */
+    public function getS3($region, $credential)
+    {
+        if (!$credentials = $this->getCredentials($region, $credential)) {
+            return null;
+        }
+
+        return S3Client::factory($credentials);
     }
 
     /**
@@ -167,7 +169,7 @@ class AWSAuthenticator
     {
         if (!$this->decrypter) {
             try {
-                $this->decrypter = $this->di->get('decrypter');
+                $this->decrypter = $this->di->get(self::DECRYPTER_SERVICE);
             } catch (Exception $ex) {
                 $this->logger->event('failure', self::ERR_MISCONFIGURED_ENCRYPTION);
 

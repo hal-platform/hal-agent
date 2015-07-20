@@ -65,7 +65,7 @@ class Uploader
         $fileHandle = call_user_func($this->fileStreamer, $tempZipArchive, 'r+');
 
         $context = [
-            'bucket' => $s3bucket
+            'bucket' => $s3bucket,
             'object' => $s3version
         ];
 

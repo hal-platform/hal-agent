@@ -344,8 +344,8 @@ class PushCommand extends Command implements OutputAwareInterface
 
         $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->application()->name());
         $foundEnv = sprintf('Environment: <info>%s</info>', $properties['push']->build()->environment()->name());
-        $foundPush = sprintf('Found push: <info>%s</info>', $properties['push']->id());
-        $foundBuild = sprintf('Found build: <info>%s</info>', $properties['push']->build()->id());
+        $foundPush = sprintf('Push: <info>%s</info>', $properties['push']->id());
+        $foundBuild = sprintf('Build: <info>%s</info>', $properties['push']->build()->id());
 
         $this->status($foundApp, self::SECTION_START);
         $this->status($foundEnv, self::SECTION_START);

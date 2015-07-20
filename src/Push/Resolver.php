@@ -34,12 +34,12 @@ class Resolver
     /**
      * @type string
      */
-    const ZIP_FILE = 'hal9000-push-%s.zip';
+    const ZIP_FILE = 'hal9000-eb-%s.zip';
 
     /**
      * @type string
      */
-    const TAR_FILE = 'hal9000-push-%s.tar.gz';
+    const TAR_FILE = 'hal9000-s3-%s.tar.gz';
 
     /**
      * @type string
@@ -262,7 +262,8 @@ class Resolver
 
                 'application' => $application->ebName(),
                 'environment' => $deployment->ebEnvironment(),
-                'bucket' => $deployment->s3bucket()
+                'bucket' => $deployment->s3bucket(),
+                'file' => sprintf('%s/%s', $application->id(), $push->id())
             ];
 
         } elseif ($method === ServerEnum::TYPE_EC2) {

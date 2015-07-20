@@ -55,7 +55,6 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      */
     public function __construct(
         EventLogger $logger,
-
         AWSAuthenticator $authenticator,
         Packer $packer,
         Uploader $uploader

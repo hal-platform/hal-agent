@@ -38,8 +38,8 @@ class InstanceFinderTest extends PHPUnit_Framework_TestCase
                 ]
             ]]);
 
-        $finder = new InstanceFinder($this->ec2);
-        $actual = $finder('pool-name', 16);
+        $finder = new InstanceFinder;
+        $actual = $finder($this->ec2, 'pool-name', 16);
 
         $expected = [
             ['dooger1'],
@@ -62,8 +62,8 @@ class InstanceFinderTest extends PHPUnit_Framework_TestCase
                 ['derp2']
             ]]);
 
-        $finder = new InstanceFinder($this->ec2);
-        $actual = $finder('pool-name');
+        $finder = new InstanceFinder;
+        $actual = $finder($this->ec2, 'pool-name');
 
         $this->assertSame([], $actual);
     }

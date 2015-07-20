@@ -12,6 +12,8 @@ use MCP\DataType\Time\Clock;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Credential;
+use QL\Hal\Core\Entity\Credential\AWSCredential;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
@@ -120,46 +122,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
     }
 
-    /**
-     * @expectedException QL\Hal\Agent\Push\PushException
-     * @expectedExceptionMessage Cannot deploy to EB. AWS has not been configured.
-     */
-    public function testElasticBeanstalkSanityCheckFails()
-    {
-        $push = (new Push)
-            ->withStatus('Waiting')
-            ->withApplication(new Application)
-            ->withBuild(new Build)
-            ->withDeployment(
-                (new Deployment)
-                    ->withServer(
-                        (new Server)
-                            ->withType('elasticbeanstalk')
-                    )
-            );
-
-        $clock = new Clock('2015-03-15 12:00:00', 'UTC');
-
-        $this->repo
-            ->shouldReceive('find')
-            ->andReturn($push);
-        $this->repo
-            ->shouldReceive('findBy')
-            ->andReturn([]);
-
-        $action = new Resolver(
-            $this->logger,
-            $this->em,
-            $clock,
-            $this->envResolver,
-            $this->encryptedResolver,
-            'sshuser',
-            'http://git'
-        );
-
-        $properties = $action('1234');
-    }
-
     public function testRsyncSuccess()
     {
         $app = (new Application)
@@ -239,12 +201,14 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'archive' => 'ARCHIVE_PATH/2015-02/hal9000-b2.5tnbBn8.tar.gz',
                 'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b2.5tnbBn8.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
+                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
+                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-push-1234.zip',
+                'testdir/hal9000-eb-1234.zip',
+                'testdir/hal9000-s3-1234.tar.gz',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -295,6 +259,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     public function testElasticBeanstalkSuccess()
     {
         $app = (new Application)
+            ->withId('repo-id')
             ->withKey('repokey')
             ->withGithubOwner('user1')
             ->withGithubRepo('repo1')
@@ -303,6 +268,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $app->setBuildTransformCmd('bin/build-transform');
         $app->setPrePushCmd('bin/pre');
         $app->setPostPushCmd('bin/post');
+
+        $aws = new AWSCredential('key', 'encrypted');
 
         $push = (new Push)
             ->withId('1234')
@@ -322,9 +289,15 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ->withDeployment(
                 (new Deployment)
                     ->withEbEnvironment('e-ididid')
+                    ->withS3Bucket('eb_bucket')
                     ->withServer(
                         (new Server)
+                            ->withName('aws-region')
                             ->withType('elasticbeanstalk')
+                    )
+                    ->withCredential(
+                        (new Credential)
+                            ->withAWS($aws)
                     )
             );
 
@@ -332,8 +305,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'method' => 'elasticbeanstalk',
 
             'elasticbeanstalk' => [
+                'region' => 'aws-region',
+                'credential' => $aws,
                 'application' => 'eb_name',
-                'environment' => 'e-ididid'
+                'environment' => 'e-ididid',
+                'bucket' => 'eb_bucket',
+                'file' => 'repo-id/1234',
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -359,12 +336,14 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
+                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
+                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-push-1234.zip',
+                'testdir/hal9000-eb-1234.zip',
+                'testdir/hal9000-s3-1234.tar.gz',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -401,7 +380,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         );
         $action->setLocalTempPath('testdir');
         $action->setArchivePath('ARCHIVE_PATH');
-        $action->setAwsCredentials('key', 'secret');
 
         $properties = $action('1234');
 
@@ -413,7 +391,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected['elasticbeanstalk'], $properties['elasticbeanstalk']);
     }
 
-    public function testEc2Success()
+    public function testEC2Success()
     {
         $app = (new Application)
             ->withKey('repokey')
@@ -442,10 +420,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             )
             ->withDeployment(
                 (new Deployment)
-                    ->withEc2Pool('pool_name')
+                    ->withEC2Pool('pool_name')
                     ->withPath('/ec2/path/var/www')
                     ->withServer(
                         (new Server)
+                            ->withName('aws-region-1')
                             ->withType('ec2')
                     )
             );
@@ -454,6 +433,8 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'method' => 'ec2',
 
             'ec2' => [
+                'region' => 'aws-region-1',
+                'credential' => null,
                 'pool' => 'pool_name',
                 'remotePath' => '/ec2/path/var/www'
             ],
@@ -481,12 +462,14 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
                 'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-8956.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-push-1234.zip'
+                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
+                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-push-1234.zip',
+                'testdir/hal9000-eb-1234.zip',
+                'testdir/hal9000-s3-1234.tar.gz',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -523,7 +506,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         );
         $action->setLocalTempPath('testdir');
         $action->setArchivePath('ARCHIVE_PATH');
-        $action->setAwsCredentials('key', 'secret');
 
         $properties = $action('1234');
 
