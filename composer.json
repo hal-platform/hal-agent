@@ -22,7 +22,7 @@
         "ext-pdo_mysql": "*",
         "ext-pdo_sqlite": "*",
 
-        "aws/aws-sdk-php": "2.7.*",
+        "aws/aws-sdk-php": "~3.2",
         "doctrine/orm": "~2.5",
         "doctrine/cache": ">=1.3",
         "guzzlehttp/guzzle": "5.*",
