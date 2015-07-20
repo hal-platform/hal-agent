@@ -54,79 +54,7 @@ class Unpacker
             return false;
         }
 
-        if (!$unpackedPath = $this->locateUnpackedArchive($buildPath)) {
-            return false;
-        }
-
-        if (!$this->sanitizeUnpackedArchive($unpackedPath)) {
-            return false;
-        }
-
         return true;
-    }
-
-    /**
-     * @param string $buildPath
-     * @return string|null
-     */
-    private function locateUnpackedArchive($buildPath)
-    {
-        $cmd = ['find', $buildPath, '-type', 'd'];
-        $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($cmd)
-            ->getProcess();
-
-        $process->setCommandLine($process->getCommandLine() . ' -name * -prune');
-
-        $process->run();
-
-        if ($process->isSuccessful()) {
-            return strtok($process->getOutput(), "\n");
-        }
-
-        $dispCommand = implode(' ', $cmd);
-        $this->processFailure($dispCommand, $process);
-
-        return null;
-    }
-
-    /**
-     * @param string $unpackedPath
-     * @return boolean
-     */
-    private function sanitizeUnpackedArchive($unpackedPath)
-    {
-        $mvCommand = 'mv {,.[!.],..?}* ..';
-        $rmCommand = ['rmdir', $unpackedPath];
-
-        $process = $this->processBuilder
-            ->setWorkingDirectory($unpackedPath)
-            ->setArguments([''])
-            ->getProcess()
-            // processbuilder escapes input, but we need these wildcards to resolve correctly unescaped
-            ->setCommandLine($mvCommand);
-
-        $process->run();
-
-        // remove unpacked directory
-        $removalProcess = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments($rmCommand)
-            ->getProcess();
-
-        $removalProcess->run();
-
-        if ($removalProcess->isSuccessful()) {
-            return true;
-        }
-
-        $dispCommand = [
-            $mvCommand,
-            implode(' ', $rmCommand)
-        ];
-
-        return $this->processFailure($dispCommand, $removalProcess);
     }
 
     /**
@@ -137,7 +65,13 @@ class Unpacker
     private function unpackArchive($buildPath, $archive)
     {
         $makeCommand = ['mkdir', $buildPath];
-        $unpackCommand = ['tar', '-vxzf', $archive, sprintf('--directory=%s', $buildPath)];
+        $unpackCommand = [
+            'tar',
+            '-vxz',
+            '--strip-components=1',
+            sprintf('--file=%s', $archive),
+            sprintf('--directory=%s', $buildPath)
+        ];
 
         $makeProcess = $this->processBuilder
             ->setWorkingDirectory(null)
