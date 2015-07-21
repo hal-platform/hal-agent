@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Command;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use QL\Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -26,6 +27,7 @@ class RemoveBuildCommand extends Command
 {
     use CommandTrait;
     use FormatterTrait;
+    use ResolverTrait;
 
     /**
      * @var string
@@ -58,28 +60,18 @@ class RemoveBuildCommand extends Command
     private $filesystem;
 
     /**
-     * @type string
-     */
-    private $archivePath;
-
-    /**
      * @param string $name
      * @param EntityManagerInterface $em
      * @param Filesystem $filesystem
-     * @param string $archivePath
      */
-    public function __construct($name,
-        EntityManagerInterface $em,
-        Filesystem $filesystem,
-        $archivePath
-    ) {
+    public function __construct($name,EntityManagerInterface $em, Filesystem $filesystem)
+    {
         parent::__construct($name);
 
         $this->em = $em;
         $this->buildRepo = $em->getRepository(Build::CLASS);
 
         $this->filesystem = $filesystem;
-        $this->archivePath = $archivePath;
     }
 
     /**
@@ -163,7 +155,7 @@ class RemoveBuildCommand extends Command
             return 1;
         }
 
-        if (!$archive = $this->generateArchiveLocation($build)) {
+        if (!$archives = $this->generateArchiveLocations($build)) {
             $output->writeln(sprintf('<error>%s</error>', sprintf('Build "%s" must be status "Success" to be removed.', $buildId)));
             return 1;
         }
@@ -174,30 +166,46 @@ class RemoveBuildCommand extends Command
         $this->em->flush();
 
         // remove file
-        if (!$this->filesystem->exists($archive)) {
+        if (!$source = $this->findSource($archives)) {
             $output->writeln(sprintf('<error>%s</error>', sprintf('Archive for build "%s" was already removed.', $buildId)));
             return 1;
         }
 
-        $this->filesystem->remove($archive);
-        return $this->success($output, sprintf('Archive for build "%s" removed.', $buildId));
+        $this->filesystem->remove($source);
+        $output->writeln(sprintf('Archive for build "%s" removed.', $buildId));
+        return 0;
     }
 
     /**
-     *  @param Build $build
-     *  @return string
+     * @param Build $build
+     *
+     * @return string[]
      */
-    private function generateArchiveLocation(Build $build)
+    private function generateArchiveLocations(Build $build)
     {
         if ($build->status() !== 'Success') {
-            return '';
+            return [];
         }
 
-        return sprintf(
-            '%s%s%s',
-            rtrim($this->archivePath, '/'),
-            DIRECTORY_SEPARATOR,
-            sprintf(self::FS_ARCHIVE_PREFIX, $build->id())
-        );
+        return [
+            $this->generateBuildArchiveFile($build->id()),
+            $this->generateLegacyBuildArchiveFile($build->id())
+        ];
+    }
+
+    /**
+     * @param string[] $sources
+     *
+     * @return string|null
+     */
+    private function findSource(array $sources)
+    {
+        foreach ($sources as $potentialSource) {
+            if ($this->filesystem->exists($potentialSource)) {
+                return $potentialSource;
+            }
+        }
+
+        return null;
     }
 }

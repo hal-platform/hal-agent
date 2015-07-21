@@ -76,7 +76,8 @@ services:
             - 'build:remove'
             - @doctrine.em
             - @utility.filesystem
-            - %environment.archive%
+        calls:
+            - ['setArchivePath', [%environment.archive%]]
     command.builds.list:
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
