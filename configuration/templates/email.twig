@@ -36,7 +36,7 @@
             margin:0;
             padding:0;
             width:100% !important;
-            line-height: 100% !important;
+            line-height: 110% !important;
         }
 
         /* Alert */
@@ -153,9 +153,11 @@
                                 <h4>Where was the code pushed?</h4>
                                 <p>
                                     {% if server.type == 'elasticbeanstalk' %}
-                                        Elastic Beanstalk ({{ deployment.ebEnvironment }}) in {{ environment.name }}
+                                        Elastic Beanstalk {{ server.name }} in {{ environment.name }}
                                     {% elseif server.type == 'ec2' %}
-                                        EC2 ({{ deployment.ec2Pool }}) in {{ environment.name }}
+                                        EC2 {{ server.name }} in {{ environment.name }}
+                                    {% elseif server.type == 's3' %}
+                                        S3 ({{ server.name }}) in {{ environment.name }}
                                     {% else %}
                                         {{ server.name }} in {{ environment.name }}
                                     {% endif %}
@@ -171,7 +173,6 @@
                         </tr>
                     {% endif %}
 
-                    </tr>
                     <tr>
                         <td valign="top" class="stat">
                             <h4>What code was built?</h4>
@@ -179,7 +180,7 @@
                                 <strong>Repository:</strong> {{ github.repo }}
                                 <br><strong>Reference:</strong> {{ github.ref }}
                                 <br><strong>Commit:</strong> {{ github.commit }}
-                                <br><a href="{{ github_url ~ github.ref_url }}">GitHub: View code</a>
+                                <br><a href="{{ github_url ~ github.ref_url }}">GitHub: view code</a>
                             </p>
 
                             {% if filesize.download %}
@@ -213,7 +214,7 @@
                         <td valign="top" class="stat">
                             <h4>Where can I see more information?</h4>
                             <p>
-                                <a href="{{ hal_url }}repositories/{{ application.id }}/status">HAL 9000: {{ application.key }} status</a><br>
+                                <a href="{{ hal_url }}applications/{{ application.id }}/status">HAL 9000: {{ application.key }} status</a><br>
                                 <br><a href="{{ hal_url }}builds/{{ build.id }}">HAL 9000: build details</a>
                                 {% if is_push %}
                                     <br><a href="{{ hal_url }}pushes/{{ push.id }}">HAL 9000: push details</a>
