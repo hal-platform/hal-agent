@@ -124,7 +124,6 @@ class UploaderTest extends PHPUnit_Framework_TestCase
         $this->assertSame(false, $actual);
     }
 
-
     public function testUploadWaitFails()
     {
         $this->s3
