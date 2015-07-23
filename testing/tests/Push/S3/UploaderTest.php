@@ -7,6 +7,9 @@
 
 namespace QL\Hal\Agent\Push\S3;
 
+use Aws\CommandInterface;
+use Aws\Exception\AwsException;
+use Aws\S3\Exception\S3Exception;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
@@ -101,7 +104,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
 
         $this->s3
             ->shouldReceive('upload')
-            ->andThrow('Aws\S3\Exception\AccessDeniedException');
+            ->andThrow(new S3Exception('', Mockery::mock(CommandInterface::CLASS)));
 
         $this->logger
             ->shouldReceive('event')
@@ -134,7 +137,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
 
         $this->s3
             ->shouldReceive('waitUntil')
-            ->andThrow('Aws\S3\Exception\S3Exception');
+            ->andThrow(new AwsException('', Mockery::mock(CommandInterface::CLASS)));
 
         $this->logger
             ->shouldReceive('event')

@@ -7,6 +7,9 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
+use Aws\CommandInterface;
+use Aws\Exception\AwsException;
+use Aws\S3\Exception\S3Exception;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
@@ -85,7 +88,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
 
         $this->s3
             ->shouldReceive('upload')
-            ->andThrow('Aws\Common\Exception\RuntimeException');
+            ->andThrow(new S3Exception('', Mockery::mock(CommandInterface::CLASS)));
 
         $this->logger
             ->shouldReceive('event')
@@ -116,7 +119,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->s3
             ->shouldReceive('waitUntil')
-            ->andThrow('Aws\Common\Exception\RuntimeException');
+            ->andThrow(new AwsException('', Mockery::mock(CommandInterface::CLASS)));
 
         $this->logger
             ->shouldReceive('event')

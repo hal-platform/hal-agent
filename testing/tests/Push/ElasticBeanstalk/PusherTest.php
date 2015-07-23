@@ -7,6 +7,8 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
+use Aws\CommandInterface;
+use Aws\ElasticBeanstalk\Exception\ElasticBeanstalkException;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 
@@ -95,7 +97,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->eb
             ->shouldReceive('updateEnvironment')
-            ->andThrow('Aws\Common\Exception\RuntimeException');
+            ->andThrow(new ElasticBeanstalkException('', Mockery::mock(CommandInterface::CLASS)));
 
         $this->logger
             ->shouldReceive('event')
@@ -131,7 +133,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->eb
             ->shouldReceive('waitUntilEnvironmentReady')
-            ->andThrow('Aws\Common\Exception\RuntimeException');
+            ->andThrow(new ElasticBeanstalkException('', Mockery::mock(CommandInterface::CLASS)));
 
         $this->logger
             ->shouldReceive('event')

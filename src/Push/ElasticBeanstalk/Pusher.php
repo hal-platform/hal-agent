@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
-use Aws\Common\Exception\AwsExceptionInterface;
+use Aws\Exception\AwsException;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use QL\Hal\Agent\Logger\EventLogger;
 
@@ -91,7 +91,7 @@ class Pusher
                 'VersionLabel' => $pushId
             ]);
 
-        } catch (AwsExceptionInterface $e) {
+        } catch (AwsException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);
 
@@ -151,7 +151,7 @@ class Pusher
                 'waiter.max_attempts' => self::WAITER_ATTEMPTS
             ]);
 
-        } catch (AwsExceptionInterface $e) {
+        } catch (AwsException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::ERR_WAITING, $context);
             return false;
