@@ -44,6 +44,7 @@ class EmailFormatter
             // application
             // environment
             // server
+            // deployment
 
         $entity = $data['build'];
         if ($data['push'] instanceof Push) {

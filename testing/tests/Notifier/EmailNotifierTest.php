@@ -10,9 +10,11 @@ namespace QL\Hal\Agent\Notifier;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Application;
+use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Server;
+use QL\Hal\Core\Type\EnumType\ServerEnum;
 use Swift_Message;
 
 class EmailNotifierTest extends PHPUnit_Framework_TestCase
@@ -53,7 +55,8 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
                 'email' => 'test@example.com'
             ]),
             'environment' => Mockery::mock(Environment::CLASS, ['name' => 'envkey']),
-            'server' => Mockery::mock(Server::CLASS, ['name' => 'servername', 'type' => 'rsync']),
+            'deployment' => (new Deployment)
+                ->withServer(Mockery::mock(Server::CLASS, ['type' => ServerEnum::TYPE_RSYNC, 'formatPretty' => 'testserver1'])),
             'push' => Mockery::mock(Push::CLASS)
         ];
 
@@ -61,7 +64,80 @@ class EmailNotifierTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame(3, $spy->getPriority());
         $this->assertSame(['test@example.com' => null], $spy->getTo());
-        $this->assertSame('[' . EmailNotifier::ICON_SUCCESS . '] repokey (envkey:servername)', $spy->getSubject());
+        $this->assertSame('[' . EmailNotifier::ICON_SUCCESS . '] repokey (envkey:testserver1)', $spy->getSubject());
+    }
+
+    public function testSuccessfulEBPush()
+    {
+        $this->formatter
+            ->shouldReceive('format')
+            ->once()
+            ->andReturn('message');
+
+        $spy = null;
+        $this->mailer
+            ->shouldReceive('send')
+            ->with(Mockery::on(function($v) use (&$spy) {
+                $spy = $v;
+                return true;
+            }));
+
+        $notifier = new EmailNotifier($this->mailer, $this->message, $this->formatter);
+
+        $data = [
+            'status' => true,
+            'application' => Mockery::mock(Application::CLASS, [
+                'key' => 'repokey',
+                'email' => 'test@example.com'
+            ]),
+            'environment' => Mockery::mock(Environment::CLASS, ['name' => 'test']),
+            'deployment' => (new Deployment)
+                ->withServer(Mockery::mock(Server::CLASS, ['type' => ServerEnum::TYPE_EB]))
+                ->withEBEnvironment('eb-env-name-1'),
+            'push' => Mockery::mock(Push::CLASS)
+        ];
+
+        $notifier->send('event.name', $data);
+
+        $this->assertSame(3, $spy->getPriority());
+        $this->assertSame(['test@example.com' => null], $spy->getTo());
+        $this->assertSame('[' . EmailNotifier::ICON_SUCCESS . '] repokey (test:EB:eb-env-name-1)', $spy->getSubject());
+    }
+
+    public function testSuccessfulPushWithCustomDeploymentName()
+    {
+        $this->formatter
+            ->shouldReceive('format')
+            ->once()
+            ->andReturn('message');
+
+        $spy = null;
+        $this->mailer
+            ->shouldReceive('send')
+            ->with(Mockery::on(function($v) use (&$spy) {
+                $spy = $v;
+                return true;
+            }));
+
+        $notifier = new EmailNotifier($this->mailer, $this->message, $this->formatter);
+
+        $data = [
+            'status' => true,
+            'application' => Mockery::mock(Application::CLASS, [
+                'key' => 'repokey',
+                'email' => 'test@example.com'
+            ]),
+            'environment' => Mockery::mock(Environment::CLASS, ['name' => 'test']),
+            'deployment' => (new Deployment)
+                ->withName('my custom deploy name'),
+            'push' => Mockery::mock(Push::CLASS)
+        ];
+
+        $notifier->send('event.name', $data);
+
+        $this->assertSame(3, $spy->getPriority());
+        $this->assertSame(['test@example.com' => null], $spy->getTo());
+        $this->assertSame('[' . EmailNotifier::ICON_SUCCESS . '] repokey (test:my custom deploy name)', $spy->getSubject());
     }
 
     public function testFailureBuild()

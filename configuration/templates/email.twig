@@ -103,6 +103,15 @@
             margin-top: 20px;
         }
 
+        ul {
+            list-style: none;
+            margin-top: 0;
+            padding: 10px;
+        }
+
+        ul li {
+            line-height: 130%;
+        }
     </style>
 </head>
 <body>
@@ -153,8 +162,7 @@
                                 <h4>Where was the code pushed?</h4>
                                 <ul>
                                     <li><b>Environment:</b> {{ environment.name }}</li>
-                                    <li><b>Server:</b> {{ push.deployment.server.formatPretty }}</li>
-                                    <li><b>Deployment:</b> {{ push.deployment.formatMeta }}</li>
+                                    <li><b>Deployment:</b> {{ deployment.formatPretty(true) }}</li>
                                 </ul>
                             </td>
                         </tr>
