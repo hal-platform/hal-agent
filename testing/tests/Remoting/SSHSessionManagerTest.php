@@ -135,9 +135,9 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'user' => 'username123456789',
             'server' => 'server123456789',
             'errors' => [
-                'SSH Warning: fsockopen(): php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known',
-                'SSH Warning: fsockopen(): unable to connect to server123456789:22 (php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known)',
-                'SSH User Notice: Cannot connect to server123456789:22. Error 0. php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known'
+                'SSH Warning: fsockopen(): php_network_getaddresses: getaddrinfo failed',
+                'SSH Warning: fsockopen(): unable to connect to server123456789:22 (php_network_getaddresses: getaddrinfo failed',
+                'SSH User Notice: Cannot connect to server123456789:22. Error 0. php_network_getaddresses: getaddrinfo failed'
             ]
         ];
 
@@ -163,7 +163,11 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
         $session = $ssh->createSession('username123456789', 'server123456789');
 
         $this->assertSame(null, $session);
-        $this->assertSame($expectedContext, $context);
+        $this->assertSame($expectedContext['user'], $context['user']);
+        $this->assertSame($expectedContext['server'], $context['server']);
+        $this->assertContains($expectedContext['errors'][0], $context['errors'][0]);
+        $this->assertContains($expectedContext['errors'][1], $context['errors'][1]);
+        $this->assertContains($expectedContext['errors'][2], $context['errors'][2]);
     }
 
     public function testDisconnectDoesNotBreak()
