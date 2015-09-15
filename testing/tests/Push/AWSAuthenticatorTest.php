@@ -11,10 +11,11 @@ use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Crypto\CryptoException;
 use RuntimeException;
-use Aws\Sdk;
+use Aws\CodeDeploy\CodeDeployClient;
 use Aws\Ec2\Ec2Client;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
+use Aws\Sdk;
 
 class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
 {
@@ -130,6 +131,29 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
         $this->assertSame(null, $service);
     }
 
+    public function testGetCD()
+    {
+        $this->credentials
+            ->shouldReceive([
+                'key' => 'key-id',
+                'secret' => 'derp'
+            ]);
+
+        $this->di
+            ->shouldReceive('get')
+            ->with('decrypter')
+            ->andReturn($this->decrypter);
+        $this->decrypter
+            ->shouldReceive('decrypt')
+            ->with('derp')
+            ->andReturn('underp');
+
+        $authenticator = new AWSAuthenticator($this->logger, $this->di, $this->aws);
+        $service = $authenticator->getCD('us-west-1', $this->credentials);
+
+        $this->assertInstanceOf(CodeDeployClient::CLASS, $service);
+    }
+
     public function testGetEB()
     {
         $this->credentials
@@ -153,7 +177,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf(ElasticBeanstalkClient::CLASS, $service);
     }
 
-    public function getEC2()
+    public function testGetEC2()
     {
         $this->credentials
             ->shouldReceive([
@@ -176,7 +200,7 @@ class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Ec2Client::CLASS, $service);
     }
 
-    public function getS3()
+    public function testGetS3()
     {
         $this->credentials
             ->shouldReceive([

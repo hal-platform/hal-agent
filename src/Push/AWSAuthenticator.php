@@ -7,11 +7,12 @@
 
 namespace QL\Hal\Agent\Push;
 
-use Aws\Sdk;
-use Aws\Exception\AwsException;
+use Aws\CodeDeploy\CodeDeployClient;
 use Aws\Ec2\Ec2Client;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
+use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
+use Aws\Sdk;
 use Exception;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
@@ -77,6 +78,21 @@ class AWSAuthenticator
         $this->logger = $logger;
         $this->di = $di;
         $this->aws = $aws;
+    }
+
+    /**
+     * @param string $region
+     * @param AWSCredential|null $credential
+     *
+     * @return CodeDeployClient|null
+     */
+    public function getCD($region, $credential)
+    {
+        if (!$credentials = $this->getCredentials($region, $credential)) {
+            return null;
+        }
+
+        return $this->aws->createCodeDeploy($credentials);
     }
 
     /**
