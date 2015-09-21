@@ -5,7 +5,7 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace QL\Hal\Agent\Push\CodeDeploy;
 
 use QL\Hal\Agent\Push\S3\Uploader as S3Uploader;
 

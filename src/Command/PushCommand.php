@@ -76,6 +76,13 @@ class PushCommand extends Command implements OutputAwareInterface
         401 => 'Failed to authenticate with AWS.',
         402 => 'Build could not be packed for S3.',
         403 => 'Upload to S3 failed.',
+
+        500 => 'Required properties for CodeDeploy are missing.',
+        501 => 'Failed to authenticate with AWS.',
+        502 => 'CodeDeploy group is not ready.',
+        503 => 'Build could not be packed for S3.',
+        504 => 'Upload to S3 failed.',
+        505 => 'Deploying application to CodeDeploy failed.'
     ];
 
     /**

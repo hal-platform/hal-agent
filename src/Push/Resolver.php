@@ -260,8 +260,9 @@ class Resolver
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
-                'application' => $application->ebName(),
+                'application' => $deployment->ebName(),
                 'environment' => $deployment->ebEnvironment(),
+
                 'bucket' => $deployment->s3bucket(),
                 'file' => sprintf('%s/%s', $application->id(), $push->id())
             ];
@@ -296,6 +297,21 @@ class Resolver
                 'bucket' => $deployment->s3bucket(),
                 'file' => $file
             ];
+
+        } elseif ($method === ServerEnum::TYPE_CD) {
+
+            $properties[$method] = [
+                'region' => $server->name(),
+                'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
+
+                'application' => $deployment->cdName(),
+                'group' => $deployment->cdGroup(),
+                'configuration' => $deployment->cdConfiguration(),
+
+                'bucket' => $deployment->s3bucket(),
+                'file' => sprintf('%s/%s.tar.gz', $application->id(), $push->id())
+            ];
+
         }
 
         return $properties;

@@ -55,6 +55,7 @@ services:
                 elasticbeanstalk: push.elasticbeanstalk.deployer
                 ec2: push.ec2.deployer
                 s3: push.s3.deployer
+                cd: push.cd.deployer
 
     ####################################################################################################################
     # elasticbeanstalk
@@ -84,6 +85,8 @@ services:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Uploader'
         arguments:
             - @logger.event
+        calls:
+            - ['allowOverwrite', [false]]
 
     push.elasticbeanstalk.pusher:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Pusher'
@@ -185,6 +188,44 @@ services:
         class: 'QL\Hal\Agent\Push\S3\Uploader'
         arguments:
             - @logger.event
+
+    ####################################################################################################################
+    # codedeploy
+    ####################################################################################################################
+
+    push.cd.deployer:
+        class: 'QL\Hal\Agent\Push\CodeDeploy\Deployer'
+        arguments:
+            - @logger.event
+            - @push.aws.authenticator
+            - @push.cd.healthchecker
+            - @push.cd.packer
+            - @push.cd.uploader
+            - @push.cd.pusher
+
+    push.cd.healthchecker:
+        class: 'QL\Hal\Agent\Push\CodeDeploy\HealthChecker'
+
+    push.cd.packer:
+        class: 'QL\Hal\Agent\Push\CodeDeploy\Packer'
+        arguments:
+            - @logger.event
+            - @utility.filesystem
+            - @utility.process.builder= # = signifies a prototype service
+            - %timeout.filepacking%
+
+    push.cd.uploader:
+        class: 'QL\Hal\Agent\Push\CodeDeploy\Uploader'
+        arguments:
+            - @logger.event
+        calls:
+            - ['allowOverwrite', [false]]
+
+    push.cd.pusher:
+        class: 'QL\Hal\Agent\Push\CodeDeploy\Pusher'
+        arguments:
+            - @logger.event
+            - @push.cd.healthchecker
 
     ####################################################################################################################
     # private services used only by push actions

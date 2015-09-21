@@ -262,8 +262,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             ->withId('repo-id')
             ->withKey('repokey')
             ->withGithubOwner('user1')
-            ->withGithubRepo('repo1')
-            ->withEbName('eb_name');
+            ->withGithubRepo('repo1');
 
         $app->setBuildTransformCmd('bin/build-transform');
         $app->setPrePushCmd('bin/pre');
@@ -288,12 +287,13 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             )
             ->withDeployment(
                 (new Deployment)
+                    ->withEbName('eb_name')
                     ->withEbEnvironment('e-ididid')
                     ->withS3Bucket('eb_bucket')
                     ->withServer(
                         (new Server)
                             ->withName('aws-region')
-                            ->withType('elasticbeanstalk')
+                            ->withType('eb')
                     )
                     ->withCredential(
                         (new Credential)
@@ -302,13 +302,14 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             );
 
         $expected = [
-            'method' => 'elasticbeanstalk',
+            'method' => 'eb',
 
-            'elasticbeanstalk' => [
+            'eb' => [
                 'region' => 'aws-region',
                 'credential' => $aws,
                 'application' => 'eb_name',
                 'environment' => 'e-ididid',
+
                 'bucket' => 'eb_bucket',
                 'file' => 'repo-id/1234',
             ],
@@ -388,7 +389,145 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
         $this->assertSame($expected['location'], $properties['location']);
         $this->assertSame($expected['artifacts'], $properties['artifacts']);
-        $this->assertSame($expected['elasticbeanstalk'], $properties['elasticbeanstalk']);
+        $this->assertSame($expected['eb'], $properties['eb']);
+    }
+
+    public function testCodeDeploySuccess()
+    {
+        $app = (new Application)
+            ->withId('repo-id')
+            ->withKey('repokey')
+            ->withGithubOwner('user1')
+            ->withGithubRepo('repo1');
+
+        $app->setBuildTransformCmd('bin/build-transform');
+        $app->setPrePushCmd('bin/pre');
+        $app->setPostPushCmd('bin/post');
+
+        $aws = new AWSCredential('key', 'encrypted');
+
+        $push = (new Push)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withApplication($app)
+            ->withBuild(
+                (new Build)
+                    ->withId('b9.1234')
+                    ->withBranch('master')
+                    ->withCommit('5555')
+                    ->withApplication($app)
+                    ->withEnvironment(
+                        (new Environment)
+                            ->withName('envname')
+                    )
+            )
+            ->withDeployment(
+                (new Deployment)
+                    ->withCDName('cd_name')
+                    ->withCDGroup('cd_group')
+                    ->withCDConfiguration('cd_config')
+                    ->withS3Bucket('cd_bucket')
+                    ->withServer(
+                        (new Server)
+                            ->withName('aws-region')
+                            ->withType('cd')
+                    )
+                    ->withCredential(
+                        (new Credential)
+                            ->withAWS($aws)
+                    )
+            );
+
+        $expected = [
+            'method' => 'cd',
+
+            'cd' => [
+                'region' => 'aws-region',
+                'credential' => $aws,
+                'application' => 'cd_name',
+                'group' => 'cd_group',
+                'configuration' => 'cd_config',
+
+                'bucket' => 'cd_bucket',
+                'file' => 'repo-id/1234.tar.gz',
+            ],
+            'configuration' => [
+                'system' => 'unix',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
+                'build' => [],
+                'build_transform' => [
+                    'bin/build-transform'
+                ],
+                'pre_push' => [
+                    'bin/pre'
+                ],
+                'post_push' => [
+                    'bin/post'
+                ]
+            ],
+
+            'location' => [
+                'path' => 'testdir/hal9000-push-1234',
+                'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
+                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b9.1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
+                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
+            ],
+
+            'artifacts' => [
+                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-eb-1234.zip',
+                'testdir/hal9000-s3-1234.tar.gz',
+                'testdir/hal9000-push-1234'
+            ],
+
+            'pushProperties' => [
+                'id' => 'b9.1234',
+                'source' => 'http://git/user1/repo1',
+                'env' => 'envname',
+                'user' => null,
+                'reference' => 'master',
+                'commit' => '5555',
+                'date' => '2015-03-15T08:00:00-04:00'
+            ]
+        ];
+
+        $clock = new Clock('2015-03-15 12:00:00', 'UTC');
+        $this->envResolver
+            ->shouldReceive('getPushProperties')
+            ->andReturn([]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn([]);
+
+        $action = new Resolver(
+            $this->logger,
+            $this->em,
+            $clock,
+            $this->envResolver,
+            $this->encryptedResolver,
+            'sshuser',
+            'http://git'
+        );
+        $action->setLocalTempPath('testdir');
+        $action->setArchivePath('ARCHIVE_PATH');
+
+        $properties = $action('1234');
+
+        $this->assertSame($expected['method'], $properties['method']);
+        $this->assertSame($expected['configuration'], $properties['configuration']);
+        $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
+        $this->assertSame($expected['location'], $properties['location']);
+        $this->assertSame($expected['artifacts'], $properties['artifacts']);
+        $this->assertSame($expected['cd'], $properties['cd']);
     }
 
     public function testEC2Success()
@@ -396,8 +535,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $app = (new Application)
             ->withKey('repokey')
             ->withGithubOwner('user1')
-            ->withGithubRepo('repo1')
-            ->withEbName('eb_name');
+            ->withGithubRepo('repo1');
 
         $app->setBuildTransformCmd('bin/build-transform');
         $app->setPrePushCmd('bin/pre');

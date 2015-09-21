@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Push\S3;
 
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
+use InvalidArgumentException;
 use QL\Hal\Agent\Logger\EventLogger;
 
 class Uploader
@@ -19,6 +20,7 @@ class Uploader
     const EVENT_MESSAGE = 'Upload to S3';
     const ERR_WAITING = 'Waited for upload to be available, but the operation timed out.';
     const ERR_BUCKET_MISSING = 'S3 bucket not found.';
+    const ERR_OBJECT_EXISTS = 'S3 object already exists for this version';
 
     // 10s * 30 attempts = 5 minutes
     const WAITER_INTERVAL = 10;
@@ -35,6 +37,11 @@ class Uploader
     private $fileStreamer;
 
     /**
+     * @type bool
+     */
+    private $allowOverwrite;
+
+    /**
      * @param EventLogger $logger
      * @param S3Client $s3
      * @param callable $fileStreamer
@@ -48,6 +55,8 @@ class Uploader
         }
 
         $this->fileStreamer = $fileStreamer;
+
+        $this->allowOverwrite = true;
     }
 
     /**
@@ -76,6 +85,14 @@ class Uploader
                 return false;
             }
 
+            if (!$this->allowOverwrite) {
+                // Error out if object already exists
+                if ($s3->doesObjectExist($bucket, $file)) {
+                    $this->logger->event('failure', self::ERR_OBJECT_EXISTS, $context);
+                    return false;
+                }
+            }
+
             $object = $s3->upload(
                 $bucket,
                 $file,
@@ -96,6 +113,11 @@ class Uploader
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);
             return false;
+
+        } catch (InvalidArgumentException $e) {
+            $context = array_merge($context, ['error' => $e->getMessage()]);
+            $this->logger->event('failure', self::EVENT_MESSAGE, $context);
+            return false;
         }
 
         // Wait for object to be accessible
@@ -105,6 +127,24 @@ class Uploader
 
         $this->logger->event('success', self::EVENT_MESSAGE, $context);
         return true;
+    }
+
+    /**
+     * Whether to allow an upload to replace an object if it already exists.
+     *
+     * Yes
+     *     - S3
+     * No
+     *     - Elastic Beanstalk
+     *     - CodeDeploy
+     *
+     * @param bool $allow
+     *
+     * @return void
+     */
+    public function allowOverwrite($allow = true)
+    {
+        $this->allowOverwrite = (bool) $allow;
     }
 
     /**
@@ -121,8 +161,10 @@ class Uploader
             $s3->waitUntil('ObjectExists', [
                 'Bucket' => $bucket,
                 'Key' => $file,
-                'waiter.interval' => self::WAITER_INTERVAL,
-                'waiter.max_attempts' => self::WAITER_ATTEMPTS
+                '@waiter' => [
+                    'delay' => self::WAITER_INTERVAL,
+                    'maxAttempts' => self::WAITER_ATTEMPTS
+                ]
             ]);
 
         } catch (AwsException $e) {

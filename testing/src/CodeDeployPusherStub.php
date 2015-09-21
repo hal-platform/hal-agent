@@ -5,10 +5,12 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace QL\Hal\Agent\Testing;
 
-use QL\Hal\Agent\Push\S3\Uploader as S3Uploader;
+use QL\Hal\Agent\Push\CodeDeploy\Pusher;
 
-class Uploader extends S3Uploader
+class CodeDeployPusherStub extends Pusher
 {
+    const WAITER_INTERVAL = 1;
+    const WAITER_ATTEMPTS = 10;
 }
