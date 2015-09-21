@@ -49,6 +49,10 @@ class Resolver
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
     const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
 
+    const DEFAULT_EB_FILENAME = '$APPID/$PUSHID.zip';
+    const DEFAULT_S3_FILENAME = '$PUSHID.tar.gz';
+    const DEFAULT_CD_FILENAME = '$APPID/$PUSHID.tar.gz';
+
     /**
      * @type EventLogger
      */
@@ -251,11 +255,22 @@ class Resolver
 
         $properties = [];
 
+        $now = $this->clock->read();
+        $replacements = [
+            'APPID' => $application->id(),
+            'APPNAME' => $application->name(),
+            'BUILDID' => $build->id(),
+            'PUSHID' => $push->id(),
+            'DATE' => $now->format('Y-m-d', 'UTC'),
+            'TIME' => $now->format('H:i:s', 'UTC')
+        ];
+
         if ($method === ServerEnum::TYPE_RSYNC) {
             $properties[$method] = $this->buildRsyncProperties($build, $deployment, $server);
 
         } elseif ($method === ServerEnum::TYPE_EB) {
 
+            $template = $deployment->s3file() ?: self::DEFAULT_EB_FILENAME;
             $properties[$method] = [
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
@@ -264,7 +279,7 @@ class Resolver
                 'environment' => $deployment->ebEnvironment(),
 
                 'bucket' => $deployment->s3bucket(),
-                'file' => sprintf('%s/%s', $application->id(), $push->id())
+                'file' => $this->buildS3Filename($replacements, $template)
             ];
 
         } elseif ($method === ServerEnum::TYPE_EC2) {
@@ -279,27 +294,18 @@ class Resolver
 
         } elseif ($method === ServerEnum::TYPE_S3) {
 
-            $buildid = $build->id();
-            $pushid = $push->id();
-            $date = $this->clock->read()->format('YYYY-MM-DD', 'UTC');
-
-            $file = sprintf('%s.tar.gz', $pushid);
-            if ($file = $deployment->s3file()) {
-                $file = str_replace('$BUILDID', $buildid, $file);
-                $file = str_replace('$PUSHID', $pushid, $file);
-                $file = str_replace('$DATE', $date, $file);
-            }
-
+            $template = $deployment->s3file() ?: self::DEFAULT_S3_FILENAME;
             $properties[$method] = [
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
                 'bucket' => $deployment->s3bucket(),
-                'file' => $file
+                'file' => $this->buildS3Filename($replacements, $template)
             ];
 
         } elseif ($method === ServerEnum::TYPE_CD) {
 
+            $template = $deployment->s3file() ?: self::DEFAULT_CD_FILENAME;
             $properties[$method] = [
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
@@ -309,7 +315,7 @@ class Resolver
                 'configuration' => $deployment->cdConfiguration(),
 
                 'bucket' => $deployment->s3bucket(),
-                'file' => sprintf('%s/%s.tar.gz', $application->id(), $push->id())
+                'file' => $this->buildS3Filename($replacements, $template)
             ];
 
         }
@@ -353,6 +359,24 @@ class Resolver
             'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->path()),
             'environmentVariables' => $env
         ];
+    }
+
+    /**
+     * @param array $replacements
+     * @param string $template
+     *
+     * @return string
+     */
+    private function buildS3Filename(array $replacements, $template)
+    {
+        $file = $template;
+
+        foreach ($replacements as $name => $val) {
+            $name = '$' . $name;
+            $file = str_replace($name, $val, $file);
+        }
+
+        return $file;
     }
 
     /**

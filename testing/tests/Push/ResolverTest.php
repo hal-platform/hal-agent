@@ -311,7 +311,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'environment' => 'e-ididid',
 
                 'bucket' => 'eb_bucket',
-                'file' => 'repo-id/1234',
+                'file' => 'repo-id/1234.zip',
             ],
             'configuration' => [
                 'system' => 'unix',
