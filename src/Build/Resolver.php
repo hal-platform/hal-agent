@@ -37,6 +37,7 @@ class Resolver
      */
     const ERR_NOT_FOUND = 'Build "%s" could not be found!';
     const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
+    const ERR_TEMP = 'Temporary build space "%s" could not be prepared. Either it does not exist, or is not writeable.';
 
     /**
      * @type EntityRepository
@@ -118,6 +119,9 @@ class Resolver
         $buildSystemProperties = $this->environmentResolver->getBuildProperties($build);
         $properties = array_merge($properties, $buildSystemProperties);
 
+        $this->ensureTempExistsAndIsWritable();
+
+
         return $properties;
     }
 
@@ -136,6 +140,24 @@ class Resolver
         ];
 
         return $artifacts;
+    }
+
+    /**
+     * @return void
+     */
+    private function ensureTempExistsAndIsWritable()
+    {
+        $temp = $this->getLocalTempPath();
+
+        if (!file_exists($temp)) {
+            if (!mkdir($temp, 0755, true)) {
+                throw new BuildException(sprintf(self::ERR_TEMP, $temp));
+            }
+        }
+
+        if (!is_writeable($temp)) {
+            throw new BuildException(sprintf(self::ERR_TEMP, $temp));
+        }
     }
 
     /**

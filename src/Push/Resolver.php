@@ -49,6 +49,8 @@ class Resolver
     const ERR_CLOBBERING_TIME = 'Push "%s" is trying to clobber a running push! It cannot be deployed at this time.';
     const ERR_HOSTNAME_RESOLUTION = 'Cannot resolve hostname "%s"';
 
+    const ERR_TEMP = 'Temporary build space "%s" could not be prepared. Either it does not exist, or is not writeable.';
+
     const DEFAULT_EB_FILENAME = '$APPID/$PUSHID.zip';
     const DEFAULT_S3_FILENAME = '$PUSHID.tar.gz';
     const DEFAULT_CD_FILENAME = '$APPID/$PUSHID.tar.gz';
@@ -394,6 +396,24 @@ class Resolver
             $properties['location']['tempTarArchive'],
             $properties['location']['path']
         ];
+    }
+
+    /**
+     * @return void
+     */
+    private function ensureTempExistsAndIsWritable()
+    {
+        $temp = $this->getLocalTempPath();
+
+        if (!file_exists($temp)) {
+            if (!mkdir($temp, 0755, true)) {
+                throw new PushException(sprintf(self::ERR_TEMP, $temp));
+            }
+        }
+
+        if (!is_writeable($temp)) {
+            throw new PushException(sprintf(self::ERR_TEMP, $temp));
+        }
     }
 
     /**
