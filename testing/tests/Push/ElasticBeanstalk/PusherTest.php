@@ -8,9 +8,14 @@
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\CommandInterface;
+use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\ElasticBeanstalk\Exception\ElasticBeanstalkException;
+use Aws\Result;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
+use QL\Hal\Agent\Waiter\Waiter;
 
 class PusherTest extends PHPUnit_Framework_TestCase
 {
@@ -18,18 +23,24 @@ class PusherTest extends PHPUnit_Framework_TestCase
     public $eb;
     public $streamer;
 
+    public $health;
+    public $waiter;
+
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
+        $this->logger = Mockery::mock(EventLogger::CLASS);
+        $this->eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
         $this->streamer = function() {return 'file';};
+
+        $this->health = Mockery::mock(HealthChecker::CLASS);
+        $this->waiter = new Waiter(.25, 10);
     }
 
     public function testSuccess()
     {
         $this->eb
             ->shouldReceive('describeApplicationVersions')
-            ->andReturn(['ApplicationVersions' => []]);
+            ->andReturn(new Result((['ApplicationVersions' => []])));
 
         $this->eb
             ->shouldReceive('createApplicationVersion')
@@ -37,16 +48,30 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->eb
             ->shouldReceive('updateEnvironment')
             ->once();
-        $this->eb
-            ->shouldReceive('waitUntilEnvironmentReady')
+
+        $this->health
+            ->shouldReceive('__invoke')
+            ->with($this->eb, 'appName', 'envId')
+            ->andReturn([
+                'status' => 'Updating',
+                'health' => 'Grey',
+            ])
             ->once();
+        $this->health
+            ->shouldReceive('__invoke')
+            ->with($this->eb, 'appName', 'envId')
+            ->andReturn([
+                'status' => 'Ready',
+                'health' => 'Green'
+            ])
+            ->twice();
 
         $this->logger
             ->shouldReceive('event')
             ->with('success', Mockery::any(), Mockery::any())
             ->once();
 
-        $pusher = new Pusher($this->logger);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
         $actual = $pusher(
             $this->eb,
             'appName',
@@ -64,14 +89,14 @@ class PusherTest extends PHPUnit_Framework_TestCase
     {
         $this->eb
             ->shouldReceive('describeApplicationVersions')
-            ->andReturn(['ApplicationVersions' => ['version1', 'version2']]);
+            ->andReturn(new Result(['ApplicationVersions' => ['version1', 'version2']]));
 
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any(), Mockery::any())
             ->once();
 
-        $pusher = new Pusher($this->logger);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
         $actual = $pusher(
             $this->eb,
             'appName',
@@ -90,7 +115,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
     {
         $this->eb
             ->shouldReceive('describeApplicationVersions')
-            ->andReturn(['ApplicationVersions' => []]);
+            ->andReturn(new Result(['ApplicationVersions' => []]));
 
         $this->eb
             ->shouldReceive('createApplicationVersion')
@@ -104,7 +129,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->with('failure', Mockery::any(), Mockery::any())
             ->once();
 
-        $pusher = new Pusher($this->logger);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
         $actual = $pusher(
             $this->eb,
             'appName',
@@ -119,11 +144,11 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->assertSame(false, $actual);
     }
 
-    public function testebWaitingForUpdateExpiresButStillSucceeds()
+    public function testAwsErrorThrownDuringHealthCheckStopsWaiter()
     {
         $this->eb
             ->shouldReceive('describeApplicationVersions')
-            ->andReturn(['ApplicationVersions' => []]);
+            ->andReturn(new Result(['ApplicationVersions' => []]));
 
         $this->eb
             ->shouldReceive('createApplicationVersion')
@@ -131,16 +156,25 @@ class PusherTest extends PHPUnit_Framework_TestCase
         $this->eb
             ->shouldReceive('updateEnvironment')
             ->once();
-        $this->eb
-            ->shouldReceive('waitUntilEnvironmentReady')
-            ->andThrow(new ElasticBeanstalkException('', Mockery::mock(CommandInterface::CLASS)));
+        $this->health
+            ->shouldReceive('__invoke')
+            ->andThrow(new ElasticBeanstalkException('', Mockery::mock(CommandInterface::CLASS)))
+            ->once();
+
+        $this->health
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'status' => 'Ready',
+                'health' => 'Green'
+            ])
+            ->once();
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Pusher::ERR_WAITING, Mockery::any())
+            ->with('success', Pusher::EVENT_MESSAGE, Mockery::any())
             ->once();
 
-        $pusher = new Pusher($this->logger);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
         $actual = $pusher(
             $this->eb,
             'appName',
@@ -153,5 +187,46 @@ class PusherTest extends PHPUnit_Framework_TestCase
         );
 
         $this->assertSame(true, $actual);
+    }
+
+    public function testTimeoutResultsInFailureOfPush()
+    {
+        $this->eb
+            ->shouldReceive('describeApplicationVersions')
+            ->andReturn(new Result(['ApplicationVersions' => []]));
+
+        $this->eb
+            ->shouldReceive('createApplicationVersion')
+            ->once();
+        $this->eb
+            ->shouldReceive('updateEnvironment')
+            ->once();
+
+        $this->health
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'status' => 'Updating',
+                'health' => 'Grey'
+            ])
+            ->times(10);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Pusher::ERR_WAITING, Mockery::any())
+            ->once();
+
+        $pusher = new Pusher($this->logger, $this->health, new Waiter(.1, 10));
+        $actual = $pusher(
+            $this->eb,
+            'appName',
+            'envId',
+            'bucket-name',
+            's3_object.zip',
+            'b.1234',
+            'p.abcd',
+            'test'
+        );
+
+        $this->assertSame(false, $actual);
     }
 }

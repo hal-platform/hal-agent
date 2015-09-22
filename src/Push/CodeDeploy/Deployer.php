@@ -269,7 +269,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Pushing code to S3', self::SECTION);
 
         $push = $properties['push'];
-        $build = $properties['push']->build();
+        $build = $properties['build'];
         $environment = $build->environment();
 
         $uploader = $this->uploader;
@@ -295,7 +295,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Deploying version to CodeDeploy', self::SECTION);
 
         $push = $properties['push'];
-        $build = $properties['push']->build();
+        $build = $properties['build'];
         $environment = $build->environment();
 
         $pusher = $this->pusher;

@@ -52,46 +52,54 @@ services:
             - @service_container
             -
                 rsync: push.rsync.deployer
-                elasticbeanstalk: push.elasticbeanstalk.deployer
+                eb: push.eb.deployer
                 ec2: push.ec2.deployer
                 s3: push.s3.deployer
                 cd: push.cd.deployer
 
     ####################################################################################################################
-    # elasticbeanstalk
+    # eb
     ####################################################################################################################
 
-    push.elasticbeanstalk.deployer:
+    push.eb.deployer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Deployer'
         arguments:
             - @logger.event
             - @push.aws.authenticator
-            - @push.elasticbeanstalk.healthchecker
-            - @push.elasticbeanstalk.packer
-            - @push.elasticbeanstalk.uploader
-            - @push.elasticbeanstalk.pusher
+            - @push.eb.healthchecker
+            - @push.eb.packer
+            - @push.eb.uploader
+            - @push.eb.pusher
 
-    push.elasticbeanstalk.healthchecker:
+    push.eb.healthchecker:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
 
-    push.elasticbeanstalk.packer:
+    push.eb.packer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Packer'
         arguments:
             - @logger.event
             - @utility.process.builder= # = signifies a prototype service
             - %timeout.push%
 
-    push.elasticbeanstalk.uploader:
+    push.eb.uploader:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Uploader'
         arguments:
             - @logger.event
         calls:
             - ['allowOverwrite', [false]]
 
-    push.elasticbeanstalk.pusher:
+    push.eb.pusher:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Pusher'
         arguments:
             - @logger.event
+            - @push.eb.healthchecker
+            - @push.eb.waiter
+
+    push.eb.waiter:
+        class: 'QL\Hal\Agent\Waiter\Waiter'
+        arguments:
+            - %push.eb.waiter.interval%
+            - %push.eb.waiter.max%
 
     ####################################################################################################################
     # rsync
@@ -226,6 +234,13 @@ services:
         arguments:
             - @logger.event
             - @push.cd.healthchecker
+            - @push.cd.waiter
+
+    push.cd.waiter:
+        class: 'QL\Hal\Agent\Waiter\Waiter'
+        arguments:
+            - %push.cd.waiter.interval%
+            - %push.cd.waiter.max%
 
     ####################################################################################################################
     # private services used only by push actions

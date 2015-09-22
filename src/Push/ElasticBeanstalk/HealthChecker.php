@@ -20,7 +20,6 @@ use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
  *     - Terminated
  *
  *     - Missing
- *     - Too Many Cooks
  *
  * Health:
  *     - Red
@@ -32,7 +31,6 @@ use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 class HealthChecker
 {
     const NON_STANDARD_MISSING = 'Missing';
-    const NON_STANDARD_MULTIPLE = 'Too Many Cooks';
 
     /**
      * @param ElasticBeanstalkClient $eb
@@ -43,25 +41,19 @@ class HealthChecker
      */
     public function __invoke(ElasticBeanstalkClient $eb, $applicationName, $environmentId)
     {
-        $environments = $eb->describeEnvironments([
+        $result = $eb->describeEnvironments([
             'ApplicationName' => $applicationName,
             'EnvironmentIds' => [$environmentId]
         ]);
 
-        // sanity check
-        if (!isset($environments['Environments'])) {
+        if (!$environment = $result->search('Environments[0]')) {
             return $this->getStatus(self::NON_STANDARD_MISSING);
         }
 
-        $environments = $environments['Environments'];
-        if (count($environments) !== 1) {
-            $status = (count($environments) === 0) ? self::NON_STANDARD_MISSING : self::NON_STANDARD_MULTIPLE;
-            return $this->getStatus($status);
-        }
-
-        $environment = $environments[0];
-
-        return $this->getStatus($environment['Status'], $environment['Health']);
+        return $this->getStatus(
+            $result->search('Environments[0].Status'),
+            $result->search('Environments[0].Health')
+        );
     }
 
     /**

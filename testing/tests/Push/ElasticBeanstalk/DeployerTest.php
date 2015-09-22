@@ -7,8 +7,16 @@
 
 namespace QL\Hal\Agent\Push\ElasticBeanstalk;
 
+use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
+use Aws\S3\S3Client;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Push\AWSAuthenticator;
+use QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
+use QL\Hal\Agent\Push\ElasticBeanstalk\Packer;
+use QL\Hal\Agent\Push\ElasticBeanstalk\Pusher;
+use QL\Hal\Agent\Push\ElasticBeanstalk\Uploader;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
@@ -27,13 +35,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock(EventLogger::CLASS);
 
-        $this->authenticator = Mockery::mock('QL\Hal\Agent\Push\AWSAuthenticator');
-        $this->health = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker');
-        $this->packer = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Packer');
-        $this->uploader = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Uploader');
-        $this->pusher = Mockery::mock('QL\Hal\Agent\Push\ElasticBeanstalk\Pusher');
+        $this->authenticator = Mockery::mock(AWSAuthenticator::CLASS);
+        $this->health = Mockery::mock(HealthChecker::CLASS);
+        $this->packer = Mockery::mock(Packer::CLASS);
+        $this->uploader = Mockery::mock(Uploader::CLASS);
+        $this->pusher = Mockery::mock(Pusher::CLASS);
     }
 
     public function testSuccess()
@@ -42,7 +50,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
-            'elasticbeanstalk' => [
+            'build' => $push->build(),
+            'eb' => [
                 'region' => '',
                 'credential' => '',
                 'application' => '',
@@ -65,14 +74,10 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
-        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $s3 = Mockery::mock(S3Client::CLASS);
         $this->authenticator
-            ->shouldReceive('getEB')
-            ->andReturn($eb);
-        $this->authenticator
-            ->shouldReceive('getS3')
-            ->andReturn($s3);
+            ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
         $this->health
             ->shouldReceive('__invoke')
@@ -106,7 +111,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
-            'elasticbeanstalk' => [
+            'build' => $push->build(),
+            'eb' => [
                 'region' => '',
                 'credential' => '',
                 'application' => 'test_app',
@@ -129,14 +135,10 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
-        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $s3 = Mockery::mock(S3Client::CLASS);
         $this->authenticator
-            ->shouldReceive('getEB')
-            ->andReturn($eb);
-        $this->authenticator
-            ->shouldReceive('getS3')
-            ->andReturn($s3);
+            ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
         $this->health
             ->shouldReceive('__invoke')
@@ -201,7 +203,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function testMissingRequiredPropertyFails()
     {
         $properties = [
-            'elasticbeanstalk' => [
+            'eb' => [
                 'region' => '',
                 'credential' => ''
             ]
@@ -228,7 +230,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function testEnvironmentHealthNotReadyFails()
     {
         $properties = [
-            'elasticbeanstalk' => [
+            'eb' => [
                 'region' => '',
                 'credential' => '',
                 'application' => '',
@@ -245,8 +247,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
-        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $s3 = Mockery::mock(S3Client::CLASS);
         $this->authenticator
             ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
@@ -275,7 +277,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function testPackerFails()
     {
         $properties = [
-            'elasticbeanstalk' => [
+            'eb' => [
                 'region' => '',
                 'credential' => '',
                 'application' => '',
@@ -295,8 +297,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
-        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $s3 = Mockery::mock(S3Client::CLASS);
         $this->authenticator
             ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
@@ -326,7 +328,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
-            'elasticbeanstalk' => [
+            'build' => $push->build(),
+            'eb' => [
                 'region' => '',
                 'credential' => '',
                 'application' => '',
@@ -348,8 +351,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
-        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $s3 = Mockery::mock(S3Client::CLASS);
         $this->authenticator
             ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 
@@ -382,7 +385,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
-            'elasticbeanstalk' => [
+            'build' => $push->build(),
+            'eb' => [
                 'region' => '',
                 'credential' => '',
                 'application' => '',
@@ -404,8 +408,8 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             'environmentVariables' => []
         ];
 
-        $eb = Mockery::mock('Aws\ElasticBeanstalk\ElasticBeanstalkClient');
-        $s3 = Mockery::mock('Aws\S3\S3Client');
+        $eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $s3 = Mockery::mock(S3Client::CLASS);
         $this->authenticator
             ->shouldReceive(['getEB' => $eb, 'getS3' => $s3]);
 

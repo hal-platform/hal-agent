@@ -46,6 +46,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
+            'build' => $push->build(),
             'cd' => [
                 'region' => '',
                 'credential' => '',
@@ -107,6 +108,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
+            'build' => $push->build(),
             'cd' => [
                 'region' => '',
                 'credential' => '',
@@ -326,6 +328,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
+            'build' => $push->build(),
             'cd' => [
                 'region' => '',
                 'credential' => '',
@@ -383,6 +386,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $properties = [
             'push' => $push,
+            'build' => $push->build(),
             'cd' => [
                 'region' => '',
                 'credential' => '',
