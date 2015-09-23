@@ -24,8 +24,8 @@ class Packer
     /**
      * @type string
      */
-    const EVENT_MESSAGE = 'Packing push';
-    const ERR_TIMEOUT = 'Packing the push took too long';
+    const EVENT_MESSAGE = 'Pack deployment into version archive';
+    const ERR_TIMEOUT = 'Packing the version archive took too long';
 
     /**
      * @type EventLogger

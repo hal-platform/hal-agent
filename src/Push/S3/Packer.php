@@ -11,4 +11,6 @@ use QL\Hal\Agent\Build\Packer as BuildPacker;
 
 class Packer extends BuildPacker
 {
+    const EVENT_MESSAGE = 'Pack deployment into archive';
+    const ERR_TIMEOUT = 'Packing the archive took too long';
 }
