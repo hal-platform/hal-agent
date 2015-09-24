@@ -263,8 +263,8 @@ class Resolver
             'APPNAME' => $application->name(),
             'BUILDID' => $build->id(),
             'PUSHID' => $push->id(),
-            'DATE' => $now->format('Y-m-d', 'UTC'),
-            'TIME' => $now->format('H:i:s', 'UTC')
+            'DATE' => $now->format('Ymd', 'UTC'),
+            'TIME' => $now->format('His', 'UTC')
         ];
 
         if ($method === ServerEnum::TYPE_RSYNC) {
