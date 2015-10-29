@@ -13,4 +13,7 @@ class Packer extends BuildPacker
 {
     const EVENT_MESSAGE = 'Pack deployment into archive';
     const ERR_TIMEOUT = 'Packing the archive took too long';
+
+    // For AWS, deref hardlinks when creating tarball "-h"
+    const TAR_FLAGS = '-hvczf';
 }

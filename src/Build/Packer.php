@@ -25,6 +25,8 @@ class Packer
     const ERR_DIST_NOT_FOUND = 'Distribution directory not found';
     const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';
 
+    const TAR_FLAGS = '-vczf';
+
     /**
      * @type EventLogger
      */
@@ -94,7 +96,7 @@ class Packer
             $workingPath = $wholePath;
         }
 
-        $tarCommand = ['tar', '-vczf', $targetFile, '.'];
+        $tarCommand = ['tar', static::TAR_FLAGS, $targetFile, '.'];
         $process = $this->processBuilder
             ->setWorkingDirectory($workingPath)
             ->setArguments($tarCommand)
