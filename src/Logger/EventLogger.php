@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Logger;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use MCP\DataType\Time\Clock;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
@@ -21,9 +21,9 @@ use QL\Hal\Core\Type\EnumType\EventStatusEnum;
 class EventLogger
 {
     /**
-     * @type EntityManager
+     * @type EntityManagerInterface
      */
-    private $entityManager;
+    private $em;
 
     /**
      * @type EventFactory
@@ -46,14 +46,18 @@ class EventLogger
     private $entity;
 
     /**
-     * @param EntityManager $entityManager
+     * @param EntityManagerInterface $em
      * @param EventFactory $factory
      * @param Notifier $notifier
      * @param Clock $clock
      */
-    public function __construct(EntityManager $entityManager, EventFactory $factory, Notifier $notifier, Clock $clock)
-    {
-        $this->entityManager = $entityManager;
+    public function __construct(
+        EntityManagerInterface $em,
+        EventFactory $factory,
+        Notifier $notifier,
+        Clock $clock
+    ) {
+        $this->em = $em;
         $this->factory = $factory;
         $this->notifier = $notifier;
         $this->clock = $clock;
@@ -131,12 +135,6 @@ class EventLogger
         } elseif ($job instanceof Push) {
             $this->startPush($job);
         }
-
-        if ($this->entity) {
-            // immediately merge and flush
-            $this->entityManager->merge($this->entity);
-            $this->entityManager->flush();
-        }
     }
 
     /**
@@ -150,12 +148,12 @@ class EventLogger
         if ($this->isInProgress()) {
             $this->entity->withStatus('Error');
             $this->entity->withEnd($this->clock->read());
-            $this->entityManager->merge($this->entity);
+            $this->em->merge($this->entity);
 
             $this->setStage('failure');
         }
 
-        $this->entityManager->flush();
+        $this->em->flush();
     }
 
     /**
@@ -169,12 +167,12 @@ class EventLogger
         if ($this->isInProgress()) {
             $this->entity->withStatus('Success');
             $this->entity->withEnd($this->clock->read());
-            $this->entityManager->merge($this->entity);
+            $this->em->merge($this->entity);
 
             $this->setStage('success');
         }
 
-        $this->entityManager->flush();
+        $this->em->flush();
     }
 
     /**
@@ -189,7 +187,6 @@ class EventLogger
         if ($this->entity instanceof Build && $this->entity->status() === 'Building') {
             return true;
         }
-
 
         if ($this->entity instanceof Push && $this->entity->status() === 'Pushing') {
             return true;
@@ -227,6 +224,10 @@ class EventLogger
         $this->entity->withStart($this->clock->read());
 
         $this->factory->setBuild($build);
+
+        // immediately merge and flush, so frontend picks up changes
+        $this->em->merge($build);
+        $this->em->flush();
     }
 
     /**
@@ -241,5 +242,15 @@ class EventLogger
         $this->entity->withStart($this->clock->read());
 
         $this->factory->setPush($push);
+
+        // Update deployment with current push
+        if ($deployment = $push->deployment()) {
+            $deployment->withPush($push);
+            $this->em->merge($deployment);
+        }
+
+        // immediately merge and flush, so frontend picks up changes
+        $this->em->merge($push);
+        $this->em->flush();
     }
 }

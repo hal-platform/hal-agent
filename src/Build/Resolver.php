@@ -121,7 +121,6 @@ class Resolver
 
         $this->ensureTempExistsAndIsWritable();
 
-
         return $properties;
     }
 

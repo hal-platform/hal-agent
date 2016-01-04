@@ -252,7 +252,6 @@ class PushCommand extends Command implements OutputAwareInterface
             return $this->failure($output, 1);
         }
 
-        // Set the push to in progress
         $this->prepare($output, $properties);
 
         // move archive to local temp location
@@ -347,6 +346,7 @@ class PushCommand extends Command implements OutputAwareInterface
      */
     private function prepare(OutputInterface $output, array $properties)
     {
+        // Set the push to in progress
         $this->logger->start($properties['push']);
 
         $foundApp = sprintf('Application: <info>%s</info>', $properties['push']->application()->name());
@@ -408,7 +408,7 @@ class PushCommand extends Command implements OutputAwareInterface
      * @param OutputInterface $output
      * @param array $properties
      *
-     * @return boolean
+     * @return bool
      */
     private function unpack(OutputInterface $output, array $properties)
     {
@@ -426,7 +426,7 @@ class PushCommand extends Command implements OutputAwareInterface
      * @param OutputInterface $output
      * @param array $properties
      *
-     * @return boolean
+     * @return bool
      */
     private function read(OutputInterface $output, array &$properties)
     {
@@ -443,7 +443,7 @@ class PushCommand extends Command implements OutputAwareInterface
      * @param OutputInterface $output
      * @param array $properties
      *
-     * @return boolean
+     * @return bool
      */
     private function build(OutputInterface $output, array $properties)
     {

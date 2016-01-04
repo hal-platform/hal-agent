@@ -230,6 +230,7 @@ class BuildCommand extends Command implements OutputAwareInterface
      *
      * @param InputInterface $input
      * @param OutputInterface $output
+     *
      * @return null
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -251,7 +252,6 @@ class BuildCommand extends Command implements OutputAwareInterface
             return $this->failure($output, 1);
         }
 
-        // Set the build to in progress
         $this->prepare($output, $properties);
 
         // download
@@ -310,6 +310,7 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param int $exitCode
+     *
      * @return null
      */
     private function finish(OutputInterface $output, $exitCode)
@@ -330,6 +331,7 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param string $buildId
+     *
      * @return array|null
      */
     private function resolve(OutputInterface $output, $buildId)
@@ -343,10 +345,12 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
+     *
      * @return null
      */
     private function prepare(OutputInterface $output, array $properties)
     {
+        // Set the build to in progress
         $this->logger->start($properties['build']);
 
         $foundApp = sprintf('Application: <info>%s</info>', $properties['build']->application()->name());
@@ -382,7 +386,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
     private function download(OutputInterface $output, array $properties)
     {
@@ -402,7 +407,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
     private function unpack(OutputInterface $output, array $properties)
     {
@@ -418,7 +424,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
     private function read(OutputInterface $output, array &$properties)
     {
@@ -434,7 +441,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
     private function build(OutputInterface $output, array $properties)
     {
@@ -457,7 +465,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
     private function pack(OutputInterface $output, array $properties)
     {
@@ -474,7 +483,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * @param OutputInterface $output
      * @param array $properties
-     * @return boolean
+     *
+     * @return bool
      */
     private function move(OutputInterface $output, array $properties)
     {

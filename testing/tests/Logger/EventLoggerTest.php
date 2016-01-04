@@ -7,10 +7,15 @@
 
 namespace QL\Hal\Agent\Logger;
 
+use Doctrine\ORM\EntityManager;
+use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
+use QL\Hal\Agent\Logger\EventFactory;
+use QL\Hal\Agent\Logger\Notifier;
 
 class EventLoggerTest extends PHPUnit_Framework_TestCase
 {
@@ -21,10 +26,10 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->factory = Mockery::mock('QL\Hal\Agent\Logger\EventFactory');
-        $this->notifier = Mockery::mock('QL\Hal\Agent\Logger\Notifier');
-        $this->clock = Mockery::mock('MCP\DataType\Time\Clock');
+        $this->em = Mockery::mock(EntityManager::class);
+        $this->factory = Mockery::mock(EventFactory::class);
+        $this->notifier = Mockery::mock(Notifier::class);
+        $this->clock = Mockery::mock(Clock::class);
     }
 
     public function testKeepDataIsPassedToNotifier()
@@ -81,12 +86,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
 
     public function testBuildIsSavedAndPersistedWhenStarted()
     {
-        // $this->notifier
-        //     ->shouldReceive('addSubscription')
-        //     ->with('end', 'service.name')
-        //     ->once();
-
-        $build = Mockery::mock(Build::CLASS, ['withStatus' => null, 'withStart' => null]);
+        $build = new Build;
 
         $this->factory
             ->shouldReceive('setBuild')
@@ -107,7 +107,6 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
 
         $logger->start($build);
-        // $logger->addSubscription('end', 'service.name');
     }
 
     public function testEventNameIsAutoResolvedIfJobStarted()
@@ -117,7 +116,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->with('push.end', 'service.name')
             ->once();
 
-        $push = Mockery::mock(Push::CLASS, ['withStatus' => null, 'withStart' => null]);
+        $push = new Push;
 
         $this->factory
             ->shouldReceive('setPush');
@@ -136,12 +135,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
 
     public function testPushIsSuccess()
     {
-        $push = Mockery::mock(Push::CLASS, [
-            'withStatus' => null,
-            'withStart' => null,
-            'withEnd' => null,
-            'status' => 'Pushing'
-        ]);
+        $push = new Push;
 
         $this->notifier
             ->shouldReceive('sendNotifications')
@@ -167,14 +161,33 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $logger->success();
     }
 
+    public function testDeploymentPushIsSavedAtStart()
+    {
+        $deployment = new Deployment;
+        $push = new Push;
+        $push->withDeployment($deployment);
+
+        $this->factory
+            ->shouldReceive('setPush');
+        $this->clock
+            ->shouldReceive('read');
+        $this->em
+            ->shouldReceive('merge');
+        $this->em
+            ->shouldReceive('flush');
+
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+
+        $this->assertSame(null, $deployment->push());
+
+        $logger->start($push);
+
+        $this->assertSame($push, $deployment->push());
+    }
+
     public function testBuildIsFailure()
     {
-        $build = Mockery::mock(Build::CLASS, [
-            'withStatus' => null,
-            'withStart' => null,
-            'withEnd' => null,
-            'status' => 'Building'
-        ]);
+        $build = new Build;
 
         $this->notifier
             ->shouldReceive('sendNotifications')
