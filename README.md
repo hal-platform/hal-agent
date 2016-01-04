@@ -127,11 +127,24 @@ Unix builds require a docker-supported build server. `boot2docker` can be used f
 
 ## Development Setup
 
-For local development, you will want to setup boot2docker as your build server.
+For local development, you will want to setup boot2docker or docker machine as your build server.
 
-1. Install rsync with `tce-load`
-    - `tce-load -wi rsync`
-2. Create `/docker-images` directory within boot2docker
+1. Add ssh key location to `%ssh.credentials%` in `config.env.yml` for docker cert file for docker VM.
+  > You will likely want to add a hosts entry from `$(docker-machine ip $DOCKER_MACHINE_NAME)` to `$DOCKER_MACHINE_NAME`.
+  > ```yaml
+  >  ssh.credentials:
+  >     - ['%build.unix.remoteUser%', '*', 'key:/Users/$USERNAME/.docker/machine/machines/$DOCKER_MACHINE_NAME/id_rsa']
+  >     - # unix build server credentials
+  >     - # windows build server credentials
+  >     - # rsync credentials
+  > ```
+  > Don't forget to replace `$USERNAME` and `DOCKER_MACHINE_NAME`.
+
+2. Install rsync in Docker VM with `tce-load`
+    > `tce-load -wi rsync`
+
+3. Create `/var/hal9000` directory within Docker VM.
+4. Create `/docker-images` directory within Docker VM.
 
 ### Unix Build Server Preparation
 
