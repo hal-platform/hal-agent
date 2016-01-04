@@ -3,44 +3,42 @@ services:
     push.resolver:
         class: 'QL\Hal\Agent\Push\Resolver'
         arguments:
-            - @logger.event
-            - @doctrine.em
-            - @clock
-            - @utility.environment.resolver
-            - @encrypted.resolver
+            - '@logger.event'
+            - '@doctrine.em'
+            - '@clock'
+            - '@utility.environment.resolver'
+            - '@encrypted.resolver'
             - %push.rsync.remoteUser%
             - %github.baseurl.site%
         calls:
-            - ['setLocalTempPath', [%environment.temp%]]
-            - ['setArchivePath', [%environment.archive%]]
+            - ['setLocalTempPath', ['%environment.temp%']]
+            - ['setArchivePath', ['%environment.archive%']]
 
     push.mover:
         class: 'QL\Hal\Agent\Push\Mover'
-        arguments:
-            - @logger.event
-            - @utility.filesystem
+        arguments: ['@logger.event', '@utility.filesystem']
 
     push.unpacker:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
-            - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - @utility.filesystem
-            - @yaml.dumper
-            - %timeout.filepacking%
+            - '@logger.event'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.filesystem'
+            - '@yaml.dumper'
+            - '%timeout.filepacking%'
 
     push.configuration.reader:
         class: 'QL\Hal\Agent\Build\ConfigurationReader'
         arguments:
-            - @logger.event
-            - @utility.filesystem
-            - @yaml.parser
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@yaml.parser'
 
     push.builder:
         class: 'QL\Hal\Agent\Build\DelegatingBuilder'
         arguments:
-            - @logger.event
-            - @service_container
+            - '@logger.event'
+            - '@service_container'
             -
                 unix: build.unix.handler
                 windows: build.windows.handler
@@ -48,8 +46,8 @@ services:
     push.deployer:
         class: 'QL\Hal\Agent\Push\DelegatingDeployer'
         arguments:
-            - @logger.event
-            - @service_container
+            - '@logger.event'
+            - '@service_container'
             -
                 rsync: push.rsync.deployer
                 eb: push.eb.deployer
@@ -64,12 +62,12 @@ services:
     push.eb.deployer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Deployer'
         arguments:
-            - @logger.event
-            - @push.aws.authenticator
-            - @push.eb.healthchecker
-            - @push.eb.packer
-            - @push.eb.uploader
-            - @push.eb.pusher
+            - '@logger.event'
+            - '@push.aws.authenticator'
+            - '@push.eb.healthchecker'
+            - '@push.eb.packer'
+            - '@push.eb.uploader'
+            - '@push.eb.pusher'
 
     push.eb.healthchecker:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
@@ -77,29 +75,26 @@ services:
     push.eb.packer:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Packer'
         arguments:
-            - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.push%
+            - '@logger.event'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.push%'
 
     push.eb.uploader:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Uploader'
-        arguments:
-            - @logger.event
+        arguments: ['@logger.event']
         calls:
             - ['allowOverwrite', [false]]
 
     push.eb.pusher:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Pusher'
         arguments:
-            - @logger.event
-            - @push.eb.healthchecker
-            - @push.eb.waiter
+            - '@logger.event'
+            - '@push.eb.healthchecker'
+            - '@push.eb.waiter'
 
     push.eb.waiter:
         class: 'QL\Hal\Agent\Waiter\Waiter'
-        arguments:
-            - %push.eb.waiter.interval%
-            - %push.eb.waiter.max%
+        arguments: ['%push.eb.waiter.interval%', '%push.eb.waiter.max%']
 
     ####################################################################################################################
     # rsync
@@ -108,46 +103,45 @@ services:
     push.rsync.deployer:
         class: 'QL\Hal\Agent\Push\Rsync\Deployer'
         arguments:
-            - @logger.event
-            - @push.rsync.delta
-            - @push.rsync.serverCommand
-            - @push.rsync.pusher
+            - '@logger.event'
+            - '@push.rsync.delta'
+            - '@push.rsync.serverCommand'
+            - '@push.rsync.pusher'
 
     push.rsync.delta:
         class: 'QL\Hal\Agent\Push\Rsync\CodeDelta'
         arguments:
-            - @logger.event
-            - @push.rsync.delta.remoter
-            - @yaml.parser
-            - @github.commits
-            - %push.rsync.remoteUser%
+            - '@logger.event'
+            - '@push.rsync.delta.remoter'
+            - '@yaml.parser'
+            - '@github.commits'
+            - '%push.rsync.remoteUser%'
 
     push.rsync.pusher:
         class: 'QL\Hal\Agent\Push\Rsync\Pusher'
         arguments:
-            - @logger.event
-            - @ssh.filemanager
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.push%
+            - '@logger.event'
+            - '@ssh.filemanager'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.push%'
 
     push.rsync.serverCommand:
         class: 'QL\Hal\Agent\Push\Rsync\ServerCommand'
-        arguments:
-            - @push.rsync.standard.remoter
+        arguments: ['@push.rsync.standard.remoter']
 
     push.rsync.standard.remoter:
         class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - @logger.event
-            - @ssh.manager
-            - %timeout.push.serverCommand%
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.push.serverCommand%'
 
     push.rsync.delta.remoter:
         class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - @logger.event
-            - @ssh.manager
-            - %timeout.standard%
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.standard%'
 
     ####################################################################################################################
     # ec2
@@ -156,10 +150,10 @@ services:
     push.ec2.deployer:
         class: 'QL\Hal\Agent\Push\EC2\Deployer'
         arguments:
-            - @logger.event
-            - @push.aws.authenticator
-            - @push.ec2.instance.finder
-            - @push.ec2.pusher
+            - '@logger.event'
+            - '@push.aws.authenticator'
+            - '@push.ec2.instance.finder'
+            - '@push.ec2.pusher'
 
     push.ec2.instance.finder:
         class: 'QL\Hal\Agent\Push\EC2\InstanceFinder'
@@ -167,10 +161,10 @@ services:
     push.ec2.pusher:
         class: 'QL\Hal\Agent\Push\EC2\Pusher'
         arguments:
-            - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %aws.ec2.user%
-            - %timeout.push.ec2%
+            - '@logger.event'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%aws.ec2.user%'
+            - '%timeout.push.ec2%'
 
     ####################################################################################################################
     # s3
@@ -179,23 +173,22 @@ services:
     push.s3.deployer:
         class: 'QL\Hal\Agent\Push\S3\Deployer'
         arguments:
-            - @logger.event
-            - @push.aws.authenticator
-            - @push.s3.packer
-            - @push.s3.uploader
+            - '@logger.event'
+            - '@push.aws.authenticator'
+            - '@push.s3.packer'
+            - '@push.s3.uploader'
 
     push.s3.packer:
         class: 'QL\Hal\Agent\Push\S3\Packer'
         arguments:
-            - @logger.event
-            - @utility.filesystem
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filepacking%
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filepacking%'
 
     push.s3.uploader:
         class: 'QL\Hal\Agent\Push\S3\Uploader'
-        arguments:
-            - @logger.event
+        arguments: ['@logger.event']
 
     ####################################################################################################################
     # codedeploy
@@ -204,12 +197,12 @@ services:
     push.cd.deployer:
         class: 'QL\Hal\Agent\Push\CodeDeploy\Deployer'
         arguments:
-            - @logger.event
-            - @push.aws.authenticator
-            - @push.cd.healthchecker
-            - @push.cd.packer
-            - @push.cd.uploader
-            - @push.cd.pusher
+            - '@logger.event'
+            - '@push.aws.authenticator'
+            - '@push.cd.healthchecker'
+            - '@push.cd.packer'
+            - '@push.cd.uploader'
+            - '@push.cd.pusher'
 
     push.cd.healthchecker:
         class: 'QL\Hal\Agent\Push\CodeDeploy\HealthChecker'
@@ -217,30 +210,29 @@ services:
     push.cd.packer:
         class: 'QL\Hal\Agent\Push\CodeDeploy\Packer'
         arguments:
-            - @logger.event
-            - @utility.filesystem
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filepacking%
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filepacking%'
 
     push.cd.uploader:
         class: 'QL\Hal\Agent\Push\CodeDeploy\Uploader'
-        arguments:
-            - @logger.event
+        arguments: ['@logger.event']
         calls:
             - ['allowOverwrite', [false]]
 
     push.cd.pusher:
         class: 'QL\Hal\Agent\Push\CodeDeploy\Pusher'
         arguments:
-            - @logger.event
-            - @push.cd.healthchecker
-            - @push.cd.waiter
+            - '@logger.event'
+            - '@push.cd.healthchecker'
+            - '@push.cd.waiter'
 
     push.cd.waiter:
         class: 'QL\Hal\Agent\Waiter\Waiter'
         arguments:
-            - %push.cd.waiter.interval%
-            - %push.cd.waiter.max%
+            - '%push.cd.waiter.interval%'
+            - '%push.cd.waiter.max%'
 
     ####################################################################################################################
     # private services used only by push actions
@@ -249,9 +241,9 @@ services:
     push.aws.authenticator:
         class: 'QL\Hal\Agent\Push\AWSAuthenticator'
         arguments:
-            - @logger.event
-            - @service_container
-            - @aws
+            - '@logger.event'
+            - '@service_container'
+            - '@aws'
 
     yaml.dumper:
         class: 'Symfony\Component\Yaml\Dumper'

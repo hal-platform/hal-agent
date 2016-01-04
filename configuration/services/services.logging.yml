@@ -10,19 +10,19 @@ services:
     logger.event:
         class: 'QL\Hal\Agent\Logger\EventLogger'
         arguments:
-            - @doctrine.em
-            - @logger.event.factory
-            - @logger.notifier
-            - @clock
+            - '@doctrine.em'
+            - '@logger.event.factory'
+            - '@logger.notifier'
+            - '@clock'
     logger.event.factory:
         class: 'QL\Hal\Agent\Logger\EventFactory'
-        arguments: [@doctrine.em, @doctrine.random]
+        arguments: ['@doctrine.em', '@doctrine.random']
         calls:
-            - ['setRedisHandler', [@redis]]
+            - ['setRedisHandler', ['@redis']]
 
     logger.notifier:
         class: 'QL\Hal\Agent\Logger\Notifier'
-        arguments: [@service_container]
+        arguments: ['@service_container']
 
     ####################################################################################################################
     # custom notifiers
@@ -30,30 +30,33 @@ services:
 
     notifier.email:
         class: 'QL\Hal\Agent\Notifier\EmailNotifier'
-        arguments: [@emailer, @emailer.message, @notifier.email.formatter]
+        arguments:
+            - '@emailer'
+            - '@emailer.message'
+            - '@notifier.email.formatter'
 
     notifier.email.formatter:
         class: 'QL\Hal\Agent\Notifier\EmailFormatter'
-        arguments: [@notifier.email.template]
+        arguments: ['@notifier.email.template']
 
     notifier.email.template:
         class: 'Twig_Template'
-        factory: [@notifier.email.environment, 'loadTemplate']
+        factory: ['@notifier.email.environment', 'loadTemplate']
         arguments: ['email.twig']
 
     notifier.email.environment:
         class: 'Twig_Environment'
-        arguments: [@notifier.twig.loader]
+        arguments: ['@notifier.twig.loader']
         calls:
-            - ['addGlobal', ['hal_url', %hal.baseurl%]]
-            - ['addGlobal', ['github_url', %github.baseurl.site%]]
+            - ['addGlobal', ['hal_url', '%hal.baseurl%']]
+            - ['addGlobal', ['github_url', '%github.baseurl.site%']]
     notifier.twig.loader:
         class: 'Twig_Loader_Filesystem'
-        arguments: [@notifier.twig.loader.path]
+        arguments: ['@notifier.twig.loader.path']
     notifier.twig.loader.path:
         class: 'WUT'
         factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
-        arguments: [@root, '/configuration/templates']
+        arguments: ['@root', '/configuration/templates']
 
     ####################################################################################################################
     # email logger services
@@ -61,16 +64,16 @@ services:
 
     emailer:
         class: 'Swift_Mailer'
-        arguments: [@emailer.transport]
+        arguments: ['@emailer.transport']
     emailer.transport:
         class: 'Swift_SmtpTransport'
-        arguments: [%email.server%]
+        arguments: ['%email.server%']
     emailer.message:
         class: 'Swift_Message'
         calls:
-            - ['setFrom', [%email.from%, %email.from.name%]]
-            - ['setReplyTo', [%email.reply%]]
-            - ['setCc', [%email.notify%]]
+            - ['setFrom', ['%email.from%', '%email.from.name%']]
+            - ['setReplyTo', ['%email.reply%']]
+            - ['setCc', ['%email.notify%']]
             - ['setContentType', ['text/html']]
             - ['setSubject', ['Critical Error']]
             # to, subject will be set at runtime
@@ -82,22 +85,22 @@ services:
     # subscriber to symfony/console event system to prepare mcp logger
     logger.mcp.subscriber:
         class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
-        arguments: [@logger.mcp.factory]
+        arguments: ['@logger.mcp.factory']
 
     logger.mcp:
         class: 'MCP\Logger\Logger'
-        arguments: [@logger.mcp.service, @logger.mcp.factory]
+        arguments: ['@logger.mcp.service', '@logger.mcp.factory']
 
     logger.mcp.service:
         class: 'MCP\Logger\Service\Guzzle5Service'
         arguments:
-            - @logger.mcp.guzzle
-            - @logger.mcp.renderer
-            - @logger.mcp.url
+            - '@logger.mcp.guzzle'
+            - '@logger.mcp.renderer'
+            - '@logger.mcp.url'
 
     logger.mcp.url:
         class: 'QL\UriTemplate\UriTemplate'
-        arguments: [%logger.mcp.host%]
+        arguments: ['%logger.mcp.host%']
     logger.mcp.guzzle:
         class: 'GuzzleHttp\Client'
     logger.mcp.renderer:
@@ -105,6 +108,6 @@ services:
 
     logger.mcp.factory:
         class: 'MCP\Logger\Adapter\Psr\MessageFactory'
-        arguments: [@clock]
+        arguments: ['@clock']
         calls:
-            - ['setDefaultProperty', ['applicationId', %application.id%]]
+            - ['setDefaultProperty', ['applicationId', '%application.id%']]

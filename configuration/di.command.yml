@@ -6,42 +6,42 @@ services:
 
     lazy.command.build.create:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['build:create', 'command.build.create', @service_container]
+        arguments: ['build:create', 'command.build.create', '@service_container']
     lazy.command.build.build:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['build:build', 'command.build.build', @service_container]
+        arguments: ['build:build', 'command.build.build', '@service_container']
     lazy.command.build.remove:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['build:remove', 'command.build.remove', @service_container]
+        arguments: ['build:remove', 'command.build.remove', '@service_container']
 
     lazy.command.push.create:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['push:create', 'command.push.create', @service_container]
+        arguments: ['push:create', 'command.push.create', '@service_container']
     lazy.command.push.push:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['push:push', 'command.push.push', @service_container]
+        arguments: ['push:push', 'command.push.push', '@service_container']
 
     lazy.command.builds.list:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['builds:list', 'command.builds.list', @service_container]
+        arguments: ['builds:list', 'command.builds.list', '@service_container']
 
     lazy.command.worker.build:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['worker:build', 'command.worker.build', @service_container]
+        arguments: ['worker:build', 'command.worker.build', '@service_container']
     lazy.command.worker.push:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['worker:push', 'command.worker.push', @service_container]
+        arguments: ['worker:push', 'command.worker.push', '@service_container']
 
     lazy.command.docker.refresh:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['docker:refresh', 'command.docker.refresh', @service_container]
+        arguments: ['docker:refresh', 'command.docker.refresh', '@service_container']
     lazy.command.docker.status:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['docker:status', 'command.docker.status', @service_container]
+        arguments: ['docker:status', 'command.docker.status', '@service_container']
 
     lazy.command.server.connections:
         class: 'QL\Hal\Agent\Command\LazyCommand'
-        arguments: ['server:connections', 'command.server.connections', @service_container]
+        arguments: ['server:connections', 'command.server.connections', '@service_container']
 
     ####################################################################################################################
     # commands
@@ -51,60 +51,60 @@ services:
         class: 'QL\Hal\Agent\Command\CreateBuildCommand'
         arguments:
             - 'build:create'
-            - @doctrine.em
-            - @clock
-            - @utility.referenceResolver
-            - @utility.id.generator
+            - '@doctrine.em'
+            - '@clock'
+            - '@utility.referenceResolver'
+            - '@utility.id.generator'
     command.build.build:
         class: 'QL\Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
-            - @logger.event
-            - @build.resolver
-            - @build.downloader
-            - @build.unpacker
-            - @build.configuration.reader
-            - @build.builder
-            - @build.packer
-            - @build.mover
-            - @utility.helper.downloadProgress
-            - @utility.filesystem
-            - @ssh.manager
+            - '@logger.event'
+            - '@build.resolver'
+            - '@build.downloader'
+            - '@build.unpacker'
+            - '@build.configuration.reader'
+            - '@build.builder'
+            - '@build.packer'
+            - '@build.mover'
+            - '@utility.helper.downloadProgress'
+            - '@utility.filesystem'
+            - '@ssh.manager'
     command.build.remove:
         class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
         arguments:
             - 'build:remove'
-            - @doctrine.em
-            - @utility.filesystem
+            - '@doctrine.em'
+            - '@utility.filesystem'
         calls:
-            - ['setArchivePath', [%environment.archive%]]
+            - ['setArchivePath', ['%environment.archive%']]
     command.builds.list:
         class: 'QL\Hal\Agent\Command\ListBuildsCommand'
         arguments:
             - 'builds:list'
-            - @doctrine.em
-            - @utility.filesystem
-            - %environment.archive%
+            - '@doctrine.em'
+            - '@utility.filesystem'
+            - '%environment.archive%'
     command.push.create:
         class: 'QL\Hal\Agent\Command\CreatePushCommand'
         arguments:
             - 'push:create'
-            - @doctrine.em
-            - @clock
-            - @utility.id.generator
+            - '@doctrine.em'
+            - '@clock'
+            - '@utility.id.generator'
     command.push.push:
         class: 'QL\Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
-            - @logger.event
-            - @push.resolver
-            - @push.mover
-            - @push.unpacker
-            - @push.configuration.reader
-            - @push.builder
-            - @push.deployer
-            - @utility.filesystem
-            - @utility.github.deploymenter
+            - '@logger.event'
+            - '@push.resolver'
+            - '@push.mover'
+            - '@push.unpacker'
+            - '@push.configuration.reader'
+            - '@push.builder'
+            - '@push.deployer'
+            - '@utility.filesystem'
+            - '@utility.github.deploymenter'
 
     ####################################################################################################################
     # workers
@@ -114,18 +114,18 @@ services:
         class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
-            - @doctrine.em
-            - @utility.process.builder= # = signifies a prototype service
-            - @logger.mcp
-            - @root
+            - '@doctrine.em'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '@logger.mcp'
+            - '@root'
     command.worker.push:
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
-            - @doctrine.em
-            - @utility.process.builder= # = signifies a prototype service
-            - @logger.mcp
-            - @root
+            - '@doctrine.em'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '@logger.mcp'
+            - '@root'
 
     ####################################################################################################################
     # utility
@@ -135,37 +135,37 @@ services:
         class: 'QL\Hal\Agent\Command\Docker\UpdateSourcesCommand'
         arguments:
             - 'docker:refresh'
-            - @ssh.filemanager
-            - @utility.process.builder= # = signifies a prototype service
-            - @github.archive
-            - @doctrine.em
-            - @clock
-            - @doctrine.random
-            - %environment.temp%
-            - %build.unix.remoteUser%
-            - %build.unix.server%
-            - %docker.source.path%
-            - %docker.source.repository%
-            - %docker.source.reference%
+            - '@ssh.filemanager'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '@github.archive'
+            - '@doctrine.em'
+            - '@clock'
+            - '@doctrine.random'
+            - '%environment.temp%'
+            - '%build.unix.remoteUser%'
+            - '%build.unix.server%'
+            - '%docker.source.path%'
+            - '%docker.source.repository%'
+            - '%docker.source.reference%'
     command.docker.status:
         class: 'QL\Hal\Agent\Command\Docker\CheckStatusCommand'
         arguments:
             - 'docker:status'
-            - @ssh.manager
-            - @redis
-            - @clock
-            - %build.unix.remoteUser%
-            - %build.unix.server%
-            - %docker.option.sudo%
-            - %environment.temp%
-            - %build.unix.temp%
+            - '@ssh.manager'
+            - '@redis'
+            - '@clock'
+            - '%build.unix.remoteUser%'
+            - '%build.unix.server%'
+            - '%docker.option.sudo%'
+            - '%environment.temp%'
+            - '%build.unix.temp%'
 
     command.server.connections:
         class: 'QL\Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
         arguments:
             - 'server:connections'
-            - @doctrine.em
-            - @ssh.manager
-            - @redis
-            - @clock
-            - %push.rsync.remoteUser%
+            - '@doctrine.em'
+            - '@ssh.manager'
+            - '@redis'
+            - '@clock'
+            - '%push.rsync.remoteUser%'

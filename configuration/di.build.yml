@@ -2,34 +2,34 @@ services:
     build.resolver:
         class: 'QL\Hal\Agent\Build\Resolver'
         arguments:
-            - @doctrine.em
-            - @utility.environment.resolver
-            - @encrypted.resolver
+            - '@doctrine.em'
+            - '@utility.environment.resolver'
+            - '@encrypted.resolver'
         calls:
-            - ['setLocalTempPath', [%environment.temp%]]
-            - ['setArchivePath', [%environment.archive%]]
+            - ['setLocalTempPath', ['%environment.temp%']]
+            - ['setArchivePath', ['%environment.archive%']]
 
     build.downloader:
         class: 'QL\Hal\Agent\Build\Downloader'
-        arguments: [@logger.event, @github.archive]
+        arguments: ['@logger.event', '@github.archive']
     build.unpacker:
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
-            - @logger.event
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filepacking%
+            - '@logger.event'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filepacking%'
     build.configuration.reader:
         class: 'QL\Hal\Agent\Build\ConfigurationReader'
         arguments:
-            - @logger.event
-            - @utility.filesystem
-            - @yaml.parser
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@yaml.parser'
 
     build.builder:
         class: 'QL\Hal\Agent\Build\DelegatingBuilder'
         arguments:
-            - @logger.event
-            - @service_container
+            - '@logger.event'
+            - '@service_container'
             -
                 unix: build.unix.handler
                 windows: build.windows.handler
@@ -39,122 +39,119 @@ services:
     build.packer:
         class: 'QL\Hal\Agent\Build\Packer'
         arguments:
-            - @logger.event
-            - @utility.filesystem
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filepacking%
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filepacking%'
     build.mover:
         class: 'QL\Hal\Agent\Build\Mover'
-        arguments:
-            - @logger.event
-            - @utility.filesystem
+        arguments: ['@logger.event', '@utility.filesystem']
 
     # unix
     build.unix.handler:
         class: 'QL\Hal\Agent\Build\Unix\UnixBuildHandler'
         arguments:
-            - @logger.event
-            - @build.unix.exporter
-            - @build.unix.builder
-            - @build.unix.importer
-            - @build.unix.cleaner
-            - @encrypted.resolver
-            - %docker.default.image%
+            - '@logger.event'
+            - '@build.unix.exporter'
+            - '@build.unix.builder'
+            - '@build.unix.importer'
+            - '@build.unix.cleaner'
+            - '@encrypted.resolver'
+            - '%docker.default.image%'
 
     build.unix.exporter:
         class: 'QL\Hal\Agent\Build\Unix\Exporter'
         arguments:
-            - @logger.event
-            - @ssh.filemanager
-            - @build.unix.standard.remoter
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filetransfer%
+            - '@logger.event'
+            - '@ssh.filemanager'
+            - '@build.unix.standard.remoter'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filetransfer%'
 
     build.unix.builder:
         class: 'QL\Hal\Agent\Build\Unix\DockerBuilder'
         arguments:
-            - @logger.event
-            - @build.unix.standard.remoter
-            - @build.unix.build.remoter
-            - %docker.source.path%
-        configurator: [@build.unix.builder.configurator, 'configure']
+            - '@logger.event'
+            - '@build.unix.standard.remoter'
+            - '@build.unix.build.remoter'
+            - '%docker.source.path%'
+        configurator: ['@build.unix.builder.configurator', 'configure']
 
     build.unix.builder.configurator:
         class: 'QL\Hal\Agent\Build\Unix\DockerBuilderConfigurator'
-        arguments: [%docker.option.sudo%, %docker.option.debug%]
+        arguments: ['%docker.option.sudo%', '%docker.option.debug%']
 
     build.unix.importer:
         class: 'QL\Hal\Agent\Build\Unix\Importer'
         arguments:
-            - @logger.event
-            - @ssh.filemanager
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filetransfer%
+            - '@logger.event'
+            - '@ssh.filemanager'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filetransfer%'
 
     build.unix.cleaner:
         class: 'QL\Hal\Agent\Build\Unix\Cleaner'
-        arguments: [@build.unix.standard.remoter]
+        arguments: ['@build.unix.standard.remoter']
 
     build.unix.build.remoter:
         class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - @logger.event
-            - @ssh.manager
-            - %timeout.build%
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.build%'
 
     build.unix.standard.remoter:
         class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - @logger.event
-            - @ssh.manager
-            - %timeout.standard%
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.standard%'
 
     # windows
     build.windows.handler:
         class: 'QL\Hal\Agent\Build\Windows\WindowsBuildHandler'
         arguments:
-            - @logger.event
-            - @build.windows.exporter
-            - @build.windows.builder
-            - @build.windows.importer
-            - @build.windows.cleaner
-            - @encrypted.resolver
+            - '@logger.event'
+            - '@build.windows.exporter'
+            - '@build.windows.builder'
+            - '@build.windows.importer'
+            - '@build.windows.cleaner'
+            - '@encrypted.resolver'
 
     build.windows.exporter:
         class: 'QL\Hal\Agent\Build\Windows\Exporter'
         arguments:
-            - @logger.event
-            - @ssh.filemanager
-            - @build.windows.standard.remoter
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filetransfer%
+            - '@logger.event'
+            - '@ssh.filemanager'
+            - '@build.windows.standard.remoter'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filetransfer%'
 
     build.windows.builder:
         class: 'QL\Hal\Agent\Build\Windows\Builder'
-        arguments:
-            - @build.windows.build.remoter
+        arguments: ['@build.windows.build.remoter']
 
     build.windows.importer:
         class: 'QL\Hal\Agent\Build\Windows\Importer'
         arguments:
-            - @logger.event
-            - @ssh.filemanager
-            - @utility.process.builder= # = signifies a prototype service
-            - %timeout.filetransfer%
+            - '@logger.event'
+            - '@ssh.filemanager'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '%timeout.filetransfer%'
 
     build.windows.cleaner:
         class: 'QL\Hal\Agent\Build\Windows\Cleaner'
-        arguments: [@build.windows.standard.remoter]
+        arguments: ['@build.windows.standard.remoter']
 
     build.windows.build.remoter:
         class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - @logger.event
-            - @ssh.manager
-            - %timeout.build%
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.build%'
     build.windows.standard.remoter:
         class: 'QL\Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - @logger.event
-            - @ssh.manager
-            - %timeout.standard%
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.standard%'

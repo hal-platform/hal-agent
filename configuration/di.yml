@@ -5,6 +5,7 @@ imports:
     - resource: services/services.doctrine.yml
     - resource: services/services.github.yml
     - resource: services/services.logging.yml
+
 services:
 
     root:
@@ -12,25 +13,25 @@ services:
 
     application:
         class: 'Symfony\Component\Console\Application'
-        arguments: [%application.name%, %application.version%]
+        arguments: ['%application.name%', '%application.version%']
         calls:
-            - ['add', [@lazy.command.build.create]]
-            - ['add', [@lazy.command.build.build]]
-            - ['add', [@lazy.command.build.remove]]
-            - ['add', [@lazy.command.push.create]]
-            - ['add', [@lazy.command.push.push]]
-            - ['add', [@lazy.command.builds.list]]
-            - ['add', [@lazy.command.worker.build]]
-            - ['add', [@lazy.command.worker.push]]
-            - ['add', [@lazy.command.docker.refresh]]
-            - ['add', [@lazy.command.docker.status]]
-            - ['add', [@lazy.command.server.connections]]
-            - ['setDispatcher', [@dispatcher]]
+            - ['add', ['@lazy.command.build.create']]
+            - ['add', ['@lazy.command.build.build']]
+            - ['add', ['@lazy.command.build.remove']]
+            - ['add', ['@lazy.command.push.create']]
+            - ['add', ['@lazy.command.push.push']]
+            - ['add', ['@lazy.command.builds.list']]
+            - ['add', ['@lazy.command.worker.build']]
+            - ['add', ['@lazy.command.worker.push']]
+            - ['add', ['@lazy.command.docker.refresh']]
+            - ['add', ['@lazy.command.docker.status']]
+            - ['add', ['@lazy.command.server.connections']]
+            - ['setDispatcher', ['@dispatcher']]
     dispatcher:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
-            - ['addSubscriber', [@logger.mcp.subscriber]]
-            - ['addSubscriber', [@utility.exceptionHandler]]
+            - ['addSubscriber', ['@logger.mcp.subscriber']]
+            - ['addSubscriber', ['@utility.exceptionHandler']]
 
     clock:
         class: 'MCP\DataType\Time\Clock'
@@ -38,21 +39,21 @@ services:
 
     ssh.manager:
         class: 'QL\Hal\Agent\Remoting\SSHSessionManager'
-        arguments: [@logger.event, @ssh.wallet]
+        arguments: ['@logger.event', '@ssh.wallet']
 
     ssh.filemanager:
         class: 'QL\Hal\Agent\Remoting\FileSyncManager'
-        arguments: [@ssh.wallet]
+        arguments: ['@ssh.wallet']
 
     ssh.wallet:
         class: 'QL\Hal\Agent\Remoting\CredentialWallet'
         calls:
-            - ['importCredentials', [%ssh.credentials%]]
+            - ['importCredentials', ['%ssh.credentials%']]
 
     redis:
         class: 'Predis\Client'
         arguments:
-            - %redis.server%
+            - '%redis.server%'
             - {prefix: '%redis.prefix%:'}
 
     ####################################################################################################################
@@ -61,7 +62,7 @@ services:
 
     utility.helper.downloadProgress:
         class: 'QL\Hal\Agent\Symfony\GuzzleDownloadProgress'
-        arguments: [@github.guzzleHttpClient]
+        arguments: ['@github.guzzleHttpClient']
 
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
@@ -73,38 +74,35 @@ services:
     utility.referenceResolver:
         class: 'QL\Hal\Agent\Github\ReferenceResolver'
         arguments:
-            - @github.references
-            - @github.commits
-            - @github.pullRequests
+            - '@github.references'
+            - '@github.commits'
+            - '@github.pullRequests'
     utility.forker:
         class: 'QL\Hal\Agent\Helper\ForkHelper'
     utility.exceptionHandler:
         class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
-        arguments: [@logger.mcp]
+        arguments: ['@logger.mcp']
 
     utility.id.generator:
         class: 'QL\Hal\Core\JobIdGenerator'
         arguments:
-            - %application.major.version%
-            - %unique.alphabet%
-            - %unique.size%
+            - '%application.major.version%'
+            - '%unique.alphabet%'
+            - '%unique.size%'
 
     yaml.parser:
         class: 'Symfony\Component\Yaml\Parser'
 
     utility.environment.resolver:
         class: 'QL\Hal\Agent\Utility\BuildEnvironmentResolver'
-        arguments:
-            - @utility.process.builder= # = signifies a prototype service
+        arguments: ['@utility.process.builder='] # = signifies a prototype service
         calls:
-            - ['setWindowsBuilder', [%build.windows.remoteUser%, %build.windows.server%, %build.windows.temp%]]
-            - ['setUnixBuilder', [%build.unix.remoteUser%, %build.unix.server%, %build.unix.temp%]]
+            - ['setWindowsBuilder', ['%build.windows.remoteUser%', '%build.windows.server%', '%build.windows.temp%']]
+            - ['setUnixBuilder', ['%build.unix.remoteUser%', '%build.unix.server%', '%build.unix.temp%']]
 
     utility.github.deploymenter:
         class: 'QL\Hal\Agent\Utility\GithubDeploymenter'
-        arguments:
-            - @github.deployments
-            - %hal.baseurl%
+        arguments: ['@github.deployments', '%hal.baseurl%']
 
     guzzle:
         class: 'GuzzleHttp\Client'
@@ -121,22 +119,20 @@ services:
 
     encrypter.factory:
         class: 'QL\Hal\Core\Crypto\CryptoFactory'
-        arguments:
-            - @encrypter.encryptedkey.squished
-            - %encrypter.symmetricKeyPath%
+        arguments: ['@encrypter.encryptedkey.squished', '%encrypter.symmetricKeyPath%']
 
     decrypter:
         class: 'QL\Hal\Core\Crypto\Decrypter'
-        factory: [@encrypter.factory, 'getAsymmetricDecrypter']
+        factory: ['@encrypter.factory', 'getAsymmetricDecrypter']
 
     encrypter.encryptedkey.squished:
         class: 'DERP'
         factory: ['QL\Hal\Agent\Utility\Stringify', 'squish']
-        arguments: [%encrypter.encryptedkey%]
+        arguments: ['%encrypter.encryptedkey%']
 
     encrypted.resolver:
         class: 'QL\Hal\Agent\Utility\EncryptedPropertyResolver'
         arguments:
-            - @doctrine.em
-            - @logger.event
-            - @service_container
+            - '@doctrine.em'
+            - '@logger.event'
+            - '@service_container'
