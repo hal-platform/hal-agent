@@ -161,30 +161,6 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $logger->success();
     }
 
-    public function testDeploymentPushIsSavedAtStart()
-    {
-        $deployment = new Deployment;
-        $push = new Push;
-        $push->withDeployment($deployment);
-
-        $this->factory
-            ->shouldReceive('setPush');
-        $this->clock
-            ->shouldReceive('read');
-        $this->em
-            ->shouldReceive('merge');
-        $this->em
-            ->shouldReceive('flush');
-
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
-
-        $this->assertSame(null, $deployment->push());
-
-        $logger->start($push);
-
-        $this->assertSame($push, $deployment->push());
-    }
-
     public function testBuildIsFailure()
     {
         $build = new Build;

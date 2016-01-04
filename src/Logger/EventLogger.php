@@ -243,12 +243,6 @@ class EventLogger
 
         $this->factory->setPush($push);
 
-        // Update deployment with current push
-        if ($deployment = $push->deployment()) {
-            $deployment->withPush($push);
-            $this->em->merge($deployment);
-        }
-
         // immediately merge and flush, so frontend picks up changes
         $this->em->merge($push);
         $this->em->flush();
