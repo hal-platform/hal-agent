@@ -20,7 +20,7 @@ parameters:
     build.unix.remoteUser: 'docker'
 
     # Unix build server
-    build.unix.server: 'localhost:2022'
+    build.unix.server: 'docker'
 
     # temporary scratch on the build server
     build.unix.temp: '/var/hal9000'
@@ -75,7 +75,7 @@ parameters:
     ############################################################################
 
     ssh.credentials:
-        - ['%build.unix.remoteUser%', '*', 'key:/path/to/id_boot2docker']
+        - ['%build.unix.remoteUser%', '*', 'key:/Users/$USERNAME/.docker/machine/machines/$DOCKER_MACHINE_NAME/id_rsa']
         - ['%build.windows.remoteUser%', '*', 'key:/path/to/id_rsa']
         - ['%push.rsync.remoteUser%', '*', 'key:/path/to/id_rsa']
 
