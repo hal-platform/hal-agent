@@ -13,6 +13,7 @@ services:
             - '@doctrine.em'
             - '@logger.event.factory'
             - '@logger.notifier'
+            - '@logger.process.handler'
             - '@clock'
     logger.event.factory:
         class: 'QL\Hal\Agent\Logger\EventFactory'
@@ -23,6 +24,10 @@ services:
     logger.notifier:
         class: 'QL\Hal\Agent\Logger\Notifier'
         arguments: ['@service_container']
+
+    logger.process.handler:
+        class: 'QL\Hal\Agent\Logger\ProcessHandler'
+        arguments: ['@doctrine.em', '@utility.id.generator']
 
     ####################################################################################################################
     # custom notifiers

@@ -22,6 +22,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
     public $em;
     public $factory;
     public $notifier;
+    public $handler;
     public $clock;
 
     public function setUp()
@@ -29,6 +30,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $this->em = Mockery::mock(EntityManager::class);
         $this->factory = Mockery::mock(EventFactory::class);
         $this->notifier = Mockery::mock(Notifier::class);
+        $this->handler = Mockery::mock(ProcessHandler::class);
         $this->clock = Mockery::mock(Clock::class);
     }
 
@@ -43,7 +45,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->with('data2', 'testing2')
             ->once();
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->keep('data1', 'testing1');
         $logger->keep('data2', 'testing2');
@@ -56,7 +58,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->with('test message', ['data' => 'test1'])
             ->once();
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->event('info', 'test message', ['data' => 'test1']);
     }
@@ -67,7 +69,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('info')
             ->never();
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->event('testing');
     }
@@ -79,7 +81,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->with('build.end', 'service.name')
             ->once();
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->addSubscription('build.end', 'service.name');
     }
@@ -104,7 +106,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('flush')
             ->once();
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->start($build);
     }
@@ -127,13 +129,13 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $this->em
             ->shouldReceive('flush');
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->start($push);
         $logger->addSubscription('end', 'service.name');
     }
 
-    public function testPushIsSuccess()
+    public function testPushIsSuccessAndLaunchesChildren()
     {
         $push = new Push;
 
@@ -143,6 +145,9 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $this->factory
             ->shouldReceive('setStage')
             ->with('push.success')
+            ->once();
+        $this->handler
+            ->shouldReceive('launch')
             ->once();
 
         $this->factory
@@ -155,13 +160,13 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $this->em
             ->shouldReceive('flush');
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->start($push);
         $logger->success();
     }
 
-    public function testBuildIsFailure()
+    public function testBuildIsFailureAndAbortsChildren()
     {
         $build = new Build;
 
@@ -171,6 +176,9 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $this->factory
             ->shouldReceive('setStage')
             ->with('build.failure')
+            ->once();
+        $this->handler
+            ->shouldReceive('abort')
             ->once();
 
         $this->factory
@@ -183,7 +191,7 @@ class EventLoggerTest extends PHPUnit_Framework_TestCase
         $this->em
             ->shouldReceive('flush');
 
-        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->clock);
+        $logger = new EventLogger($this->em, $this->factory, $this->notifier, $this->handler, $this->clock);
 
         $logger->start($build);
         $logger->failure();

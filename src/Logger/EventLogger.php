@@ -36,12 +36,17 @@ class EventLogger
     private $notifier;
 
     /**
+     * @type ProcessHandler
+     */
+    private $processHandler;
+
+    /**
      * @type Clock
      */
     private $clock;
 
     /**
-     * @type Build|Push
+     * @type Build|Push|null
      */
     private $entity;
 
@@ -49,17 +54,20 @@ class EventLogger
      * @param EntityManagerInterface $em
      * @param EventFactory $factory
      * @param Notifier $notifier
+     * @param ProcessHandler $processHandler
      * @param Clock $clock
      */
     public function __construct(
         EntityManagerInterface $em,
         EventFactory $factory,
         Notifier $notifier,
+        ProcessHandler $processHandler,
         Clock $clock
     ) {
         $this->em = $em;
         $this->factory = $factory;
         $this->notifier = $notifier;
+        $this->processHandler = $processHandler;
         $this->clock = $clock;
     }
 
@@ -151,6 +159,8 @@ class EventLogger
             $this->em->merge($this->entity);
 
             $this->setStage('failure');
+
+            $this->processHandler->abort($this->entity);
         }
 
         $this->em->flush();
@@ -170,6 +180,8 @@ class EventLogger
             $this->em->merge($this->entity);
 
             $this->setStage('success');
+
+            $this->processHandler->launch($this->entity);
         }
 
         $this->em->flush();
@@ -197,6 +209,7 @@ class EventLogger
 
     /**
      * @param string $stage
+     *
      * @return string|null
      */
     private function normalizeStage($stage)
@@ -204,7 +217,7 @@ class EventLogger
         if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 5) === 'push.') {
             return $stage;
 
-        } else if ($this->entity) {
+        } elseif ($this->entity) {
             $prefix = ($this->entity instanceof Build) ? 'build' : 'push';
             return sprintf('%s.%s', $prefix, $stage);
         }
@@ -215,7 +228,7 @@ class EventLogger
     /**
      * @param Build $build
      *
-     * @return null
+     * @return void
      */
     private function startBuild(Build $build)
     {
@@ -233,7 +246,7 @@ class EventLogger
     /**
      * @param Push $push
      *
-     * @return null
+     * @return void
      */
     private function startPush(Push $push)
     {
