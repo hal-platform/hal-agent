@@ -106,10 +106,6 @@ class FileSyncManager
             '--recursive',
             '--links',
             '--perms',
-            '--group',
-            '--owner',
-            '--devices',
-            '--specials',
             '--checksum',
             '--verbose',
             '--delete-after'

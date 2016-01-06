@@ -78,6 +78,7 @@ class CommandContext
 
     /**
      * @param string $sanitizedCommand
+     *
      * @return self
      */
     public function withSanitized($sanitizedCommand)
