@@ -27,6 +27,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $logger;
 
     /**
+     * @type Verify
+     */
+    private $verify;
+
+    /**
      * @type CodeDelta
      */
     private $delta;
@@ -43,17 +48,20 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
     /**
      * @param EventLogger $logger
+     * @param Verify $verify
      * @param CodeDelta $delta
      * @param ServerCommand $serverCommand
      * @param Pusher $pusher
      */
     public function __construct(
         EventLogger $logger,
+        Verify $verify,
         CodeDelta $delta,
         ServerCommand $serverCommand,
         Pusher $pusher
     ) {
         $this->logger = $logger;
+        $this->verify = $verify;
         $this->delta = $delta;
         $this->serverCommand = $serverCommand;
         $this->pusher = $pusher;
@@ -72,26 +80,48 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return 100;
         }
 
+        // Verify
+        if (!$this->verify($properties)) {
+            return 101;
+        }
+
         // record code delta
         $this->delta($properties);
 
         // run pre push commands
         if (!$this->prepush($properties)) {
-            return 101;
+            return 102;
         }
 
         // sync code
         if (!$this->push($properties)) {
-            return 102;
+            return 103;
         }
 
         // run post push commands
         if (!$this->postpush($properties)) {
-            return 103;
+            return 104;
         }
 
         // success
         return 0;
+    }
+
+    /**
+     * @param array $properties
+     *
+     * @return boolean
+     */
+    private function verify(array $properties)
+    {
+        $this->status('Verifying target directory', self::SECTION);
+
+        $verify = $this->verify;
+        return $verify(
+            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[ServerEnum::TYPE_RSYNC]['remotePath']
+        );
     }
 
     /**

@@ -55,7 +55,7 @@ class PushCommand extends Command implements OutputAwareInterface
         6 => 'Deployment failed.',
 
         100 => 'Required properties for rsync are missing.',
-        101 => 'Build transform command failed.',
+        101 => 'Could not verify target directory.',
         102 => 'Pre push command failed.',
         103 => 'Rsync push failed.',
         104 => 'Post push command failed.',
