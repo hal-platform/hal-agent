@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "32980cdfc0e265d45ad2d619127b0265",
-    "content-hash": "35b9164c35fa218a7bee84bc93e07a2b",
+    "hash": "84416fd43902cac022e22a2c7e6b89fd",
+    "content-hash": "f540217a601f8e0b3550ce455cc53dd6",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1444,12 +1444,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "dev-master",
+            "version": "2.9.0-beta1",
+            "source": {
+                "type": "git",
+                "url": "http://git/web-core/hal-core.git",
+                "reference": "2e925364abc4f428abf41690ff6996be841156ea"
+            },
             "dist": {
-                "type": "path",
-                "url": "../hal-core/",
-                "reference": "a92261ddaca63e11a041e8117b1dc67eb2d9d083",
-                "shasum": null
+                "type": "zip",
+                "url": "http://composer/dist/ql-hal-core-2.9.0-beta1-e91c63.zip",
+                "reference": "2e925364abc4f428abf41690ff6996be841156ea",
+                "shasum": "cf9f0e94f712127ba8721b5c47b1459da00be398"
             },
             "archive": {
                 "exclude": [
@@ -1493,7 +1498,8 @@
                     "email": "itteamwebcore@quickenloans.com"
                 }
             ],
-            "description": "HAL9000 Shared Libraries, Services, Models, and Repositories"
+            "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
+            "time": "2016-01-05 13:30:13"
         },
         {
             "name": "ql/mcp-common",
@@ -3250,7 +3256,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "ql/hal-core": 20
+        "ql/hal-core": 10
     },
     "prefer-stable": false,
     "prefer-lowest": false,
