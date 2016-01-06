@@ -8,9 +8,9 @@
 namespace QL\Hal\Agent\Notifier;
 
 use InvalidArgumentException;
-use MCP\DataType\Time\TimePoint;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
+use QL\MCP\Common\Time\TimePoint;
 use Twig_Template;
 
 class EmailFormatter

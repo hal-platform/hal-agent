@@ -8,10 +8,10 @@
 namespace QL\Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MCP\DataType\Time\Clock;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Type\EnumType\EventStatusEnum;
+use QL\MCP\Common\Time\Clock;
 
 /**
  * Handles starting and finishing jobs - e.g. Changing the status of a build or push.

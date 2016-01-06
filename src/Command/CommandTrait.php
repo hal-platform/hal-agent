@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Command;
 
-use MCP\DataType\Time\TimePoint;
+use QL\MCP\Common\Time\TimePoint;
 use Symfony\Component\Console\Output\OutputInterface;
 
 trait CommandTrait

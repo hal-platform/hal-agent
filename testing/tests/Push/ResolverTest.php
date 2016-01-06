@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Push;
 
 use Mockery;
-use MCP\DataType\Time\Clock;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
@@ -18,6 +17,7 @@ use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Server;
+use QL\MCP\Common\Time\Clock;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
 {

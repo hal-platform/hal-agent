@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Push;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MCP\DataType\Time\Clock;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
 use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
@@ -21,6 +20,7 @@ use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Repository\PushRepository;
 use QL\Hal\Core\Type\EnumType\ServerEnum;
+use QL\MCP\Common\Time\Clock;
 
 /**
  * Resolve push properties from user and environment input

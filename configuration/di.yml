@@ -34,7 +34,7 @@ services:
             - ['addSubscriber', ['@utility.exceptionHandler']]
 
     clock:
-        class: 'MCP\DataType\Time\Clock'
+        class: 'QL\MCP\Common\Time\Clock'
         arguments: ['now', 'UTC']
 
     ssh.manager:

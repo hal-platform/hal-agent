@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Command\Docker;
 
 use DateTime;
-use MCP\DataType\Time\Clock;
 use Net_SSH2;
 use Predis\Client as Predis;
 use QL\Hal\Agent\Command\CommandTrait;
@@ -16,6 +15,7 @@ use QL\Hal\Agent\Command\FormatterTrait;
 use QL\Hal\Agent\Remoting\SSHSessionManager;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
+use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;

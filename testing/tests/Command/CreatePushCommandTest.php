@@ -8,12 +8,12 @@
 namespace QL\Hal\Agent\Command;
 
 use PHPUnit_Framework_TestCase;
-use MCP\DataType\Time\Clock;
 use Mockery;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\User;
+use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 

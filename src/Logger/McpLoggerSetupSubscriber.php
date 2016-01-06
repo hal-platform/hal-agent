@@ -7,8 +7,8 @@
 
 namespace QL\Hal\Agent\Logger;
 
-use MCP\DataType\IPv4Address;
 use MCP\Logger\Adapter\Psr\MessageFactory;
+use QL\MCP\Common\IPv4Address;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

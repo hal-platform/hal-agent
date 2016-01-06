@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "84416fd43902cac022e22a2c7e6b89fd",
-    "content-hash": "f540217a601f8e0b3550ce455cc53dd6",
+    "hash": "20b495f29afb3620dd1a367f62f151d2",
+    "content-hash": "7bec3b13e96f9181f0b4eb97a31f8ea6",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1444,17 +1444,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.9.0-beta1",
+            "version": "2.9.0-beta2",
             "source": {
                 "type": "git",
                 "url": "http://git/web-core/hal-core.git",
-                "reference": "2e925364abc4f428abf41690ff6996be841156ea"
+                "reference": "06b05d6cace46df582045852d4139b6b6d231b23"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.9.0-beta1-e91c63.zip",
-                "reference": "2e925364abc4f428abf41690ff6996be841156ea",
-                "shasum": "cf9f0e94f712127ba8721b5c47b1459da00be398"
+                "url": "http://composer/dist/ql-hal-core-2.9.0-beta2-8ac18d.zip",
+                "reference": "06b05d6cace46df582045852d4139b6b6d231b23",
+                "shasum": "3172c9d1a2b03d28a77ce4b79390272c12900206"
             },
             "archive": {
                 "exclude": [
@@ -1471,10 +1471,11 @@
                 "ext-pdo_mysql": "*",
                 "ext-pdo_sqlite": "*",
                 "php-64bit": ">=5.5",
-                "ql/mcp-core": "^1.0.3"
+                "ql/mcp-common": "~1.0"
             },
             "require-dev": {
                 "mockery/mockery": "*",
+                "paragonie/random_compat": "~1.1",
                 "phpunit/phpunit": "*",
                 "robmorgan/phinx": "~0.5",
                 "symfony/config": "*",
@@ -1498,8 +1499,8 @@
                     "email": "itteamwebcore@quickenloans.com"
                 }
             ],
-            "description": "HAL9000 Shared Libraries, Services, Models, and Repositories",
-            "time": "2016-01-05 13:30:13"
+            "description": "HAL 9000 shared components and domain resources",
+            "time": "2016-01-06 19:06:01"
         },
         {
             "name": "ql/mcp-common",
@@ -1562,73 +1563,31 @@
             "time": "2015-12-10 13:42:36"
         },
         {
-            "name": "ql/mcp-core",
-            "version": "1.1.0",
-            "source": {
-                "type": "git",
-                "url": "http://git/mcp/mcp-core.git",
-                "reference": "3261234da3c5e6baa4a6458a29d97f29dd9316cd"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "http://composer/dist/ql-mcp-core-1.1.0-f94f33.zip",
-                "reference": "3261234da3c5e6baa4a6458a29d97f29dd9316cd",
-                "shasum": "d9346f80352b710d8430bb8a1117db5aa794b7c0"
-            },
-            "archive": {
-                "exclude": [
-                    "/tests",
-                    "/phpunit.xml.dist"
-                ]
-            },
-            "require": {
-                "paragonie/random_compat": "~1.1",
-                "ql/mcp-common": "~1.0"
-            },
-            "conflict": {
-                "ql/mcp": "*"
-            },
-            "require-dev": {
-                "phpunit/php-invoker": "*",
-                "phpunit/phpunit": "*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "MCP\\": "src\\"
-                }
-            },
-            "license": [
-                "proprietary"
-            ],
-            "description": "[DEPRECATED] Please use MCP Common instead.",
-            "time": "2015-12-11 16:52:43"
-        },
-        {
             "name": "ql/mcp-logger",
-            "version": "2.2.0",
+            "version": "2.4.0",
             "source": {
                 "type": "git",
                 "url": "http://git/mcp/mcp-logger.git",
-                "reference": "593f0a209e4ae6c8be1bd8fa38267d5937d09afb"
+                "reference": "5d6e826a2c7505c72deaf65535fe81121b3e4af2"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-mcp-logger-2.2.0-dde9bd.zip",
-                "reference": "593f0a209e4ae6c8be1bd8fa38267d5937d09afb",
-                "shasum": "3d14ab8774db79e595b97dd6423753e498c06139"
+                "url": "http://composer/dist/ql-mcp-logger-2.4.0-cfa0b3.zip",
+                "reference": "5d6e826a2c7505c72deaf65535fe81121b3e4af2",
+                "shasum": "bcef9714971cecac5e1fe61064f70520d52db0e2"
             },
             "archive": {
                 "exclude": [
                     "/phpunit.xml.dist",
-                    "/testing"
+                    "/testing",
+                    "/docker",
+                    "/docker-compose.yml"
                 ]
             },
             "require": {
-                "ext-xmlwriter": "*",
-                "php": ">=5.4.0",
-                "ql/mcp-core": "1.*",
-                "ql/uri-template": "1.*"
+                "php": ">=5.5",
+                "ql/mcp-common": "~1.0",
+                "ql/uri-template": "~1.0"
             },
             "require-dev": {
                 "aws/aws-sdk-php": "^3.0",
@@ -1637,12 +1596,14 @@
                 "mockery/mockery": ">=0.8",
                 "phpunit/php-invoker": "*",
                 "phpunit/phpunit": "*",
-                "psr/log": "*"
+                "psr/log": "*",
+                "ql/mcp-http": "^1.0"
             },
             "suggest": {
                 "aws/aws-sdk-php": "Required when using the Kinesis Service",
                 "guzzlehttp/guzzle": "Required when using the Guzzle 4, Guzzle 5, Guzzle 6 services.",
-                "psr/log": "Required when using the PSR-3 logger."
+                "psr/log": "Required when using the PSR-3 logger.",
+                "ql/mcp-http": "Required when using Http Service"
             },
             "type": "library",
             "autoload": {
@@ -1662,7 +1623,7 @@
             ],
             "description": "Library for handling PHP Logging within Quicken Loans.",
             "homepage": "http://git/mcp/mcp-logger",
-            "time": "2015-07-17 17:03:25"
+            "time": "2015-12-28 17:44:38"
         },
         {
             "name": "ql/uri-template",

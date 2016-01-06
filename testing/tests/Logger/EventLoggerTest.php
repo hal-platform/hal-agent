@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManager;
-use MCP\DataType\Time\Clock;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
@@ -16,6 +15,7 @@ use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Agent\Logger\EventFactory;
 use QL\Hal\Agent\Logger\Notifier;
+use QL\MCP\Common\Time\Clock;
 
 class EventLoggerTest extends PHPUnit_Framework_TestCase
 {
