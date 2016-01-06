@@ -33,6 +33,10 @@ class PushCommand extends Command
     use OutputAwareTrait;
     use WorkerTrait;
 
+    const SUCCESS_JOB = 'Build Failed: %s';
+    const ERR_JOB = 'Build Success: %s';
+    const ERR_JOB_TIMEOUT = 'Build Timeout: %s';
+
     // 1 hour max
     const MAX_JOB_TIMEOUT = 3600;
 
@@ -202,12 +206,23 @@ class PushCommand extends Command
                     $allDone = false;
 
                 } catch (ProcessTimedOutException $e) {
-                    $this->write($this->outputJob($id, $process, true));
+                    $output = $this->outputJob($id, $process, true);
+                    $this->write($output);
+
+                    $this->logger->warn(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
                     unset($this->processes[$id]);
                 }
 
             } else {
-                $this->write($this->outputJob($id, $process, false));
+                $output = $this->outputJob($id, $process, false);
+                $this->write($output);
+
+                if ($exit = $process->getExitCode()) {
+                    $this->logger->info(sprintf(self::ERR_JOB, $id), ['exceptionData' => $output, 'exitCode' => $exit]);
+                } else {
+                    $this->logger->info(sprintf(self::SUCCESS_JOB, $id), ['exceptionData' => $output]);
+                }
+
                 unset($this->processes[$id]);
             }
         }

@@ -100,8 +100,8 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn(false);
         $this->process
             ->shouldReceive('getExitCode')
-            ->times(2)
-            ->andReturn(0, 1);
+            ->times(4)
+            ->andReturn(0, 0, 1, 1);
         $this->process
             ->shouldReceive([
                 'getOutput' => 'output here',
