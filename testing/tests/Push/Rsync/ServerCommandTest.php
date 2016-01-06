@@ -92,10 +92,17 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
             ->times(1)
             ->with('sshuser', 'server', ['cd "path" &&', 'command2'])
             ->andReturn($this->command);
+
         $this->remoter
             ->shouldReceive('run')
-            ->with($this->command, $env, [true])
-            ->andReturn(true, false);
+            ->with($this->command, $env, [true, 'Run remote command "command1"'])
+            ->andReturn(true)
+            ->once();
+        $this->remoter
+            ->shouldReceive('run')
+            ->with($this->command, $env, [true, 'Run remote command "command2"'])
+            ->andReturn(false)
+            ->once();
 
         $serverCommand = new ServerCommand($this->remoter);
         $success = $serverCommand('sshuser', 'server', 'path', $commands, $env);

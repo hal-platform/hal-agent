@@ -23,14 +23,17 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
      */
     const SECTION = 'Docker';
     const EVENT_MESSAGE = 'Run build command';
+    const EVENT_MESSAGE_CUSTOM = 'Run build command "%s"';
     const CONTAINER_WORKING_DIR = '/build';
     const DOCKER_SHELL = <<<SHELL
 bash -l -c %s
 SHELL;
 
+    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,25}$/';
+
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source';
     const EVENT_DOCKER_RUNNING = 'Check Docker daemon status';
-    const EVENT_BUILD_CONTAINER = 'Build Docker image';
+    const EVENT_BUILD_CONTAINER = 'Build Docker image "%s"';
     const EVENT_SCRATCH_OWNER = 'Record build owner metadata';
     const EVENT_SCRATCH_GROUP = 'Record build group metadata';
     const EVENT_START_CONTAINER = 'Start Docker container';
@@ -202,7 +205,7 @@ SHELL;
             sprintf('"%s/%s"', rtrim($imagesBasePath, '/'), $imageName)
         ];
 
-        return $this->runBuildRemote($build, self::EVENT_BUILD_CONTAINER);
+        return $this->runBuildRemote($build, sprintf(self::EVENT_BUILD_CONTAINER, $imageName));
     }
 
     /**
@@ -313,7 +316,13 @@ SHELL;
                 ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
                 ->withSanitized($command);
 
-            if (!$response = $this->runBuildRemote($context, self::EVENT_MESSAGE)) {
+            // Add build command to log message if short enough
+            $msg = self::EVENT_MESSAGE;
+            if (1 === preg_match(self::SHORT_COMMAND_VALIDATION, $command)) {
+                $msg = sprintf(self::EVENT_MESSAGE_CUSTOM, $command);
+            }
+
+            if (!$response = $this->runBuildRemote($context, $msg)) {
                 return false;
             }
         }
