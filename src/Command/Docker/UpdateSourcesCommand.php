@@ -55,37 +55,37 @@ HELP;
     ];
 
     /**
-     * @type FileSyncManager
+     * @var FileSyncManager
      */
     private $fileSyncManager;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @type ArchiveApi
+     * @var ArchiveApi
      */
     private $archiveApi;
 
     /**
-     * @type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * @type Clock
+     * @var Clock
      */
     private $clock;
 
     /**
-     * @type callable
+     * @var callable
      */
     private $random;
 
     /**
-     * @type string
+     * @var string
      */
     private $localTemp;
     private $unixBuildUser;
@@ -93,7 +93,7 @@ HELP;
     private $unixDockerSourcePath;
 
     /**
-     * @type string
+     * @var string
      */
     private $defaultRepository;
     private $defaultReference;

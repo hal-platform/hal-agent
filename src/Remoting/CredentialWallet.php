@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Remoting;
 class CredentialWallet
 {
     /**
-     * @type Credentials[]
+     * @var Credentials[]
      */
     private $credentials;
 

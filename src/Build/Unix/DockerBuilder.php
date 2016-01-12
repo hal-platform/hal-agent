@@ -19,7 +19,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     use EmergencyBuildHandlerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const SECTION = 'Docker';
     const EVENT_MESSAGE = 'Run build command';
@@ -42,29 +42,29 @@ SHELL;
     const EVENT_REMOVE_CONTAINER = 'Remove Docker container';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type SSHProcess
+     * @var SSHProcess
      */
     private $remoter;
     private $buildRemoter;
 
     /**
-     * @type string
+     * @var string
      */
     private $dockerSourcesPath;
 
     /**
-     * @type string|null
+     * @var string|null
      */
     private $remoteUser;
     private $remoteServer;
 
     /**
-     * @type bool
+     * @var bool
      */
     private $logDockerCommands;
     private $useSudoForDocker;

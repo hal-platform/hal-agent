@@ -10,18 +10,18 @@ namespace QL\Hal\Agent\Remoting;
 class CommandContext
 {
     /**
-     * @type string
+     * @var string
      */
     private $username;
     private $server;
 
     /**
-     * @type array|string
+     * @var array|string
      */
     private $command;
 
     /**
-     * @type string
+     * @var string
      */
     private $sanitizedCommand;
 

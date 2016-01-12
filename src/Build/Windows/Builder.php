@@ -14,7 +14,7 @@ class Builder
     const EVENT_MESSAGE = 'Run Windows Build Command';
 
     /**
-     * @type SSHProcess
+     * @var SSHProcess
      */
     private $remoter;
 

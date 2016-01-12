@@ -19,17 +19,17 @@ class DelegatingDeployer
     const UNKNOWN_FAILURE_CODE = 6;
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ContainerInterface
+     * @var ContainerInterface
      */
     private $container;
 
     /**
-     * @type int
+     * @var int
      */
     private $exitCode;
 
@@ -38,7 +38,7 @@ class DelegatingDeployer
      * Example:
      *     rsync => 'service.rsync.deployer'
      *
-     * @type array
+     * @var array
      */
     private $deployers;
 

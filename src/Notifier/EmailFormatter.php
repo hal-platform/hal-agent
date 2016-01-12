@@ -16,7 +16,7 @@ use Twig_Template;
 class EmailFormatter
 {
     /**
-     * @type Twig_Template
+     * @var Twig_Template
      */
     private $twig;
 

@@ -21,30 +21,30 @@ class Importer
     use ProcessRunnerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Import from build server';
     const ERR_TIMEOUT = 'Import from build server took too long';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type FileSyncManager
+     * @var FileSyncManager
      */
     private $fileSyncManager;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
      * Time (in seconds) to wait before aborting
      *
-     * @type int
+     * @var int
      */
     private $commandTimeout;
 

@@ -17,7 +17,7 @@ class Packer
     use ProcessRunnerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Archive build';
     const ERR_TIMEOUT = 'Archiving the build took too long';
@@ -28,22 +28,22 @@ class Packer
     const TAR_FLAGS = '-vczf';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @type string
+     * @var string
      */
     private $commandTimeout;
 

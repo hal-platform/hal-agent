@@ -40,12 +40,12 @@ class SSHSessionManager
     ];
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type CredentialWallet
+     * @var CredentialWallet
      */
     private $credentials;
 
@@ -58,19 +58,19 @@ class SSHSessionManager
      *     'user2@server' => new Net_SSH2,
      * ]
      *
-     * @type array
+     * @var array
      */
     private $activeSessions;
 
     /**
      * A store to put errors from phpseclib
      *
-     * @type array
+     * @var array
      */
     private $errors;
 
     /**
-     * @type callable
+     * @var callable
      */
     private $errorHandler;
 

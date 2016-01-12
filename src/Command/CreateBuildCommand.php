@@ -54,17 +54,17 @@ HELP;
     ];
 
     /**
-     * @type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * @type Clock
+     * @var Clock
      */
     private $clock;
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $buildRepo;
     private $applicationRepo;
@@ -72,12 +72,12 @@ HELP;
     private $userRepo;
 
     /**
-     * @type ReferenceResolver
+     * @var ReferenceResolver
      */
     private $refResolver;
 
     /**
-     * @type JobIdGenerator
+     * @var JobIdGenerator
      */
     private $unique;
 

@@ -31,29 +31,29 @@ class AWSAuthenticator
     const DECRYPTER_SERVICE = 'decrypter';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ContainerInterface
+     * @var ContainerInterface
      */
     private $di;
 
     /**
-     * @type Sdk
+     * @var Sdk
      */
     private $aws;
 
     /**
-     * @type Decrypter|null
+     * @var Decrypter|null
      */
     private $decrypter;
 
     /**
      * Hardcoded, since Enums were removed in aws sdk 3.0
      *
-     * @type string[]
+     * @var string[]
      */
     private static $awsRegions = [
         'ap-northeast-1',

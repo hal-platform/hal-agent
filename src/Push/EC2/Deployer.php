@@ -28,22 +28,22 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     const ERR_NO_INSTANCES = 'No EC2 instances are running';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type AWSAuthenticator
+     * @var AWSAuthenticator
      */
     private $authenticator;
 
     /**
-     * @type InstanceFinder
+     * @var InstanceFinder
      */
     private $finder;
 
     /**
-     * @type Pusher
+     * @var Pusher
      */
     private $pusher;
 

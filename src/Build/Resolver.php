@@ -28,29 +28,29 @@ class Resolver
     use ResolverTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const DOWNLOAD_FILE = 'hal9000-download-%s.tar.gz';
 
     /**
-     * @type string
+     * @var string
      */
     const ERR_NOT_FOUND = 'Build "%s" could not be found!';
     const ERR_NOT_WAITING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
     const ERR_TEMP = 'Temporary build space "%s" could not be prepared. Either it does not exist, or is not writeable.';
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $buildRepo;
 
     /**
-     * @type BuildEnvironmentResolver
+     * @var BuildEnvironmentResolver
      */
     private $environmentResolver;
 
     /**
-     * @type EncryptedPropertyResolver
+     * @var EncryptedPropertyResolver
      */
     private $encryptedResolver;
 

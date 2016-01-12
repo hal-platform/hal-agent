@@ -32,17 +32,17 @@ class Resolver
     use ResolverTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const ZIP_FILE = 'hal9000-eb-%s.zip';
 
     /**
-     * @type string
+     * @var string
      */
     const TAR_FILE = 'hal9000-s3-%s.tar.gz';
 
     /**
-     * @type string
+     * @var string
      */
     const ERR_NOT_FOUND = 'Push "%s" could not be found!';
     const ERR_BAD_STATUS = 'Push "%s" has a status of "%s"! It cannot be redeployed.';
@@ -56,43 +56,43 @@ class Resolver
     const DEFAULT_CD_FILENAME = '$APPID/$PUSHID.tar.gz';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type PushRepository
+     * @var PushRepository
      */
     private $pushRepo;
 
     /**
-     * @type Clock
+     * @var Clock
      */
     private $clock;
 
     /**
-     * @type BuildEnvironmentResolver
+     * @var BuildEnvironmentResolver
      */
     private $buildEnvironmentResolver;
 
     /**
-     * @type EncryptedPropertyResolver
+     * @var EncryptedPropertyResolver
      */
     private $encryptedResolver;
 
     /**
-     * @type string
+     * @var string
      */
     private $sshUser;
     private $ec2User;
 
     /**
-     * @type string
+     * @var string
      */
     private $githubBaseUrl;
 
     /**
-     * @type string|null
+     * @var string|null
      */
     private $awsKey;
     private $awsSecret;

@@ -43,7 +43,7 @@ class PushCommand extends Command implements OutputAwareInterface
     /**
      * A list of all possible exit codes of this command
      *
-     * @type array
+     * @var array
      */
     private static $codes = [
         0 => 'Success!',
@@ -86,57 +86,57 @@ class PushCommand extends Command implements OutputAwareInterface
     ];
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Resolver
+     * @var Resolver
      */
     private $resolver;
 
     /**
-     * @type Mover
+     * @var Mover
      */
     private $mover;
 
     /**
-     * @type Unpacker
+     * @var Unpacker
      */
     private $unpacker;
 
     /**
-     * @type ConfigurationReader
+     * @var ConfigurationReader
      */
     private $reader;
 
     /**
-     * @type DelegatingBuilder
+     * @var DelegatingBuilder
      */
     private $builder;
 
     /**
-     * @type DelegatingDeployer
+     * @var DelegatingDeployer
      */
     private $deployer;
 
     /**
-     * @type Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @type GitHubDeploymenter
+     * @var GitHubDeploymenter
      */
     private $ghDeploymenter;
 
     /**
-     * @type Push|null
+     * @var Push|null
      */
     private $push;
 
     /**
-     * @type boolean
+     * @var boolean
      */
     private $enableShutdownHandler;
 

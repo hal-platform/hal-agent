@@ -28,22 +28,22 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     const SKIP_POST_PUSH = 'Skipping post-push commands for S3 deployment';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type AWSAuthenticator
+     * @var AWSAuthenticator
      */
     private $authenticator;
 
     /**
-     * @type Packer
+     * @var Packer
      */
     private $packer;
 
     /**
-     * @type Uploader
+     * @var Uploader
      */
     private $uploader;
 

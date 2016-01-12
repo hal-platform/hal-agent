@@ -10,7 +10,7 @@ namespace QL\Hal\Agent\Build\Unix;
 class DockerBuilderConfigurator
 {
     /**
-     * @type bool
+     * @var bool
      */
     private $dockerSudo;
     private $dockerDebugMode;

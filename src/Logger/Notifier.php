@@ -16,17 +16,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class Notifier
 {
     /**
-     * @type ContainerInterface
+     * @var ContainerInterface
      */
     private $di;
 
     /**
-     * @type array
+     * @var array
      */
     private $subscriptions;
 
     /**
-     * @type array
+     * @var array
      */
     private $data;
 

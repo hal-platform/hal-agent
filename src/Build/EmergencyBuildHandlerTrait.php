@@ -14,17 +14,17 @@ trait EmergencyBuildHandlerTrait
     use OutputAwareTrait;
 
     /**
-     * @type bool
+     * @var bool
      */
     private $enableShutdownHandler = true;
 
     /**
-     * @type callable|null
+     * @var callable|null
      */
     private $emergencyCleaner = null;
 
     /**
-     * @type string
+     * @var string
      */
     private $emergencyMessage = '';
 

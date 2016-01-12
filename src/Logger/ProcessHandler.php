@@ -32,18 +32,18 @@ class ProcessHandler
     const ERR_IN_PROGRESS = 'Push %s to target already in progress.';
 
     /**
-     * @type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $processRepo;
     private $deploymentRepo;
 
     /**
-     * @type JobIdGenerator
+     * @var JobIdGenerator
      */
     private $unique;
 

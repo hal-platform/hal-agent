@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 trait OutputAwareTrait
 {
     /**
-     * @type OutputInterface
+     * @var OutputInterface
      */
     private $output;
 

@@ -12,7 +12,7 @@ class FileSyncManager
     const DEFAULT_SSH_PORT = 22;
 
     /**
-     * @type CredentialWallet
+     * @var CredentialWallet
      */
     private $credentials;
 

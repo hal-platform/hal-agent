@@ -17,7 +17,7 @@ class ServerCommand
     const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,25}$/';
 
     /**
-     * @type SSHProcess
+     * @var SSHProcess
      */
     private $remoter;
 

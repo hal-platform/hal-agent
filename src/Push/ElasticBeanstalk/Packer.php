@@ -22,23 +22,23 @@ class Packer
     use ProcessRunnerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Pack deployment into version archive';
     const ERR_TIMEOUT = 'Packing the version archive took too long';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @type string
+     * @var string
      */
     private $commandTimeout;
 

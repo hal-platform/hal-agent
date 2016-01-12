@@ -22,7 +22,7 @@ trait ResolverTrait
     private static $UNIQUE_TEMP_PATH = 'hal9000-%s-%s';
 
     /**
-     * @type string
+     * @var string
      */
     private $localTempPath;
     private $archivePath;

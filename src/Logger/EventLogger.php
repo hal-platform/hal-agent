@@ -21,32 +21,32 @@ use QL\MCP\Common\Time\Clock;
 class EventLogger
 {
     /**
-     * @type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * @type EventFactory
+     * @var EventFactory
      */
     private $factory;
 
     /**
-     * @type Notifier
+     * @var Notifier
      */
     private $notifier;
 
     /**
-     * @type ProcessHandler
+     * @var ProcessHandler
      */
     private $processHandler;
 
     /**
-     * @type Clock
+     * @var Clock
      */
     private $clock;
 
     /**
-     * @type Build|Push|null
+     * @var Build|Push|null
      */
     private $entity;
 

@@ -66,32 +66,32 @@ class EventFactory
     const REDIS_LOG_EXPIRY = 3600;
 
     /**
-     * @type string
+     * @var string
      */
     private $currentStage;
 
     /**
-     * @type Build|Push
+     * @var Build|Push
      */
     private $entity;
 
     /**
-     * @type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * @type callable
+     * @var callable
      */
     private $random;
 
     /**
-     * @type Predis|null
+     * @var Predis|null
      */
     private $predis;
 
     /**
-     * @type EventLog[]
+     * @var EventLog[]
      */
     private $logs;
 

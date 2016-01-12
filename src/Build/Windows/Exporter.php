@@ -22,36 +22,36 @@ class Exporter
     use ProcessRunnerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Export to build server';
     const ERR_TIMEOUT = 'Export to build server took too long';
     const ERR_PREPARE_BUILD_DIR = 'Failed to prepare build directory';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type FileSyncManager
+     * @var FileSyncManager
      */
     private $fileSyncManager;
 
     /**
-     * @type SSHProcess
+     * @var SSHProcess
      */
     private $remoter;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
      * Time (in seconds) to wait before aborting
      *
-     * @type int
+     * @var int
      */
     private $commandTimeout;
 

@@ -14,22 +14,22 @@ use QL\Hal\Core\Entity\User;
 class GithubDeploymenter
 {
     /**
-     * @type DeploymentsApi
+     * @var DeploymentsApi
      */
     private $deploymentsApi;
 
     /**
-     * @type string
+     * @var string
      */
     private $halBaseUrl;
 
     /**
-     * @type int|null
+     * @var int|null
      */
     private $currentDeploymentId;
 
     /**
-     * @type Push|null
+     * @var Push|null
      */
     private $currentPush;
 

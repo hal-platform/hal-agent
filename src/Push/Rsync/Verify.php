@@ -22,17 +22,17 @@ class Verify
     const ERR_VERIFY_PERMISSIONS = 'Could not verify permissions of target directory';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type SSHSessionManager
+     * @var SSHSessionManager
      */
     private $sshManager;
 
     /**
-     * @type SSHProcess
+     * @var SSHProcess
      */
     private $remoter;
 

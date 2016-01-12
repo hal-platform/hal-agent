@@ -16,7 +16,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class ArchiveApi
 {
     /**
-     * @type client
+     * @var client
      */
     private $github;
 

@@ -15,27 +15,27 @@ use Symfony\Component\Process\ProcessBuilder;
 class Pusher
 {
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Code Deployment to instances';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @type FileSyncManager
+     * @var FileSyncManager
      */
     private $fileSyncManager;
 
     /**
-     * @type int
+     * @var int
      */
     private $commandTimeout;
 

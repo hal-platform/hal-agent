@@ -21,14 +21,14 @@ class BuildEnvironmentResolver
     const UNIQUE_BUILD_PATH = 'hal9000-%s';
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
      * UNIX properties
      *
-     * @type string|null
+     * @var string|null
      */
     private $unixBuildDirectory;
     private $unixUser;
@@ -37,7 +37,7 @@ class BuildEnvironmentResolver
     /**
      * WINDOWS properties
      *
-     * @type string|null
+     * @var string|null
      */
     private $windowsBuildDirectory;
     private $windowsUser;

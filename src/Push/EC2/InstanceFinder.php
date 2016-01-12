@@ -29,7 +29,7 @@ class InstanceFinder
     const TAG_NAME_FOR_POOL = 'hal_pool';
 
     /**
-     * @type int
+     * @var int
      */
     private static $instanceStates = [
         0,

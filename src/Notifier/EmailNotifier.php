@@ -15,7 +15,7 @@ use Swift_Message;
 class EmailNotifier implements NotifierInterface
 {
     /**
-     * @type string
+     * @var string
      */
     const BUILD_MESSAGE = '[%s] %s (%s)';
     const PUSH_MESSAGE = '[%s] %s (%s:%s)';
@@ -25,17 +25,17 @@ class EmailNotifier implements NotifierInterface
     const ICON_INFO = "\xE2\x81\x89";
 
     /**
-     * @type Swift_Mailer
+     * @var Swift_Mailer
      */
     private $mailer;
 
     /**
-     * @type Swift_Message
+     * @var Swift_Message
      */
     private $message;
 
     /**
-     * @type EmailFormatter
+     * @var EmailFormatter
      */
     private $formatter;
 

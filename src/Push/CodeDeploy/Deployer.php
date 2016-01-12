@@ -34,32 +34,32 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     const SKIP_POST_PUSH = 'Skipping post-push commands for CodeDeploy deployment';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type AWSAuthenticator
+     * @var AWSAuthenticator
      */
     private $authenticator;
 
     /**
-     * @type HealthChecker
+     * @var HealthChecker
      */
     private $health;
 
     /**
-     * @type Packer
+     * @var Packer
      */
     private $packer;
 
     /**
-     * @type Uploader
+     * @var Uploader
      */
     private $uploader;
 
     /**
-     * @type Pusher
+     * @var Pusher
      */
     private $pusher;
 

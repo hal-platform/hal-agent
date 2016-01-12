@@ -15,7 +15,7 @@ use QL\Hal\Agent\Logger\EventLogger;
 class Uploader
 {
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Upload to S3';
     const ERR_WAITING = 'Waited for upload to be available, but the operation timed out.';
@@ -27,17 +27,17 @@ class Uploader
     const WAITER_ATTEMPTS = 30;
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type callable
+     * @var callable
      */
     private $fileStreamer;
 
     /**
-     * @type bool
+     * @var bool
      */
     private $allowOverwrite;
 

@@ -25,32 +25,32 @@ class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted properties';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Exporter
+     * @var Exporter
      */
     private $exporter;
 
     /**
-     * @type Builder
+     * @var Builder
      */
     private $builder;
 
     /**
-     * @type Importer
+     * @var Importer
      */
     private $importer;
 
     /**
-     * @type Cleaner
+     * @var Cleaner
      */
     private $cleaner;
 
     /**
-     * @type EncryptedPropertyResolver
+     * @var EncryptedPropertyResolver
      */
     private $decrypter;
 

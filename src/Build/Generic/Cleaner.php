@@ -14,12 +14,12 @@ class Cleaner
     const EVENT_MESSAGE = 'Clean remote build server';
 
     /**
-     * @type SSHProcess
+     * @var SSHProcess
      */
     private $remoter;
 
     /**
-     * @type bool
+     * @var bool
      */
     private $doHorribleThing;
 

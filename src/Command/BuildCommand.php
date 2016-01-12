@@ -45,7 +45,7 @@ class BuildCommand extends Command implements OutputAwareInterface
     /**
      * A list of all possible exit codes of this command
      *
-     * @type array
+     * @var array
      */
     private static $codes = [
         0 => 'Success!',
@@ -70,67 +70,67 @@ class BuildCommand extends Command implements OutputAwareInterface
     ];
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Resolver
+     * @var Resolver
      */
     private $resolver;
 
     /**
-     * @type Downloader
+     * @var Downloader
      */
     private $downloader;
 
     /**
-     * @type Unpacker
+     * @var Unpacker
      */
     private $unpacker;
 
     /**
-     * @type ConfigurationReader
+     * @var ConfigurationReader
      */
     private $reader;
 
     /**
-     * @type DelegatingBuilder
+     * @var DelegatingBuilder
      */
     private $builder;
 
     /**
-     * @type Packer
+     * @var Packer
      */
     private $packer;
 
     /**
-     * @type Mover
+     * @var Mover
      */
     private $mover;
 
     /**
-     * @type GuzzleDownloadProgress
+     * @var GuzzleDownloadProgress
      */
     private $progress;
 
     /**
-     * @type Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @type SSHSessionManager
+     * @var SSHSessionManager
      */
     private $sshManager;
 
     /**
-     * @type string[]
+     * @var string[]
      */
     private $artifacts;
 
     /**
-     * @type boolean
+     * @var boolean
      */
     private $enableShutdownHandler;
 

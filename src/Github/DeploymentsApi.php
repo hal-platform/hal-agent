@@ -18,12 +18,12 @@ use GuzzleHttp\UriTemplate;
 class DeploymentsApi
 {
     /**
-     * @type Guzzle
+     * @var Guzzle
      */
     private $guzzle;
 
     /**
-     * @type string
+     * @var string
      */
     private $ghApiBaseUrl;
 

@@ -19,28 +19,28 @@ use Symfony\Component\Process\ProcessUtils;
 class SSHProcess
 {
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Run remote command';
     const ERR_COMMAND_TIMEOUT = 'Remote command took too long';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type SSHSessionManager
+     * @var SSHSessionManager
      */
     private $sshManager;
 
     /**
-     * @type int
+     * @var int
      */
     private $commandTimeout;
 
     /**
-     * @type string
+     * @var string
      */
     private $lastOutput;
     private $lastErrorOutput;

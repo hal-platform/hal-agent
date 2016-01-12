@@ -14,12 +14,12 @@ class Waiter
     /**
      * Interval between waits, in seconds.
      *
-     * @type float
+     * @var float
      */
     private $interval;
 
     /**
-     * @type int
+     * @var int
      */
     private $maxAttempts;
 

@@ -18,28 +18,28 @@ class Pusher
     use ProcessRunnerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Code Deployment';
     const ERR_TIMEOUT = 'Deploying code to server took too long';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type FileSyncManager
+     * @var FileSyncManager
      */
     private $fileSyncManager;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 
     /**
-     * @type int
+     * @var int
      */
     private $commandTimeout;
 

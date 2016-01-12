@@ -16,18 +16,18 @@ class Unpacker
     use ProcessRunnerTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Unpack GitHub archive';
     const ERR_TIMEOUT = 'Unpacking GitHub archive took too long';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $processBuilder;
 

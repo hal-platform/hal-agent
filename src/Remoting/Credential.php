@@ -19,34 +19,34 @@ class Credential
     /**
      * Username
      *
-     * @type string
+     * @var string
      */
     private $username;
 
     /**
      * Server name, or "*" for wildcard
      *
-     * @type string
+     * @var string
      */
     private $server;
 
     /**
-     * @type string
+     * @var string
      */
     private $port;
 
     /**
-     * @type string|null
+     * @var string|null
      */
     private $keyPath;
 
     /**
-     * @type string|null
+     * @var string|null
      */
     private $password;
 
     /**
-     * @type callable
+     * @var callable
      */
     private $keyFetcher;
 

@@ -20,17 +20,17 @@ class DelegatingBuilder
     const DOCKER_PREFIX = 'docker:';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ContainerInterface
+     * @var ContainerInterface
      */
     private $container;
 
     /**
-     * @type int
+     * @var int
      */
     private $exitCode;
 
@@ -40,12 +40,12 @@ class DelegatingBuilder
      * Example:
      *     unix => 'service.unix.builder'
      *
-     * @type array
+     * @var array
      */
     private $builders;
 
     /**
-     * @type boolean
+     * @var boolean
      */
     private $enableStaging;
 

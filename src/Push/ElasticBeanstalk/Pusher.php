@@ -16,7 +16,7 @@ use QL\Hal\Agent\Waiter\Waiter;
 class Pusher
 {
     /**
-     * @type string
+     * @var string
      */
     const EVENT_MESSAGE = 'Code Deployment';
     const ERR_ALREADY_EXISTS = 'Application version already exists';
@@ -25,17 +25,17 @@ class Pusher
     const INFO_STILL_DEPLOYING = 'Deployment Status Check';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type HealthChecker
+     * @var HealthChecker
      */
     private $health;
 
     /**
-     * @type Waiter
+     * @var Waiter
      */
     private $waiter;
 

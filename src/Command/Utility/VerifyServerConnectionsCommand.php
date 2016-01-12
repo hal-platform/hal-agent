@@ -72,28 +72,28 @@ HELP;
     ];
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $serverRepo;
     private $environmentRepo;
 
     /**
-     * @type SSHSessionManager
+     * @var SSHSessionManager
      */
     private $sshManager;
 
     /**
-     * @type Predis
+     * @var Predis
      */
     private $predis;
 
     /**
-     * @type Clock
+     * @var Clock
      */
     private $clock;
 
     /**
-     * @type string
+     * @var string
      */
     private $remoteUser;
 

@@ -26,37 +26,37 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     const DOCKER_PREFIX = 'docker:';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Exporter
+     * @var Exporter
      */
     private $exporter;
 
     /**
-     * @type BuilderInterface
+     * @var BuilderInterface
      */
     private $builder;
 
     /**
-     * @type Importer
+     * @var Importer
      */
     private $importer;
 
     /**
-     * @type Cleaner
+     * @var Cleaner
      */
     private $cleaner;
 
     /**
-     * @type EncryptedPropertyResolver
+     * @var EncryptedPropertyResolver
      */
     private $decrypter;
 
     /**
-     * @type string
+     * @var string
      */
     private $defaultDockerImage;
 

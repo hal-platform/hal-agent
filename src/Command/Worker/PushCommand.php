@@ -44,44 +44,44 @@ class PushCommand extends Command
     const DEFAULT_SLEEP_TIME = 5;
 
     /**
-     * @type PushRepository
+     * @var PushRepository
      */
     private $pushRepo;
 
     /**
-     * @type EntityManager
+     * @var EntityManager
      */
     private $entityManager;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $builder;
 
     /**
-     * @type LoggerInterface
+     * @var LoggerInterface
      */
     private $logger;
 
     /**
-     * @type Process[]
+     * @var Process[]
      */
     private $processes;
 
     /**
-     * @type array
+     * @var array
      */
     private $deploymentCache;
 
     /**
-     * @type string
+     * @var string
      */
     private $workingDir;
 
     /**
      * Sleep time in seconds
      *
-     * @type int
+     * @var int
      */
     private $sleepTime;
 

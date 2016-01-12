@@ -27,22 +27,22 @@ class EncryptedPropertyResolver
     const ERR_MISCONFIGURED_ENCRYPTION = 'A serious error occured while decrypting. HAL Agent may not be configured correctly.';
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $encryptedRepo;
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type ContainerInterface
+     * @var ContainerInterface
      */
     private $di;
 
     /**
-     * @type Decrypter|null
+     * @var Decrypter|null
      */
     private $decrypter;
 

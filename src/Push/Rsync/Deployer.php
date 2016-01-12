@@ -22,27 +22,27 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     const ERR_INVALID_DEPLOYMENT_SYSTEM = 'Rsync deployment system is not configured';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Verify
+     * @var Verify
      */
     private $verify;
 
     /**
-     * @type CodeDelta
+     * @var CodeDelta
      */
     private $delta;
 
     /**
-     * @type ServerCommand
+     * @var ServerCommand
      */
     private $serverCommand;
 
     /**
-     * @type Pusher
+     * @var Pusher
      */
     private $pusher;
 

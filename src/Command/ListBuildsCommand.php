@@ -35,7 +35,7 @@ class ListBuildsCommand extends Command
     use ResolverTrait;
 
     /**
-     * @type string
+     * @var string
      */
     const TIMEZONE = 'America/Detroit';
     const PAGE_SIZE = 500;
@@ -43,7 +43,7 @@ class ListBuildsCommand extends Command
     /**
      * A list of all possible exit codes of this command
      *
-     * @type array
+     * @var array
      */
     private static $codes = [
         0 => 'Success!',
@@ -54,14 +54,14 @@ class ListBuildsCommand extends Command
     ];
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $buildRepo;
     private $applicationRepo;
     private $envRepo;
 
     /**
-     * @type Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 

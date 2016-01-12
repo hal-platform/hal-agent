@@ -37,7 +37,7 @@ class RemoveBuildCommand extends Command
     /**
      * A list of all possible exit codes of this command
      *
-     * @type array
+     * @var array
      */
     private static $codes = [
         0 => 'Archive removed.',
@@ -45,17 +45,17 @@ class RemoveBuildCommand extends Command
     ];
 
     /**
-     * @type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $buildRepo;
 
     /**
-     * @type Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 

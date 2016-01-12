@@ -20,27 +20,27 @@ class ConfigurationReader
     const ERR_TOO_MANY_COOKS = 'Too many commands specified for "%s". Must be less than 10.';
 
     /**
-     * @type string
+     * @var string
      */
     const FS_CONFIG_FILE = '.hal9000.yml';
 
     /**
-     * @type EventLogger
+     * @var EventLogger
      */
     private $logger;
 
     /**
-     * @type Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @type Parser
+     * @var Parser
      */
     private $parser;
 
     /**
-     * @type callable
+     * @var callable
      */
     private $fileLoader;
 

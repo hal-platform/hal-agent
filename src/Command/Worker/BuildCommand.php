@@ -43,34 +43,34 @@ class BuildCommand extends Command implements OutputAwareInterface
     const DEFAULT_SLEEP_TIME = 5;
 
     /**
-     * @type EntityRepository
+     * @var EntityRepository
      */
     private $buildRepo;
 
     /**
-     * @type ProcessBuilder
+     * @var ProcessBuilder
      */
     private $builder;
 
     /**
-     * @type LoggerInterface
+     * @var LoggerInterface
      */
     private $logger;
 
     /**
-     * @type Process[]
+     * @var Process[]
      */
     private $processes;
 
     /**
-     * @type string
+     * @var string
      */
     private $workingDir;
 
     /**
      * Sleep time in seconds
      *
-     * @type int
+     * @var int
      */
     private $sleepTime;
 
