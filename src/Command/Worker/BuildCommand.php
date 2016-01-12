@@ -32,8 +32,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     use OutputAwareTrait;
     use WorkerTrait;
 
-    const SUCCESS_JOB = 'Build Failed: %s';
-    const ERR_JOB = 'Build Success: %s';
+    const SUCCESS_JOB = 'Build Success: %s';
+    const ERR_JOB = 'Build Failed: %s';
     const ERR_JOB_TIMEOUT = 'Build Timeout: %s';
 
     // 1 hour max

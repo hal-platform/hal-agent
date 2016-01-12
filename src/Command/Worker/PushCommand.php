@@ -33,9 +33,9 @@ class PushCommand extends Command
     use OutputAwareTrait;
     use WorkerTrait;
 
-    const SUCCESS_JOB = 'Build Failed: %s';
-    const ERR_JOB = 'Build Success: %s';
-    const ERR_JOB_TIMEOUT = 'Build Timeout: %s';
+    const SUCCESS_JOB = 'Push Success: %s';
+    const ERR_JOB = 'Push Failed: %s';
+    const ERR_JOB_TIMEOUT = 'Push Timeout: %s';
 
     // 1 hour max
     const MAX_JOB_TIMEOUT = 3600;
