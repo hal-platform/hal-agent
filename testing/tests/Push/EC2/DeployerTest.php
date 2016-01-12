@@ -37,6 +37,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'region' => 'us-east-1',
                 'credential' => null,
                 'pool' => 'poolname',
+                'remoteUser' => 'ec2_user',
                 'remotePath' => '/path/var/www'
             ],
             'configuration' => [
@@ -93,6 +94,7 @@ OUTPUT;
                 'region' => 'us-east-1',
                 'credential' => null,
                 'pool' => '',
+                'remoteUser' => 'ec2_user',
                 'remotePath' => ''
             ],
             'pushProperties' => [],
@@ -170,6 +172,7 @@ OUTPUT;
             'ec2' => [
                 'region' => '',
                 'pool' => '',
+                'remoteUser' => 'ec2_user',
                 'remotePath' => ''
             ]
         ];
@@ -192,6 +195,7 @@ OUTPUT;
                 'region' => '',
                 'credential' => '',
                 'pool' => '',
+                'remoteUser' => 'ec2_user',
                 'remotePath' => ''
             ],
             'pushProperties' => [],
@@ -233,6 +237,7 @@ OUTPUT;
                 'region' => '',
                 'credential' => '',
                 'pool' => '',
+                'remoteUser' => 'ec2_user',
                 'remotePath' => ''
             ],
             'pushProperties' => [],

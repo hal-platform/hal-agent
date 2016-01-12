@@ -9,23 +9,39 @@ namespace QL\Hal\Agent\Push\EC2;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\FileSyncManager;
+use Symfony\Component\Process\Process;
 
 class PusherTest extends PHPUnit_Framework_TestCase
 {
     public $logger;
+    public $fileSync;
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->fileSync = Mockery::mock(FileSyncManager::class);
     }
 
     public function testSuccess()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
+        $process = Mockery::mock(Process::class, [
             'run' => 0,
             'getCommandLine' => 'rsync',
             'isSuccessful' => true
         ])->makePartial();
+
+        $this->fileSync
+            ->shouldReceive('buildOutgoingRsync')
+            ->with('build/path', 'ec2_user', Mockery::type('string'), 'sync/path', [])
+            ->andReturn([
+                'rsync',
+                '--perms',
+                'fromhere',
+                'user@tohere'
+            ])
+            ->times(3);
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
         $builder
@@ -57,7 +73,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
                 'failure' => 0
             ])->once();
 
-        $action = new Pusher($this->logger, $builder, 'ec2-user', 20);
+        $action = new Pusher($this->logger, $this->fileSync, $builder, 20);
 
         $instances = [
             [
@@ -74,13 +90,13 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $success = $action('build/path', 'sync/path', [], $instances);
+        $success = $action('build/path', 'ec2_user', 'sync/path', [], $instances);
         $this->assertSame(true, $success);
     }
 
     public function testSomeFailed()
     {
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
+        $process = Mockery::mock(Process::class, [
             'run' => 0,
             'getCommandLine' => 'rsync'
         ])->makePartial();
@@ -97,6 +113,17 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('isSuccessful')
             ->andReturn(false)
             ->once();
+
+        $this->fileSync
+            ->shouldReceive('buildOutgoingRsync')
+            ->with('build/path', 'ec2_user', Mockery::type('string'), 'sync/path', ['exclude_file', 'exclude_dir/'])
+            ->andReturn([
+                'rsync',
+                '--perms',
+                'fromhere',
+                'user@tohere'
+            ])
+            ->times(3);
 
         $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
         $builder
@@ -128,7 +155,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
                 'failure' => 2
             ])->once();
 
-        $action = new Pusher($this->logger, $builder, 'ec2-user', 20);
+        $action = new Pusher($this->logger, $this->fileSync, $builder, 20);
 
         $instances = [
             [
@@ -145,7 +172,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $success = $action('build/path', 'sync/path', [], $instances);
+        $success = $action('build/path', 'ec2_user', 'sync/path', ['exclude_file', 'exclude_dir/'], $instances);
         $this->assertSame(false, $success);
     }
 }

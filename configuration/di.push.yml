@@ -9,6 +9,7 @@ services:
             - '@utility.environment.resolver'
             - '@encrypted.resolver'
             - %push.rsync.remoteUser%
+            - %aws.ec2.user%
             - %github.baseurl.site%
         calls:
             - ['setLocalTempPath', ['%environment.temp%']]
@@ -176,8 +177,8 @@ services:
         class: 'QL\Hal\Agent\Push\EC2\Pusher'
         arguments:
             - '@logger.event'
+            - '@ssh.filemanager'
             - '@utility.process.builder=' # = signifies a prototype service
-            - '%aws.ec2.user%'
             - '%timeout.push.ec2%'
 
     ####################################################################################################################

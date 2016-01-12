@@ -60,6 +60,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
 
@@ -86,6 +87,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
 
@@ -116,6 +118,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
 
@@ -241,6 +244,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');
@@ -377,6 +381,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');
@@ -515,6 +520,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');
@@ -574,6 +580,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'region' => 'aws-region-1',
                 'credential' => null,
                 'pool' => 'pool_name',
+                'remoteUser' => 'ec2user',
                 'remotePath' => '/ec2/path/var/www'
             ],
             'configuration' => [
@@ -640,6 +647,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
+            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');

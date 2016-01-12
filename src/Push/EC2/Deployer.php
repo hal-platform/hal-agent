@@ -137,6 +137,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
+        if (!array_key_exists('remoteUser', $properties)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -192,6 +196,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $pusher = $this->pusher;
         return $pusher(
             $properties['location']['path'],
+            $properties[ServerEnum::TYPE_EC2]['remoteUser'],
             $properties[ServerEnum::TYPE_EC2]['remotePath'],
             $properties['configuration']['exclude'],
             $instances

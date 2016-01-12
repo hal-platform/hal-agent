@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Push\EC2;
 
 use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\FileSyncManager;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
@@ -29,6 +30,11 @@ class Pusher
     private $processBuilder;
 
     /**
+     * @type FileSyncManager
+     */
+    private $fileSyncManager;
+
+    /**
      * @type int
      */
     private $commandTimeout;
@@ -36,40 +42,54 @@ class Pusher
     /**
      * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
-     * @param string $ec2User
+     * @param FileSyncManager $fileSyncManager
      * @param int $commandTimeout
      */
-    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $ec2User, $commandTimeout)
-    {
+    public function __construct(
+        EventLogger $logger,
+        FileSyncManager $fileSyncManager,
+        ProcessBuilder $processBuilder,
+        $commandTimeout
+    ) {
         $this->logger = $logger;
+        $this->fileSyncManager = $fileSyncManager;
         $this->processBuilder = $processBuilder;
         $this->commandTimeout = $commandTimeout;
-        $this->ec2User = $ec2User;
     }
 
     /**
      * @param string $buildPath
      * @param string $remotePath
+     * @param string $remoteUser
      * @param array $excludedFiles
      * @param array $instances
      *
      * @return boolean
      */
-    public function __invoke($buildPath, $remotePath, array $excludedFiles, array $instances)
+    public function __invoke($buildPath, $remoteUser, $remotePath, array $excludedFiles, array $instances)
     {
         $instanceStatus = [];
 
         foreach ($instances as $instance) {
-            $syncPath = sprintf('%s@%s:%s', $this->ec2User, $instance['PublicDnsName'], $remotePath);
-            $command = $this->buildRsyncCommand($buildPath, $syncPath, $excludedFiles);
+
+            $command = $this->fileSyncManager->buildOutgoingRsync(
+                $buildPath,
+                $remoteUser,
+                $instance['PublicDnsName'],
+                $remotePath,
+                $excludedFiles
+            );
+
+            $rsyncCommand = implode(' ', $command);
 
             // run sync for instance
             $process = $this->processBuilder
                 ->setWorkingDirectory(null)
-                ->setArguments($command)
+                ->setArguments([''])
                 ->setTimeout($this->commandTimeout)
-                ->getProcess();
-            $process->setCommandLine($process->getCommandLine());
+                ->getProcess()
+                // processbuilder escapes input, but it breaks the rsync params
+                ->setCommandLine($rsyncCommand . ' 2>&1');
 
             $rsyncStatus = $this->runProcess($process) ? 'finished' : 'timeout';
 
@@ -109,37 +129,6 @@ class Pusher
         // dont worry, locke will save us
         $this->logger->event('success', self::EVENT_MESSAGE, $context);
         return true;
-    }
-
-    /**
-     * @param string $buildPath
-     * @param string $syncPath
-     * @param string[] $excludedFiles
-     *
-     * @return string[]
-     */
-    private function buildRsyncCommand($buildPath, $syncPath, array $excludedFiles)
-    {
-        $command = [
-            'rsync',
-            '--rsh=ssh -o BatchMode=yes',
-            '--recursive',
-            '--links',
-            '--perms',
-            '--group',
-            '--owner',
-            '--devices',
-            '--specials',
-            '--checksum',
-            '--verbose',
-            '--delete-after'
-        ];
-
-        foreach ($excludedFiles as $excluded) {
-            $command[] = '--exclude=' . $excluded;
-        }
-
-        return array_merge($command, [$buildPath . '/', $syncPath]);
     }
 
     /**
