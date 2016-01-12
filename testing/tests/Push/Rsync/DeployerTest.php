@@ -90,6 +90,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $expected = <<<'OUTPUT'
 [Deploying - Rsync] Deploying push by rsync
+[Deploying - Rsync] Verifying RSync configuration
 [Deploying - Rsync] Verifying target directory
 [Deploying - Rsync] Reading previous push data
 [Deploying - Rsync] Running pre-push command

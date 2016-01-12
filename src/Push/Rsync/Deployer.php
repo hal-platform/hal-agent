@@ -75,7 +75,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_RSYNC])) {
+        if (!isset($properties[ServerEnum::TYPE_RSYNC]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_RSYNC])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 100;
         }
@@ -105,6 +105,42 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         // success
         return 0;
+    }
+
+    /**
+     * @param array $properties
+     *
+     * @return bool
+     */
+    private function verifyConfiguration($properties)
+    {
+        $this->status('Verifying RSync configuration', self::SECTION);
+
+        if (!is_array($properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('remoteUser', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('remoteServer', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('remotePath', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('syncPath', $properties)) {
+            return false;
+        }
+
+        if (!array_key_exists('environmentVariables', $properties)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
