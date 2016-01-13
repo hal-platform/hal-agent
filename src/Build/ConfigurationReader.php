@@ -156,7 +156,6 @@ class ConfigurationReader
             $commands = [$commands];
         }
 
-
         // # of commands must be <=10
         if (count($commands) > 10) {
             $this->logger->event('failure', sprintf(self::ERR_TOO_MANY_COOKS, $key), $context);

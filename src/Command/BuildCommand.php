@@ -265,6 +265,7 @@ class BuildCommand extends Command implements OutputAwareInterface
         }
 
         // read .hal9000.yml
+        // NOTE: this action takes properties by reference and MODIFIES configuration IN PLACE
         if (!$this->read($output, $properties)) {
             return $this->failure($output, 4);
         }

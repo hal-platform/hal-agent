@@ -35,6 +35,7 @@ trait DefaultConfigHelperTrait
 
     /**
      * @param string|null $cmd
+     *
      * @return array
      */
     private function arrayizeCommand($cmd)

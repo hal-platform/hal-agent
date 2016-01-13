@@ -77,7 +77,7 @@ class DelegatingBuilder
         // reset exit code
         $this->exitCode = 0;
 
-        // Convert "docker/" system to unix
+        // Convert "docker:" system to unix
         if (substr($system, 0, 7) === self::DOCKER_PREFIX) {
             $system = 'unix';
         }
