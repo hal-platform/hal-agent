@@ -9,6 +9,9 @@ namespace QL\Hal\Agent\Build\Unix;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\CommandContext;
+use QL\Hal\Agent\Remoting\SSHProcess;
 
 class DockerBuilderTest extends PHPUnit_Framework_TestCase
 {
@@ -21,13 +24,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
-        $this->buildRemoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->remoter = Mockery::mock(SSHProcess::class);
+        $this->buildRemoter = Mockery::mock(SSHProcess::class);
 
-        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->command = Mockery::mock(CommandContext::class);
 
-        $this->buildCommand = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->buildCommand = Mockery::mock(CommandContext::class);
         $this->buildCommand
             ->shouldReceive('withSanitized')
             ->andReturn($this->buildCommand)
@@ -264,6 +267,11 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     public function testMultipleCommandsAreRun()
     {
+        $userCommands = [
+            'command1',
+            'command2'
+        ];
+
         $prefix = 'docker exec "container-name"';
         $expectedCommand1 = [$prefix, "bash -l -c 'command1'"];
         $expectedCommand2 = [$prefix, "bash -l -c 'command2'"];
@@ -311,8 +319,74 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
         $action->disableShutdownHandler();
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command1', 'command2'], []);
+        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', $userCommands, []);
 
         $this->assertSame(true, $success);
+    }
+
+    public function testMultipleCommandsAreRunInMultipleContainers()
+    {
+        $userCommands = [
+            'command1',
+            'docker:node5 command2',
+            'docker:image_owner/imgname:tag command3',
+            'docker:image_owner/imgname:tag command4',
+            'command5',
+        ];
+
+        // per container: 2 - sanity check, 2 - meta, 1 - start, 3 cleanup
+        $this->remoter
+            ->shouldReceive('createCommand')
+            ->times(8 * 4)
+            ->andReturn($this->command);
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(8 * 4)
+            ->andReturn(true);
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->times(3 * 4)
+            ->andReturn(
+                'builduser-owner1', 'builduser-group1', 'container-name1',
+                'builduser-owner2', 'builduser-group2', 'container-name2',
+                'builduser-owner3', 'builduser-group3', 'container-name3',
+                'builduser-owner4', 'builduser-group4', 'container-name4'
+            );
+
+        // run
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/legacy"', '"/docker-images/legacy"']);
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name1"', "bash -l -c 'command1'"]);
+
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/node5"', '"/docker-images/node5"']);
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name2"', "bash -l -c 'command2'"]);
+
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/image_owner/imgname:tag"', '"/docker-images/image_owner/imgname:tag"']);
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name3"', "bash -l -c 'command3'"]);
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name3"', "bash -l -c 'command4'"]);
+
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/legacy"', '"/docker-images/legacy"']);
+        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name4"', "bash -l -c 'command5'"]);
+
+        $this->buildRemoter
+            ->shouldReceive('run')
+            ->times(2 * 4 + 1)
+            ->andReturn(true);
+
+        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action->disableShutdownHandler();
+
+        $success = $action('legacy', 'builduser', 'buildserver', 'buildpath', $userCommands, []);
+
+        $this->assertSame(true, $success);
+    }
+
+    private function expectDockerCommand($user, $server, $command)
+    {
+        $this->buildRemoter
+            ->shouldReceive('createCommand')
+            ->times(1)
+            ->with($user, $server, $command)
+            ->andReturn($this->buildCommand)
+            ->ordered();
     }
 }

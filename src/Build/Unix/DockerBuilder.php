@@ -22,16 +22,35 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
      * @var string
      */
     const SECTION = 'Docker';
+    const SECTION_BUILD = 'Docker - Build';
+
     const EVENT_MESSAGE = 'Run build command';
     const EVENT_MESSAGE_CUSTOM = 'Run build command "%s"';
     const CONTAINER_WORKING_DIR = '/build';
+
+    /**
+     * Valid docker pattern:
+     *
+     * Each component must follow this regex:
+     * ([a-zA-Z0-9]{1}[a-zA-Z0-9_.-]{1,29})
+     *
+     * @see https://github.com/docker/docker/blob/b46f044bf71309088b30c1172d4c69287c6a99df/utils/names.go#L6
+     *
+     * docker:QL_DOCKERFILE
+     * docker:imagename
+     * docker:imagename:tag
+     * docker:owner/imagename:tag
+     */
+    const DOCKER_PREFIX = 'docker:';
+
+    const DOCKER_IMAGE_REGEX = '([a-zA-Z0-9]{1}[a-zA-Z0-9_.-]{1,29})';
     const DOCKER_SHELL = <<<SHELL
 bash -l -c %s
 SHELL;
 
-    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,25}$/';
+    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,40}$/';
 
-    const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source';
+    const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source for "%s"';
     const EVENT_DOCKER_RUNNING = 'Check Docker daemon status';
     const EVENT_BUILD_CONTAINER = 'Build Docker image "%s"';
     const EVENT_SCRATCH_OWNER = 'Record build owner metadata';
@@ -40,6 +59,8 @@ SHELL;
     const EVENT_CLEAN_PERMISSIONS = 'Clean build permissions';
     const EVENT_KILL_CONTAINER = 'Kill Docker container';
     const EVENT_REMOVE_CONTAINER = 'Remove Docker container';
+
+    const ERR_CONTAINER_NOT_RUNNING = 'Docker container is not running.';
 
     /**
      * @var EventLogger
@@ -69,6 +90,8 @@ SHELL;
     private $logDockerCommands;
     private $useSudoForDocker;
 
+    private static $dockerPatternRegex;
+
     /**
      * @param EventLogger $logger
      * @param SSHProcess $remoter
@@ -88,6 +111,12 @@ SHELL;
 
         $this->logDockerCommands = false;
         $this->useSudoForDocker = false;
+
+        self::$dockerPatternRegex = sprintf(
+            '/^%1$s%2$s(\/%2$s)?(\:%2$s)? /',
+            self::DOCKER_PREFIX,
+            self::DOCKER_IMAGE_REGEX
+        );
     }
 
     /**
@@ -109,27 +138,77 @@ SHELL;
     /**
      * {@inheritdoc}
      */
-    public function __invoke($imageName, $remoteUser, $remoteServer, $remotePath, array $commands, array $env)
+    public function __invoke($defaultImageName, $remoteUser, $remoteServer, $remotePath, array $commands, array $env)
     {
-        $fqImageName = sprintf('hal9000/%s', $imageName);
-        $imagesBasePath = $this->dockerSourcesPath;
-
+        // Store as class properties so cleanup operation can use them
         $this->remoteUser = $remoteUser;
         $this->remoteServer = $remoteServer;
 
+        $currentImage = '';
+        $containerName = '';
+        $cleanup = null;
+
+        foreach ($commands as $command) {
+            list($image, $command) = $this->parseCommand($defaultImageName, $command);
+
+            // Image has changed, run cleanup for previous container (if set), and build new container
+            if ($image !== $currentImage) {
+                $currentImage = $image;
+
+                if (is_callable($cleanup)) {
+                    $cleanup();
+                    // If we were able to cleanup the previous container, remove it from emergency handler
+                    $this->cleanup(null, '');
+                }
+
+                if (!$container = $this->buildContainer($currentImage, $remotePath, $env)) {
+                    return $this->bombout(false);
+                }
+
+                list($containerName, $cleanup) = $container;
+            }
+
+            // well thats weird, something seriously bad happened
+            if (!$containerName) {
+                $this->logger->event('failure', self::ERR_CONTAINER_NOT_RUNNING);
+                return $this->bombout(false);
+            }
+
+            // 5. Run command
+            if (!$this->runCommand($containerName, $command)) {
+                return $this->bombout(false);
+            }
+        }
+
+        // Bombout will automatically run the last cleanup
+        return $this->bombout(true);
+    }
+
+    /**
+     * @param string $imageName
+     * @param string $remotePath
+     * @param array $env
+     *
+     * @return array|null Returns either null, or the container name and cleanup closure on success
+     */
+    private function buildContainer($imageName, $remotePath, array $env)
+    {
+        $imagesBasePath = $this->dockerSourcesPath;
+        $fqImageName = sprintf('hal9000/%s', $imageName);
+
         // 1. Ensure docker source exists
         if (!$this->sanityCheck($imagesBasePath, $imageName)) {
-            return $this->bombout(false);
+            return null;
         }
 
         // 2. Build docker image
         if (!$this->buildImage($imageName, $fqImageName, $imagesBasePath)) {
-            return $this->bombout(false);
+            return null;
         }
 
         // 3. Get owner of build dir
         if (!$dockerMeta = $this->getOwner($remotePath)) {
-            return $this->bombout(false);
+            return null;
         }
 
         $owner = $dockerMeta['owner'];
@@ -137,18 +216,44 @@ SHELL;
 
         // 4. Start up docker container
         if (!$containerName = $this->startContainer($remotePath, $fqImageName, $env)) {
-            return $this->bombout(false);
+            return null;
         }
+
+        $cleanup = function() use ($containerName, $owner, $group) {
+            $this->cleanupContainer($containerName, $owner, $group);
+        };
 
         // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler([$this, 'cleanupContainer'], 'Clean up and shutdown Docker container', $containerName, $owner, $group);
+        $this->enableEmergencyHandler($cleanup, 'Clean up and shutdown Docker container');
 
-        // 5. Run commands
-        if (!$this->runCommands($containerName, $commands)) {
-            return $this->bombout(false);
+        // This sucks more than a little
+        return [$containerName, $cleanup];
+    }
+
+    /**
+     * This should return the docker image to use (WITHOUT "docker:" prefix), and command without docker instructions.
+     *
+     * @param string $defaultImage
+     * @param string $command
+     *
+     * @return array [$imageName, $command]
+     */
+    private function parseCommand($defaultImage, $command)
+    {
+        if (preg_match(self::$dockerPatternRegex, $command, $matches)) {
+
+            $image = array_shift($matches);
+
+            // Remove docker prefix from command
+            $command = substr($command, strlen($image));
+
+            // return docker image as just the "docker/*" part
+            $image = substr($image, strlen(self::DOCKER_PREFIX));
+
+            return [trim($image), trim($command)];
         }
 
-        return $this->bombout(true);
+        return [$defaultImage, $command];
     }
 
     /**
@@ -177,7 +282,7 @@ SHELL;
             $this->docker('info')
         ];
 
-        if (!$isDockerImageValid = $this->runRemote($validateDockerSourceCommand, self::EVENT_VALIDATE_DOCKERSOURCE)) {
+        if (!$isDockerImageValid = $this->runRemote($validateDockerSourceCommand, sprintf(self::EVENT_VALIDATE_DOCKERSOURCE, $imageName))) {
             return false;
         }
 
@@ -288,18 +393,18 @@ SHELL;
 
         $containerName = trim($this->remoter->getLastOutput());
 
-        $this->status(sprintf('Docker container "%s" started.', $containerName), self::SECTION);
+        $this->status(sprintf('Docker container "%s" started', $containerName), self::SECTION);
 
         return $containerName;
     }
 
     /**
      * @param string $containerName
-     * @param array $commands
+     * @param array $command
      *
      * @return boolean
      */
-    private function runCommands($containerName, array $commands)
+    private function runCommand($containerName, $command)
     {
         $prefix = [
             $this->docker('exec'),
@@ -307,24 +412,22 @@ SHELL;
         ];
         $prefix = implode(' ', $prefix);
 
-        foreach ($commands as $command) {
-            $actual = $this->dockerEscaped($command);
+        $actual = $this->dockerEscaped($command);
 
-            $this->status('Running user build command inside Docker container', self::SECTION);
+        $this->status(sprintf('Running build command [ %s ] in Docker container', $command), self::SECTION_BUILD);
 
-            $context = $this->buildRemoter
-                ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
-                ->withSanitized($command);
+        $context = $this->buildRemoter
+            ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
+            ->withSanitized($command);
 
-            // Add build command to log message if short enough
-            $msg = self::EVENT_MESSAGE;
-            if (1 === preg_match(self::SHORT_COMMAND_VALIDATION, $command)) {
-                $msg = sprintf(self::EVENT_MESSAGE_CUSTOM, $command);
-            }
+        // Add build command to log message if short enough
+        $msg = self::EVENT_MESSAGE;
+        if (1 === preg_match(self::SHORT_COMMAND_VALIDATION, $command)) {
+            $msg = sprintf(self::EVENT_MESSAGE_CUSTOM, $command);
+        }
 
-            if (!$response = $this->runBuildRemote($context, $msg)) {
-                return false;
-            }
+        if (!$response = $this->runBuildRemote($context, $msg)) {
+            return false;
         }
 
         // all good
@@ -343,6 +446,8 @@ SHELL;
      */
     private function cleanupContainer($containerName, $owner, $group)
     {
+        $this->status(sprintf('Cleaning up container "%s"', $containerName), 'Docker');
+
         $chown = sprintf('chown -R %s:%s "%s"', $owner, $group, self::CONTAINER_WORKING_DIR);
         $chown = [
             $this->docker('exec'),
@@ -427,17 +532,11 @@ SHELL;
      * @param callable $cleaner
      * @param string $message
      *
-     * @param string $containerName
-     * @param string $owner
-     * @param string $group
-     *
      * @return null
      */
-    private function enableEmergencyHandler(callable $cleaner, $message, $containerName, $owner, $group)
+    private function enableEmergencyHandler(callable $cleaner, $message)
     {
-        $this->cleanup(function() use ($cleaner, $containerName, $owner, $group) {
-            $cleaner($containerName, $owner, $group);
-        }, $message);
+        $this->cleanup($cleaner, $message);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {
