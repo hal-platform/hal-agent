@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "fa5cb6b231236916b278adb4fbfd3560",
-    "content-hash": "ddf7f762c8619247a6108252897c07cb",
+    "hash": "5b2ea1c9c4301546f8883eb9041a2f88",
+    "content-hash": "dbcba4bb6de3eda53f3140f1c4750871",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1444,17 +1444,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "2.9.0-beta2",
+            "version": "2.9.0-rc1",
             "source": {
                 "type": "git",
-                "url": "http://git/web-core/hal-core.git",
-                "reference": "06b05d6cace46df582045852d4139b6b6d231b23"
+                "url": "http://git/hal/hal-core.git",
+                "reference": "0615e7fb1eb7de97f6d1cd822eb91d41dfd6bff8"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.9.0-beta2-8ac18d.zip",
-                "reference": "06b05d6cace46df582045852d4139b6b6d231b23",
-                "shasum": "3172c9d1a2b03d28a77ce4b79390272c12900206"
+                "url": "http://composer/dist/ql-hal-core-2.9.0-rc1-718c34.zip",
+                "reference": "0615e7fb1eb7de97f6d1cd822eb91d41dfd6bff8",
+                "shasum": "80daef430a0db93c90de5eaffa956a995c6aa16c"
             },
             "archive": {
                 "exclude": [
@@ -1486,8 +1486,7 @@
             "autoload": {
                 "psr-4": {
                     "QL\\Hal\\Core\\": "src/",
-                    "QL\\Hal\\Core\\Testing\\": "testing/src/",
-                    "QL\\Kraken\\Core\\": "src-kraken/"
+                    "QL\\Hal\\Core\\Testing\\": "testing/src/"
                 }
             },
             "license": [
@@ -1495,12 +1494,12 @@
             ],
             "authors": [
                 {
-                    "name": "IT Team Web Core",
-                    "email": "itteamwebcore@quickenloans.com"
+                    "name": "Steve Kluck",
+                    "email": "stevekluck@quickenloans.com"
                 }
             ],
-            "description": "HAL 9000 shared components and domain resources",
-            "time": "2016-01-06 19:06:01"
+            "description": "Hal shared components and domain resources",
+            "time": "2016-02-02 15:53:27"
         },
         {
             "name": "ql/mcp-common",
@@ -3280,7 +3279,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "ql/hal-core": 10
+        "ql/hal-core": 5
     },
     "prefer-stable": false,
     "prefer-lowest": false,
