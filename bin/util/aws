@@ -1,0 +1,54 @@
+#!/usr/bin/env php
+<?php
+
+namespace QL\Hal\Bin;
+
+use QL\Hal\Agent\Application\Di;
+use QL\Hal\Core\Entity\Credential\AWSCredential;
+
+$root = __DIR__ . '/../..';
+require_once $root . '/configuration/bootstrap.php';
+
+$key = '';
+$secret = '';
+$region = '';
+
+$container = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
+$aws = $container->get('push.aws.authenticator');
+
+$cred = new AWSCredential($key, $secret);
+$s3 = $aws->getS3($region, $cred);
+$cd = $aws->getCD($region, $cred);
+
+//
+
+$bucket = 'DemoBucket';
+$app = 'DemoApplication';
+$group = 'DemoFleet';
+
+//
+
+$result = $s3->doesBucketExist($bucket);
+
+echo "Does $bucket exist?\n";
+var_dump($result);
+
+//
+
+$result = $cd->getDeploymentGroup([
+    'applicationName' => $app,
+    'deploymentGroupName' => $group
+]);
+
+var_dump($result->get('deploymentGroupInfo'));
+
+$result = $cd->listDeployments([
+    'applicationName' => $app,
+    'deploymentGroupName' => $group
+]);
+
+var_dump($result->get('deployments'));
+
+//
+
+echo "\n";
