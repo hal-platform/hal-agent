@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+# Use "boot2docker ssh" or "docker-machine ssh $(docker-machine active)"
+#DEFAULT_MACHINE_PREFIX="docker-machine ssh $(docker-machine active)"
+#DEFAULT_B2D_PREFIX="boot2docker ssh"
+
+readonly DMC_BIN="docker-machine"
+readonly B2D_BIN="boot2docker"
+readonly RSYNC_BIN="rsync"
+
+readonly DI_PATH="/docker-images"
+readonly TEMP_PATH="/var/hal9000"
+
+DMC_IS_INSTALLED=$(type -t $DMC_BIN)
+B2D_IS_INSTALLED=$(type -t $B2D_BIN)
+
+echo "--------------------------------------------------------------------------------"
+echo "(1/5) Verifying docker configuration"
+echo "--------------------------------------------------------------------------------"
+
+if [ $DMC_IS_INSTALLED ] ; then
+
+    echo "Docker Machine is installed. Using Docker Machine."
+    CMD_PREFIX="docker-machine ssh $(docker-machine active)"
+
+elif [ $B2D_IS_INSTALLED ] ; then
+
+    echo "Docker Machine is not installed. Using Boot2docker."
+    CMD_PREFIX="boot2docker ssh"
+else
+    echo "Docker Machine is not installed."
+    echo "Boot2docker is not installed."
+    echo "Setup cannot be run."
+    exit 1
+fi
+
+echo;echo "OK!"
+
+echo "--------------------------------------------------------------------------------"
+echo "(2/5) INSTALLING rsync"
+echo "--------------------------------------------------------------------------------"
+
+RSYNC_IS_INSTALLED=$($CMD_PREFIX type -t $RSYNC_BIN 2>/dev/null)
+
+if [ $DMC_IS_INSTALLED ] ; then
+    echo "Rsync already installed in docker host."
+else
+    echo "Rsync not found. Installing."
+    $CMD_PREFIX tce-load -wi rsync
+fi
+
+echo;echo "OK!"
+
+echo "--------------------------------------------------------------------------------"
+echo "(3/5) CREATING directories"
+echo "--------------------------------------------------------------------------------"
+
+$CMD_PREFIX test -d $DI_PATH 2>/dev/null
+DI_IS_SETUP=$?
+
+$CMD_PREFIX test -d $TEMP_PATH 2>/dev/null
+TMP_IS_SETUP=$?
+
+if [ $DI_IS_SETUP -eq 0 ] ; then
+    echo "$DI_PATH found on docker host. Skipping setup."
+else
+    echo "$DI_PATH not found. Creating."
+    $CMD_PREFIX sudo mkdir $DI_PATH
+fi
+
+if [ $TMP_IS_SETUP -eq 0 ] ; then
+    echo "$TEMP_PATH found on docker host. Skipping setup."
+else
+    echo "$TEMP_PATH not found. Creating."
+    $CMD_PREFIX sudo mkdir $TEMP_PATH
+fi
+
+echo;echo "OK!"
+
+echo "--------------------------------------------------------------------------------"
+echo "(4/5) SETTING permissions"
+echo "--------------------------------------------------------------------------------"
+
+$CMD_PREFIX sudo chown docker:docker $DI_PATH
+$CMD_PREFIX sudo chown docker:docker $TEMP_PATH
+echo;echo "OK!"
+
+echo "--------------------------------------------------------------------------------"
+echo "(5/5) PLEASE RUN THE FOLLOWING COMMAND TO FINISH AGENT SETUP"
+echo "--------------------------------------------------------------------------------"
+
+echo 'bin/hal docker:refresh'
+echo
