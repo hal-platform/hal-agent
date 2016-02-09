@@ -27,9 +27,9 @@ use QL\Hal\Core\JobIdGenerator;
  */
 class ProcessHandler
 {
-    const ERR_NO_DEPLOYMENT = 'No target specified.';
-    const ERR_INVALID_DEPLOYMENT = 'Invalid target specified.';
-    const ERR_IN_PROGRESS = 'Push %s to target already in progress.';
+    const ERR_NO_DEPLOYMENT = 'No target specified';
+    const ERR_INVALID_DEPLOYMENT = 'Invalid target specified';
+    const ERR_IN_PROGRESS = 'Push %s to target already in progress';
 
     /**
      * @var EntityManagerInterface
