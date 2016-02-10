@@ -121,8 +121,8 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             '[Worker] Waiting pushes: 2',
             '[Worker] Starting push: 1234',
             '[Worker] Starting push: 5555',
-            'Build 1234 finished: ✔ success',
-            'Build 5555 finished: ✖ error',
+            'Build 1234 finished: success',
+            'Build 5555 finished: error',
         ];
 
         $output = $this->output->fetch();
@@ -223,7 +223,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             '[Worker] Waiting pushes: 2',
             '[Worker] Starting push: 1234',
             '[Worker] Skipping push: 5555 - A push to deployment 6666 is already running',
-            'Build 1234 finished: ✔ success'
+            'Build 1234 finished: success'
         ];
 
         $output = $this->output->fetch();

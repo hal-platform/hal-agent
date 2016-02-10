@@ -123,11 +123,11 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             '[Worker] Waiting builds: 2',
             '[Worker] Starting build: 1234',
             '[Worker] Starting build: 5555',
-            'Build 1234 finished: ✔ success',
+            'Build 1234 finished: success',
 
             '[Worker] Checking build status: 5555',
             '[Worker] Waiting 1 seconds...',
-            'Build 5555 finished: ✖ error'
+            'Build 5555 finished: error'
         ];
 
         $output = $this->output->fetch();
