@@ -153,24 +153,6 @@ class Verify
             return false;
         }
 
-        // $currentPerms = explode(' ', $currentPerms);
-
-        // if (count($currentPerms) < 4) {
-        //     $this->logger->event('failure', self::ERR_READ_PERMISSIONS, ['directory' => $target]);
-        //     return false;
-        // }
-
-        // list($owner, $group) = array_slice($currentPerms, 3, 2);
-        // if (!$isWriteable || ($remoteUser !== $owner)) {
-        //     $this->logger->event('failure', self::ERR_VERIFY_PERMISSIONS, [
-        //         'directory' => $target,
-        //         'currentPermissions' => sprintf('%s:%s', $owner, $group),
-        //         'requiredOwner' => $remoteUser,
-        //         'isWriteable' => $isWriteable ? 'Yes' : 'No'
-        //     ]);
-        //     return false;
-        // }
-
         return true;
     }
 }
