@@ -125,35 +125,51 @@ class Verify
     private function verifyTargetIsWriteable($remoteUser, $remoteServer, $target)
     {
         $dirWriteable = sprintf('test -w "%s"', $target);
-        $getPermission = sprintf('ls -ld "%s"', $target);
+        $getTargetStats = sprintf('ls -ld "%s"', $target);
+        $verifyOwner = sprintf('find "%s" -maxdepth 0 -user "%s" -d 0 -type d -print0', $target, $remoteUser);
 
         $context = $this->remoter->createCommand($remoteUser, $remoteServer, $dirWriteable);
         $isWriteable = $this->remoter->run($context, [], [false]);
 
-        $context = $this->remoter->createCommand($remoteUser, $remoteServer, $getPermission);
+        // Get the ls metadata for log output
+        $context = $this->remoter->createCommand($remoteUser, $remoteServer, $getTargetStats);
         if (!$response = $this->remoter->run($context, [], [false])) {
             $this->logger->event('failure', self::ERR_READ_PERMISSIONS, ['directory' => $target]);
             return false;
         }
 
-        $currentPerms = trim($this->remoter->getLastOutput());
-        $currentPerms = explode(' ', $currentPerms);
+        $output = trim($this->remoter->getLastOutput());
 
-        if (count($currentPerms) < 4) {
-            $this->logger->event('failure', self::ERR_READ_PERMISSIONS, ['directory' => $target]);
-            return false;
-        }
+        $context = $this->remoter->createCommand($remoteUser, $remoteServer, $verifyOwner);
+        $isOwned = $this->remoter->run($context, [], [false]);
 
-        list($owner, $group) = array_slice($currentPerms, 2, 2);
-        if (!$isWriteable || ($remoteUser !== $owner)) {
+        if (!$isWriteable || !$isOwned) {
             $this->logger->event('failure', self::ERR_VERIFY_PERMISSIONS, [
                 'directory' => $target,
-                'currentPermissions' => sprintf('%s:%s', $owner, $group),
+                'currentPermissions' => $output,
                 'requiredOwner' => $remoteUser,
                 'isWriteable' => $isWriteable ? 'Yes' : 'No'
             ]);
             return false;
         }
+
+        // $currentPerms = explode(' ', $currentPerms);
+
+        // if (count($currentPerms) < 4) {
+        //     $this->logger->event('failure', self::ERR_READ_PERMISSIONS, ['directory' => $target]);
+        //     return false;
+        // }
+
+        // list($owner, $group) = array_slice($currentPerms, 3, 2);
+        // if (!$isWriteable || ($remoteUser !== $owner)) {
+        //     $this->logger->event('failure', self::ERR_VERIFY_PERMISSIONS, [
+        //         'directory' => $target,
+        //         'currentPermissions' => sprintf('%s:%s', $owner, $group),
+        //         'requiredOwner' => $remoteUser,
+        //         'isWriteable' => $isWriteable ? 'Yes' : 'No'
+        //     ]);
+        //     return false;
+        // }
 
         return true;
     }

@@ -226,7 +226,7 @@ class ProcessHandlerTest extends PHPUnit_Framework_TestCase
         $handler->launch($parent);
 
         $this->assertSame('Aborted', $process1->status());
-        $this->assertSame('No target specified.', $process1->message());
+        $this->assertSame('No target specified', $process1->message());
     }
 
     public function testPreventInvalidDeployment()
@@ -267,7 +267,7 @@ class ProcessHandlerTest extends PHPUnit_Framework_TestCase
         $handler->launch($parent);
 
         $this->assertSame('Aborted', $process1->status());
-        $this->assertSame('Invalid target specified.', $process1->message());
+        $this->assertSame('Invalid target specified', $process1->message());
     }
 
     public function testPreventClobbering()
@@ -321,6 +321,6 @@ class ProcessHandlerTest extends PHPUnit_Framework_TestCase
         $this->assertSame('Aborted', $process2->status());
 
         $this->assertSame(null, $push);
-        $this->assertSame('Push derp123 to target already in progress.', $process1->message());
+        $this->assertSame('Push derp123 to target already in progress', $process1->message());
     }
 }

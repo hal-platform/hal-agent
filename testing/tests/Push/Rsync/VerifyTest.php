@@ -140,14 +140,19 @@ SHELL_OUTPUT;
             ->with('sshuser', 'hostname', 'ls -ld "/var/test"')
             ->andReturn($this->context)
             ->once();
+            $this->remoter
+            ->shouldReceive('createCommand')
+            ->with('sshuser', 'hostname', 'find "/var/test" -maxdepth 0 -user "sshuser" -d 0 -type d -print0')
+            ->andReturn($this->context)
+            ->once();
 
         // dir exists,
         // is not writeable
         // owned
         $this->remoter
             ->shouldReceive('run')
-            ->andReturn(true, false, true)
-            ->times(3);
+            ->andReturn(true, false, true, true)
+            ->times(4);
 
         $this->remoter
             ->shouldReceive('getLastOutput')
@@ -157,7 +162,7 @@ SHELL_OUTPUT;
             ->shouldReceive('event')
             ->with('failure', Verify::ERR_VERIFY_PERMISSIONS, [
                 'directory' => '/var/test',
-                'currentPermissions' => 'sshuser:users',
+                'currentPermissions' => $lsOutput,
                 'requiredOwner' => 'sshuser',
                 'isWriteable' => 'No',
             ])
@@ -190,14 +195,19 @@ SHELL_OUTPUT;
             ->with('sshuser', 'hostname', 'ls -ld "/var/test"')
             ->andReturn($this->context)
             ->once();
+        $this->remoter
+            ->shouldReceive('createCommand')
+            ->with('sshuser', 'hostname', 'find "/var/test" -maxdepth 0 -user "sshuser" -d 0 -type d -print0')
+            ->andReturn($this->context)
+            ->once();
 
         // dir exists,
         // is writeable
         // not owned
         $this->remoter
             ->shouldReceive('run')
-            ->andReturn(true, true, true)
-            ->times(3);
+            ->andReturn(true, true, true, false)
+            ->times(4);
 
         $this->remoter
             ->shouldReceive('getLastOutput')
@@ -207,56 +217,9 @@ SHELL_OUTPUT;
             ->shouldReceive('event')
             ->with('failure', Verify::ERR_VERIFY_PERMISSIONS, [
                 'directory' => '/var/test',
-                'currentPermissions' => 'otheruser:users',
+                'currentPermissions' => $lsOutput,
                 'requiredOwner' => 'sshuser',
                 'isWriteable' => 'Yes',
-            ])
-            ->once();
-
-        $action = new Verify($this->logger, $this->ssh, $this->remoter);
-        $success = $action('sshuser', 'hostname', '/var/test');
-
-        $this->assertFalse($success);
-    }
-
-    public function testTargetDirExistsButOutputIsGarbled()
-    {
-        $lsOutput = <<<SHELL_OUTPUT
-drwxrwxr-x.10 otheruser u
-SHELL_OUTPUT;
-
-        $this->remoter
-            ->shouldReceive('createCommand')
-            ->with('sshuser', 'hostname', 'test -d "/var/test"')
-            ->andReturn($this->context)
-            ->once();
-        $this->remoter
-            ->shouldReceive('createCommand')
-            ->with('sshuser', 'hostname', 'test -w "/var/test"')
-            ->andReturn($this->context)
-            ->once();
-        $this->remoter
-            ->shouldReceive('createCommand')
-            ->with('sshuser', 'hostname', 'ls -ld "/var/test"')
-            ->andReturn($this->context)
-            ->once();
-
-        // dir exists,
-        // is writeable
-        // mangled output
-        $this->remoter
-            ->shouldReceive('run')
-            ->andReturn(true, true, true)
-            ->times(3);
-
-        $this->remoter
-            ->shouldReceive('getLastOutput')
-            ->andReturn($lsOutput);
-
-        $this->logger
-            ->shouldReceive('event')
-            ->with('failure', Verify::ERR_READ_PERMISSIONS, [
-                'directory' => '/var/test',
             ])
             ->once();
 
