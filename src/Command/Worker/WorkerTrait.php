@@ -27,28 +27,25 @@ STDOUT;
         $exit = $process->getExitCode();
         $stdout = $process->getOutput() . $process->getErrorOutput();
 
-        $status = '<error>error</error>';
-        $formattingPad = 15;
+        $status = "\xE2\x9C\x96" . ' error'; // U+2716
 
         if ($exit === 0) {
-            $status = '<info>success</info>';
-            $formattingPad = 13;
+            $status = "\xE2\x9C\x94" . ' success'; // U+2714
         }
 
         if ($timedOut) {
-            $status = '<error>timed out</error>';
-            $formattingPad = 15;
+            $status = "\xE2\x9D\x97" . ' timed out'; // U+2757
         }
 
         $header = sprintf('Build %s finished: %s', $id, $status);
 
         $output = $this->BOOKEND .
-            $this->buildRows($header, 116 + $formattingPad) .
+            $this->buildRows($header, 116 + 2) .
             $this->BOOKEND .
             $this->buildRows($stdout) .
             $this->BOOKEND;
 
-        return $output;
+        return "\n" . $output;
     }
 
     /**
@@ -65,6 +62,7 @@ STDOUT;
 
         $output = '';
         foreach ($lines as $line) {
+            $line = mb_substr($line, 0, 116);
             $output .= sprintf("| %s |\n", str_pad($line, $max));
         }
 
