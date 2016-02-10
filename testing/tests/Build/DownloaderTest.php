@@ -9,6 +9,9 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Github\ArchiveApi;
+use QL\Hal\Agent\Github\GitHubException;
+use QL\Hal\Agent\Logger\EventLogger;
 
 class DownloaderTest extends PHPUnit_Framework_TestCase
 {
@@ -18,12 +21,12 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->file = FIXTURES_DIR . '/downloaded.file';
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock(EventLogger::class);
     }
 
     public function testSuccess()
     {
-        $api = Mockery::mock('QL\Hal\Agent\Github\ArchiveApi', [
+        $api = Mockery::mock(ArchiveApi::class, [
             'download' => true
         ]);
 
@@ -45,9 +48,30 @@ class DownloaderTest extends PHPUnit_Framework_TestCase
 
     public function testFailure()
     {
-        $api = Mockery::mock('QL\Hal\Agent\Github\ArchiveApi', [
+        $api = Mockery::mock(ArchiveApi::class, [
             'download' => false
         ]);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any(), [
+                'repository' => 'user/repo',
+                'reference' => 'ref',
+                'target' => $this->file
+            ])->once();
+
+        $action = new Downloader($this->logger, $api);
+
+        $success = $action('user', 'repo', 'ref', $this->file);
+        $this->assertFalse($success);
+    }
+
+    public function testApiThrowsException()
+    {
+        $api = Mockery::mock(ArchiveApi::class);
+        $api
+            ->shouldReceive('download')
+            ->andThrow(GitHubException::class);
 
         $this->logger
             ->shouldReceive('event')

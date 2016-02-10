@@ -8,7 +8,6 @@
 namespace QL\Hal\Agent\Github;
 
 use Closure;
-use Exception;
 use Guzzle\Common\Event;
 use Github\Client;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -38,6 +37,8 @@ class ArchiveApi
      * @param string $reference  reference to a branch or commit
      * @param string $target     where to download the file
      *
+     * @throws Exception
+     *
      * @return boolean
      */
     public function download($username, $repository, $reference, $target)
@@ -53,7 +54,7 @@ class ArchiveApi
         $response = $client->request($path, null, 'GET', [], ['allow_redirects'  => false]);
 
         if (302 !== $response->getStatusCode()) {
-            throw new Exception('Unexpected response from github archive link');
+            throw new GitHubException('Unexpected response from github archive link');
         }
 
         $redirect = $response->getLocation();

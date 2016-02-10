@@ -9,6 +9,7 @@ namespace QL\Hal\Agent\Build;
 
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Github\ArchiveApi;
+use QL\Hal\Agent\Github\GitHubException;
 
 class Downloader
 {
@@ -46,8 +47,13 @@ class Downloader
      */
     public function __invoke($user, $repo, $ref, $target)
     {
-        if ($isSuccessful = $this->github->download($user, $repo, $ref, $target)) {
+        try {
+            $isSuccessful = $this->github->download($user, $repo, $ref, $target);
+        } catch (GitHubException $ex) {
+            $isSuccessful = false;
+        }
 
+        if ($isSuccessful) {
             $filesize = filesize($target);
             $this->logger->keep('filesize', ['download' => $filesize]);
             $this->logger->event('success', self::EVENT_MESSAGE, [
