@@ -126,11 +126,11 @@
                             <h4 style="margin:0;">Gump it for me!</h4>
                             <p>
                                 <b>{{ username }}</b>
-                                {% if is_success %}
+                                {% if is_success -%}
                                     {{ is_push ? 'pushed a build' : 'created a build' }}
-                                {% else %}
+                                {%- else -%}
                                     {{ is_push ? 'tried to push a build' : 'tried to create a build' }}
-                                {% endif %}
+                                {%- endif %}
 
                                 for <b>{{ application.key }}</b>
                                 from the code at <b>{{ github.human }}</b>{% if not is_success %}, but it <b style="color:#C12A19;">failed</b>{% endif %}.
@@ -144,7 +144,7 @@
                             <ul>
                                 <li><b>ID:</b> {{ application.key }}</li>
                                 <li><b>Name:</b> {{ application.name }}</li>
-                                <li><b>Group:</b> {{ application.group.name }}</li>
+                                <li><b>Group:</b> {{ application.group.name ?: 'Unknown' }}</li>
                             </ul>
                         </td>
                     </tr>
@@ -161,7 +161,7 @@
                             <td valign="top" class="stat">
                                 <h4>Where was the code pushed?</h4>
                                 <ul>
-                                    <li><b>Environment:</b> {{ environment.name }}</li>
+                                    <li><b>Environment:</b> {{ environment.name ?: 'Unknown' }}</li>
                                     <li><b>Deployment:</b> {{ deployment.formatPretty(true) }}</li>
                                 </ul>
                             </td>
@@ -170,7 +170,7 @@
                         <tr>
                             <td valign="top" class="stat">
                                 <h4>Which environment is the {{ type }} for?</h4>
-                                <p>{{ environment.name }}</p>
+                                <p>{{ environment.name ?: 'Unknown' }}</p>
                             </td>
                         </tr>
                     {% endif %}
@@ -188,9 +188,10 @@
                             {% if filesize.download %}
                                 <ul>
                                     <li><b>Code size:</b> {{ filesize.download }}</li>
-                                    {% if filesize.archive %}
+                                    {% if filesize.archive -%}
                                         <li><b>Build size:</b> {{ filesize.archive }}</li>
-                                    {% endif %}
+                                    {%- endif %}
+
                                 </ul>
                                 {% if filesize.archive and filesize.tooBig %}
                                     <p class="file-alert">
@@ -198,7 +199,7 @@
                                         <br>You should consider cleaning up some of your build artifacts.
                                     </p>
                                 {% endif %}
-                            {% endif %}
+                            {%- endif %}
                         </td>
                     </tr>
                     <tr>
@@ -206,10 +207,10 @@
                             <h4>When was the {{ type }} initiated?</h4>
                             <ul>
                                 <li><b>Start:</b> {{ time.start }}</li>
-                                {% if time.end %}
+                                {% if time.end -%}
                                     <li><b>End:</b> {{ time.end }}</li>
                                     <li><b>Total elapsed time:</b> {{ time.elapsed }}</li>
-                                {% endif %}
+                                {%- endif %}
                             </ul>
                         </td>
                     </tr>
@@ -217,11 +218,11 @@
                         <td valign="top" class="stat">
                             <h4>Where can I see more information?</h4>
                             <ul>
-                                <li><a href="{{ hal_url }}applications/{{ application.id }}/status">HAL 9000: {{ application.key }} status</a></li>
-                                <li><a href="{{ hal_url }}builds/{{ build.id }}">HAL 9000: build details</a></li>
-                                {% if is_push %}
-                                    <li><a href="{{ hal_url }}pushes/{{ push.id }}">HAL 9000: push details</a></li>
-                                {% endif %}
+                                <li><a href="{{ hal_url }}applications/{{ application.id }}/status">Hal: {{ application.key }} status</a></li>
+                                <li><a href="{{ hal_url }}builds/{{ build.id }}">Hal: build details</a></li>
+                                {% if is_push -%}
+                                    <li><a href="{{ hal_url }}pushes/{{ push.id }}">Hal: push details</a></li>
+                                {%- endif %}
                             </ul>
                         </td>
                     </tr>

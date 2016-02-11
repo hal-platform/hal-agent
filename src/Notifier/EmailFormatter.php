@@ -15,6 +15,8 @@ use Twig_Template;
 
 class EmailFormatter
 {
+    const ERR_INVALID = 'Error: Unable to build email notification';
+
     /**
      * @var Twig_Template
      */
@@ -37,32 +39,41 @@ class EmailFormatter
     {
         // expected data in data:
             // icon
-            // event
             // status
             // build
             // push
             // application
+
             // environment
-            // server
             // deployment
 
-        $entity = $data['build'];
-        if ($data['push'] instanceof Push) {
-            $entity = $data['push'];
+        $icon = $this->nullable($data, 'icon');
+        $status = $this->nullable($data, 'status');
+        $application = $this->nullable($data, 'application');
+        $build = $this->nullable($data, 'build');
+
+        $entity = $build;
+        $push = $this->nullable($data, 'push');
+        if ($push instanceof Push) {
+            $entity = $push;
+        }
+
+        if (!$application || !$build) {
+            return self::ERR_INVALID;
         }
 
         // title
-        if ($data['status'] !== null) {
+        if ($status !== null) {
             $type = ($entity instanceof Push) ? 'push' : 'build';
-            $status = ($data['status'] === true) ? 'succeeded' : 'failed';
-            $title = sprintf('[%s] The %s %s', $data['icon'], $type, $status);
+            $status = ($status === true) ? 'succeeded' : 'failed';
+            $title = sprintf('[%s] The %s %s', $icon, $type, $status);
         } else {
             $type = ($entity instanceof Push) ? 'Push' : 'Build';
-            $title = sprintf('[%s] %s update', $data['icon'], $type);
+            $title = sprintf('[%s] %s update', $icon, $type);
         }
 
-        $githubRepo = sprintf('%s/%s', $data['application']->githubOwner(), $data['application']->githubRepo());
-        list($githubUrl, $githubHuman) = $this->formatGithubRef($githubRepo, $data['build']->branch(), $data['build']->commit());
+        $githubRepo = sprintf('%s/%s', $application->githubOwner(), $application->githubRepo());
+        list($githubUrl, $githubHuman) = $this->formatGithubRef($githubRepo, $build->branch(), $build->commit());
 
         $context = array_merge($data, [
             'title' => $title,
@@ -74,8 +85,8 @@ class EmailFormatter
 
             'github' => [
                 'repo' => $githubRepo,
-                'ref' => $data['build']->branch(),
-                'commit' => $data['build']->commit(),
+                'ref' => $build->branch(),
+                'commit' => $build->commit(),
                 'human' => $githubHuman,
                 'ref_url' => $githubUrl
             ],
@@ -90,10 +101,15 @@ class EmailFormatter
     /**
      * @param TimePoint $start
      * @param TimePoint|null $end
+     *
      * @return string
      */
-    private function formatTime(TimePoint $start, TimePoint $end = null)
+    private function formatTime(TimePoint $start = null, TimePoint $end = null)
     {
+        if (!$start) {
+            return ['start' => 'Unknown'];
+        }
+
         $startTime = $start->format('Y-m-d H:i:s', 'America/Detroit');
         $endTime = ($end) ? $end->format('Y-m-d H:i:s', 'America/Detroit') : null;
         $elapsed = null;
@@ -186,5 +202,20 @@ class EmailFormatter
             $base . '/tree/' . $branch,
             $branch . ' branch'
         ];
+    }
+
+    /**
+     * @param array $data
+     * @param string $key
+     *
+     * @return mixed
+     */
+    private function nullable(array $data, $key)
+    {
+        if (isset($data[$key])) {
+            return $data[$key];
+        }
+
+        return null;
     }
 }
