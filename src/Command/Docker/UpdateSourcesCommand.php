@@ -49,9 +49,7 @@ HELP;
         1 => 'Invalid temp directory.',
         2 => 'Invalid GitHub repository or reference.',
         3 => 'Archive download and unpack failed.',
-        4 => 'Failed to locate unpacked archive.',
-        5 => 'Failed to sanitize unpacked archive.',
-        6 => 'An error occured while transferring dockerfile sources to build server.'
+        4 => 'An error occured while transferring dockerfile sources to build server.'
     ];
 
     /**
@@ -211,16 +209,6 @@ HELP;
             return $this->failure($output, 3);
         }
 
-        if (!$unpackedPath = $this->locateUnpackedArchive($tempDir)) {
-            $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 4);
-        }
-
-        if (!$this->sanitizeUnpackedArchive($unpackedPath)) {
-            $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 5);
-        }
-
         $transfer = $this->transferFiles(
             $output,
             $tempDir,
@@ -231,7 +219,7 @@ HELP;
 
         if (!$transfer) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 6);
+            return $this->failure($output, 4);
         }
 
         // Audit
@@ -285,7 +273,13 @@ HELP;
     private function unpackArchive($tempDir, $archive)
     {
         $makeCommand = ['mkdir', $tempDir];
-        $unpackCommand = ['tar', '-vxzf', $archive, sprintf('--directory=%s', $tempDir)];
+        $unpackCommand = [
+            'tar',
+            '-vxz',
+            '--strip-components=1',
+            sprintf('--file=%s', $archive),
+            sprintf('--directory=%s', $tempDir)
+        ];
 
         $makeProcess = $this->processBuilder
             ->setWorkingDirectory(null)
@@ -304,59 +298,6 @@ HELP;
 
         $unpackProcess->run();
         return $unpackProcess->isSuccessful();
-    }
-
-    /**
-     * @param string $tempDir
-     *
-     * @return string|null
-     */
-    private function locateUnpackedArchive($tempDir)
-    {
-        $cmd = ['find', $tempDir, '-type', 'd'];
-        $process = $this->processBuilder
-            ->setWorkingDirectory($tempDir)
-            ->setArguments($cmd)
-            ->getProcess();
-
-        $process->setCommandLine($process->getCommandLine() . ' -name * -prune');
-
-        $process->run();
-
-        if ($process->isSuccessful()) {
-            return strtok($process->getOutput(), "\n");
-        }
-
-        return null;
-    }
-
-    /**
-     * @param string $unpackedPath
-     *
-     * @return boolean
-     */
-    private function sanitizeUnpackedArchive($unpackedPath)
-    {
-        $mvCommand = 'mv {,.[!.],..?}* ..';
-        $rmCommand = ['rmdir', $unpackedPath];
-
-        $process = $this->processBuilder
-            ->setWorkingDirectory($unpackedPath)
-            ->setArguments([''])
-            ->getProcess()
-            // processbuilder escapes input, but we need these wildcards to resolve correctly unescaped
-            ->setCommandLine($mvCommand);
-
-        $process->run();
-
-        // remove unpacked directory
-        $removalProcess = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments($rmCommand)
-            ->getProcess();
-
-        $removalProcess->run();
-        return $removalProcess->isSuccessful();
     }
 
     /**
