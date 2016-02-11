@@ -142,7 +142,7 @@ SHELL_OUTPUT;
             ->once();
             $this->remoter
             ->shouldReceive('createCommand')
-            ->with('sshuser', 'hostname', 'find "/var/test" -maxdepth 0 -user "sshuser" -d 0 -type d -print0')
+            ->with('sshuser', 'hostname', 'find "/var/test" -maxdepth 0 -user "sshuser" -type d -print0')
             ->andReturn($this->context)
             ->once();
 
@@ -197,7 +197,7 @@ SHELL_OUTPUT;
             ->once();
         $this->remoter
             ->shouldReceive('createCommand')
-            ->with('sshuser', 'hostname', 'find "/var/test" -maxdepth 0 -user "sshuser" -d 0 -type d -print0')
+            ->with('sshuser', 'hostname', 'find "/var/test" -maxdepth 0 -user "sshuser" -type d -print0')
             ->andReturn($this->context)
             ->once();
 

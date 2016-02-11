@@ -126,7 +126,7 @@ class Verify
     {
         $dirWriteable = sprintf('test -w "%s"', $target);
         $getTargetStats = sprintf('ls -ld "%s"', $target);
-        $verifyOwner = sprintf('find "%s" -maxdepth 0 -user "%s" -d 0 -type d -print0', $target, $remoteUser);
+        $verifyOwner = sprintf('find "%s" -maxdepth 0 -user "%s" -type d -print0', $target, $remoteUser);
 
         $context = $this->remoter->createCommand($remoteUser, $remoteServer, $dirWriteable);
         $isWriteable = $this->remoter->run($context, [], [false]);
