@@ -30,7 +30,7 @@
         "swiftmailer/swiftmailer": "5.2.*",
         "twig/twig": "~1.15",
 
-        "ql/hal-core":   "2.9.0-rc1",
+        "ql/hal-core":   "2.9.0",
 
         "ql/mcp-common": "~1.0",
         "ql/mcp-logger": "~2.4",
