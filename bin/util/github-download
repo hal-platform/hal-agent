@@ -1,0 +1,61 @@
+#!/usr/bin/env php
+<?php
+
+namespace QL\Hal\Bin;
+
+use Github\Client;
+use Github\Exception\RuntimeException;
+use Github\HttpClient\HttpClient;
+use Guzzle\Http\Client as Guzzle3;
+use QL\Hal\Agent\Github\ArchiveApi;
+
+$root = __DIR__ . '/../..';
+require_once $root . '/configuration/bootstrap.php';
+
+$baseurl = 'http://git/api/v3/';
+$guzzle3 = new Guzzle3($baseurl);
+$client = new Client(new HttpClient([], $guzzle3));
+$archive = new ArchiveApi($client);
+
+$params = $argv;
+array_shift($params);
+
+if (count($params) === 3) {
+    $owner = array_shift($params);
+    $repo = array_shift($params);
+    $reference = str_replace(['.', '/', '\\', '=', '+', '$'], '', array_shift($params));
+
+} else {
+    $owner = 'hal';
+    $repo = 'hal';
+    $reference = 'master';
+}
+
+$targetFile = "$root/$owner-$repo-$reference.tar.gz";
+
+echo <<<OUTPUT
+Repo: $owner/$repo
+Reference: $reference
+Filename: $targetFile
+
+
+OUTPUT;
+
+try {
+    $downloaded = $archive->download($owner, $repo, $reference, $targetFile);
+} catch (RuntimeException $e) {
+    echo $e->getMessage() . "\n\n";
+    $downloaded = false;
+}
+
+if ($downloaded) {
+    $bytes = filesize($targetFile);
+    $mb = sprintf('%s MB', round($bytes / 1048576, 3));
+
+    echo "File downloaded!\n";
+    echo "Filesize: $mb ($bytes bytes)\n";
+} else {
+    echo "An error occured!\n";
+}
+
+
