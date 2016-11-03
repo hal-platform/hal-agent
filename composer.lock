@@ -773,6 +773,7 @@
                 "rest",
                 "web service"
             ],
+            "abandoned": "guzzlehttp/guzzle",
             "time": "2015-03-18 18:23:50"
         },
         {
@@ -1448,13 +1449,13 @@
             "source": {
                 "type": "git",
                 "url": "http://git/hal/hal-core.git",
-                "reference": "5b3b4b1a8e6c5ccff7ec574b81ad062b24f7dbca"
+                "reference": "de87b306f9544411329c764f5770bc3873523a00"
             },
             "dist": {
                 "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.9.0-8b85d9.zip",
-                "reference": "5b3b4b1a8e6c5ccff7ec574b81ad062b24f7dbca",
-                "shasum": "b2a128c4585286baab4eab7b9375a4ff7e6ee308"
+                "url": "http://composer/dist/ql-hal-core-2.9.0-a95fa3.zip",
+                "reference": "de87b306f9544411329c764f5770bc3873523a00",
+                "shasum": "4e0a639a5d2dcc7c23b0ffb189b6497103509d42"
             },
             "archive": {
                 "exclude": [
