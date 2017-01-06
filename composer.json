@@ -24,7 +24,7 @@
         "guzzlehttp/guzzle": "5.*",
         "knplabs/github-api": "1.2.1",
         "paragonie/random_compat": "~1.1",
-        "phpseclib/phpseclib": "0.3.9",
+        "phpseclib/phpseclib": "1.0.5",
         "predis/predis": "~1.0",
         "psr/log": "*",
         "swiftmailer/swiftmailer": "5.2.*",
