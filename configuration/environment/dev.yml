@@ -4,7 +4,7 @@ parameters:
     github.token: ''
     github.com.token: ''
 
-    hal.baseurl: 'http://hal9000/'
+    hal.baseurl: 'http://hal.local/'
 
     # file path to store permanent archives of builds                   | recommended path: 'PROJECT_DIRECTORY/.archive'
     environment.archive: ''
@@ -16,14 +16,17 @@ parameters:
     # UNIX BUILDING
     ############################################################################
 
-    # user used to SSH and RSYNC to build server
-    build.unix.remoteUser: 'docker'
+    # user used to SSH and RSYNC to build servers
+    build.unix.remoteUser: ''
 
     # Unix build server
-    build.unix.server: 'docker'
+    build.unix.server: 'localhost'
 
-    # temporary scratch on the build server
-    build.unix.temp: '/var/hal9000'
+    # temporary scratch on the build server                             | recommended path: 'PROJECT_DIRECTORY/.buildserver'
+    build.unix.temp: ''
+
+    # Local path to clone of docker-images
+    docker.source.path: '/docker-images'
 
     # Docker configuration
     docker.option.sudo: false
@@ -75,7 +78,7 @@ parameters:
     ############################################################################
 
     ssh.credentials:
-        - ['%build.unix.remoteUser%', '*', 'key:/Users/$USERNAME/.docker/machine/machines/$DOCKER_MACHINE_NAME/id_rsa']
+        - ['%build.unix.remoteUser%', '*', 'key:/path/to/id_rsa']
         - ['%build.windows.remoteUser%', '*', 'key:/path/to/id_rsa']
         - ['%push.rsync.remoteUser%', '*', 'key:/path/to/id_rsa']
 
