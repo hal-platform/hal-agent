@@ -4,6 +4,9 @@
 # recommended location for build artifacts
 /.build/
 
+# recommended location for "build server" build artifacts
+/.buildserver/
+
 # doctrine proxy location
 /.doctrine/
 
