@@ -229,7 +229,7 @@ class PushCommand extends Command implements OutputAwareInterface
         $pushId = $input->getArgument('PUSH_ID');
 
         // Add subscriptions
-        $this->logger->addSubscription('push.success', 'notifier.email');
+        // $this->logger->addSubscription('push.success', 'notifier.email');
         $this->logger->addSubscription('push.failure', 'notifier.email');
 
         $this->logger->setStage('push.start');

@@ -242,10 +242,6 @@ class BuildCommand extends Command implements OutputAwareInterface
 
         $buildId = $input->getArgument('BUILD_ID');
 
-        // Add subscriptions
-        $this->logger->addSubscription('build.success', 'notifier.email');
-        $this->logger->addSubscription('build.failure', 'notifier.email');
-
         $this->logger->setStage('build.start');
 
         if (!$properties = $this->resolve($output, $buildId)) {

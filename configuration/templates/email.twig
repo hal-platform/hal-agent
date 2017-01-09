@@ -135,6 +135,11 @@
                                 for <b>{{ application.key }}</b>
                                 from the code at <b>{{ github.human }}</b>{% if not is_success %}, but it <b style="color:#C12A19;">failed</b>{% endif %}.
                             </p>
+                            {% if is_push -%}
+                                <p>
+                                    <a href="{{ hal_url }}pushes/{{ push.id }}">View more information on Hal</a>
+                                </p>
+                            {% endif %}
                         </td>
                     </tr>
 

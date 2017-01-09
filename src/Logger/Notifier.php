@@ -76,7 +76,7 @@ class Notifier
             return;
         }
 
-        if (!$entity instanceof Build && !$entity instanceof Push) {
+        if (!$entity instanceof Push) {
             return;
         }
 
@@ -112,10 +112,10 @@ class Notifier
 
     /**
      * @param string $event
-     * @param Build|Push $entity
+     * @param Push $entity
      * @return array
      */
-    private function prepareData($event, $entity)
+    private function prepareData($event, Push $entity)
     {
         $status = null;
         if ($entity->status() === 'Success') {
@@ -125,17 +125,10 @@ class Notifier
             $status = false;
         }
 
-        if ($entity instanceof Push) {
-            $build = $entity->build();
-            $push = $entity;
-            $deployment = $push->deployment();
-            $server = $deployment->server();
-        } else {
-            $build = $entity;
-            $push = null;
-            $deployment = null;
-            $server = null;
-        }
+        $build = $entity->build();
+        $push = $entity;
+        $deployment = $push->deployment();
+        $server = $deployment->server();
 
         $application = $build->application();
         $env = $build->environment();

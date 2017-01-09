@@ -78,7 +78,6 @@ services:
         calls:
             - ['setFrom', ['%email.from%', '%email.from.name%']]
             - ['setReplyTo', ['%email.reply%']]
-            - ['setCc', ['%email.notify%']]
             - ['setContentType', ['text/html']]
             - ['setSubject', ['Critical Error']]
             # to, subject will be set at runtime
