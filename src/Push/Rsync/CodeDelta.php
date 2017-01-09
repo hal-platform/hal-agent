@@ -161,6 +161,9 @@ class CodeDelta
         // Get compare data from github api
         try {
             $comparison = $this->commitApi->compare($username, $repository, $old['commit'], $new['commit']);
+            if (!is_array($comparison)) {
+                return $context;
+            }
         } catch (RuntimeException $e) {
             return $context;
         }
