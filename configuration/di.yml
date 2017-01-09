@@ -102,10 +102,6 @@ services:
             - ['setWindowsBuilder', ['%build.windows.remoteUser%', '%build.windows.server%', '%build.windows.temp%']]
             - ['setUnixBuilder', ['%build.unix.remoteUser%', '%build.unix.server%', '%build.unix.temp%']]
 
-    utility.github.deploymenter:
-        class: 'QL\Hal\Agent\Utility\GithubDeploymenter'
-        arguments: ['@github.deployments', '%hal.baseurl%']
-
     guzzle:
         class: 'GuzzleHttp\Client'
 

@@ -14,12 +14,6 @@ services:
         class: 'Github\Api\PullRequest'
         arguments: ['@github.client']
 
-    github.deployments:
-        class: 'QL\Hal\Agent\Github\DeploymentsApi'
-        arguments:
-            - '@guzzle'
-            - '%github.baseurl.api%'
-
     github.client:
         class: 'Github\Client'
         arguments: ['@github.httpClient']

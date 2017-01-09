@@ -29,7 +29,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     public $deployer;
 
     public $filesystem;
-    public $ghDeploymenter;
 
     public $input;
     public $output;
@@ -44,7 +43,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
         $this->deployer = Mockery::mock('QL\Hal\Agent\Push\DelegatingDeployer');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
-        $this->ghDeploymenter = Mockery::mock('QL\Hal\Agent\Utility\GithubDeploymenter');
 
         $this->output = new BufferedOutput;
     }
@@ -69,11 +67,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('addSubscription')
             ->twice();
 
-        $this->ghDeploymenter
-            ->shouldReceive('updateDeployment')
-            ->with('failure')
-            ->twice();
-
         $command = new PushCommand(
             'cmd',
             $this->logger,
@@ -83,8 +76,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->reader,
             $this->builder,
             $this->deployer,
-            $this->filesystem,
-            $this->ghDeploymenter
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -205,22 +197,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('remove')
             ->twice();
 
-        $this->ghDeploymenter
-            ->shouldReceive('createGitHubDeployment')
-            ->once();
-        $this->ghDeploymenter
-            ->shouldReceive('updateDeployment')
-            ->with('pending')
-            ->once();
-        $this->ghDeploymenter
-            ->shouldReceive('updateDeployment')
-            ->with('success')
-            ->once();
-        $this->ghDeploymenter
-            ->shouldReceive('updateDeployment')
-            ->with('failure')
-            ->once();
-
         $command = new PushCommand(
             'cmd',
             $this->logger,
@@ -230,8 +206,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->reader,
             $this->builder,
             $this->deployer,
-            $this->filesystem,
-            $this->ghDeploymenter
+            $this->filesystem
         );
 
         $command->disableShutdownHandler();
@@ -298,11 +273,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('addSubscription')
             ->twice();
 
-        $this->ghDeploymenter
-            ->shouldReceive('updateDeployment')
-            ->with('failure')
-            ->once();
-
         $this->resolver
             ->shouldReceive('__invoke')
             ->andReturn([
@@ -340,8 +310,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->reader,
             $this->builder,
             $this->deployer,
-            $this->filesystem,
-            $this->ghDeploymenter
+            $this->filesystem
         );
 
         try {

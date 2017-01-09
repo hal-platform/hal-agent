@@ -15,7 +15,6 @@ use QL\Hal\Agent\Push\Mover;
 use QL\Hal\Agent\Push\Pusher;
 use QL\Hal\Agent\Push\Resolver;
 use QL\Hal\Agent\Push\Unpacker;
-use QL\Hal\Agent\Utility\GithubDeploymenter;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Entity\Push;
@@ -121,11 +120,6 @@ class PushCommand extends Command implements OutputAwareInterface
     private $filesystem;
 
     /**
-     * @var GitHubDeploymenter
-     */
-    private $ghDeploymenter;
-
-    /**
      * @var Push|null
      */
     private $push;
@@ -145,7 +139,6 @@ class PushCommand extends Command implements OutputAwareInterface
      * @param DelegatingBuilder $builder
      * @param DelegatingDeployer $deployer
      * @param Filesystem $filesystem
-     * @param GitHubDeploymenter $ghDeploymenter
      */
     public function __construct(
         $name,
@@ -156,8 +149,7 @@ class PushCommand extends Command implements OutputAwareInterface
         ConfigurationReader $reader,
         DelegatingBuilder $builder,
         DelegatingDeployer $deployer,
-        Filesystem $filesystem,
-        GitHubDeploymenter $ghDeploymenter
+        Filesystem $filesystem
     ) {
         parent::__construct($name);
 
@@ -172,7 +164,6 @@ class PushCommand extends Command implements OutputAwareInterface
         $this->deployer = $deployer;
 
         $this->filesystem = $filesystem;
-        $this->ghDeploymenter = $ghDeploymenter;
         $this->artifacts = [];
 
         $this->enableShutdownHandler = true;
@@ -306,11 +297,9 @@ class PushCommand extends Command implements OutputAwareInterface
     {
         if ($exitCode === 0) {
             $this->logger->success();
-            $this->ghDeploymenter->updateDeployment('success');
 
         } else {
             $this->logger->failure();
-            $this->ghDeploymenter->updateDeployment('failure');
         }
 
         $this->cleanup();
@@ -372,10 +361,6 @@ class PushCommand extends Command implements OutputAwareInterface
         }
 
         $this->logger->event('success', 'Resolved push properties', $context);
-
-        // Attempt to create a github deployment
-        $this->ghDeploymenter->createGitHubDeployment($properties['push']);
-        $this->ghDeploymenter->updateDeployment('pending');
 
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];
@@ -483,6 +468,5 @@ class PushCommand extends Command implements OutputAwareInterface
 
         // If we got to this point and the status is still "Pushing", something terrible has happened.
         $this->logger->failure();
-        $this->ghDeploymenter->updateDeployment('failure');
     }
 }
