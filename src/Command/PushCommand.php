@@ -67,11 +67,6 @@ class PushCommand extends Command implements OutputAwareInterface
         204 => 'Upload to S3 failed.',
         205 => 'Deploying application to EB failed.',
 
-        300 => 'Required properties for EC2 are missing.',
-        301 => 'Failed to authenticate with AWS.',
-        302 => 'No EC2 instances found.',
-        303 => 'EC2 push failed.',
-
         400 => 'Required properties for S3 are missing.',
         401 => 'Failed to authenticate with AWS.',
         402 => 'Build could not be packed for S3.',

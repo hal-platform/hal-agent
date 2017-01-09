@@ -84,7 +84,6 @@ class Resolver
      * @var string
      */
     private $sshUser;
-    private $ec2User;
 
     /**
      * @var string
@@ -105,7 +104,6 @@ class Resolver
      * @param EncryptedPropertyResolver $encryptedResolver
      *
      * @param string $sshUser
-     * @param string $ec2User
      * @param string $githubBaseUrl
      */
     public function __construct(
@@ -115,7 +113,6 @@ class Resolver
         BuildEnvironmentResolver $buildEnvironmentResolver,
         EncryptedPropertyResolver $encryptedResolver,
         $sshUser,
-        $ec2User,
         $githubBaseUrl
     ) {
         $this->logger = $logger;
@@ -125,7 +122,6 @@ class Resolver
         $this->encryptedResolver = $encryptedResolver;
 
         $this->sshUser = $sshUser;
-        $this->ec2User = $ec2User;
         $this->githubBaseUrl = $githubBaseUrl;
     }
 
@@ -286,18 +282,6 @@ class Resolver
 
                 'bucket' => $deployment->s3bucket(),
                 'file' => $this->buildS3Filename($replacements, $template)
-            ];
-
-        } elseif ($method === ServerEnum::TYPE_EC2) {
-
-            $properties[$method] = [
-                'region' => $server->name(),
-                'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
-
-                'pool' => $deployment->ec2Pool(),
-
-                'remoteUser' => $this->ec2User,
-                'remotePath' => $deployment->path()
             ];
 
         } elseif ($method === ServerEnum::TYPE_S3) {

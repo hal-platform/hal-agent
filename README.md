@@ -212,11 +212,11 @@ Build Systems:
 
 Deployment Types:
 - Rsync
-- EC2 (Autoscaling, rsync)
+- Code Deploy
 - Elastic Beanstalk
 
 **Please note:** 
-For EC2 and EB deployments "server commands" are skipped (Both pre-push and post-push).
+For CD and EB deployments "server commands" are skipped (Both pre-push and post-push).
 
 ### .hal9000.yml
 

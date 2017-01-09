@@ -324,9 +324,10 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
         // audit
         $user = new User;
 
+        $timepoint = Mockery::mock(TimePoint::class);
         $this->clock
             ->shouldReceive('read')
-            ->andReturn(Mockery::mock(TimePoint::class));
+            ->andReturn($timepoint);
 
         $this->em
             ->shouldReceive('flush');

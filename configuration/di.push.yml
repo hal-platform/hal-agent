@@ -8,9 +8,8 @@ services:
             - '@clock'
             - '@utility.environment.resolver'
             - '@encrypted.resolver'
-            - %push.rsync.remoteUser%
-            - %aws.ec2.user%
-            - %github.baseurl.site%
+            - '%push.rsync.remoteUser%'
+            - '%github.baseurl.site%'
         calls:
             - ['setLocalTempPath', ['%environment.temp%']]
             - ['setArchivePath', ['%environment.archive%']]
@@ -41,8 +40,8 @@ services:
             - '@logger.event'
             - '@service_container'
             -
-                unix: build.unix.handler
-                windows: build.windows.handler
+                unix: 'build.unix.handler'
+                windows: 'build.windows.handler'
 
     push.deployer:
         class: 'QL\Hal\Agent\Push\DelegatingDeployer'
@@ -50,11 +49,10 @@ services:
             - '@logger.event'
             - '@service_container'
             -
-                rsync: push.rsync.deployer
-                eb: push.eb.deployer
-                ec2: push.ec2.deployer
-                s3: push.s3.deployer
-                cd: push.cd.deployer
+                rsync: 'push.rsync.deployer'
+                eb: 'push.eb.deployer'
+                s3: 'push.s3.deployer'
+                cd: 'push.cd.deployer'
 
     ####################################################################################################################
     # eb
@@ -157,29 +155,6 @@ services:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.standard%'
-
-    ####################################################################################################################
-    # ec2
-    ####################################################################################################################
-
-    push.ec2.deployer:
-        class: 'QL\Hal\Agent\Push\EC2\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.aws.authenticator'
-            - '@push.ec2.instance.finder'
-            - '@push.ec2.pusher'
-
-    push.ec2.instance.finder:
-        class: 'QL\Hal\Agent\Push\EC2\InstanceFinder'
-
-    push.ec2.pusher:
-        class: 'QL\Hal\Agent\Push\EC2\Pusher'
-        arguments:
-            - '@logger.event'
-            - '@ssh.filemanager'
-            - '@utility.process.builder=' # = signifies a prototype service
-            - '%timeout.push.ec2%'
 
     ####################################################################################################################
     # s3

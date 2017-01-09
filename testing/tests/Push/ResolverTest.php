@@ -60,7 +60,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
-            'ec2user',
             'http://git'
         );
 
@@ -87,7 +86,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
-            'ec2user',
             'http://git'
         );
 
@@ -118,7 +116,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
-            'ec2user',
             'http://git'
         );
 
@@ -244,7 +241,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
-            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');
@@ -381,7 +377,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
-            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');
@@ -520,7 +515,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             $this->envResolver,
             $this->encryptedResolver,
             'sshuser',
-            'ec2user',
             'http://git'
         );
         $action->setLocalTempPath('testdir');
@@ -534,132 +528,5 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected['location'], $properties['location']);
         $this->assertSame($expected['artifacts'], $properties['artifacts']);
         $this->assertSame($expected['cd'], $properties['cd']);
-    }
-
-    public function testEC2Success()
-    {
-        $app = (new Application)
-            ->withKey('repokey')
-            ->withGithubOwner('user1')
-            ->withGithubRepo('repo1');
-
-        $app->setBuildTransformCmd('bin/build-transform');
-        $app->setPrePushCmd('bin/pre');
-        $app->setPostPushCmd('bin/post');
-
-        $push = (new Push)
-            ->withId('1234')
-            ->withStatus('Waiting')
-            ->withApplication($app)
-            ->withBuild(
-                (new Build)
-                    ->withId('8956')
-                    ->withBranch('master')
-                    ->withCommit('5555')
-                    ->withApplication($app)
-                    ->withEnvironment(
-                        (new Environment)
-                            ->withName('envname')
-                    )
-            )
-            ->withDeployment(
-                (new Deployment)
-                    ->withEC2Pool('pool_name')
-                    ->withPath('/ec2/path/var/www')
-                    ->withServer(
-                        (new Server)
-                            ->withName('aws-region-1')
-                            ->withType('ec2')
-                    )
-            );
-
-        $expected = [
-            'method' => 'ec2',
-
-            'ec2' => [
-                'region' => 'aws-region-1',
-                'credential' => null,
-                'pool' => 'pool_name',
-                'remoteUser' => 'ec2user',
-                'remotePath' => '/ec2/path/var/www'
-            ],
-            'configuration' => [
-                'system' => 'unix',
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
-                'build' => [],
-                'build_transform' => [
-                    'bin/build-transform'
-                ],
-                'pre_push' => [
-                    'bin/pre'
-                ],
-                'post_push' => [
-                    'bin/post'
-                ]
-            ],
-
-            'location' => [
-                'path' => 'testdir/hal9000-push-1234',
-                'archive' => 'ARCHIVE_PATH/hal9000-8956.tar.gz',
-                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-8956.tar.gz',
-                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
-                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz'
-            ],
-
-            'artifacts' => [
-                'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-eb-1234.zip',
-                'testdir/hal9000-s3-1234.tar.gz',
-                'testdir/hal9000-push-1234'
-            ],
-
-            'pushProperties' => [
-                'id' => '8956',
-                'source' => 'http://git/user1/repo1',
-                'env' => 'envname',
-                'user' => null,
-                'reference' => 'master',
-                'commit' => '5555',
-                'date' => '2015-03-15T08:00:00-04:00'
-            ]
-        ];
-
-        $clock = new Clock('2015-03-15 12:00:00', 'UTC');
-        $this->envResolver
-            ->shouldReceive('getPushProperties')
-            ->andReturn([]);
-        $this->repo
-            ->shouldReceive('find')
-            ->andReturn($push);
-        $this->repo
-            ->shouldReceive('findBy')
-            ->andReturn([]);
-
-        $action = new Resolver(
-            $this->logger,
-            $this->em,
-            $clock,
-            $this->envResolver,
-            $this->encryptedResolver,
-            'sshuser',
-            'ec2user',
-            'http://git'
-        );
-        $action->setLocalTempPath('testdir');
-        $action->setArchivePath('ARCHIVE_PATH');
-
-        $properties = $action('1234');
-
-        $this->assertSame($expected['method'], $properties['method']);
-        $this->assertSame($expected['configuration'], $properties['configuration']);
-        $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
-        $this->assertSame($expected['location'], $properties['location']);
-        $this->assertSame($expected['artifacts'], $properties['artifacts']);
-        $this->assertSame($expected['ec2'], $properties['ec2']);
     }
 }
