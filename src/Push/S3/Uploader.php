@@ -11,6 +11,7 @@ use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use InvalidArgumentException;
 use QL\Hal\Agent\Logger\EventLogger;
+use RuntimeException;
 
 class Uploader
 {
@@ -19,6 +20,7 @@ class Uploader
      */
     const EVENT_MESSAGE = 'Upload to S3';
     const ERR_WAITING = 'Waited for upload to be available, but the operation timed out.';
+    const ERR_UNEXPECTED = 'An unexpected error occurred during an S3 multipart upload.';
     const ERR_BUCKET_MISSING = 'S3 bucket not found.';
     const ERR_OBJECT_EXISTS = 'S3 object already exists for this version';
 
@@ -174,6 +176,13 @@ class Uploader
             ]);
 
             $this->logger->event('failure', self::ERR_WAITING, $context);
+            return false;
+
+        } catch(RuntimeException $e) {
+            $this->logger->event('failure', self::ERR_UNEXPECTED, [
+                'Bucket' => $bucket,
+                'Key' => $file,
+            ]);
             return false;
         }
 
