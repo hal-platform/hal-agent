@@ -7,6 +7,8 @@ parameters:
 
     email.reply: 'hal@example.com'
 
+    logging.stacktrace: true
+
     timeout.build: 1800
     timeout.push: 300
 

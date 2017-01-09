@@ -82,6 +82,8 @@ services:
     utility.exceptionHandler:
         class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
         arguments: ['@logger.mcp']
+        calls:
+            - ['setStacktraceLogging', ['%logging.stacktrace%']]
 
     utility.id.generator:
         class: 'QL\Hal\Core\JobIdGenerator'

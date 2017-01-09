@@ -8,12 +8,15 @@
 namespace QL\Hal\Agent\Symfony;
 
 use Psr\Log\LoggerInterface;
+use QL\Hal\Agent\Utility\StacktraceFormatterTrait;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleExceptionEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExceptionHandlerSubscriber implements EventSubscriberInterface
 {
+    use StacktraceFormatterTrait;
+
     /**
      * @var LoggerInterface
      */
@@ -35,12 +38,13 @@ class ExceptionHandlerSubscriber implements EventSubscriberInterface
     public function handleException(ConsoleExceptionEvent $event, $eventName)
     {
         $exception = $event->getException();
+
         $context = [
             'message' => $exception->getMessage(),
             'code' => $exception->getCode(),
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
-            'exceptionData' => $exception->getTraceAsString()
+            'exceptionData' => $this->formatExceptionStacktrace($exception)
         ];
 
         $this->logger->critical($exception->getMessage(), $context);
