@@ -50,8 +50,10 @@ SHELL;
 
     const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,40}$/';
 
+    const EVENT_VALIDATE_IMAGE_BUILT = 'Validate Docker image is built';
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source for "%s"';
     const EVENT_DOCKER_RUNNING = 'Check Docker daemon status';
+    const EVENT_BUILD_INFO = 'Using Docker image "%s"';
     const EVENT_BUILD_CONTAINER = 'Build Docker image "%s"';
     const EVENT_SCRATCH_OWNER = 'Record build owner metadata';
     const EVENT_SCRATCH_GROUP = 'Record build group metadata';
@@ -304,6 +306,23 @@ SHELL;
     {
         $this->status(sprintf('Building container "%s"', $fqImageName), self::SECTION);
 
+        $imageExists = [
+            $this->docker('inspect'),
+            '--format="{{ .Id }}"',
+            $fqImageName
+        ];
+
+        $imageInfo = [
+            $this->docker('history'),
+            '--no-trunc',
+            $fqImageName
+        ];
+
+        // Check if container exists, dont build if it does
+        if ($isDockerImageBuilt = $this->runRemote($imageExists, sprintf(self::EVENT_VALIDATE_IMAGE_BUILT, $imageName))) {
+            return $this->runBuildRemote($imageInfo, sprintf(self::EVENT_BUILD_INFO, $imageName));
+        }
+
         $build = [
             $this->docker('build'),
             sprintf('--tag="%s"', $fqImageName),
@@ -485,6 +504,9 @@ SHELL;
     }
 
     /**
+     * Run commands through the remoter dedicated to "build commands". This remoter uses a longer timeout
+     * so it can wait for long running commands to finish.
+     *
      * @param string|string[] $command
      * @param string $customMessage
      * @param string[] $env
