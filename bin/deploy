@@ -7,11 +7,6 @@ function loadTitles() {
 ┃ VERIFY ENCRYPTED PROPERTIES                                                  ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 OUTOUT
-    read -r -d '' TITLE_INSTALL <<OUTOUT
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ COMPOSER INSTALLATION                                                        ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-OUTOUT
     read -r -d '' TITLE_CONFIG <<OUTOUT
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ NORMALIZE ENVIRONMENT CONFIGURATION                                          ┃
@@ -25,6 +20,11 @@ OUTOUT
     read -r -d '' TITLE_DOCTRINE <<OUTOUT
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ CACHING DOCTRINE PROXIES                                                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+OUTOUT
+    read -r -d '' TITLE_CLEANUP <<OUTOUT
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ CLEAN UP                                                                     ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 OUTOUT
 }
@@ -52,16 +52,20 @@ function removeArtifacts() {
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
 loadTitles
+DEPLOY=false
 
 set -e
+
+# determine whether to run frontend or backend only install
+for var in "$@" ; do
+    if [ "$var" = "--deploy" ] ; then
+        DEPLOY=true
+    fi
+done
 
 # install and configure
 echo "$TITLE_ENCRYPTED"
 "$DIR"/verify-encrypted
-
-# install and configure
-echo "$TITLE_INSTALL"
-"$DIR"/install
 
 echo "$TITLE_CONFIG"
 "$DIR"/normalize-configuration
@@ -73,8 +77,7 @@ echo "$TITLE_DOCTRINE"
 "$DIR"/generate-doctrine-proxies
 
 # Remove artifacts from deployment - keep your builds tidy!
-
-# Remove unneeded files if deploying from HAL
-if [ -n "$HAL_ENVIRONMENT" ]; then
-    removeArtifacts
+if [ "$DEPLOY" = true ] ; then
+    echo "$TITLE_CLEANUP"
+    removeArtifacts "bin/composer" "testing"
 fi

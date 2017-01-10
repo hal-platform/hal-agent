@@ -1,3 +1,6 @@
 system: docker:php5.6
 exclude: []
-build: 'bin/deploy'
+build:
+    - 'bin/install --deploy'
+    - 'bin/deploy --deploy'
+
