@@ -9,12 +9,14 @@ namespace QL\Hal\Agent\Logger;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Notifier\NotifierInterface;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Server;
+use Symfony\Component\DependencyInjection\Container;
 
 class NotifierTest extends PHPUnit_Framework_TestCase
 {
@@ -22,7 +24,7 @@ class NotifierTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->di = Mockery::mock('Symfony\Component\DependencyInjection\Container');
+        $this->di = Mockery::mock(Container::class);
     }
 
     public function testInvalidSubscriptionIsNotAdded()
@@ -49,10 +51,10 @@ class NotifierTest extends PHPUnit_Framework_TestCase
 
     public function testNotificationIsSent()
     {
-        $notifierService = Mockery::mock('QL\Hal\Agent\Notifier\NotifierInterface');
+        $notifierService = Mockery::mock(NotifierInterface::class);
         $notifierService
             ->shouldReceive('send')
-            ->with('build.end', Mockery::any())
+            ->with('push.end', Mockery::any())
             ->once();
 
         $this->di
@@ -64,23 +66,26 @@ class NotifierTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('get')
             ->andReturn($notifierService);
 
-        $build = Mockery::mock('QL\Hal\Core\Entity\Build');
-        $build
-            ->shouldReceive([
-                'status' => 'Success',
-                'application' => 'repo',
-                'environment' => 'env'
-            ]);
+        $push = Mockery::mock(Push::class, [
+            'status' => 'Success',
+            'application' => Mockery::mock(Application::class),
+            'build' => Mockery::mock(Build::class, [
+                'environment' => Mockery::mock(Environment::class)
+            ]),
+            'deployment' => Mockery::mock(Deployment::class, [
+                'server' => Mockery::mock(Server::class)
+            ])
+        ]);
 
         $notifier = new Notifier($this->di);
-        $notifier->addSubscription('build.end', 'service');
-        $notifier->sendNotifications('build.end', $build);
+        $notifier->addSubscription('push.end', 'service');
+        $notifier->sendNotifications('push.end', $push);
     }
 
     public function testNotifierBuildsCorrectContextForService()
     {
         $spy = null;
-        $notifierService = Mockery::mock('QL\Hal\Agent\Notifier\NotifierInterface');
+        $notifierService = Mockery::mock(NotifierInterface::class);
         $notifierService
             ->shouldReceive('send')
             ->with('push.success', Mockery::on(function($v) use (&$spy) {
@@ -98,20 +103,16 @@ class NotifierTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('get')
             ->andReturn($notifierService);
 
-        $server = Mockery::mock(Server::CLASS);
-        $application = Mockery::mock(Application::CLASS);
-        $environment = Mockery::mock(Environment::CLASS);
+        $application = Mockery::mock(Application::class);
+        $environment = Mockery::mock(Environment::class);
+        $build = Mockery::mock(Build::class, ['environment' => $environment]);
 
-        $build = Mockery::mock(Build::CLASS, [
-            'application' => $application,
-            'environment' => $environment
-        ]);
-        $deployment = Mockery::mock(Deployment::CLASS, [
-            'server' => $server
-        ]);
+        $server = Mockery::mock(Server::class);
+        $deployment = Mockery::mock(Deployment::class, ['server' => $server]);
 
-        $push = Mockery::mock(Push::CLASS, [
+        $push = Mockery::mock(Push::class, [
             'status' => 'Success',
+            'application' => $application,
             'build' => $build,
             'deployment' => $deployment
         ]);

@@ -66,9 +66,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('setStage')
             ->once();
-        $this->logger
-            ->shouldReceive('addSubscription')
-            ->twice();
 
         $this->ssh
             ->shouldReceive('disconnectAll')
@@ -197,14 +194,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('failure')
             ->once();
-        $this->logger
-            ->shouldReceive('addSubscription')
-            ->with('build.failure', 'notifier.email')
-            ->once();
-        $this->logger
-            ->shouldReceive('addSubscription')
-            ->with('build.success', 'notifier.email')
-            ->once();
 
         $this->ssh
             ->shouldReceive('disconnectAll')
@@ -298,9 +287,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('failure')
             ->once();
-        $this->logger
-            ->shouldReceive('addSubscription')
-            ->twice();
 
         $this->ssh
             ->shouldReceive('disconnectAll')

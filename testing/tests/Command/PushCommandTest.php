@@ -65,7 +65,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->logger
             ->shouldReceive('addSubscription')
-            ->twice();
+            ->once();
 
         $command = new PushCommand(
             'cmd',
@@ -144,10 +144,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('addSubscription')
             ->with('push.failure', 'notifier.email')
-            ->once();
-        $this->logger
-            ->shouldReceive('addSubscription')
-            ->with('push.success', 'notifier.email')
             ->once();
 
         $this->resolver
@@ -271,7 +267,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->once();
         $this->logger
             ->shouldReceive('addSubscription')
-            ->twice();
+            ->once();
 
         $this->resolver
             ->shouldReceive('__invoke')

@@ -112,25 +112,25 @@ class Notifier
 
     /**
      * @param string $event
-     * @param Push $entity
+     * @param Push $push
      * @return array
      */
-    private function prepareData($event, Push $entity)
+    private function prepareData($event, Push $push)
     {
         $status = null;
-        if ($entity->status() === 'Success') {
+        if ($push->status() === 'Success') {
             $status = true;
 
-        } elseif ($entity->status() === 'Error') {
+        } elseif ($push->status() === 'Error') {
             $status = false;
         }
 
-        $build = $entity->build();
-        $push = $entity;
+        $application = $push->application();
+
         $deployment = $push->deployment();
         $server = $deployment->server();
 
-        $application = $build->application();
+        $build = $push->build();
         $env = $build->environment();
 
         return array_merge($this->data, [
