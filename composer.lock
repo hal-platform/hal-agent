@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "26d44b1b084014e27f1f005acdc8d6c4",
+    "content-hash": "d1785a1c3bcb4fe18ab72ad6c4934085",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1444,11 +1444,17 @@
         },
         {
             "name": "ql/hal-core",
-            "version": "dev-master",
+            "version": "2.10-beta1",
             "source": {
                 "type": "git",
                 "url": "http://git/hal/hal-core.git",
-                "reference": "5a1a3f40312a182d5e35c04f07138f655ec58876"
+                "reference": "d6087ffb42bb638586467d8a6f5770915c7b3239"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "http://composer/dist/ql-hal-core-2.10-beta1-fcbc02.zip",
+                "reference": "d6087ffb42bb638586467d8a6f5770915c7b3239",
+                "shasum": "3aed8760058274f7b06a5be678b1d355a8bdd061"
             },
             "archive": {
                 "exclude": [
@@ -1493,7 +1499,7 @@
                 }
             ],
             "description": "Hal shared components and domain resources",
-            "time": "2017-01-09 19:20:03"
+            "time": "2017-01-10T17:50:21+00:00"
         },
         {
             "name": "ql/mcp-common",
@@ -3467,7 +3473,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "ql/hal-core": 20
+        "ql/hal-core": 10
     },
     "prefer-stable": false,
     "prefer-lowest": false,
