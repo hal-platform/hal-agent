@@ -9,6 +9,11 @@ namespace QL\Hal\Agent\Build\Windows;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Remoting\FileSyncManager;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
 class ImporterTest extends PHPUnit_Framework_TestCase
 {
@@ -17,8 +22,8 @@ class ImporterTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->syncer = Mockery::mock('QL\Hal\Agent\Remoting\FileSyncManager');
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->syncer = Mockery::mock(FileSyncManager::class);
     }
 
     public function testScpTimesOut()
@@ -32,11 +37,11 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ])->once();
 
         $this->syncer
-            ->shouldReceive('buildIncomingScp')
+            ->shouldReceive('buildIncomingScpForDirectory')
             ->andReturn(['scp', 'param1']);
 
-        $ex = Mockery::mock('Symfony\Component\Process\Exception\ProcessTimedOutException');
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
+        $ex = Mockery::mock(ProcessTimedOutException::class);
+        $process = Mockery::mock(Process::class, [
             'run' => null,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'err-output'
@@ -45,7 +50,7 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('run')
             ->andThrow($ex);
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $builder = Mockery::mock(ProcessBuilder::class . '[getProcess]');
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
@@ -68,10 +73,10 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             ])->once();
 
         $this->syncer
-            ->shouldReceive('buildIncomingScp')
+            ->shouldReceive('buildIncomingScpForDirectory')
             ->andReturn(['scp', 'param1']);
 
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
+        $process = Mockery::mock(Process::class, [
             'run' => null,
             'getOutput' => 'test-output',
             'getExitCode' => 127,
@@ -79,7 +84,7 @@ class ImporterTest extends PHPUnit_Framework_TestCase
             'isSuccessful' => false
         ])->makePartial();
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $builder = Mockery::mock(ProcessBuilder::class . '[getProcess]');
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
@@ -93,16 +98,16 @@ class ImporterTest extends PHPUnit_Framework_TestCase
     public function testScpBuildsCommandCorrectly()
     {
         $this->syncer
-            ->shouldReceive('buildIncomingScp')
+            ->shouldReceive('buildIncomingScpForDirectory')
             ->with('.', 'windows-user', 'server:2200', '/remote/path')
             ->andReturn(['scp', 'param1']);
 
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
+        $process = Mockery::mock(Process::class, [
             'run' => null,
             'isSuccessful' => true
         ])->makePartial();
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $builder = Mockery::mock(ProcessBuilder::class);
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);
@@ -126,15 +131,15 @@ class ImporterTest extends PHPUnit_Framework_TestCase
     public function testScpSuccess()
     {
         $this->syncer
-            ->shouldReceive('buildIncomingScp')
+            ->shouldReceive('buildIncomingScpForDirectory')
             ->andReturn(['scp', 'param1']);
 
-        $process = Mockery::mock('Symfony\Component\Process\Process', [
+        $process = Mockery::mock(Process::class, [
             'run' => null,
             'isSuccessful' => true
         ])->makePartial();
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
+        $builder = Mockery::mock(ProcessBuilder::class . '[getProcess]');
         $builder
             ->shouldReceive('getProcess')
             ->andReturn($process);

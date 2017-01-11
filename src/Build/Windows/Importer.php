@@ -95,7 +95,7 @@ class Importer
      */
     private function transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)
     {
-        $command = $this->fileSyncManager->buildIncomingScp('.', $remoteUser, $remoteServer, $remotePath);
+        $command = $this->fileSyncManager->buildIncomingScpForDirectory('.', $remoteUser, $remoteServer, $remotePath);
         if ($command === null) {
             return false;
         }

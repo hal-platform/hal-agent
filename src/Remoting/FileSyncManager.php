@@ -152,10 +152,25 @@ class FileSyncManager
             return null;
         }
 
-        $from = sprintf('%s@%s:%s/.', $credential->username(), $server, rtrim($remotePath, '/'));
+        $from = sprintf('%s@%s:%s', $credential->username(), $server, $remotePath);
         $to = $localPath;
 
         return $this->buildScp($from, $to, $port, $credential->keyPath());
+    }
+
+    /**
+     * @param string $localPath
+     * @param string $remoteUser
+     * @param string $remoteServer
+     * @param string $remotePath
+     *
+     * @return string[]|null
+     */
+    public function buildIncomingScpForDirectory($localPath, $remoteUser, $remoteServer, $remotePath)
+    {
+        $remotePath = sprintf('%s/.', rtrim($remotePath, '/'));
+
+        return $this->buildIncomingScp($localPath, $remoteUser, $remoteServer, $remotePath);
     }
 
     /**
