@@ -13,13 +13,14 @@ use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
+use Symfony\Component\Process\ProcessBuilder;
 
 class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
 {
     public function testNoPropertiesReturnedIfWindowsAndUnixDataNotSet()
     {
         $build = $this->createMockBuild();
-        $processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $processBuilder = Mockery::mock(ProcessBuilder::class);
 
         $resolver = new BuildEnvironmentResolver($processBuilder);
 
@@ -29,11 +30,75 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected, $actual);
     }
 
+    public function testUnixProperties()
+    {
+        $build = $this->createMockBuild();
+
+        $processBuilder = Mockery::mock(ProcessBuilder::class);
+
+        $resolver = new BuildEnvironmentResolver($processBuilder);
+        $resolver->setUnixBuilder('builduser', 'nixserver', '/var/buildserver');
+
+        $expected = [
+            'unix' => [
+                'buildUser' => 'builduser',
+                'buildServer' => 'nixserver',
+                'remoteFile' => '/var/buildserver/hal9000-build-1234.tar.gz',
+
+                'environmentVariables' => [
+                    'HAL_BUILDID' => '1234',
+                    'HAL_COMMIT' => '5555',
+                    'HAL_GITREF' => 'master',
+                    'HAL_ENVIRONMENT' => 'envkey',
+                    'HAL_REPO' => 'repokey'
+                ]
+            ]
+        ];
+
+        $actual = $resolver->getBuildProperties($build);
+
+        $this->assertSame($expected, $actual);
+    }
+
+    public function testUnixPropertiesForPush()
+    {
+        $build = $this->createMockBuild();
+
+        $push = (new Push)
+            ->withId(4321)
+            ->withBuild($build);
+
+        $processBuilder = Mockery::mock(ProcessBuilder::class);
+
+        $resolver = new BuildEnvironmentResolver($processBuilder);
+        $resolver->setUnixBuilder('builduser', 'nixserver', '/var/buildserver');
+
+        $expected = [
+            'unix' => [
+                'buildUser' => 'builduser',
+                'buildServer' => 'nixserver',
+                'remoteFile' => '/var/buildserver/hal9000-push-4321.tar.gz',
+
+                'environmentVariables' => [
+                    'HAL_BUILDID' => '1234',
+                    'HAL_COMMIT' => '5555',
+                    'HAL_GITREF' => 'master',
+                    'HAL_ENVIRONMENT' => 'envkey',
+                    'HAL_REPO' => 'repokey'
+                ]
+            ]
+        ];
+
+        $actual = $resolver->getPushProperties($push);
+
+        $this->assertSame($expected, $actual);
+    }
+
     public function testWindowsProperties()
     {
         $build = $this->createMockBuild();
 
-        $processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $processBuilder = Mockery::mock(ProcessBuilder::class);
 
         $resolver = new BuildEnvironmentResolver($processBuilder);
         $resolver->setWindowsBuilder('winuser', 'windowsbox1', '/win/builds');
@@ -67,7 +132,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
             ->withId(4321)
             ->withBuild($build);
 
-        $processBuilder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
+        $processBuilder = Mockery::mock(ProcessBuilder::class);
 
         $resolver = new BuildEnvironmentResolver($processBuilder);
         $resolver->setWindowsBuilder('winuser', 'windowsbox1', '/win/builds');

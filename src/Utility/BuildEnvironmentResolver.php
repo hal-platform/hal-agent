@@ -146,7 +146,7 @@ class BuildEnvironmentResolver
             UnixBuildHandler::SERVER_TYPE => [
                 'buildUser' => $this->unixUser,
                 'buildServer' => $this->unixServer,
-                'remotePath' => $this->generateUnixBuildPath($uniqueId),
+                'remoteFile' => $this->generateUnixBuildPath($uniqueId),
                 'environmentVariables' => $env
             ]
         ];
@@ -215,7 +215,7 @@ class BuildEnvironmentResolver
     private function generateUnixBuildPath($uniqueId)
     {
         $buildPath = sprintf(
-            '%s/%s/',
+            '%s/%s.tar.gz',
             rtrim($this->unixBuildDirectory, DIRECTORY_SEPARATOR),
             sprintf(self::UNIQUE_BUILD_PATH, $uniqueId)
         );
