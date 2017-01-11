@@ -26,6 +26,7 @@ class Packer
     const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';
 
     const TAR_FLAGS = '-vczf';
+    const MB_IN_BYTES = 1048576;
 
     /**
      * @var EventLogger
@@ -48,6 +49,11 @@ class Packer
     private $commandTimeout;
 
     /**
+     * @var bool
+     */
+    private $logOnSuccess;
+
+    /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param ProcessBuilder $processBuilder
@@ -59,6 +65,16 @@ class Packer
         $this->filesystem = $filesystem;
         $this->processBuilder = $processBuilder;
         $this->commandTimeout = $commandTimeout;
+
+        $this->logOnSuccess = true;
+    }
+
+    /**
+     * @return void
+     */
+    public function disableForcedLogging()
+    {
+        $this->logOnSuccess = false;
     }
 
     /**
@@ -108,18 +124,29 @@ class Packer
         }
 
         if ($process->isSuccessful()) {
-
-            $filesize = filesize($targetFile);
-
-            $this->logger->keep('filesize', ['archive' => $filesize]);
-            $this->logger->event('success', static::EVENT_MESSAGE, [
-                'size' => sprintf('%s MB', round($filesize / 1048576, 2))
-            ]);
+            if ($this->logOnSuccess) {
+                $this->logSuccess($targetFile);
+            }
 
             return true;
         }
 
         $dispCommand = implode(' ', $tarCommand);
         return $this->processFailure($dispCommand, $process);
+    }
+
+    /**
+     * @param string $targetFile
+     *
+     * @return void
+     */
+    private function logSuccess($targetFile)
+    {
+        $filesize = filesize($targetFile);
+
+        $this->logger->keep('filesize', ['archive' => $filesize]);
+        $this->logger->event('success', static::EVENT_MESSAGE, [
+            'size' => sprintf('%s MB', round($filesize / self::MB_IN_BYTES, 2))
+        ]);
     }
 }
