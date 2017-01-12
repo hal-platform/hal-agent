@@ -45,14 +45,15 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
                 'environmentVariables' => [],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
-                'remotePath' => '/tmp/builds/derp'
+                'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
             ],
             'location' => [
-                'path' => ''
+                'path' => '',
+                'tempArchive' => '/tmp/builds/local.derp.tar.gz'
             ]
         ];
 
@@ -108,10 +109,11 @@ OUTPUT;
                 'build' => ['cmd1'],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
-                'remotePath' => '/tmp/builds/derp'
+                'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'location' => [
-                'path' => ''
+                'path' => '',
+                'tempArchive' => '/tmp/builds/local.derp.tar.gz'
             ]
         ];
 
@@ -143,14 +145,15 @@ OUTPUT;
                 'environmentVariables' => [],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
-                'remotePath' => '/tmp/builds/derp'
+                'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'configuration' => [
                 'system' => 'docker:custom-docker-image',
                 'build' => ['cmd1'],
             ],
             'location' => [
-                'path' => ''
+                'path' => '',
+                'tempArchive' => '/tmp/builds/local.derp.tar.gz'
             ]
         ];
 
@@ -164,7 +167,7 @@ OUTPUT;
                 'custom-docker-image',
                 'testuser',
                 'buildserver',
-                '/tmp/builds/derp',
+                '/var/builds/remote.tar.gz',
                 ['cmd1'],
                 []
             )
@@ -200,14 +203,15 @@ OUTPUT;
                 ],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
-                'remotePath' => '/tmp/builds/derp'
+                'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
             ],
             'location' => [
-                'path' => '/path'
+                'path' => '',
+                'tempArchive' => '/tmp/builds/local.derp.tar.gz'
             ],
             'encrypted' => [
                 'VAL1' => 'testing1',
@@ -267,14 +271,15 @@ OUTPUT;
                 ],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
-                'remotePath' => '/tmp/builds/derp'
+                'remoteFile' => '/var/builds/remote2.tar.gz'
             ],
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
             ],
             'location' => [
-                'path' => '/path'
+                'path' => '',
+                'tempArchive' => '/tmp/builds/local.derp.tar.gz'
             ],
             'encrypted' => [
                 'VAL1' => 'testing1',
@@ -316,7 +321,7 @@ OUTPUT;
                 'default-image',
                 'testuser',
                 'buildserver',
-                '/tmp/builds/derp',
+                '/var/builds/remote2.tar.gz',
                 ['cmd1'],
                 ['decrypt-output']
             )

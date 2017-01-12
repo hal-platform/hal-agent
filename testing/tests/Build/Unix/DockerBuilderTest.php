@@ -22,6 +22,9 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
     public $buildCommand;
     public $dockerSourcesPath;
 
+    public $buildUser;
+    public $buildServer;
+
     public function setUp()
     {
         $this->logger = Mockery::mock(EventLogger::class);
@@ -37,13 +40,14 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
             ->byDefault();
 
         $this->dockerSourcesPath = '/docker-images';
+        $this->buildUser = 'builduser';
+        $this->buildServer = 'buildserver';
     }
 
-    public function testSuccess()
+    public function xtestSuccess()
     {
         $this->loop(9, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+            $this->expectUntestedCommand(0);
         });
 
         $this->remoter
@@ -51,22 +55,19 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
             ->times(3)
             ->andReturn('owner', 'group', 'container-name-2');
 
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/unix']);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/unix'], 0);
 
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name-2"', "bash -l -c 'command'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container-name-2"', "bash -l -c 'command'"], 0);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], []);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertTrue($success);
     }
 
     public function testFailAtSanityCheck()
     {
-        $this->expectCommand('builduser', 'buildserver', ['test -d', '"/docker-images/unix"', '&&', 'test -f', '"/docker-images/unix/Dockerfile"']);
-        $this->expectCommandStatus(1);
+        $this->expectCommand(['test -d', '"/docker-images/unix"', '&&', 'test -f', '"/docker-images/unix/Dockerfile"'], 1);
 
         $this->buildRemoter
             ->shouldReceive('run')
@@ -74,188 +75,195 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], []);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
     }
 
     public function testFailAtBuildInfo()
     {
-        $this->expectUntestedCommand();
-        $this->expectCommandStatus(0);
+        $this->expectUntestedCommand(0);
 
-        $this->expectCommand('builduser', 'buildserver', ['docker info']);
-        $this->expectCommandStatus(0);
+        $this->expectCommand(['docker info'], 0);
 
-        $this->expectCommand('builduser', 'buildserver', ['docker inspect', '--format="{{ .Id }}"', 'hal9000/unix']);
-        $this->expectCommandStatus(0);
+        $this->expectCommand(['docker inspect', '--format="{{ .Id }}"', 'hal9000/unix'], 0);
 
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/unix']);
-        $this->expectDockerCommandStatus(1);
+        $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/unix'], 1);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], []);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
     }
 
     public function testFailAtBuildImage()
     {
-        $this->expectUntestedCommand();
-        $this->expectCommandStatus(0);
+        $this->expectUntestedCommand(0);
 
-        $this->expectCommand('builduser', 'buildserver', ['docker info']);
-        $this->expectCommandStatus(0);
+        $this->expectCommand('docker info', 0);
 
-        $this->expectCommand('builduser', 'buildserver', ['docker inspect', '--format="{{ .Id }}"', 'hal9000/unix']);
-        $this->expectCommandStatus(1);
+        $this->expectCommand(['docker inspect', '--format="{{ .Id }}"', 'hal9000/unix'], 1);
 
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/unix"', '"/docker-images/unix"']);
-        $this->expectDockerCommandStatus(1);
+        $this->expectDockerCommand(['docker build', '--tag="hal9000/unix"', '"/docker-images/unix"'], 1);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], []);
-        $this->assertFalse($success);
-    }
-
-    public function testFailAtGetMeta()
-    {
-        $this->loop(3, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
-        });
-
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/unix']);
-        $this->expectDockerCommandStatus(0);
-
-        // meta
-        $this->expectCommand('builduser', 'buildserver', ['ls -ldn', 'buildpath', '| awk \'{print $3}\'']);
-        $this->expectCommandStatus(0);
-
-        $this->remoter
-            ->shouldReceive('getLastOutput')
-            ->times(1)
-            ->andReturn('builduser-owner');
-
-        $this->expectCommand('builduser', 'buildserver', ['ls -ldn', 'buildpath', '| awk \'{print $4}\'']);
-        $this->expectCommandStatus(1);
-
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
-
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], []);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
     }
 
     public function testFailAtStartContainer()
     {
-        $this->loop(3 + 2, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        // sanity(2) + build(1)
+        $this->loop(2 + 1, function() {
+            $this->expectUntestedCommand(0);
         });
 
         // build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/unix']);
-        $this->expectDockerCommandStatus(0);
-
-        // meta
-        $this->remoter
-            ->shouldReceive('getLastOutput')
-            ->times(2)
-            ->andReturn('builduser-owner', 'builduser-group');
+        $this->expectDockerCommand('docker history', 0);
 
         $expectedCommand = [
             'docker run',
             '--detach=true',
             '--tty=true',
             '--interactive=true',
-            '--volume="buildpath:/build"',
             '--workdir="/build"',
             '--env HAL_DERP',
             'hal9000/unix',
             'bash -l'
         ];
 
-        $this->expectCommand('builduser', 'buildserver', $expectedCommand);
-        $this->expectCommandStatus(1);
+        $this->expectCommand($expectedCommand, 1);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], ['HAL_DERP' => 'testing']);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], ['HAL_DERP' => 'testing']);
+        $this->assertFalse($success);
+    }
+
+    public function testFailAtCopyIn()
+    {
+        // sanity(2) + build/start(2)
+        $this->loop(2 + 2, function() {
+            $this->expectUntestedCommand(0);
+        });
+
+        // build
+        $this->expectDockerCommand('docker history', 0);
+
+        // start, meta
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->times(2)
+            ->andReturn('container-name', 'container-user');
+
+        // get meta (user)
+        $this->expectCommand(['docker inspect', '--format="{{ .Config.User }}"', 'container-name'], 0);
+
+        // copy
+        $this->expectCommand(['cat buildfile.tar.gz', '|', 'docker cp', '-', 'container-name:/build'], 1);
+
+        // cleanup
+        $this->expectCommand(['docker kill', '"container-name"']);
+        $this->expectCommand(['docker rm', '"container-name"']);
+
+        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action->disableShutdownHandler();
+
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
+        $this->assertFalse($success);
+    }
+
+    public function testFailAtChownWhenNonRoot()
+    {
+        // sanity(2) + build/start(2) + copy(2)
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
+        });
+
+        // build
+        $this->expectDockerCommand('docker history', 0);
+
+        // start, meta
+        $this->remoter
+            ->shouldReceive('getLastOutput')
+            ->times(2)
+            ->andReturn('container2', 'container-user');
+
+        // permissions
+        $this->expectCommand(['docker exec', '--user root', '"container2"', 'chown -R container-user:container-user /build'], 1);
+
+        // cleanup
+        $this->expectCommand(['docker kill', '"container2"']);
+        $this->expectCommand(['docker rm', '"container2"']);
+
+        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action->disableShutdownHandler();
+
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
     }
 
     public function testFailAtRunCommandAndCleanupRuns()
     {
-        $this->loop(3 + 2 + 1, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
         });
 
         // build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/unix']);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand('docker history', 0);
 
-        // meta, start
+        // start, meta
         $this->remoter
             ->shouldReceive('getLastOutput')
-            ->times(3)
-            ->andReturn('builduser-owner', 'builduser-group', 'container-name');
+            ->times(2)
+            ->andReturn('container-name', '0');
 
         // run
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name"', "bash -l -c 'command'"]);
-        $this->expectDockerCommandStatus(1);
+        $this->expectDockerCommand(['docker exec "container-name"', "bash -l -c 'command'"], 1);
 
         // cleanup
-        $this->expectCommand('builduser', 'buildserver', ['docker exec', '"container-name"', "bash -l -c 'chown -R builduser-owner:builduser-group \"/build\"'"]);
-        $this->expectCommandStatus(0);
-
-        $this->expectCommand('builduser', 'buildserver', ['docker kill', '"container-name"']);
-        $this->expectCommandStatus(0);
-
-        $this->expectCommand('builduser', 'buildserver', ['docker rm', '"container-name"']);
-        $this->expectCommandStatus(0);
+        $this->expectCommand('docker kill');
+        $this->expectCommand('docker rm');
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
         $action->disableShutdownHandler();
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command'], []);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
     }
 
-    public function testMultipleCommandsAreRun()
+    public function testSuccessOnMultipleCommandsAreRun()
     {
-        $this->loop(3 + 2 + 1, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
         });
 
         // build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/unix']);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand('docker history', 0);
 
-        // meta, start
+        // start, meta
         $this->remoter
             ->shouldReceive('getLastOutput')
-            ->times(3)
-            ->andReturn('builduser-owner', 'builduser-group', 'container-name');
+            ->times(2)
+            ->andReturn('container3', 'root');
 
         // run
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name"', "bash -l -c 'command1'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container3"', "bash -l -c 'command1'"], 0);
 
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name"', "bash -l -c 'command2'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container3"', "bash -l -c 'command2'"], 0);
+
+        // copy out
+        $this->expectCommand(['docker cp', 'container3:/build/.', '-', '>', 'buildfile.tar.gz'], 0);
 
         // cleanup
-        $this->loop(3, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
-        });
+
+        $this->expectCommand('docker kill');
+        $this->expectCommand('docker rm');
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
         $action->disableShutdownHandler();
 
-        $success = $action('unix', 'builduser', 'buildserver', 'buildpath', ['command1', 'command2'], []);
+        $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command1', 'command2'], []);
 
         $this->assertSame(true, $success);
     }
@@ -270,130 +278,123 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
             'command5',                                 # container 4
         ];
 
-        // container 1: sanity, build, start
-        $this->loop(3 + 2 + 1, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        // container 1: sanity(2) + build/start(2) + copy(2)
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
         });
 
-        // container 1: build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/legacy']);
-        $this->expectDockerCommandStatus(0);
+        // container 1: build, permissions, run, copy out, cleanup
+        $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/legacy'], 0);
+        $this->expectCommand(['docker exec', '--user root', '"container1"', 'chown -R cuser1:cuser1 /build'], 0);
 
-        // container 1: run
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name1"', "bash -l -c 'command1'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container1"', "bash -l -c 'command1'"], 0);
+
+        $this->expectCommand('docker cp', 0);
+        $this->expectCommand('docker kill');
+        $this->expectCommand('docker rm');
 
         // container 2: sanity, build, start
-        $this->loop(3 + 2 + 1, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
         });
 
-        // container 2: build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/node5']);
-        $this->expectDockerCommandStatus(0);
+        // container 2: build, permissions, run, copy out, cleanup
+        $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/node5'], 0);
+        $this->expectCommand(['docker exec', '--user root', '"container2"', 'chown -R cuser2:cuser2 /build'], 0);
 
-        // container 2: run
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name2"', "bash -l -c 'command2'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container2"', "bash -l -c 'command2'"], 0);
+
+        $this->expectCommand('docker cp', 0);
+        $this->expectCommand('docker kill');
+        $this->expectCommand('docker rm');
 
         // container 3: sanity, build, start
-        $this->loop(3 + 2 + 1, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
         });
 
-        // container 3: build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/image_owner/imgname:tag']);
-        $this->expectDockerCommandStatus(0);
+        // container 3: build, permissions, run, copy out, cleanup
+        $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/image_owner/imgname:tag'], 0);
+        $this->expectCommand(['docker exec', '--user root', '"container3"', 'chown -R cuser3:cuser3 /build'], 0);
 
-        // container 3: run
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name3"', "bash -l -c 'command3'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container3"', "bash -l -c 'command3'"], 0);
+        $this->expectDockerCommand(['docker exec "container3"', "bash -l -c 'command4'"], 0);
 
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name3"', "bash -l -c 'command4'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectCommand('docker cp', 0);
+        $this->expectCommand('docker kill');
+        $this->expectCommand('docker rm');
 
         // container 4: sanity, build, start
-        $this->loop(3 + 2 + 1, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
+        $this->loop(2 + 2 + 2, function() {
+            $this->expectUntestedCommand(0);
         });
 
-        // container 4: build
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker history', '--no-trunc', 'hal9000/legacy']);
-        $this->expectDockerCommandStatus(0);
+        // container 4: build, permissions, run, copy out, cleanup
+        $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/legacy'], 0);
+        $this->expectCommand(['docker exec', '--user root', '"container4"', 'chown -R cuser4:cuser4 /build'], 0);
 
-        // container 4: run
-        $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name4"', "bash -l -c 'command5'"]);
-        $this->expectDockerCommandStatus(0);
+        $this->expectDockerCommand(['docker exec "container4"', "bash -l -c 'command5'"], 0);
+
+        $this->expectCommand('docker cp', 0);
+        $this->expectCommand('docker kill');
+        $this->expectCommand('docker rm');
 
         // outputs
         $this->remoter
             ->shouldReceive('getLastOutput')
-            ->times(3 * 4)
+            ->times(2 * 4)
             ->andReturn(
-                'builduser-owner1', 'builduser-group1', 'container-name1',
-                'builduser-owner2', 'builduser-group2', 'container-name2',
-                'builduser-owner3', 'builduser-group3', 'container-name3',
-                'builduser-owner4', 'builduser-group4', 'container-name4'
+                'container1', 'cuser1',
+                'container2', 'cuser2',
+                'container3', 'cuser3',
+                'container4', 'cuser4'
             );
-
-        // cleanup
-        $this->loop(3 * 4, function() {
-            $this->expectUntestedCommand();
-            $this->expectCommandStatus(0);
-        });
-
-        // run
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/legacy"', '"/docker-images/legacy"']);
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name1"', "bash -l -c 'command1'"]);
-
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/node5"', '"/docker-images/node5"']);
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name2"', "bash -l -c 'command2'"]);
-
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/image_owner/imgname:tag"', '"/docker-images/image_owner/imgname:tag"']);
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name3"', "bash -l -c 'command3'"]);
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name3"', "bash -l -c 'command4'"]);
-
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker build', '--tag="hal9000/legacy"', '"/docker-images/legacy"']);
-        // $this->expectDockerCommand('builduser', 'buildserver', ['docker exec "container-name4"', "bash -l -c 'command5'"]);
-
-        // $this->buildRemoter
-        //     ->shouldReceive('run')
-        //     ->times(2 * 4 + 1)
-        //     ->andReturn(true);
 
         $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
         $action->disableShutdownHandler();
 
-        $success = $action('legacy', 'builduser', 'buildserver', 'buildpath', $userCommands, []);
+        $success = $action('legacy', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', $userCommands, []);
 
         $this->assertSame(true, $success);
     }
 
-    private function expectUntestedCommand()
+    private function expectUntestedCommand($exitCode)
     {
         $this->remoter
             ->shouldReceive('createCommand')
             ->times(1)
             ->andReturn($this->command)
             ->ordered();
+
+        $this->remoter
+            ->shouldReceive('runWithLoggingOnFailure')
+            ->times(1)
+            ->andReturn($exitCode === 0 ? true : false);
     }
 
-    private function expectCommand($user, $server, $command)
+    private function expectCommand($command, $exitCode = 0)
     {
+        // When a string is passed for command, only the first argument is matched
+        // e.g. you want to match the docker command run, but dont care about the args
+        if (is_string($command)) {
+            $expectCommand = $command;
+            $command = Mockery::on(function($v) use ($expectCommand) {
+                // echo "\nEXPECT: ".str_pad($expectCommand, 20)." ------- GOT: $v[0] - ".json_encode($v);
+                // $d = ($v[0] === $expectCommand);
+
+                // if ($d) echo " FOUND\n";
+                // return $d;
+                return ($v[0] === $expectCommand);
+            });
+        }
+
         $this->remoter
             ->shouldReceive('createCommand')
             ->times(1)
-            ->with($user, $server, $command)
+            ->with($this->buildUser, $this->buildServer, $command)
             ->andReturn($this->command)
             ->ordered();
-    }
 
-    private function expectCommandStatus($exitCode)
-    {
         $this->remoter
             ->shouldReceive('runWithLoggingOnFailure')
             ->times(1)
@@ -402,7 +403,7 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
     // When a string is passed for command, only the first argument is matched
     // e.g. you want to match the docker command run, but dont care about the args
-    private function expectDockerCommand($user, $server, $command)
+    private function expectDockerCommand($command, $exitCode = 0)
     {
         if (is_string($command)) {
             $dockerCommand = $command;
@@ -414,13 +415,10 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->buildRemoter
             ->shouldReceive('createCommand')
             ->times(1)
-            ->with($user, $server, $command)
+            ->with($this->buildUser, $this->buildServer, $command)
             ->andReturn($this->buildCommand)
             ->ordered();
-    }
 
-    private function expectDockerCommandStatus($exitCode)
-    {
         $this->buildRemoter
             ->shouldReceive('run')
             ->times(1)

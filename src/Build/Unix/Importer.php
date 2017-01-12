@@ -32,6 +32,11 @@ class Importer
     private $logger;
 
     /**
+     * @var Unpacker
+     */
+    private $unpacker;
+
+    /**
      * @var FileSyncManager
      */
     private $fileSyncManager;
@@ -50,6 +55,7 @@ class Importer
 
     /**
      * @param EventLogger $logger
+     * @param Unpacker $unpacker
      * @param FileSyncManager $fileSyncManager
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
@@ -57,11 +63,13 @@ class Importer
      */
     public function __construct(
         EventLogger $logger,
+        Unpacker $unpacker,
         FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
         $commandTimeout
     ) {
         $this->logger = $logger;
+        $this->unpacker = $unpacker;
         $this->fileSyncManager = $fileSyncManager;
         $this->processBuilder = $processBuilder;
         $this->commandTimeout = $commandTimeout;
@@ -69,15 +77,20 @@ class Importer
 
     /**
      * @param string $buildPath
+     * @param string $buildFile
      * @param string $remoteUser
      * @param string $remoteServer
-     * @param string $remotePath
+     * @param string $remoteFile
      *
      * @return boolean
      */
-    public function __invoke($buildPath, $remoteUser, $remoteServer, $remotePath)
+    public function __invoke($buildPath, $buildFile, $remoteUser, $remoteServer, $remoteFile)
     {
-        if (!$this->transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)) {
+        if (!$this->transferFile($buildFile, $remoteUser, $remoteServer, $remoteFile)) {
+            return false;
+        }
+
+        if (!$this->unpackBuild($buildFile, $buildPath)) {
             return false;
         }
 
@@ -92,22 +105,16 @@ class Importer
      *
      * @return bool
      */
-    private function transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)
+    private function transferFile($buildFile, $remoteUser, $remoteServer, $remoteFile)
     {
-        $command = $this->fileSyncManager->buildIncomingRsync($buildPath, $remoteUser, $remoteServer, $remotePath);
+        $command = $this->fileSyncManager->buildIncomingScp($buildFile, $remoteUser, $remoteServer, $remoteFile);
         if ($command === null) {
             return false;
         }
 
-        $rsyncCommand = implode(' ', $command);
-
         $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments([''])
-            ->setTimeout($this->commandTimeout)
-            ->getProcess()
-            // processbuilder escapes input, but it breaks the rsync params
-            ->setCommandLine($rsyncCommand . ' 2>&1');
+            ->setArguments($command)
+            ->getProcess();
 
         if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out
@@ -120,5 +127,18 @@ class Importer
 
         $dispCommand = implode("\n", $command);
         return $this->processFailure($dispCommand, $process);
+    }
+
+    /**
+     * @param string $buildFile
+     * @param string $buildPath
+     *
+     * @return bool
+     */
+    private function unpackBuild($buildFile, $buildPath)
+    {
+        $unpacker = $this->unpacker;
+
+        return $unpacker($buildFile, $buildPath);
     }
 }

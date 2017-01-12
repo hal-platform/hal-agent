@@ -155,16 +155,20 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $this->status('Exporting files to build server', self::SECTION);
 
         $localPath = $properties['location']['path'];
+
+        // We override the local tempArchive used for the build/source download since its already been used.
+        $localFile = $properties['location']['tempArchive'];
+
         $user = $properties[self::SERVER_TYPE]['buildUser'];
         $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $path = $properties[self::SERVER_TYPE]['remotePath'];
+        $file = $properties[self::SERVER_TYPE]['remoteFile'];
 
         $exporter = $this->exporter;
-        $response = $exporter($localPath, $user, $server, $path);
+        $response = $exporter($localPath, $localFile, $user, $server, $file);
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote unix build server', $user, $server, $path);
+            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote unix build server', $user, $server, $file);
         }
 
         return $response;
@@ -205,7 +209,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $env = $properties[self::SERVER_TYPE]['environmentVariables'];
         $user = $properties[self::SERVER_TYPE]['buildUser'];
         $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $path = $properties[self::SERVER_TYPE]['remotePath'];
+        $file = $properties[self::SERVER_TYPE]['remoteFile'];
 
         // decrypt and add encrypted properties to env if possible
         if ($decrypted) {
@@ -218,7 +222,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
             $builder->setOutput($this->getOutput());
         }
 
-        return $builder($dockerImage, $user, $server, $path, $commands, $env);
+        return $builder($dockerImage, $user, $server, $file, $commands, $env);
     }
 
     /**
@@ -231,12 +235,14 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $this->status('Importing files from build server', self::SECTION);
 
         $localPath = $properties['location']['path'];
+        $localFile = $properties['location']['tempArchive'];
+
         $user = $properties[self::SERVER_TYPE]['buildUser'];
         $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $path = $properties[self::SERVER_TYPE]['remotePath'];
+        $file = $properties[self::SERVER_TYPE]['remoteFile'];
 
         $importer = $this->importer;
-        return $importer($localPath, $user, $server, $path);
+        return $importer($localPath, $localFile, $user, $server, $file);
     }
 
     /**

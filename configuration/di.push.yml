@@ -41,7 +41,7 @@ services:
             - '@service_container'
             -
                 unix: 'build.unix.handler'
-                windows: 'build.windows.handler'
+                #windows: 'build.windows.handler'
 
     push.deployer:
         class: 'QL\Hal\Agent\Push\DelegatingDeployer'

@@ -14,12 +14,12 @@ interface BuilderInterface
      *
      * @param string $remoteUser
      * @param string $remoteServer
-     * @param string $remotePath
+     * @param string $remoteFile
      *
      * @param array $commands
      * @param array $env
      *
      * @return boolean
      */
-    public function __invoke($imageName, $remoteUser, $remoteServer, $remotePath, array $commands, array $env);
+    public function __invoke($imageName, $remoteUser, $remoteServer, $remoteFile, array $commands, array $env);
 }

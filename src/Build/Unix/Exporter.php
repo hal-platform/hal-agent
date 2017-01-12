@@ -15,7 +15,7 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
- * This uses RSYNC for file transfer
+ * This uses SCP to transfer a single build archive (tar).
  */
 class Exporter
 {
@@ -32,6 +32,11 @@ class Exporter
      * @var EventLogger
      */
     private $logger;
+
+    /**
+     * @var Packer
+     */
+    private $packer;
 
     /**
      * @var FileSyncManager
@@ -57,6 +62,7 @@ class Exporter
 
     /**
      * @param EventLogger $logger
+     * @param Packer $packer
      * @param FileSyncManager $fileSyncManager
      * @param SSHProcess $remoter
      * @param ProcessBuilder $processBuilder
@@ -65,12 +71,14 @@ class Exporter
      */
     public function __construct(
         EventLogger $logger,
+        Packer $packer,
         FileSyncManager $fileSyncManager,
         SSHProcess $remoter,
         ProcessBuilder $processBuilder,
         $commandTimeout
     ) {
         $this->logger = $logger;
+        $this->packer = $packer;
         $this->fileSyncManager = $fileSyncManager;
         $this->remoter = $remoter;
         $this->processBuilder = $processBuilder;
@@ -79,19 +87,24 @@ class Exporter
 
     /**
      * @param string $buildPath
+     * @param string $buildFile
      * @param string $remoteUser
      * @param string $remoteServer
-     * @param string $remotePath
+     * @param string $remoteFile
      *
      * @return boolean
      */
-    public function __invoke($buildPath, $remoteUser, $remoteServer, $remotePath)
+    public function __invoke($buildPath, $buildFile, $remoteUser, $remoteServer, $remoteFile)
     {
-        if (!$this->createRemoteDir($remoteUser, $remoteServer, $remotePath)) {
+        if (!$this->packBuild($buildPath, $buildFile)) {
             return false;
         }
 
-        if (!$this->transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)) {
+        if (!$this->transferFile($buildFile, $remoteUser, $remoteServer, $remoteFile)) {
+            return false;
+        }
+
+        if (!$this->removeLocalFiles($buildPath)) {
             return false;
         }
 
@@ -99,38 +112,29 @@ class Exporter
     }
 
     /**
-     * @param string $remoteUser
-     * @param string $remoteServer
-     * @param string $remotePath
+     * @param string $buildPath
+     * @param string $buildFile
      *
      * @return bool
      */
-    private function createRemoteDir($remoteUser, $remoteServer, $remotePath)
+    private function packBuild($buildPath, $buildFile)
     {
-        $command = sprintf('if [ -d "%1$s" ]; then \rm -r "%1$s"; fi; mkdir -p "%1$s"', $remotePath);
+        $packer = $this->packer;
 
-        $context = $this->remoter
-            ->createCommand($remoteUser, $remoteServer, $command);
-
-        if ($response = $this->remoter->run($context, [], [false])) {
-            return true;
-        }
-
-        $this->logger->event('failure', self::ERR_PREPARE_BUILD_DIR);
-        return false;
+        return $packer($buildPath, '.', $buildFile);
     }
 
     /**
-     * @param string $buildPath
+     * @param string $buildFile
      * @param string $remoteUser
      * @param string $remoteServer
-     * @param string $remotePath
+     * @param string $remoteFile
      *
      * @return bool
      */
-    private function transferFiles($buildPath, $remoteUser, $remoteServer, $remotePath)
+    private function transferFile($buildFile, $remoteUser, $remoteServer, $remoteFile)
     {
-        $command = $this->fileSyncManager->buildOutgoingRsync($buildPath, $remoteUser, $remoteServer, $remotePath);
+        $command = $this->fileSyncManager->buildOutgoingScp($buildFile, $remoteUser, $remoteServer, $remoteFile);
         if ($command === null) {
             return false;
         }
@@ -138,17 +142,37 @@ class Exporter
         $rsyncCommand = implode(' ', $command);
 
         $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments([''])
-            ->setTimeout($this->commandTimeout)
-            ->getProcess()
-            // processbuilder escapes input, but it breaks the rsync params
-            ->setCommandLine($rsyncCommand . ' 2>&1');
+            ->setArguments($command)
+            ->getProcess();
 
         if (!$this->runProcess($process, $this->commandTimeout)) {
             // command timed out, bomb out
             return false;
         }
+
+        if ($process->isSuccessful()) {
+            return true;
+        }
+
+        $dispCommand = implode("\n", $command);
+        return $this->processFailure($dispCommand, $process);
+    }
+
+    /**
+     * @param string $buildPath
+     *
+     * @return bool
+     */
+    private function removeLocalFiles($buildPath)
+    {
+        // remove local build dir
+        $command = ['rm', '-r', $buildPath];
+        $process = $this->processBuilder
+            ->setWorkingDirectory($buildPath)
+            ->setArguments($command)
+            ->getProcess();
+
+        $process->run();
 
         if ($process->isSuccessful()) {
             return true;

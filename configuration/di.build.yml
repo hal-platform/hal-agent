@@ -32,7 +32,7 @@ services:
             - '@service_container'
             -
                 unix: build.unix.handler
-                windows: build.windows.handler
+                #windows: build.windows.handler
         calls:
             - ['enableStaging', []]
 
@@ -63,10 +63,16 @@ services:
         class: 'QL\Hal\Agent\Build\Unix\Exporter'
         arguments:
             - '@logger.event'
+            - '@build.unix.exporter.packer'
             - '@ssh.filemanager'
             - '@build.unix.standard.remoter'
             - '@utility.process.builder=' # = signifies a prototype service
             - '%timeout.filetransfer%'
+    build.unix.exporter.packer:
+        parent: 'build.packer'
+        class: 'QL\Hal\Agent\Build\Unix\Packer'
+        calls:
+            - ['disableForcedLogging', []]
 
     build.unix.builder:
         class: 'QL\Hal\Agent\Build\Unix\DockerBuilder'
@@ -85,9 +91,13 @@ services:
         class: 'QL\Hal\Agent\Build\Unix\Importer'
         arguments:
             - '@logger.event'
+            - '@build.unix.importer.unpacker'
             - '@ssh.filemanager'
             - '@utility.process.builder=' # = signifies a prototype service
             - '%timeout.filetransfer%'
+    build.unix.importer.unpacker:
+        parent: 'build.unpacker'
+        class: 'QL\Hal\Agent\Build\Unix\Unpacker'
 
     build.unix.cleaner:
         class: 'QL\Hal\Agent\Build\Unix\Cleaner'

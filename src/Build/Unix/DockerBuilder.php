@@ -55,14 +55,14 @@ SHELL;
     const EVENT_DOCKER_RUNNING = 'Check Docker daemon status';
     const EVENT_BUILD_INFO = 'Using Docker image "%s"';
     const EVENT_BUILD_CONTAINER = 'Build Docker image "%s"';
-    const EVENT_SCRATCH_OWNER = 'Record build owner metadata';
-    const EVENT_SCRATCH_GROUP = 'Record build group metadata';
     const EVENT_START_CONTAINER = 'Start Docker container';
-    const EVENT_CLEAN_PERMISSIONS = 'Clean build permissions';
+    const EVENT_DOCKER_COPY_IN = 'Copy source into container';
+    const EVENT_DOCKER_GET_USER = 'Record docker container user';
+    const EVENT_DOCKER_FIX_PERMISSIONS = 'Fix permissions of source files';
+    const EVENT_DOCKER_COPY_OUT = 'Copy build from container';
     const EVENT_KILL_CONTAINER = 'Kill Docker container';
     const EVENT_REMOVE_CONTAINER = 'Remove Docker container';
-
-    const ERR_CONTAINER_NOT_RUNNING = 'Docker container is not running.';
+    const EVENT_DOCKER_CLEANUP = 'Clean up and shutdown Docker container';
 
     /**
      * @var EventLogger
@@ -140,60 +140,95 @@ SHELL;
     /**
      * {@inheritdoc}
      */
-    public function __invoke($defaultImageName, $remoteUser, $remoteServer, $remotePath, array $commands, array $env)
+    public function __invoke($defaultImageName, $remoteUser, $remoteServer, $remoteFile, array $commands, array $env)
     {
         // Store as class properties so cleanup operation can use them
         $this->remoteUser = $remoteUser;
         $this->remoteServer = $remoteServer;
 
-        $currentImage = '';
-        $containerName = '';
-        $cleanup = null;
+        $imagedCommands = $this->organizeCommands($defaultImageName, $commands);
 
-        foreach ($commands as $command) {
-            list($image, $command) = $this->parseCommand($defaultImageName, $command);
+        foreach ($imagedCommands as $entry) {
+            list($image, $commands) = $entry;
 
-            // Image has changed, run cleanup for previous container (if set), and build new container
-            if ($image !== $currentImage) {
-                $currentImage = $image;
+            // 1. Build container
+            if (!$containerName = $this->buildContainer($image, $env)) {
+                return $this->bombout(false);
+            }
 
-                if (is_callable($cleanup)) {
-                    $cleanup();
-                    // If we were able to cleanup the previous container, remove it from emergency handler
-                    $this->cleanup(null, '');
-                }
+            // 2. Enable cleanup failsafe
+            $cleanup = $this->enableDockerCleanup($containerName);
 
-                if (!$container = $this->buildContainer($currentImage, $remotePath, $env)) {
+            // 3. Copy into container
+            if (!$this->copyIntoContainer($containerName, $remoteFile)) {
+                return $this->bombout(false);
+            }
+
+            // 4. Run commands
+            foreach ($commands as $command) {
+                if (!$this->runCommand($containerName, $command)) {
                     return $this->bombout(false);
                 }
-
-                list($containerName, $cleanup) = $container;
             }
 
-            // well thats weird, something seriously bad happened
-            if (!$containerName) {
-                $this->logger->event('failure', self::ERR_CONTAINER_NOT_RUNNING);
+            // 5. Copy out of container
+            if (!$this->copyFromContainer($containerName, $remoteFile)) {
                 return $this->bombout(false);
             }
 
-            // 5. Run command
-            if (!$this->runCommand($containerName, $command)) {
-                return $this->bombout(false);
-            }
+            // 6. Run and clear docker cleanup/shutdown functionality
+            $this->runDockerCleanup($cleanup);
         }
 
-        // Bombout will automatically run the last cleanup
         return $this->bombout(true);
     }
 
     /**
+     * Organize a list of commands into an array such as
+     * [
+     *     [ $image1, [$command1, $command2] ]
+     *     [ $image2, [$command3] ]
+     *     [ $image1, [$command4] ]
+     * ]
+     *
+     * @param string $defaultImageName
+     * @param array $commands
+     *
+     * @return array
+     */
+    private function organizeCommands($defaultImageName, array $commands)
+    {
+        $organized = [];
+        $prevImage = null;
+        foreach ($commands as $command) {
+            list($image, $command) = $this->parseCommand($defaultImageName, $command);
+
+            // Using same image in a row, rebuild the entire entry with the added command
+            if ($image === $prevImage) {
+                list($i, $cmds) = array_pop($organized);
+                $cmds[] = $command;
+
+                $entry = [$image, $cmds];
+
+            } else {
+                $entry = [$image, [$command]];
+            }
+
+            $organized[] = $entry;
+
+            $prevImage = $image;
+        }
+
+        return $organized;
+    }
+
+    /**
      * @param string $imageName
-     * @param string $remotePath
      * @param array $env
      *
      * @return array|null Returns either null, or the container name and cleanup closure on success
      */
-    private function buildContainer($imageName, $remotePath, array $env)
+    private function buildContainer($imageName, array $env)
     {
         $imagesBasePath = $this->dockerSourcesPath;
         $fqImageName = sprintf('hal9000/%s', $imageName);
@@ -208,28 +243,101 @@ SHELL;
             return null;
         }
 
-        // 3. Get owner of build dir
-        if (!$dockerMeta = $this->getOwner($remotePath)) {
+        // 3. Start up docker container
+        if (!$containerName = $this->startContainer($fqImageName, $env)) {
             return null;
         }
 
-        $owner = $dockerMeta['owner'];
-        $group = $dockerMeta['group'];
+        return $containerName;
+    }
 
-        // 4. Start up docker container
-        if (!$containerName = $this->startContainer($remotePath, $fqImageName, $env)) {
-            return null;
+    /**
+     * Example usage in a shell:
+     * > cat output.tar | docker cp - $containerName:/build
+     *
+     * Copy the contents of a tar (NOT in a subdirectory) into a directory in the container
+     *
+     * Note: When copying files into containers, permissions are root:root
+     * so another exec is required to fix permissions.
+     *
+     * @param string $containerName
+     * @param string $archiveFile
+     *
+     * @return bool
+     */
+    private function copyIntoContainer($containerName, $archiveFile)
+    {
+        $getUser = [
+            $this->docker('inspect'),
+            '--format="{{ .Config.User }}"',
+            $containerName
+        ];
+
+        $copyInto = [
+            sprintf('cat %s', $archiveFile),
+            '|',
+            $this->docker('cp'),
+            '-',
+            sprintf('%s:%s', $containerName, self::CONTAINER_WORKING_DIR)
+        ];
+
+        // Get user container is being run as.
+        if (!$this->runRemote($getUser, self::EVENT_DOCKER_GET_USER)) {
+            return false;
         }
 
-        $cleanup = function() use ($containerName, $owner, $group) {
-            $this->cleanupContainer($containerName, $owner, $group);
-        };
+        $owner = trim($this->remoter->getLastOutput());
+        if (!$owner) $owner = 'root';
 
-        // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($cleanup, 'Clean up and shutdown Docker container');
+        // Copy in files
+        if (!$this->runRemote($copyInto, self::EVENT_DOCKER_COPY_IN)) {
+            return false;
+        }
 
-        // This sucks more than a little
-        return [$containerName, $cleanup];
+        // Do not need to chown if container user is root
+        if ($owner === 'root') {
+            return true;
+        }
+
+        // Fix permissions copied over (will be owned by root:root)
+        $fixPermissions = [
+            $this->docker('exec'),
+            sprintf('--user %s', 'root'),
+            sprintf('"%s"', $containerName),
+            sprintf('chown -R %s:%s %s', $owner, $owner, self::CONTAINER_WORKING_DIR)
+        ];
+
+        if (!$this->runRemote($fixPermissions, self::EVENT_DOCKER_FIX_PERMISSIONS)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Example usage in a shell:
+     * > docker cp $containerName:/build/. - > output.tar
+     *
+     * @param string $containerName
+     * @param string $archiveFile
+     *
+     * @return bool
+     */
+    private function copyFromContainer($containerName, $archiveFile)
+    {
+        $copyFrom = [
+            $this->docker('cp'),
+            sprintf('%s:%s/.', $containerName, self::CONTAINER_WORKING_DIR),
+            '-',
+            '>',
+            $archiveFile
+        ];
+
+        if (!$this->runRemote($copyFrom, self::EVENT_DOCKER_COPY_OUT)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -319,7 +427,8 @@ SHELL;
         ];
 
         // Check if container exists, dont build if it does
-        if ($isDockerImageBuilt = $this->runRemote($imageExists, sprintf(self::EVENT_VALIDATE_IMAGE_BUILT, $imageName))) {
+        $isDockerImageBuilt = $this->runRemote($imageExists, sprintf(self::EVENT_VALIDATE_IMAGE_BUILT, $imageName));
+        if ($isDockerImageBuilt) {
             return $this->runBuildRemote($imageInfo, sprintf(self::EVENT_BUILD_INFO, $imageName));
         }
 
@@ -333,60 +442,16 @@ SHELL;
     }
 
     /**
-     * Retrieve owner and group of the workspace
-     *
-     * We need to chown any files generated from within the container after the build runs
-     *
-     * @param string $remotePath
-     *
-     * @return string|null
-     */
-    private function getOwner($remotePath)
-    {
-        $this->status('Grabbing Docker metadata', self::SECTION);
-
-        $getOwnerNumber = [
-            'ls -ldn',
-            $remotePath,
-            '| awk \'{print $3}\''
-        ];
-
-        $getGroupNumber = [
-            'ls -ldn',
-            $remotePath,
-            '| awk \'{print $4}\''
-        ];
-
-        if (!$response = $this->runRemote($getOwnerNumber, self::EVENT_SCRATCH_OWNER)) {
-            return null;
-        }
-
-        $owner = trim($this->remoter->getLastOutput());
-
-        if (!$response = $this->runRemote($getGroupNumber, self::EVENT_SCRATCH_GROUP)) {
-            return null;
-        }
-
-        $group = trim($this->remoter->getLastOutput());
-
-        return [
-            'owner' => $owner,
-            'group' => $group
-        ];
-    }
-
-    /**
      * Create and start container
      *
      * We use bash so the container stays open, while we run other commands
      *
-     * @param string $remotePath
      * @param string $imageName
      * @param array $env
      *
      * @return string|null
      */
-    private function startContainer($remotePath, $imageName, array $env)
+    private function startContainer($imageName, array $env)
     {
         $this->status('Starting Docker container', self::SECTION);
 
@@ -395,7 +460,6 @@ SHELL;
             '--detach=true',
             '--tty=true',
             '--interactive=true',
-            sprintf('--volume="%s:%s"', $remotePath, self::CONTAINER_WORKING_DIR),
             sprintf('--workdir="%s"', self::CONTAINER_WORKING_DIR)
         ];
 
@@ -454,25 +518,15 @@ SHELL;
     }
 
     /**
-     * 1. Clean up permissions on files generated within container
-     * 2. Kill and remove container
+     * Kill and remove container
      *
      * @param string $containerName
-     * @param string $owner
-     * @param string $group
      *
      * @return void
      */
-    private function cleanupContainer($containerName, $owner, $group)
+    private function cleanupContainer($containerName)
     {
         $this->status(sprintf('Cleaning up container "%s"', $containerName), 'Docker');
-
-        $chown = sprintf('chown -R %s:%s "%s"', $owner, $group, self::CONTAINER_WORKING_DIR);
-        $chown = [
-            $this->docker('exec'),
-            sprintf('"%s"', $containerName),
-            $this->dockerEscaped($chown)
-        ];
 
         $kill = [
             $this->docker('kill'),
@@ -485,7 +539,6 @@ SHELL;
         ];
 
         // Do not care whether these fail
-        $this->runRemote($chown, self::EVENT_CLEAN_PERMISSIONS);
         $this->runRemote($kill, self::EVENT_KILL_CONTAINER);
         $this->runRemote($rm, self::EVENT_REMOVE_CONTAINER);
     }
@@ -546,6 +599,34 @@ SHELL;
     {
         $escaped = escapeshellarg($command);
         return sprintf(self::DOCKER_SHELL, $escaped);
+    }
+
+    /**
+     * @param string $containerName
+     *
+     * @return callable
+     */
+    private function enableDockerCleanup($containerName)
+    {
+        $cleanup = function() use ($containerName) {
+            $this->cleanupContainer($containerName);
+        };
+
+        // Set emergency handler in case of super fatal
+        $this->enableEmergencyHandler($cleanup, self::EVENT_DOCKER_CLEANUP);
+
+        return $cleanup;
+    }
+
+    /**
+     * @param string $containerName
+     *
+     * @return callable
+     */
+    private function runDockerCleanup(callable $cleanup)
+    {
+        $cleanup();
+        $this->cleanup(null);
     }
 
     /**
