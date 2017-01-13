@@ -196,6 +196,9 @@ services:
 
     push.cd.healthchecker:
         class: 'QL\Hal\Agent\Push\CodeDeploy\HealthChecker'
+        arguments:
+            - '@clock'
+            - '%clock.timezone%'
 
     push.cd.packer:
         class: 'QL\Hal\Agent\Push\CodeDeploy\Packer'
@@ -217,6 +220,7 @@ services:
             - '@logger.event'
             - '@push.cd.healthchecker'
             - '@push.cd.waiter'
+            - '%hal.baseurl%'
 
     push.cd.waiter:
         class: 'QL\Hal\Agent\Waiter\Waiter'

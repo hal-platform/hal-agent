@@ -40,15 +40,22 @@ class Pusher
     private $waiter;
 
     /**
+     * @var string
+     */
+    private $halBaseURL;
+
+    /**
      * @param EventLogger $logger
      * @param HealthChecker $health
      * @param Waiter $waiter
+     * @param string $halBaseURL
      */
-    public function __construct(EventLogger $logger, HealthChecker $health, Waiter $waiter)
+    public function __construct(EventLogger $logger, HealthChecker $health, Waiter $waiter, $halBaseURL)
     {
         $this->logger = $logger;
         $this->health = $health;
         $this->waiter = $waiter;
+        $this->halBaseURL = $halBaseURL;
     }
 
     /**
@@ -90,6 +97,13 @@ class Pusher
             'object' => $s3version
         ];
 
+        $description = implode("\n", [
+            "[Environment]$environmentName",
+            "[Build]$buildId",
+            "[Push]$pushId",
+            sprintf('[Hal]%s/pushes/%s', $this->halBaseURL, $pushId)
+        ]);
+
         try {
 
             $result = $cd->createDeployment([
@@ -97,7 +111,7 @@ class Pusher
                 'deploymentGroupName' => $cdGroup,
                 'deploymentConfigName' => $cdConfiguration,
 
-                'description' => sprintf('Build %s, Env %s', $buildId, $environmentName),
+                'description' => $description,
                 'ignoreApplicationStopFailures' => false,
                 'revision' => [
                     'revisionType' => 'S3',
@@ -123,7 +137,7 @@ class Pusher
         if (!$this->wait($cd, $deployID)) {
 
             // Get final health to report
-            $health = $this->health->getDeploymentHealth($cd, $deployID);
+            $health = $this->health->getDeploymentInstancesHealth($cd, $deployID);
             $context = array_merge($context, $health);
 
             // unknown if deployment succeeded. Log the timeout and report as a failure.
@@ -132,7 +146,7 @@ class Pusher
         }
 
         // We waited, now get the results
-        $health = $this->health->getDeploymentHealth($cd, $deployID);
+        $health = $this->health->getDeploymentInstancesHealth($cd, $deployID);
         $context = array_merge($context, $health);
 
         // success
@@ -179,7 +193,7 @@ class Pusher
         $iteration = 0;
         return function() use ($cd, $deployID, &$iteration) {
             try {
-                $health = $this->health->getDeploymentHealth($cd, $deployID);
+                $health = $this->health->getDeploymentInstancesHealth($cd, $deployID);
 
             } catch (AwsException $e) {
                 // Some unknown error
@@ -214,26 +228,5 @@ class Pusher
             'status' => $health['status'],
             'overview' => $health['overview']
         ]);
-    }
-
-    /**
-     * @param CodeDeployClient $cd
-     * @param string $deployID
-     *
-     * @return array
-     */
-    private function getDeployInfo(CodeDeployClient $cd, $deployID)
-    {
-        $result = $cd->getDeployment(['deploymentId' => $deployID]);
-
-        $status = $result->search('deploymentInfo.status');
-        $overview = $result->search('deploymentInfo.deploymentOverview');
-        $error = $result->search('deploymentInfo.errorInformation');
-
-        return [
-            'status' => $status,
-            'overview' => $overview,
-            'error' => $error
-        ];
     }
 }

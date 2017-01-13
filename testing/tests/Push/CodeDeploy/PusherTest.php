@@ -26,10 +26,10 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->cd = Mockery::mock(CodeDeployClient::CLASS);
+        $this->cd = Mockery::mock(CodeDeployClient::class);
 
-        $this->logger = Mockery::mock(EventLogger::CLASS);
-        $this->health = Mockery::mock(HealthChecker::CLASS);
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->health = Mockery::mock(HealthChecker::class);
         $this->waiter = new Waiter(.25, 10);
     }
 
@@ -39,6 +39,12 @@ class PusherTest extends PHPUnit_Framework_TestCase
             'deploymentId' => '1234'
         ]);
 
+        $expectedDescription = <<<TEXT
+[Environment]test
+[Build]b2.build
+[Push]p2.push
+[Hal]http://hal.local/pushes/p2.push
+TEXT;
         $this->cd
             ->shouldReceive('createDeployment')
             ->with([
@@ -46,7 +52,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
                 'deploymentGroupName' => 'cd_group',
                 'deploymentConfigName' => 'cd_config',
 
-                'description' => 'Build b2.build, Env test',
+                'description' => $expectedDescription,
                 'ignoreApplicationStopFailures' => false,
                 'revision' => [
                     'revisionType' => 'S3',
@@ -60,7 +66,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->andReturn($result);
 
         $this->health
-            ->shouldReceive('getDeploymentHealth')
+            ->shouldReceive('getDeploymentInstancesHealth')
             ->with($this->cd, '1234')
             ->andReturn([
                 'status' => 'Succeeded'
@@ -72,7 +78,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->with('success', 'Code Deployment', Mockery::type('array'))
             ->once();
 
-        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter, 'http://hal.local');
         $status = $pusher(
             $this->cd,
             'cd_app',
@@ -92,7 +98,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
     public function testCreateDeploymentHasAnErrorFails()
     {
-        $ex = new CodeDeployException('msg', Mockery::mock(CommandInterface::CLASS));
+        $ex = new CodeDeployException('msg', Mockery::mock(CommandInterface::class));
         $this->cd
             ->shouldReceive('createDeployment')
             ->andThrow($ex);
@@ -102,7 +108,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->with('failure', 'Code Deployment', Mockery::type('array'))
             ->once();
 
-        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter, 'http://hal.local');
         $status = $pusher(
             $this->cd,
             'cd_app',
@@ -131,7 +137,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->andReturn($result);
 
         $this->health
-            ->shouldReceive('getDeploymentHealth')
+            ->shouldReceive('getDeploymentInstancesHealth')
             ->andReturn([
                 'status' => 'Failed'
             ])
@@ -142,7 +148,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->with('failure', 'Code Deployment', Mockery::type('array'))
             ->once();
 
-        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter, 'http://hal.local');
         $status = $pusher(
             $this->cd,
             'cd_app',
@@ -173,7 +179,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->andReturn($result);
 
         $this->health
-            ->shouldReceive('getDeploymentHealth')
+            ->shouldReceive('getDeploymentInstancesHealth')
             ->andReturn([
                 'status' => 'Queued',
                 'overview' => [
@@ -186,7 +192,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ])
             ->times(11);
         $this->health
-            ->shouldReceive('getDeploymentHealth')
+            ->shouldReceive('getDeploymentInstancesHealth')
             ->andReturn([
                 'status' => 'InProgress',
                 'overview' => [
@@ -199,7 +205,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ])
             ->times(1);
         $this->health
-            ->shouldReceive('getDeploymentHealth')
+            ->shouldReceive('getDeploymentInstancesHealth')
             ->andReturn([
                 'status' => 'InProgress',
                 'overview' => [
@@ -236,7 +242,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ])
             ->once();
 
-        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter, 'http://hal.local');
         $status = $pusher(
             $this->cd,
             'cd_app',

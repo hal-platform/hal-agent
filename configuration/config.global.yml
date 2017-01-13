@@ -9,6 +9,8 @@ parameters:
 
     logging.stacktrace: true
 
+    clock.timezone: 'America/Detroit'
+
     timeout.build: 1800
     timeout.push: 300
 
