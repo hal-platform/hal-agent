@@ -215,29 +215,38 @@ class Resolver
     }
 
     /**
+     * @todo Clean up this terrible method
+     *
      * @param array $properties
      *
      * @return void
      */
     private function addPushVarsToBuildVars(array &$properties)
     {
-        if (!isset($properties['rsync']['environmentVariables'])) {
+        if (!isset($properties['rsync']['environmentVariables']) && !isset($properties['script']['environmentVariables'])) {
             return;
         }
 
-        $hostname = $properties['rsync']['environmentVariables']['HAL_HOSTNAME'];
-        $path = $properties['rsync']['environmentVariables']['HAL_PATH'];
+        // add rsync props
+        if (isset($properties['rsync']['environmentVariables'])) {
+            $hostname = $properties['rsync']['environmentVariables']['HAL_HOSTNAME'];
+            $path = $properties['rsync']['environmentVariables']['HAL_PATH'];
 
-        // Add to unix env
-        if (isset($properties['unix']['environmentVariables'])) {
-            $properties['unix']['environmentVariables']['HAL_HOSTNAME'] = $hostname;
-            $properties['unix']['environmentVariables']['HAL_PATH'] = $path;
+            // Add to unix env
+            if (isset($properties['unix']['environmentVariables'])) {
+                $properties['unix']['environmentVariables']['HAL_HOSTNAME'] = $hostname;
+                $properties['unix']['environmentVariables']['HAL_PATH'] = $path;
+            }
         }
 
-        // Add to windows env
-        if (isset($properties['windows']['environmentVariables'])) {
-            $properties['windows']['environmentVariables']['HAL_HOSTNAME'] = $hostname;
-            $properties['windows']['environmentVariables']['HAL_PATH'] = $path;
+        // add script props
+        if (isset($properties['script']['environmentVariables'])) {
+            $context = $properties['script']['environmentVariables']['HAL_CONTEXT'];
+
+            // Add to unix env
+            if (isset($properties['unix']['environmentVariables'])) {
+                $properties['unix']['environmentVariables']['HAL_CONTEXT'] = $context;
+            }
         }
     }
 
