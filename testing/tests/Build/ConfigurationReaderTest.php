@@ -9,6 +9,10 @@ namespace QL\Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Parser;
 
 class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
 {
@@ -18,9 +22,9 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
-        $this->parser = Mockery::mock('Symfony\Component\Yaml\Parser');
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->filesystem = Mockery::mock(Filesystem::class);
+        $this->parser = Mockery::mock(Parser::class);
     }
 
     public function testFileDoesNotExist()
@@ -47,7 +51,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $this->parser
             ->shouldReceive('parse')
             ->with('bad_file')
-            ->andThrow('Symfony\Component\Yaml\Exception\ParseException');
+            ->andThrow(ParseException::class);
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Mockery::any())
@@ -125,6 +129,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
                 'build' => [],
                 'build_transform' => null,
                 'pre_push' => 'single_cmd',
+                'deploy' => null,
                 'post_push' => [['array_cmd_is_bad']],
             ]);
         $this->logger
@@ -191,6 +196,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
                 'exclude' => ['excluded_dir'],
                 'build' => [],
                 'build_transform' => null,
+                'deploy' => null,
                 'post_push' => ['cmd1', 'cmd2'],
             ]);
         $this->logger
@@ -209,6 +215,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
             'build' => [],
             'build_transform' => [],
             'pre_push' => [],
+            'deploy' => [],
             'post_push' => ['cmd1', 'cmd2'],
         ];
 

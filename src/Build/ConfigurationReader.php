@@ -116,21 +116,15 @@ class ConfigurationReader
             $config['dist'] = (string) trim($yaml['dist']);
         }
 
-        $config['exclude'] = $this->validateList($yaml, 'exclude', $context);
-        $config['build'] = $this->validateList($yaml, 'build', $context);
-        $config['build_transform'] = $this->validateList($yaml, 'build_transform', $context);
-        $config['pre_push'] = $this->validateList($yaml, 'pre_push', $context);
-        $config['post_push'] = $this->validateList($yaml, 'post_push', $context);
+        $parsed = ['exclude', 'build', 'build_transform', 'pre_push', 'deploy', 'post_push'];
 
-        // If any of the lists are null, an error occured.
-        if (
-            $config['exclude'] === null ||
-            $config['build'] === null ||
-            $config['build_transform'] === null ||
-            $config['pre_push'] === null ||
-            $config['post_push'] === null
-        ) {
-            return false;
+        foreach ($parsed as $p) {
+            $config[$p] = $this->validateList($yaml, $p, $context);
+
+            // If any of the lists are null, an error occured.
+            if ($config[$p] === null) {
+                return false;
+            }
         }
 
         $context['configuration'] = $config;
