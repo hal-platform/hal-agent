@@ -62,12 +62,7 @@ class BuildEnvironmentResolver
     {
         $uniqueId = sprintf('build-%s', $build->id());
 
-        $properties = array_merge(
-            $this->getUnixProperties($build, $uniqueId),
-            $this->getWindowsProperties($build, $uniqueId)
-        );
-
-        return $properties;
+        return $this->getUnixProperties($build, $uniqueId);
     }
 
     /**
@@ -81,10 +76,11 @@ class BuildEnvironmentResolver
     {
         $uniqueId = sprintf('push-%s', $push->id());
 
-        $properties = array_merge(
-            $this->getUnixProperties($push->build(), $uniqueId),
-            $this->getWindowsProperties($push->build(), $uniqueId)
-        );
+        $properties = $this->getUnixProperties($push->build(), $uniqueId);
+
+        if (isset($properties['unix']['environmentVariables'])) {
+            $properties['unix']['environmentVariables']['HAL_PUSHID'] = $push->id();
+        }
 
         return $properties;
     }
