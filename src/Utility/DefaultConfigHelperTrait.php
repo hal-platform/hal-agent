@@ -29,6 +29,7 @@ trait DefaultConfigHelperTrait
             'build' => $this->arrayizeCommand($application->getBuildCmd()),
             'build_transform' => $this->arrayizeCommand($application->getBuildTransformCmd()),
             'pre_push' => $this->arrayizeCommand($application->getPrePushCmd()),
+            'deploy' => [],
             'post_push' => $this->arrayizeCommand($application->getPostPushCmd())
         ];
     }

@@ -164,7 +164,6 @@ class Resolver
             'location' => [
                 'path' => $this->generateLocalTempPath($push->id(), 'push'),
                 'archive' => $this->generateBuildArchiveFile($build->id()),
-                'legacy_archive' => $this->generateLegacyBuildArchiveFile($build->id()),
 
                 'tempArchive' => $this->generateTempBuildArchiveFile($push->id(), 'push'),
 
@@ -270,6 +269,9 @@ class Resolver
         if ($method === ServerEnum::TYPE_RSYNC) {
             $properties[$method] = $this->buildRsyncProperties($build, $deployment, $server);
 
+        } elseif ($method === ServerEnum::TYPE_SCRIPT) {
+            $properties[$method] = $this->buildScriptProperties($build, $deployment);
+
         } elseif ($method === ServerEnum::TYPE_EB) {
 
             $template = $deployment->s3file() ?: self::DEFAULT_EB_FILENAME;
@@ -350,6 +352,27 @@ class Resolver
             'remotePath' => $deployment->path(),
             'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->path()),
             'environmentVariables' => $env
+        ];
+    }
+
+    /**
+     * @param Build $build
+     * @param Deployment $deployment
+     *
+     * @return array
+     */
+    private function buildScriptProperties(Build $build, Deployment $deployment)
+    {
+        return [
+            'environmentVariables' => [
+                'HAL_CONTEXT' => $deployment->scriptContext(),
+
+                'HAL_BUILDID' => $build->id(),
+                'HAL_COMMIT' => $build->commit(),
+                'HAL_GITREF' => $build->branch(),
+                'HAL_ENVIRONMENT' => $build->environment()->name(),
+                'HAL_REPO' => $build->application()->key()
+            ]
         ];
     }
 

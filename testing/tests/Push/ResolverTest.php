@@ -7,8 +7,12 @@
 
 namespace QL\Hal\Agent\Push;
 
+use Doctrine\ORM\EntityManager;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Logger\EventLogger;
+use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Credential;
@@ -17,6 +21,7 @@ use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Server;
+use QL\Hal\Core\Repository\PushRepository;
 use QL\MCP\Common\Time\Clock;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
@@ -30,19 +35,19 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->repo = Mockery::mock('QL\Hal\Core\Repository\PushRepository', [
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->repo = Mockery::mock(PushRepository::class, [
             'find' => null,
             'findBy' => []
         ]);
 
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+        $this->em = Mockery::mock(EntityManager::class, [
             'getRepository' => $this->repo
         ]);
 
         $this->clock = new Clock('now', 'UTC');
-        $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
-        $this->encryptedResolver = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver', [
+        $this->envResolver = Mockery::mock(BuildEnvironmentResolver::class);
+        $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class, [
             'getEncryptedPropertiesWithSources' => []
         ]);
     }
@@ -191,6 +196,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'pre_push' => [
                     'bin/pre'
                 ],
+                'deploy' => [],
                 'post_push' => [
                     'bin/post'
                 ]
@@ -199,7 +205,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/2015-02/hal9000-b2.5tnbBn8.tar.gz',
-                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b2.5tnbBn8.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
                 'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
                 'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz'
@@ -327,6 +332,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'pre_push' => [
                     'bin/pre'
                 ],
+                'deploy' => [],
                 'post_push' => [
                     'bin/post'
                 ]
@@ -335,7 +341,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
-                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
                 'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
                 'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
@@ -465,6 +470,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'pre_push' => [
                     'bin/pre'
                 ],
+                'deploy' => [],
                 'post_push' => [
                     'bin/post'
                 ]
@@ -473,7 +479,6 @@ class ResolverTest extends PHPUnit_Framework_TestCase
             'location' => [
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
-                'legacy_archive' => 'ARCHIVE_PATH/hal9000/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
                 'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
                 'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
@@ -528,5 +533,124 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->assertSame($expected['location'], $properties['location']);
         $this->assertSame($expected['artifacts'], $properties['artifacts']);
         $this->assertSame($expected['cd'], $properties['cd']);
+    }
+
+
+    public function testScriptSuccess()
+    {
+        $app = (new Application)
+            ->withId('repo-id')
+            ->withKey('repokey')
+            ->withGithubOwner('user1')
+            ->withGithubRepo('repo1');
+
+        $push = (new Push)
+            ->withId('1234')
+            ->withStatus('Waiting')
+            ->withApplication($app)
+            ->withBuild(
+                (new Build)
+                    ->withId('b9.1234')
+                    ->withBranch('master')
+                    ->withCommit('5555')
+                    ->withApplication($app)
+                    ->withEnvironment(
+                        (new Environment)
+                            ->withName('envname')
+                    )
+            )
+            ->withDeployment(
+                (new Deployment)
+                    ->withScriptContext('testdata')
+                    ->withServer(
+                        (new Server)
+                            ->withType('script')
+                    )
+            );
+
+        $expected = [
+            'method' => 'script',
+
+            'script' => [
+                'environmentVariables' => [
+                    'HAL_CONTEXT' => 'testdata',
+                    'HAL_BUILDID' => 'b9.1234',
+                    'HAL_COMMIT' => '5555',
+                    'HAL_GITREF' => 'master',
+                    'HAL_ENVIRONMENT' => 'envname',
+                    'HAL_REPO' => 'repokey'
+                ]
+            ],
+            'configuration' => [
+                'system' => 'unix',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
+                'build' => [],
+                'build_transform' => [],
+                'pre_push' => [],
+                'deploy' => [],
+                'post_push' => []
+            ],
+
+            'location' => [
+                'path' => 'testdir/hal9000-push-1234',
+                'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
+                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
+            ],
+
+            'artifacts' => [
+                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-eb-1234.zip',
+                'testdir/hal9000-s3-1234.tar.gz',
+                'testdir/hal9000-push-1234'
+            ],
+
+            'pushProperties' => [
+                'id' => 'b9.1234',
+                'source' => 'http://git/user1/repo1',
+                'env' => 'envname',
+                'user' => null,
+                'reference' => 'master',
+                'commit' => '5555',
+                'date' => '2015-03-15T08:00:00-04:00'
+            ]
+        ];
+
+        $clock = new Clock('2015-03-15 12:00:00', 'UTC');
+        $this->envResolver
+            ->shouldReceive('getPushProperties')
+            ->andReturn([]);
+        $this->repo
+            ->shouldReceive('find')
+            ->andReturn($push);
+        $this->repo
+            ->shouldReceive('findBy')
+            ->andReturn([]);
+
+        $action = new Resolver(
+            $this->logger,
+            $this->em,
+            $clock,
+            $this->envResolver,
+            $this->encryptedResolver,
+            'sshuser',
+            'http://git'
+        );
+        $action->setLocalTempPath('testdir');
+        $action->setArchivePath('ARCHIVE_PATH');
+
+        $properties = $action('1234');
+
+        $this->assertSame($expected['method'], $properties['method']);
+        $this->assertSame($expected['configuration'], $properties['configuration']);
+        $this->assertSame($expected['pushProperties'], $properties['pushProperties']);
+        $this->assertSame($expected['location'], $properties['location']);
+        $this->assertSame($expected['artifacts'], $properties['artifacts']);
+        $this->assertSame($expected['script'], $properties['script']);
     }
 }

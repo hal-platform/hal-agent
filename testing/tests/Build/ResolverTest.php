@@ -7,11 +7,15 @@
 
 namespace QL\Hal\Agent\Build;
 
+use Doctrine\ORM\EntityManager;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
+use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
+use QL\Hal\Core\Repository\BuildRepository;
 
 class ResolverTest extends PHPUnit_Framework_TestCase
 {
@@ -22,13 +26,13 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+        $this->buildRepo = Mockery::mock(BuildRepository::class);
+        $this->em = Mockery::mock(EntityManager::class, [
             'getRepository' => $this->buildRepo
         ]);
 
-        $this->envResolver = Mockery::mock('QL\Hal\Agent\Utility\BuildEnvironmentResolver');
-        $this->encryptedResolver = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
+        $this->envResolver = Mockery::mock(BuildEnvironmentResolver::class);
+        $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
     }
     /**
      * @expectedException QL\Hal\Agent\Build\BuildException
@@ -83,6 +87,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 ],
                 'build_transform' => [],
                 'pre_push' => [],
+                'deploy' => [],
                 'post_push' => []
             ],
 

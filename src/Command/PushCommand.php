@@ -376,13 +376,8 @@ class PushCommand extends Command implements OutputAwareInterface
     {
         $this->status('Moving archive to local storage', self::SECTION_START);
 
-        $from = [
-            $properties['location']['archive'],
-            $properties['location']['legacy_archive']
-        ];
-
         $mover = $this->mover;
-        return $mover($from, $properties['location']['tempArchive']);
+        return $mover($properties['location']['archive'], $properties['location']['tempArchive']);
     }
 
     /**
