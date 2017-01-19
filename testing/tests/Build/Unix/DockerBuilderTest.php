@@ -253,7 +253,7 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->expectDockerCommand(['docker exec "container3"', "bash -l -c 'command2'"], 0);
 
         // copy out
-        $this->expectCommand(['docker cp', 'container3:/build/.', '-', '>', 'buildfile.tar.gz'], 0);
+        $this->expectCommand(['docker cp', 'container3:/build/.', '-', '|', 'gzip', '>', 'buildfile.tar.gz'], 0);
 
         // cleanup
 

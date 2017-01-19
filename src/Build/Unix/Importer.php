@@ -14,7 +14,7 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
- * This uses RSYNC for file transfer
+ * This uses SCP to transfer a single build archive (tar).
  */
 class Importer
 {

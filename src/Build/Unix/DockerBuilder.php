@@ -260,6 +260,9 @@ SHELL;
      * Note: When copying files into containers, permissions are root:root
      * so another exec is required to fix permissions.
      *
+     * Also note: Docker can understand both raw tars, and gzip'd tars for copying
+     * files into containers. However, it only exports to tar, NOT gzip'd tar.
+     *
      * @param string $containerName
      * @param string $archiveFile
      *
@@ -317,6 +320,12 @@ SHELL;
     /**
      * Example usage in a shell:
      * > docker cp $containerName:/build/. - > output.tar
+     * > docker cp $containerName:/build/. - | gzip > output.tar.gz
+     *
+     * Docker exports as tar when copying files out as an archive.
+     * We pipe it to gzip so its tar.gz for use elsewhere in the hal system.
+     *
+     * It's a bit unnecessary but fine for now.
      *
      * @param string $containerName
      * @param string $archiveFile
@@ -329,8 +338,8 @@ SHELL;
             $this->docker('cp'),
             sprintf('%s:%s/.', $containerName, self::CONTAINER_WORKING_DIR),
             '-',
-            '>',
-            $archiveFile
+            '|', 'gzip',
+            '>', $archiveFile
         ];
 
         if (!$this->runRemote($copyFrom, self::EVENT_DOCKER_COPY_OUT)) {
