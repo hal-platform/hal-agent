@@ -9,10 +9,6 @@
         "psr-4": { "QL\\Hal\\Agent\\": "src/", "QL\\Hal\\Agent\\Testing\\": "testing/src" }
     },
 
-    "repositories": [
-        { "type": "git", "url": "http://git/hal/hal-core.git" }
-    ],
-
     "require": {
         "php-64bit": "~5.6 || ~7.0",
 
@@ -34,7 +30,7 @@
         "swiftmailer/swiftmailer": "5.2.*",
         "twig/twig": "~1.15",
 
-        "ql/hal-core":   "dev-master as 2.10.0-beta2",
+        "ql/hal-core":   "2.10.0",
 
         "ql/mcp-common": "~1.0",
         "ql/mcp-logger": "~2.4",
