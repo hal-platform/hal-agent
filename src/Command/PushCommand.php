@@ -66,6 +66,10 @@ class PushCommand extends Command implements OutputAwareInterface
         204 => 'Upload to S3 failed.',
         205 => 'Deploying application to EB failed.',
 
+        300 => 'Required properties for script are missing.',
+        301 => 'No deployment scripts are defined.',
+        302 => 'Deployment command failed.',
+
         400 => 'Required properties for S3 are missing.',
         401 => 'Failed to authenticate with AWS.',
         402 => 'Build could not be packed for S3.',

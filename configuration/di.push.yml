@@ -53,6 +53,7 @@ services:
                 eb: 'push.eb.deployer'
                 s3: 'push.s3.deployer'
                 cd: 'push.cd.deployer'
+                script: 'push.script.deployer'
 
     ####################################################################################################################
     # eb
@@ -227,6 +228,40 @@ services:
         arguments:
             - '%push.cd.waiter.interval%'
             - '%push.cd.waiter.max%'
+
+    ####################################################################################################################
+    # script
+    ####################################################################################################################
+
+    push.script.deployer:
+        class: 'QL\Hal\Agent\Push\Script\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@push.script.builder'
+
+    push.script.builder:
+        class: 'QL\Hal\Agent\Push\Script\DeployDelegatingBuilder'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            -
+                unix: 'push.script.build.unix.handler'
+                #windows: 'build.windows.handler'
+
+    push.script.build.unix.handler:
+        class: 'QL\Hal\Agent\Build\Unix\UnixBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.exporter'
+            - '@push.script.build.unix.builder'
+            - '@build.unix.importer'
+            - '@build.unix.cleaner'
+            - '@encrypted.resolver'
+            - '%docker.default.image%'
+
+    push.script.build.unix.builder:
+        parent: 'build.unix.builder'
+        class: 'QL\Hal\Agent\Push\Script\DeployDockerBuilder'
 
     ####################################################################################################################
     # private services used only by push actions

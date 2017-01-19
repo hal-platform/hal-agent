@@ -497,16 +497,16 @@ SHELL;
 
         $actual = $this->dockerEscaped($command);
 
-        $this->status(sprintf('Running build command [ %s ] in Docker container', $command), self::SECTION_BUILD);
+        $this->status(sprintf('Running build command [ %s ] in Docker container', $command), static::SECTION_BUILD);
 
         $context = $this->buildRemoter
             ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
             ->withSanitized($command);
 
         // Add build command to log message if short enough
-        $msg = self::EVENT_MESSAGE;
+        $msg = static::EVENT_MESSAGE;
         if (1 === preg_match(self::SHORT_COMMAND_VALIDATION, $command)) {
-            $msg = sprintf(self::EVENT_MESSAGE_CUSTOM, $command);
+            $msg = sprintf(static::EVENT_MESSAGE_CUSTOM, $command);
         }
 
         if (!$response = $this->runBuildRemote($context, $msg)) {
