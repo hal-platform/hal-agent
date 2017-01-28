@@ -62,7 +62,7 @@ services:
 
     utility.helper.downloadProgress:
         class: 'QL\Hal\Agent\Symfony\GuzzleDownloadProgress'
-        arguments: ['@github.guzzleHttpClient']
+        arguments: ['@guzzle']
 
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
@@ -104,6 +104,11 @@ services:
 
     guzzle:
         class: 'GuzzleHttp\Client'
+
+    guzzle.github.adapter.client:
+        class: 'Http\Adapter\Guzzle5\Client'
+        arguments:
+            - '@guzzle'
 
     aws:
         class: 'Aws\Sdk'

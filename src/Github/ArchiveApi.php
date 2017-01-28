@@ -7,24 +7,36 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Closure;
-use Guzzle\Common\Event;
+use Exception;
 use Github\Client;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Github\HttpClient\Plugin\PathPrepend;
+use GuzzleHttp\Psr7\LazyOpenStream;
+use Http\Client\Common\HttpMethodsClient;
+use Http\Client\Common\Plugin\RedirectPlugin;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 class ArchiveApi
 {
+    const ARCHIVE_ERROR_MSG = 'Failed to archive repository: %s, tried downloading: %s to target: %s';
     /**
-     * @var client
+     * @var EnterpriseClient
      */
     private $github;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
-     * @param Client $github
+     * @param EnterpriseClient $github
+     * @param LoggerInterface $logger
      */
-    public function __construct(Client $github)
+    public function __construct(EnterpriseClient $github, LoggerInterface $logger)
     {
         $this->github = $github;
+        $this->logger = $logger;
     }
 
     /**
@@ -32,67 +44,84 @@ class ArchiveApi
      *
      * @link http://developer.github.com/v3/repos/contents/
      *
-     * @param string $username   the user who owns the repository
+     * @param string $username the user who owns the repository
      * @param string $repository the name of the repository
-     * @param string $reference  reference to a branch or commit
-     * @param string $target     where to download the file
+     * @param string $reference reference to a branch or commit
+     * @param string $target where to download the file
      *
-     * @throws Exception
-     *
-     * @return boolean
+     * @return bool
+     * @throws GitHubException
      */
     public function download($username, $repository, $reference, $target)
     {
         $path = sprintf(
-            'repos/%s/%s/tarball/%s',
+            '/api/%s/repos/%s/%s/tarball/%s',
+            rawurlencode($this->github->getApiVersion()),
             rawurlencode($username),
             rawurlencode($repository),
             rawurlencode($reference)
         );
 
+        /*
+         * Context on why we are messing with the plugins below
+         *
+         * see @link https://developer.github.com/v3/repos/contents/#get-archive-link
+         * On how we download archive's from github.
+         *
+         * Our github enterprise archive links are not on a subdomain like they are on
+         * gihtub.com, they are under http://git/_codeload example uri-template:
+         *
+         *     http://git/_codeload/{username}/{repository}/legacy.tar.gz/master
+         *
+         * However the knplabs github client if configured with an enterprise url will always try and
+         * prepend '/api/v3' to the front of the path used. This combined with their redirect plugin will always cause
+         * a 404 as it tries:
+         *
+         *     http://git/api/v3/_codeload/{username}/{repository}/legacy.tar.gz/master`
+         *
+         * So we are going to remove the plugins that prepend and redirect and handle it all ourselves.
+         */
+        $this->github->removePlugin(PathPrepend::class);
+        $this->github->removePlugin(RedirectPlugin::class);
+
+        /** @var HttpMethodsClient $client */
         $client = $this->github->getHttpClient();
-        $response = $client->request($path, null, 'GET', [], ['allow_redirects'  => false]);
+
+        /** @var ResponseInterface $response */
+        $response = $client->get($path);
 
         if (302 !== $response->getStatusCode()) {
             throw new GitHubException('Unexpected response from github archive link');
         }
 
-        $redirect = $response->getLocation();
-
-        $listener = $this->setResponseBody($target);
-        $client->addListener('request.before_send', $listener);
-        $client->addListener('request.complete', $this->onCompletion($listener));
+        $redirect = array_pop($response->getHeader('Location'));
 
         $response = $client->get($redirect);
+        $responseBody = $response->getBody();
 
-        return $response->isSuccessful();
-    }
-
-    /**
-     * @param string $target
-     *
-     * @return Closure
-     */
-    private function setResponseBody($target)
-    {
-        return function (Event $event) use ($target) {
-            if (!$event['request']) {
-                return;
+        $return = true;
+        try {
+            $target = new LazyOpenStream($target, 'w+');
+            while (!$responseBody->eof()) {
+                $target->write($responseBody->read(1024));
             }
+        } catch (RuntimeException $e) {
+            $this->logger->error(
+                sprintf(self::ARCHIVE_ERROR_MSG, $repository, $path, $target),
+                [
+                    'Exception Message' => $e->getMessage(),
+                    'Exception Trace' => $e->getTraceAsString(),
+                    'Exception code' => $e->getCode(),
+                ]
+            );
 
-            $event['request']->setResponseBody($target);
-        };
-    }
+            $return = false;
+        }
 
-    /**
-     * @param Closure $listener
-     *
-     * @return Closure
-     */
-    private function onCompletion(Closure $listener)
-    {
-        return function (Event $event, $name, EventDispatcherInterface $dispatcher) use ($listener) {
-            $dispatcher->removeListener('request.before_send', $listener);
-        };
+        //add the plugins back in case the client is used after this has run
+        $this->github->addPlugin(new RedirectPlugin());
+        $this->github->addPlugin(new PathPrepend(sprintf('/api/%s', $this->github->getApiVersion())));
+
+        return $return;
     }
 }

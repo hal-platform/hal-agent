@@ -28,8 +28,8 @@ parameters:
     push.eb.waiter.interval: 20
     push.eb.waiter.max: 60
 
-    github.baseurl.site: 'http://git/'
-    github.baseurl.api: 'http://git/api/v3/'
+    github.baseurl.site: 'http://git'
+    github.baseurl.api: 'http://git/api/v3'
 
     docker.source.repository: 'skluck/docker-images'
     docker.source.reference: 'master'

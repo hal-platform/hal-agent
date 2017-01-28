@@ -8,10 +8,10 @@
 namespace QL\Hal\Agent\Symfony;
 
 use Closure;
-use Guzzle\Common\Event;
-use Guzzle\Http\Client;
+use GuzzleHttp\Client;
+use GuzzleHttp\Event\CompleteEvent;
+use GuzzleHttp\Event\ProgressEvent;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Output progressive status of a file download to the symfony console output.
@@ -24,6 +24,9 @@ class GuzzleDownloadProgress
     private $client;
 
     /**
+     * This needs to be the same guzzle client that is passed to HttpClientBuilder that
+     * Github\Client uses....HTTP Plug isn't it great? -___-
+     *
      * @var Client $client
      */
     public function __construct(Client $client)
@@ -33,42 +36,46 @@ class GuzzleDownloadProgress
 
     /**
      * @param OutputInterface $output
+     *
      * @return null
      */
     public function enableDownloadProgress(OutputInterface $output)
     {
-        $dispatcher = $this->client->getEventDispatcher();
+        $dispatcher = $this->client->getEmitter();
         $listener = $this->onUpdate($output);
 
-        $dispatcher->addListener('curl.callback.progress', $listener);
-        $dispatcher->addListener('request.complete', $this->onCompletion($output, $listener));
+        $dispatcher->on('progress', $listener);
+        $dispatcher->on('complete', $this->onCompletion($output, $listener));
     }
 
     /**
      * @param OutputInterface $output
      * @param Closure $listener
+     *
      * @return Closure
      */
     private function onCompletion(OutputInterface $output, Closure $listener)
     {
-        return function (Event $event, $name, EventDispatcherInterface $dispatcher) use ($output, $listener) {
-            $dispatcher->removeListener('curl.callback.progress', $listener);
+        return function (CompleteEvent $event) use ($output, $listener) {
+            $event->getClient()->getEmitter()->removeListener('progress', $listener);
         };
     }
 
     /**
      * @param OutputInterface $output
+     *
      * @return Closure
      */
     private function onUpdate(OutputInterface $output)
     {
         $prev = null;
-        return function (Event $event) use ($output, &$prev) {
-            if (!$event['download_size']) {
+
+        return function (ProgressEvent $event) use ($output, &$prev) {
+            if (!$event->downloadSize) {
                 return;
             }
 
-            $percentage = round($event['downloaded'] / $event['download_size'], 2) * 100;
+            $percentage = round($event->downloaded / $event->downloadSize, 2) * 100;
             $message = sprintf('<info>Percentage complete:</info> %s%%', $percentage);
             if ($prev === $message) {
                 return;
