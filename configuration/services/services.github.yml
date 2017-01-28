@@ -2,14 +2,16 @@ services:
 
     github.archive:
         class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments: ['@github.client', '@logger.mcp']
+        arguments: ['@github.client']
 
     github.references:
         class: 'Github\Api\GitData\References'
         arguments: ['@github.client']
+
     github.commits:
         class: 'Github\Api\Repository\Commits'
         arguments: ['@github.client']
+
     github.pullRequests:
         class: 'Github\Api\PullRequest'
         arguments: ['@github.client']

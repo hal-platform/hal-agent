@@ -7,8 +7,12 @@
 
 namespace QL\Hal\Agent\Symfony;
 
-use Guzzle\Common\Event;
-use Guzzle\Http\Client;
+use GuzzleHttp\Client;
+use GuzzleHttp\Event\CompleteEvent;
+use GuzzleHttp\Event\EmitterInterface;
+use GuzzleHttp\Event\ProgressEvent;
+use GuzzleHttp\Transaction;
+use Mockery;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -24,9 +28,10 @@ class GuzzleDownloadProgressTest extends PHPUnit_Framework_TestCase
 
         $helper->enableDownloadProgress($output);
 
-        $dispatcher = $client->getEventDispatcher();
-        $progressListeners = $dispatcher->getListeners('curl.callback.progress');
-        $completeListeners = $dispatcher->getListeners('request.complete');
+        /** @var EmitterInterface $dispatcher */
+        $dispatcher = $client->getEmitter();
+        $progressListeners = $dispatcher->listeners('progress');
+        $completeListeners = $dispatcher->listeners('complete');
 
         $this->assertCount(1, $progressListeners);
         $this->assertCount(1, $completeListeners);
@@ -42,11 +47,14 @@ class GuzzleDownloadProgressTest extends PHPUnit_Framework_TestCase
 
         $helper->enableDownloadProgress($output);
 
-        $dispatcher = $client->getEventDispatcher();
-        $dispatcher->dispatch('request.complete', new Event);
+        /** @var EmitterInterface $dispatcher */
+        $dispatcher = $client->getEmitter();
+        $mockTransaction = Mockery::mock(Transaction::class);
+        $mockTransaction->client = $client;
+        $dispatcher->emit('complete', new CompleteEvent($mockTransaction));
 
-        $this->assertCount(0, $dispatcher->getListeners('curl.callback.progress'));
-        $this->assertCount(1, $dispatcher->getListeners('request.complete'));
+        $this->assertCount(0, $dispatcher->listeners('progress'));
+        $this->assertCount(1, $dispatcher->listeners('complete'));
     }
 
     public function testProgressListenerUpdatesOutput()
@@ -56,21 +64,27 @@ class GuzzleDownloadProgressTest extends PHPUnit_Framework_TestCase
         $helper = new GuzzleDownloadProgress($client);
 
         $helper->enableDownloadProgress($output);
-        $dispatcher = $client->getEventDispatcher();
+        /** @var EmitterInterface $dispatcher */
+        $dispatcher = $client->getEmitter();
 
         // first event
-        $event = new Event(['download_size' => 1000]);
-        $dispatcher->dispatch('curl.callback.progress', $event);
+        $event = Mockery::mock(ProgressEvent::class)->shouldIgnoreMissing();
+        $event->downloadSize = 1000;
+        $dispatcher->emit('progress', $event);
         $this->assertSame("\x0DPercentage complete: 0%", $output->fetch());
 
         // second event
-        $event = new Event(['downloaded' => 630, 'download_size' => 1000]);
-        $dispatcher->dispatch('curl.callback.progress', $event);
+        $event = Mockery::mock(ProgressEvent::class)->shouldIgnoreMissing();
+        $event->downloaded = 630;
+        $event->downloadSize = 1000;
+        $dispatcher->emit('progress', $event);
         $this->assertSame("\x0DPercentage complete: 63%", $output->fetch());
 
         // last event
-        $event = new Event(['downloaded' => 1000, 'download_size' => 1000]);
-        $dispatcher->dispatch('curl.callback.progress', $event);
+        $event = Mockery::mock(ProgressEvent::class)->shouldIgnoreMissing();
+        $event->downloaded = 1000;
+        $event->downloadSize = 1000;
+        $dispatcher->emit('progress', $event);
         $this->assertSame("\x0DPercentage complete: 100%\n", $output->fetch());
     }
 }

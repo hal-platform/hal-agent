@@ -7,36 +7,25 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Exception;
-use Github\Client;
 use Github\HttpClient\Plugin\PathPrepend;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use Http\Client\Common\HttpMethodsClient;
 use Http\Client\Common\Plugin\RedirectPlugin;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 class ArchiveApi
 {
-    const ARCHIVE_ERROR_MSG = 'Failed to archive repository: %s, tried downloading: %s to target: %s';
     /**
      * @var EnterpriseClient
      */
     private $github;
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
 
     /**
      * @param EnterpriseClient $github
-     * @param LoggerInterface $logger
      */
-    public function __construct(EnterpriseClient $github, LoggerInterface $logger)
+    public function __construct(EnterpriseClient $github)
     {
         $this->github = $github;
-        $this->logger = $logger;
     }
 
     /**
@@ -94,34 +83,21 @@ class ArchiveApi
             throw new GitHubException('Unexpected response from github archive link');
         }
 
-        $redirect = array_pop($response->getHeader('Location'));
+        $locationHeader = $response->getHeader('Location');
+        $redirect = array_pop($locationHeader);
 
         $response = $client->get($redirect);
         $responseBody = $response->getBody();
 
-        $return = true;
-        try {
-            $target = new LazyOpenStream($target, 'w+');
-            while (!$responseBody->eof()) {
-                $target->write($responseBody->read(1024));
-            }
-        } catch (RuntimeException $e) {
-            $this->logger->error(
-                sprintf(self::ARCHIVE_ERROR_MSG, $repository, $path, $target),
-                [
-                    'Exception Message' => $e->getMessage(),
-                    'Exception Trace' => $e->getTraceAsString(),
-                    'Exception code' => $e->getCode(),
-                ]
-            );
-
-            $return = false;
+        $target = new LazyOpenStream($target, 'w+');
+        while (!$responseBody->eof()) {
+            $target->write($responseBody->read(1024));
         }
 
         //add the plugins back in case the client is used after this has run
         $this->github->addPlugin(new RedirectPlugin());
         $this->github->addPlugin(new PathPrepend(sprintf('/api/%s', $this->github->getApiVersion())));
 
-        return $return;
+        return true;
     }
 }
