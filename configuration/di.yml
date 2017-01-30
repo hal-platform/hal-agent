@@ -100,10 +100,6 @@ services:
 
     guzzle:
         class: 'GuzzleHttp\Client'
-        arguments:
-          - config:
-              - curl:
-                  - ''
 
     guzzle.github.adapter.client:
         class: 'Http\Adapter\Guzzle5\Client'
