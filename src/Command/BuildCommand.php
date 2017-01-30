@@ -16,10 +16,8 @@ use QL\Hal\Agent\Build\Resolver;
 use QL\Hal\Agent\Build\Unpacker;
 use QL\Hal\Agent\Logger\EventLogger;
 use QL\Hal\Agent\Remoting\SSHSessionManager;
-use QL\Hal\Agent\Symfony\GuzzleDownloadProgress;
 use QL\Hal\Agent\Symfony\OutputAwareInterface;
 use QL\Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -110,11 +108,6 @@ class BuildCommand extends Command implements OutputAwareInterface
     private $mover;
 
     /**
-     * @var GuzzleDownloadProgress
-     */
-    private $progress;
-
-    /**
      * @var Filesystem
      */
     private $filesystem;
@@ -144,7 +137,6 @@ class BuildCommand extends Command implements OutputAwareInterface
      * @param DelegatingBuilder $builder
      * @param Packer $packer
      * @param Mover $mover
-     * @param GuzzleDownloadProgress $progress
      * @param Filesystem $filesystem
      * @param SSHSessionManager $sshManager
      */
@@ -158,7 +150,6 @@ class BuildCommand extends Command implements OutputAwareInterface
         DelegatingBuilder $builder,
         Packer $packer,
         Mover $mover,
-        GuzzleDownloadProgress $progress,
         Filesystem $filesystem,
         SSHSessionManager $sshManager
     ) {
@@ -174,7 +165,6 @@ class BuildCommand extends Command implements OutputAwareInterface
         $this->packer = $packer;
         $this->mover = $mover;
 
-        $this->progress = $progress;
         $this->filesystem = $filesystem;
         $this->sshManager = $sshManager;
 
@@ -388,8 +378,6 @@ class BuildCommand extends Command implements OutputAwareInterface
      */
     private function download(OutputInterface $output, array $properties)
     {
-        $this->progress->enableDownloadProgress($output);
-
         $this->status('Downloading github repository', self::SECTION_START);
 
         $downloader = $this->downloader;

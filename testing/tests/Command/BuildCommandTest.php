@@ -26,7 +26,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public $builder;
     public $packer;
     public $mover;
-    public $downloadProgress;
     public $filesystem;
     public $ssh;
 
@@ -43,7 +42,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
         $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
         $this->packer = Mockery::mock('QL\Hal\Agent\Build\Packer');
         $this->mover = Mockery::mock('QL\Hal\Agent\Build\Mover');
-        $this->downloadProgress = Mockery::mock('QL\Hal\Agent\Symfony\GuzzleDownloadProgress');
         $this->filesystem = Mockery::mock('Symfony\Component\FileSystem\Filesystem');
         $this->ssh = Mockery::mock('QL\Hal\Agent\Remoting\SSHSessionManager');
 
@@ -81,7 +79,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             $this->builder,
             $this->packer,
             $this->mover,
-            $this->downloadProgress,
             $this->filesystem,
             $this->ssh
         );
@@ -152,9 +149,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
                 ]
             ]);
 
-        $this->downloadProgress
-            ->shouldReceive('enableDownloadProgress');
-
         $this->downloader
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -209,7 +203,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             $this->builder,
             $this->packer,
             $this->mover,
-            $this->downloadProgress,
             $this->filesystem,
             $this->ssh
         );
@@ -254,7 +247,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             ])
         ]);
 
-        $this->downloadProgress->shouldIgnoreMissing();
         $this->downloader->shouldReceive(['__invoke' => true]);
         // simulate an error
         $this->unpacker
@@ -302,7 +294,6 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             $this->builder,
             $this->packer,
             $this->mover,
-            $this->downloadProgress,
             $this->filesystem,
             $this->ssh
         );

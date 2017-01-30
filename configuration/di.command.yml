@@ -67,7 +67,6 @@ services:
             - '@build.builder'
             - '@build.packer'
             - '@build.mover'
-            - '@utility.helper.downloadProgress'
             - '@utility.filesystem'
             - '@ssh.manager'
     command.build.remove:

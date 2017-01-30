@@ -60,10 +60,6 @@ services:
     # utility / shared
     ####################################################################################################################
 
-    utility.helper.downloadProgress:
-        class: 'QL\Hal\Agent\Symfony\GuzzleDownloadProgress'
-        arguments: ['@guzzle']
-
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
     utility.process.builder:
@@ -104,6 +100,10 @@ services:
 
     guzzle:
         class: 'GuzzleHttp\Client'
+        arguments:
+          - config:
+              - curl:
+                  - ''
 
     guzzle.github.adapter.client:
         class: 'Http\Adapter\Guzzle5\Client'
