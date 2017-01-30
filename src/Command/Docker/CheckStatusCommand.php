@@ -8,7 +8,7 @@
 namespace QL\Hal\Agent\Command\Docker;
 
 use DateTime;
-use Net_SSH2;
+use phpseclib\Net\SSH2;
 use Predis\Client as Predis;
 use QL\Hal\Agent\Command\CommandTrait;
 use QL\Hal\Agent\Command\FormatterTrait;
@@ -213,11 +213,11 @@ HELP;
     }
 
     /**
-     * @param Net_SSH2 $ssh
+     * @param SSH2 $ssh
      *
      * @return string
      */
-    private function checkBuilder(Net_SSH2 $ssh)
+    private function checkBuilder(SSH2 $ssh)
     {
         $sudo = $this->useSudoForDocker ? 'sudo ' : '';
 
@@ -233,7 +233,7 @@ HELP;
      *
      * @return string
      */
-    private function checkDocker(Net_SSH2 $ssh)
+    private function checkDocker(SSH2 $ssh)
     {
         return [
             'info' => $this->remote($ssh, $this->docker() . ' info'),
@@ -256,12 +256,12 @@ HELP;
     }
 
     /**
-     * @param Net_SSH2 $ssh
+     * @param SSH2 $ssh
      * @param string $command
      *
      * @return string
      */
-    private function remote(Net_SSH2 $ssh, $command)
+    private function remote(SSH2 $ssh, $command)
     {
         $output = $ssh->exec($command);
 

@@ -8,6 +8,7 @@
 namespace QL\Hal\Agent\Remoting;
 
 use Mockery;
+use phpseclib\Net\SSH2;
 use PHPUnit_Framework_TestCase;
 
 class SSHProcessTest extends PHPUnit_Framework_TestCase
@@ -37,7 +38,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
     public function testCommandTimeout()
     {
-        $session = Mockery::mock('Net_SSH2', [
+        $session = Mockery::mock(SSH2::class, [
             'disconnect' => null,
             'getStdError' => 'err-output',
             'getExitStatus' => 0
@@ -76,7 +77,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
     public function testCommandTimeoutWithLoggingEnabled()
     {
-        $session = Mockery::mock('Net_SSH2', ['disconnect' => null]);
+        $session = Mockery::mock(SSH2::class, ['disconnect' => null]);
         $this->ssh
             ->shouldReceive('createSession')
             ->with('user', 'server')
@@ -110,7 +111,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
     public function testCommandFailure()
     {
-        $session = Mockery::mock('Net_SSH2', ['disconnect' => null]);
+        $session = Mockery::mock(SSH2::class, ['disconnect' => null]);
         $this->ssh
             ->shouldReceive('createSession')
             ->with('user', 'server')
@@ -150,7 +151,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
     public function testSuccessWithLogging()
     {
-        $session = Mockery::mock('Net_SSH2', [
+        $session = Mockery::mock(SSH2::class, [
             'disconnect' => null,
             'getStdError' => '',
             'getExitStatus' => 0
@@ -186,7 +187,7 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
     public function testSuccess()
     {
-        $session = Mockery::mock('Net_SSH2', [
+        $session = Mockery::mock(SSH2::class, [
             'disconnect' => null,
             'getStdError' => '',
             'getExitStatus' => 0

@@ -7,8 +7,8 @@
 
 namespace QL\Hal\Agent\Remoting;
 
-use Crypt_RSA;
-use Net_SSH2;
+use phpseclib\Crypt\RSA;
+use phpseclib\Net\SSH2;
 use QL\Hal\Agent\Logger\EventLogger;
 
 class SSHSessionManager
@@ -50,12 +50,12 @@ class SSHSessionManager
     private $credentials;
 
     /**
-     * An array of active Net_SSH2 sessions
+     * An array of active SSH2 sessions
      *
      * Example:
      * [
-     *     'user1@server' => new Net_SSH2,
-     *     'user2@server' => new Net_SSH2,
+     *     'user1@server' => new SSH2,
+     *     'user2@server' => new SSH2,
      * ]
      *
      * @var array
@@ -94,7 +94,7 @@ class SSHSessionManager
      * @param string $user
      * @param string $server
      *
-     * @return Net_SSH2|null
+     * @return SSH2|null
      */
     public function createSession($user, $server)
     {
@@ -128,7 +128,7 @@ class SSHSessionManager
             $sshCredential = $credential->password();
         }
 
-        $ssh = new Net_SSH2($server, $port);
+        $ssh = new SSH2($server, $port);
 
         $command = [$ssh, 'login'];
         $args = [$user, $sshCredential];
@@ -201,7 +201,7 @@ class SSHSessionManager
     /**
      * @param string|null $privateKey
      *
-     * @return Crypt_RSA|null
+     * @return RSA|null
      */
     private function loadPrivateKey($privateKey)
     {
@@ -209,7 +209,7 @@ class SSHSessionManager
             return null;
         }
 
-        $key = new Crypt_RSA;
+        $key = new RSA;
 
         $command = [$key, 'loadKey'];
         $args = [$privateKey];

@@ -7,7 +7,7 @@
 
 namespace QL\Hal\Agent\Remoting;
 
-use Net_SSH2;
+use phpseclib\Net\SSH2;
 use QL\Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\ProcessUtils;
 
@@ -226,13 +226,13 @@ class SSHProcess
     }
 
     /**
-     * @param Net_SSH2 $sshSession
+     * @param SSH2 $sshSession
      * @param CommandContext $command
      * @param array $env
      *
      * @return void
      */
-    private function runCommand(Net_SSH2 $sshSession, CommandContext $command, array $env = [])
+    private function runCommand(SSH2 $sshSession, CommandContext $command, array $env = [])
     {
         $actual = $command->command();
 
