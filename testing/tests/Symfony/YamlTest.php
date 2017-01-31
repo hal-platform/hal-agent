@@ -7,6 +7,10 @@
 namespace QL\Hal\Agent\Symfony;
 
 use PHPUnit_Framework_TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RecursiveRegexIterator;
+use RegexIterator;
 use Symfony\Component\Yaml\Yaml;
 
 class YamlTest extends PHPUnit_Framework_TestCase
@@ -16,9 +20,9 @@ class YamlTest extends PHPUnit_Framework_TestCase
      */
     public function testYamlFilesDoNotThrowErrorsWhenPared()
     {
-        $configFiles = new \RecursiveDirectoryIterator(__DIR__ . '/../../../configuration');
-        $iterator = new \RecursiveIteratorIterator($configFiles);
-        $yamlRegex = new \RegexIterator($iterator, '/^.+\.yml$/i', \RecursiveRegexIterator::GET_MATCH);
+        $configFiles = new RecursiveDirectoryIterator(__DIR__ . '/../../../configuration');
+        $iterator = new RecursiveIteratorIterator($configFiles);
+        $yamlRegex = new RegexIterator($iterator, '/^.+\.yml$/i', RecursiveRegexIterator::GET_MATCH);
 
         /** @var  $yamlFile */
         foreach ($yamlRegex as $yamlRegexMatch) {
