@@ -106,7 +106,7 @@ class LazyCommand extends Command
         return $this->proxy(__FUNCTION__, func_get_args());
     }
 
-    public function setCode($code)
+    public function setCode(callable $code)
     {
         return $this->proxy(__FUNCTION__, func_get_args());
     }

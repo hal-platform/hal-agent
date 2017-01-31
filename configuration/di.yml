@@ -64,7 +64,7 @@ services:
         class: 'Symfony\Component\Filesystem\Filesystem'
     utility.process.builder:
         class: 'Symfony\Component\Process\ProcessBuilder'
-        scope: prototype
+        shared: false
         calls:
             - ['inheritEnvironmentVariables', [false]]
     utility.referenceResolver:
