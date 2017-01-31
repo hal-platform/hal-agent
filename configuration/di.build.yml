@@ -16,7 +16,7 @@ services:
         class: 'QL\Hal\Agent\Build\Unpacker'
         arguments:
             - '@logger.event'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filepacking%'
     build.configuration.reader:
         class: 'QL\Hal\Agent\Build\ConfigurationReader'
@@ -41,7 +41,7 @@ services:
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filepacking%'
     build.mover:
         class: 'QL\Hal\Agent\Build\Mover'
@@ -66,7 +66,7 @@ services:
             - '@build.unix.exporter.packer'
             - '@ssh.filemanager'
             - '@build.unix.standard.remoter'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filetransfer%'
     build.unix.exporter.packer:
         parent: 'build.packer'
@@ -93,7 +93,7 @@ services:
             - '@logger.event'
             - '@build.unix.importer.unpacker'
             - '@ssh.filemanager'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filetransfer%'
     build.unix.importer.unpacker:
         parent: 'build.unpacker'
@@ -134,7 +134,7 @@ services:
             - '@logger.event'
             - '@ssh.filemanager'
             - '@build.windows.standard.remoter'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filetransfer%'
 
     build.windows.builder:
@@ -146,7 +146,7 @@ services:
         arguments:
             - '@logger.event'
             - '@ssh.filemanager'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filetransfer%'
 
     build.windows.cleaner:

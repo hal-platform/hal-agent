@@ -113,7 +113,7 @@ services:
         arguments:
             - 'worker:build'
             - '@doctrine.em'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '@logger.mcp'
             - '@root'
     command.worker.push:
@@ -121,7 +121,7 @@ services:
         arguments:
             - 'worker:push'
             - '@doctrine.em'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '@logger.mcp'
             - '@root'
 
@@ -134,7 +134,7 @@ services:
         arguments:
             - 'docker:refresh'
             - '@ssh.filemanager'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '@github.archive'
             - '@doctrine.em'
             - '@clock'

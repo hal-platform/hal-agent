@@ -93,7 +93,7 @@ services:
 
     utility.environment.resolver:
         class: 'QL\Hal\Agent\Utility\BuildEnvironmentResolver'
-        arguments: ['@utility.process.builder='] # = signifies a prototype service
+        arguments: ['@utility.process.builder']
         calls:
             - ['setWindowsBuilder', ['%build.windows.remoteUser%', '%build.windows.server%', '%build.windows.temp%']]
             - ['setUnixBuilder', ['%build.unix.remoteUser%', '%build.unix.server%', '%build.unix.temp%']]

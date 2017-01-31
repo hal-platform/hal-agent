@@ -22,7 +22,7 @@ services:
         class: 'QL\Hal\Agent\Push\Unpacker'
         arguments:
             - '@logger.event'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '@utility.filesystem'
             - '@yaml.dumper'
             - '%timeout.filepacking%'
@@ -76,7 +76,7 @@ services:
         class: 'QL\Hal\Agent\Push\ElasticBeanstalk\Packer'
         arguments:
             - '@logger.event'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.push%'
 
     push.eb.uploader:
@@ -129,7 +129,7 @@ services:
         arguments:
             - '@logger.event'
             - '@ssh.filemanager'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.push%'
 
     push.rsync.serverCommand:
@@ -174,7 +174,7 @@ services:
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filepacking%'
 
     push.s3.uploader:
@@ -206,7 +206,7 @@ services:
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
-            - '@utility.process.builder=' # = signifies a prototype service
+            - '@utility.process.builder'
             - '%timeout.filepacking%'
 
     push.cd.uploader:
