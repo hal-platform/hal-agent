@@ -144,7 +144,6 @@ class Packer
     {
         $filesize = filesize($targetFile);
 
-        $this->logger->keep('filesize', ['archive' => $filesize]);
         $this->logger->event('success', static::EVENT_MESSAGE, [
             'size' => sprintf('%s MB', round($filesize / self::MB_IN_BYTES, 2))
         ]);

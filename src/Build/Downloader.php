@@ -55,7 +55,6 @@ class Downloader
 
         if ($isSuccessful) {
             $filesize = filesize($target);
-            $this->logger->keep('filesize', ['download' => $filesize]);
             $this->logger->event('success', self::EVENT_MESSAGE, [
                 'size' => sprintf('%s MB', round($filesize / 1048576, 2))
             ]);

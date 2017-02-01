@@ -83,10 +83,6 @@ class PackerTest extends PHPUnit_Framework_TestCase
             ->with('success', Mockery::any(), [
                 'size' => '0.08 MB',
             ])->once();
-        $this->logger
-            ->shouldReceive('keep')
-            ->with('filesize', ['archive' => '87480'])
-            ->once();
 
         $this->filesystem
             ->shouldReceive('exists')

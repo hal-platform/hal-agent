@@ -31,11 +31,6 @@ class EventLogger
     private $factory;
 
     /**
-     * @var Notifier
-     */
-    private $notifier;
-
-    /**
      * @var ProcessHandler
      */
     private $processHandler;
@@ -53,20 +48,17 @@ class EventLogger
     /**
      * @param EntityManagerInterface $em
      * @param EventFactory $factory
-     * @param Notifier $notifier
      * @param ProcessHandler $processHandler
      * @param Clock $clock
      */
     public function __construct(
         EntityManagerInterface $em,
         EventFactory $factory,
-        Notifier $notifier,
         ProcessHandler $processHandler,
         Clock $clock
     ) {
         $this->em = $em;
         $this->factory = $factory;
-        $this->notifier = $notifier;
         $this->processHandler = $processHandler;
         $this->clock = $clock;
     }
@@ -83,22 +75,6 @@ class EventLogger
         }
 
         $this->factory->setStage($normalized);
-        $this->notifier->sendNotifications($normalized, $this->entity);
-    }
-
-    /**
-     * @param string $stage
-     * @param string $service
-     *
-     * @return null
-     */
-    public function addSubscription($stage, $service)
-    {
-        if (!$normalized = $this->normalizeStage($stage)) {
-            return;
-        }
-
-        $this->notifier->addSubscription($normalized, $service);
     }
 
     /**
@@ -117,17 +93,6 @@ class EventLogger
         }
 
         $this->factory->$status($message, $context);
-    }
-
-    /**
-     * @param string $key
-     * @param mixed $value
-     *
-     * @return null
-     */
-    public function keep($key, $value)
-    {
-        $this->notifier->keep($key, $value);
     }
 
     /**
