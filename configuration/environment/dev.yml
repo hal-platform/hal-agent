@@ -66,8 +66,6 @@ parameters:
     database.server: 'localhost'
     database.database: 'hal'
 
-    email.from.name: 'HAL9000 - DEV'
-
     redis.server: 'ql1coreredistest1:6379'
     redis.prefix: 'hal9000dev'
 

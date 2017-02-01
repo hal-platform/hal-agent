@@ -12,7 +12,6 @@ services:
         arguments:
             - '@doctrine.em'
             - '@logger.event.factory'
-            - '@logger.notifier'
             - '@logger.process.handler'
             - '@clock'
     logger.event.factory:
@@ -21,66 +20,9 @@ services:
         calls:
             - ['setRedisHandler', ['@redis']]
 
-    logger.notifier:
-        class: 'QL\Hal\Agent\Logger\Notifier'
-        arguments: ['@service_container']
-
     logger.process.handler:
         class: 'QL\Hal\Agent\Logger\ProcessHandler'
         arguments: ['@doctrine.em', '@utility.id.generator']
-
-    ####################################################################################################################
-    # custom notifiers
-    ####################################################################################################################
-
-    notifier.email:
-        class: 'QL\Hal\Agent\Notifier\EmailNotifier'
-        arguments:
-            - '@emailer'
-            - '@emailer.message'
-            - '@notifier.email.formatter'
-
-    notifier.email.formatter:
-        class: 'QL\Hal\Agent\Notifier\EmailFormatter'
-        arguments: ['@notifier.email.template']
-
-    notifier.email.template:
-        class: 'Twig_Template'
-        factory: ['@notifier.email.environment', 'loadTemplate']
-        arguments: ['email.twig']
-
-    notifier.email.environment:
-        class: 'Twig_Environment'
-        arguments: ['@notifier.twig.loader']
-        calls:
-            - ['addGlobal', ['hal_url', '%hal.baseurl%']]
-            - ['addGlobal', ['github_url', '%github.baseurl.site%']]
-    notifier.twig.loader:
-        class: 'Twig_Loader_Filesystem'
-        arguments: ['@notifier.twig.loader.path']
-    notifier.twig.loader.path:
-        class: 'WUT'
-        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
-        arguments: ['@root', '/configuration/templates']
-
-    ####################################################################################################################
-    # email logger services
-    ####################################################################################################################
-
-    emailer:
-        class: 'Swift_Mailer'
-        arguments: ['@emailer.transport']
-    emailer.transport:
-        class: 'Swift_SmtpTransport'
-        arguments: ['%email.server%']
-    emailer.message:
-        class: 'Swift_Message'
-        calls:
-            - ['setFrom', ['%email.from%', '%email.from.name%']]
-            - ['setReplyTo', ['%email.reply%']]
-            - ['setContentType', ['text/html']]
-            - ['setSubject', ['Critical Error']]
-            # to, subject will be set at runtime
 
     ####################################################################################################################
     # mcp logger services
