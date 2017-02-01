@@ -97,6 +97,10 @@ trait CommandTrait
         $limit = trim(ini_get('memory_limit'));
         if (1 === preg_match('/([\d]+)M/', $limit, $matches)) {
             $limit = array_pop($matches) * 1024 * 1024;
+        } elseif (1 === preg_match('/([\d]+)G/', $limit, $matches)) {
+            $limit = array_pop($matches) * 1024 * 1024 * 1024;
+        } else {
+            $limit = 0;
         }
 
         $usage = sprintf('%s', round(memory_get_usage() / 1048576, 2));
