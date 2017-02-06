@@ -7,27 +7,23 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Github\Client;
-use Github\HttpClient\HttpClient;
-use Guzzle\Http\Client as GuzzleClient;
-use Guzzle\Http\Message\Response;
-use Guzzle\Plugin\Mock\MockPlugin;
+use GuzzleHttp\Client as GuzzleClient;
+use function GuzzleHttp\Psr7\stream_for;
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use Psr\Http\Message\ResponseInterface;
 
 class DeploymentsApiTest extends PHPUnit_Framework_TestCase
 {
     public function testCreateDeploymentSuccess()
     {
-        $response = Mockery::mock('GuzzleHttp\Message\ResponseInterface', [
+        $response = Mockery::mock(ResponseInterface::class, [
             'getStatusCode' => 200,
-            'json' => [
-                'id' => 55
-            ]
+            'getBody' => stream_for('{"id": 55}')
         ]);
 
         $payload = null;
-        $guzzle = Mockery::mock('GuzzleHttp\Client');
+        $guzzle = Mockery::mock(GuzzleClient::class);
         $guzzle
             ->shouldReceive('post')
             ->with(
@@ -62,15 +58,13 @@ class DeploymentsApiTest extends PHPUnit_Framework_TestCase
 
     public function testCreateDeploymentStatusSuccess()
     {
-        $response = Mockery::mock('GuzzleHttp\Message\ResponseInterface', [
+        $response = Mockery::mock(ResponseInterface::class, [
             'getStatusCode' => 200,
-            'json' => [
-                'id' => 55
-            ]
+            'getBody' => stream_for('{"id": 55}')
         ]);
 
         $payload = null;
-        $guzzle = Mockery::mock('GuzzleHttp\Client');
+        $guzzle = Mockery::mock(GuzzleClient::class);
         $guzzle
             ->shouldReceive('post')
             ->with(

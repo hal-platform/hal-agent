@@ -10,7 +10,7 @@
     },
 
     "require": {
-        "php-64bit": "~5.6 || ~7.0",
+        "php-64bit": "~7.0",
 
         "ext-curl": "*",
         "ext-openssl": "*",
@@ -22,18 +22,18 @@
         "doctrine/orm": "~2.5",
         "doctrine/cache": "~1.6",
 
-        "guzzlehttp/guzzle": "~5.3",
+        "guzzlehttp/guzzle": "^6.0",
         "knplabs/github-api": "~2.0.1",
         "paragonie/random_compat": "~1.1",
         "phpseclib/phpseclib": "2.0.4",
-        "php-http/guzzle5-adapter": "~1.0.0",
+        "php-http/guzzle6-adapter": "^1.1.0",
         "predis/predis": "~1.0",
         "psr/log": "*",
 
         "ql/hal-core":   "2.10.0",
 
-        "ql/mcp-common": "~1.0",
-        "ql/mcp-logger": "~2.4",
+        "ql/mcp-common": "^1.1",
+        "ql/mcp-logger": "^3.0.0",
 
         "symfony/config":                "~3.2",
         "symfony/console":               "~3.2",

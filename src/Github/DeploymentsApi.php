@@ -8,9 +8,10 @@
 namespace QL\Hal\Agent\Github;
 
 use GuzzleHttp\Client as Guzzle;
-use GuzzleHttp\Exception\ParseException;
-use GuzzleHttp\Message\ResponseInterface;
 use GuzzleHttp\UriTemplate;
+use function GuzzleHttp\json_decode as guzzle_json_decode;
+use InvalidArgumentException;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Requires GitHub Enterprise 2.1
@@ -161,8 +162,8 @@ class DeploymentsApi
         }
 
         try {
-            $decoded = $response->json();
-        } catch (ParseException $e) {
+            $decoded = guzzle_json_decode($response->getBody()->getContents(), true);
+        } catch (InvalidArgumentException $e) {
             return null;
         }
 

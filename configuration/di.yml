@@ -100,9 +100,11 @@ services:
 
     guzzle:
         class: 'GuzzleHttp\Client'
+        arguments:
+            - { allow_redirects: false }
 
     guzzle.github.adapter.client:
-        class: 'Http\Adapter\Guzzle5\Client'
+        class: 'Http\Adapter\Guzzle6\Client'
         arguments:
             - '@guzzle'
 

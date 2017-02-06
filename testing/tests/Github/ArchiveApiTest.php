@@ -10,23 +10,23 @@ namespace QL\Hal\Agent\Github;
 use Github\Exception\RuntimeException;
 use Github\HttpClient\Builder;
 use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Message\Response;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Stream\Stream;
-use GuzzleHttp\Subscriber\Mock;
-use Http\Adapter\Guzzle5\Client as Guzzle5Adapter;
+use Http\Adapter\Guzzle6\Client as Guzzle6Adapter;
 use PHPUnit_Framework_TestCase;
 
 class ArchiveApiTest extends PHPUnit_Framework_TestCase
 {
     public function testExceptionThrowIfDirectResponseIsNotRedirect()
     {
-        $guzzle = new GuzzleClient;
-        $mock = new Mock([
+        $mock = new MockHandler([
             new Response(200)
         ]);
-        $guzzle->getEmitter()->attach($mock);
+        $guzzle = new GuzzleClient(['handler' => HandlerStack::create($mock)]);
 
-        $guzzleAdapter = new Guzzle5Adapter($guzzle);
+        $guzzleAdapter = new Guzzle6Adapter($guzzle);
         $httpBuilder = new Builder($guzzleAdapter);
 
         $client = new EnterpriseClient($httpBuilder, null, 'http://git');
@@ -39,14 +39,13 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
 
     public function testSuccess()
     {
-        $guzzle = new GuzzleClient;
-        $mock = new Mock([
+        $mock = new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
             new Response(200)
         ]);
-        $guzzle->getEmitter()->attach($mock);
+        $guzzle = new GuzzleClient(['handler' => $mock]);
 
-        $guzzleAdapter = new Guzzle5Adapter($guzzle);
+        $guzzleAdapter = new Guzzle6Adapter($guzzle);
         $httpBuilder = new Builder($guzzleAdapter);
 
         $client = new EnterpriseClient($httpBuilder, null, 'http://git');
@@ -59,14 +58,13 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
 
     public function testFailureThrowsException()
     {
-        $guzzle = new GuzzleClient;
-        $mock = new Mock([
+        $mock = new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
             new Response(503)
         ]);
-        $guzzle->getEmitter()->attach($mock);
+        $guzzle = new GuzzleClient(['handler' => $mock]);
 
-        $guzzleAdapter = new Guzzle5Adapter($guzzle);
+        $guzzleAdapter = new Guzzle6Adapter($guzzle);
         $httpBuilder = new Builder($guzzleAdapter);
 
         $client = new EnterpriseClient($httpBuilder, null, 'http://git');
@@ -81,14 +79,14 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
     {
         $testFile = __DIR__ . '/test.request';
 
-        $guzzle = new GuzzleClient;
-        $mock = new Mock([
+        $mock = new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
             new Response(200, [], Stream::factory('test-body'))
         ]);
-        $guzzle->getEmitter()->attach($mock);
 
-        $guzzleAdapter = new Guzzle5Adapter($guzzle);
+        $guzzle = new GuzzleClient(['handler' => $mock]);
+
+        $guzzleAdapter = new Guzzle6Adapter($guzzle);
         $httpBuilder = new Builder($guzzleAdapter);
 
         $client = new EnterpriseClient($httpBuilder, null, 'http://git');
