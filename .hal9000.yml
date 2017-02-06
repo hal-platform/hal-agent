@@ -1,4 +1,4 @@
-system: docker:php5.6
+system: docker:php7.1
 exclude: []
 build:
     - 'bin/install --deploy'
