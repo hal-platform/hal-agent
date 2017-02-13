@@ -1,10 +1,9 @@
 imports:
-    - resource: di.command.yml
-    - resource: di.build.yml
-    - resource: di.push.yml
-    - resource: services/services.doctrine.yml
-    - resource: services/services.github.yml
-    - resource: services/services.logging.yml
+    - resource: 'di.command.yml'
+    - resource: 'di.build.yml'
+    - resource: 'di.push.yml'
+    - resource: 'services/services.doctrine.yml'
+    - resource: 'services/services.github.yml'
 
 services:
 
@@ -31,7 +30,7 @@ services:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
         calls:
             - ['addSubscriber', ['@logger.mcp.subscriber']]
-            - ['addSubscriber', ['@utility.exceptionHandler']]
+            - ['addSubscriber', ['@logger.exception_handler']]
 
     clock:
         class: 'QL\MCP\Common\Time\Clock'
@@ -57,6 +56,41 @@ services:
             - {prefix: '%redis.prefix%:'}
 
     ####################################################################################################################
+    # logging
+    ####################################################################################################################
+
+    logger:
+        parent: 'mcp.logger'
+
+    logger.exception_handler:
+        class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
+        arguments: ['@logger']
+        calls:
+            - ['setStacktraceLogging', ['%logging.stacktrace%']]
+
+    logger.event:
+        class: 'QL\Hal\Agent\Logger\EventLogger'
+        arguments:
+            - '@doctrine.em'
+            - '@logger.event.factory'
+            - '@logger.process.handler'
+            - '@clock'
+    logger.event.factory:
+        class: 'QL\Hal\Agent\Logger\EventFactory'
+        arguments: ['@doctrine.em', '@doctrine.random']
+        calls:
+            - ['setRedisHandler', ['@redis']]
+
+    logger.process.handler:
+        class: 'QL\Hal\Agent\Logger\ProcessHandler'
+        arguments: ['@doctrine.em', '@utility.id.generator']
+
+    # subscriber to symfony/console event system to prepare mcp logger
+    logger.mcp.subscriber:
+        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
+        arguments: ['@mcp.logger.factory']
+
+    ####################################################################################################################
     # utility / shared
     ####################################################################################################################
 
@@ -75,11 +109,6 @@ services:
             - '@github.pullRequests'
     utility.forker:
         class: 'QL\Hal\Agent\Helper\ForkHelper'
-    utility.exceptionHandler:
-        class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
-        arguments: ['@mcp.logger']
-        calls:
-            - ['setStacktraceLogging', ['%logging.stacktrace%']]
 
     utility.id.generator:
         class: 'QL\Hal\Core\JobIdGenerator'

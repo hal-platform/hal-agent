@@ -50,14 +50,6 @@ parameters:
 
     push.rsync.remoteUser: ''
 
-
-    ############################################################################
-    # LOGGING
-    ############################################################################
-
-    #Factory class sets the defaults this is here if you want to override them for your dev
-    mcp.logger.service.errorlog.options:
-
     ############################################################################
     # DATABASE / NOTIFICATIONS
     ############################################################################
@@ -112,6 +104,6 @@ parameters:
         4eca266fbc1045c7c35c4cde4d42609f|ab5f7474e0230947560d2187540971c0
 
 services:
-    #Parent service is in services.logging.yml not in the vendor mcp-logger.yml
+    # Comment this out to use default logger of syslog.
     mcp.logger.service:
-        parent: 'logger.mcp.errorlog'
+        parent: 'mcp.logger.service.errorlog'

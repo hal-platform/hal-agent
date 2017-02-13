@@ -10,12 +10,10 @@
 # doctrine proxy location
 /.doctrine/
 
-# unit testing artifacts
+# testing
+/.error.log
 /phpunit.xml
 /.phpunit/
-
-# dev logs
-/.logs/
 
 # compiled configuration, package manager installation
 /bin/composer

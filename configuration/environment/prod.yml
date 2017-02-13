@@ -48,12 +48,10 @@ parameters:
     push.rsync.remoteUser: ''
 
     ############################################################################
-    # Logging
+    # error handling and logging
     ############################################################################
 
-    mcp.logger.service.syslog.options:
-        ident: 'hal'
-        facility: !php/const:LOG_USER
+    logging.stacktrace: false
 
     ############################################################################
     # DATABASE / NOTIFICATIONS

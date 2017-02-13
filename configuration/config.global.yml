@@ -1,8 +1,10 @@
 parameters:
 
-    logging.stacktrace: true
-
     clock.timezone: 'America/Detroit'
+
+    ############################################################################
+    # timeouts
+    ############################################################################
 
     timeout.build: 1800
     timeout.push: 300
@@ -21,8 +23,16 @@ parameters:
     push.eb.waiter.interval: 20
     push.eb.waiter.max: 60
 
+    ############################################################################
+    # github
+    ############################################################################
+
     github.baseurl.site: 'http://git'
     github.baseurl.api: 'http://git/api/v3'
+
+    ############################################################################
+    # docker
+    ############################################################################
 
     docker.source.repository: 'skluck/docker-images'
     docker.source.reference: 'master'
@@ -30,6 +40,26 @@ parameters:
     docker.default.image: 'legacy'
     docker.option.sudo: false
     docker.option.debug: false
+
+    ############################################################################
+    # error handling and logging
+    ############################################################################
+
+    logging.stacktrace: true
+
+    mcp.logger.service.syslog.options:
+        ident: 'hal-%application.id%'
+        facility: !php/const:LOG_USER
+    mcp.logger.service.errorlog.options:
+        type: 3
+        facility: !php/const:QL\MCP\Logger\Service\ErrorLogService::FILE
+        file: '../.error.log'
+    mcp.logger.default_properties:
+        applicationID: '%application.id%'
+
+    ############################################################################
+    # database
+    ############################################################################
 
     # Replaced by env
     database.username: ''
