@@ -1,5 +1,5 @@
 {
-    "name": "ql/hal-agent",
+    "name": "hal/hal-agent",
     "description": "HAL9000 Console Application",
     "license": "proprietary",
     "authors": [
