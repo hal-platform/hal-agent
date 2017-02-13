@@ -5,11 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Remoting\SSHProcess;
-use QL\Hal\Agent\Remoting\SSHSessionManager;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Remoting\SSHSessionManager;
 
 /**
  * Ugh http://unix.stackexchange.com/questions/42685/rsync-how-to-exclude-the-topmost-directory

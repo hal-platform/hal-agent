@@ -5,11 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Utility\ProcessRunnerTrait;
-use QL\Hal\Agent\Remoting\FileSyncManager;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Utility\ProcessRunnerTrait;
+use Hal\Agent\Remoting\FileSyncManager;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 

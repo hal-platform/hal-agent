@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command\Docker;
+namespace Hal\Agent\Command\Docker;
 
-use QL\Hal\Agent\Command\CommandTrait;
-use QL\Hal\Agent\Command\FormatterTrait;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
-use QL\Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Command\CommandTrait;
+use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\OutputAwareTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;

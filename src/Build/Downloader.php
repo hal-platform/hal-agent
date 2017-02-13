@@ -5,11 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Github\ArchiveApi;
-use QL\Hal\Agent\Github\GitHubException;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Github\ArchiveApi;
+use Hal\Agent\Github\GitHubException;
 
 class Downloader
 {

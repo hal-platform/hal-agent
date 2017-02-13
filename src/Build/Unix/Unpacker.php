@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Unix;
+namespace Hal\Agent\Build\Unix;
 
-use QL\Hal\Agent\Build\Unpacker as BuildUnpacker;
+use Hal\Agent\Build\Unpacker as BuildUnpacker;
 
 class Unpacker extends BuildUnpacker
 {

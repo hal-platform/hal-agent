@@ -5,13 +5,13 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\Build\BuildHandlerInterface;
-use QL\Hal\Agent\Build\EmergencyBuildHandlerTrait;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
-use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Agent\Build\BuildHandlerInterface;
+use Hal\Agent\Build\EmergencyBuildHandlerTrait;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Utility\EncryptedPropertyResolver;
 
 class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
 {

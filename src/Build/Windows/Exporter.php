@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Remoting\FileSyncManager;
-use QL\Hal\Agent\Remoting\SSHProcess;
-use QL\Hal\Agent\Utility\ProcessRunnerTrait;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Remoting\FileSyncManager;
+use Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 

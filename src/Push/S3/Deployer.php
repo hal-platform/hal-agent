@@ -5,14 +5,14 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\S3;
+namespace Hal\Agent\Push\S3;
 
 use Aws\S3\S3Client;
-use QL\Hal\Agent\Push\AWSAuthenticator;
-use QL\Hal\Agent\Push\DeployerInterface;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
-use QL\Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Push\AWSAuthenticator;
+use Hal\Agent\Push\DeployerInterface;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Type\EnumType\ServerEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface

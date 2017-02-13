@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
-use QL\Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 

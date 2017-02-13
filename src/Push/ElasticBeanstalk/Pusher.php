@@ -5,13 +5,13 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\Exception\AwsException;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Waiter\TimeoutException;
-use QL\Hal\Agent\Waiter\Waiter;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Waiter\TimeoutException;
+use Hal\Agent\Waiter\Waiter;
 
 class Pusher
 {

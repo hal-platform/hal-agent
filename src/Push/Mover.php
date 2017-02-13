@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace Hal\Agent\Push;
 
-use QL\Hal\Agent\Build\Mover as BaseMover;
+use Hal\Agent\Build\Mover as BaseMover;
 
 class Mover extends BaseMover
 {

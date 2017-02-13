@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\Build\Generic\Cleaner as BaseCleaner;
+use Hal\Agent\Build\Generic\Cleaner as BaseCleaner;
 
 class Cleaner extends BaseCleaner
 {

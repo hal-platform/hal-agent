@@ -5,18 +5,18 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command\Docker;
+namespace Hal\Agent\Command\Docker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use QL\Hal\Core\Entity\AuditLog;
 use QL\Hal\Core\Entity\User;
 use QL\Hal\Core\Repository\AuditLogRepository;
-use QL\Hal\Agent\Command\CommandTrait;
-use QL\Hal\Agent\Command\FormatterTrait;
-use QL\Hal\Agent\Remoting\FileSyncManager;
-use QL\Hal\Agent\Github\ArchiveApi;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
-use QL\Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Command\CommandTrait;
+use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Remoting\FileSyncManager;
+use Hal\Agent\Github\ArchiveApi;
+use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\OutputAwareTrait;
 use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

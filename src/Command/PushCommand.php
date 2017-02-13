@@ -5,18 +5,18 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace Hal\Agent\Command;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Build\ConfigurationReader;
-use QL\Hal\Agent\Build\DelegatingBuilder;
-use QL\Hal\Agent\Push\DelegatingDeployer;
-use QL\Hal\Agent\Push\Mover;
-use QL\Hal\Agent\Push\Pusher;
-use QL\Hal\Agent\Push\Resolver;
-use QL\Hal\Agent\Push\Unpacker;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
-use QL\Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Build\ConfigurationReader;
+use Hal\Agent\Build\DelegatingBuilder;
+use Hal\Agent\Push\DelegatingDeployer;
+use Hal\Agent\Push\Mover;
+use Hal\Agent\Push\Pusher;
+use Hal\Agent\Push\Resolver;
+use Hal\Agent\Push\Unpacker;
+use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

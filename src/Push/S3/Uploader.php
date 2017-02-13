@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\S3;
+namespace Hal\Agent\Push\S3;
 
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use InvalidArgumentException;
-use QL\Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Logger\EventLogger;
 use RuntimeException;
 
 class Uploader

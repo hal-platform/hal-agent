@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command\Utility;
+namespace Hal\Agent\Command\Utility;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,13 +14,13 @@ use Predis\Client as Predis;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Utility\SortingTrait;
-use QL\Hal\Agent\Command\CommandTrait;
-use QL\Hal\Agent\Command\FormatterTrait;
-use QL\Hal\Agent\Push\HostnameValidatorTrait;
-use QL\Hal\Agent\Remoting\SSHSessionManager;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
-use QL\Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Agent\Utility\SortingHelperTrait;
+use Hal\Agent\Command\CommandTrait;
+use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Push\HostnameValidatorTrait;
+use Hal\Agent\Remoting\SSHSessionManager;
+use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Utility\SortingHelperTrait;
 use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

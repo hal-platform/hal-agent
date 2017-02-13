@@ -5,16 +5,16 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
-use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
-use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
-use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
-use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
-use QL\Hal\Agent\Utility\ResolverTrait;
+use Hal\Agent\Build\Unix\UnixBuildHandler;
+use Hal\Agent\Build\Windows\WindowsBuildHandler;
+use Hal\Agent\Utility\BuildEnvironmentResolver;
+use Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Agent\Utility\DefaultConfigHelperTrait;
+use Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;

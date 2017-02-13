@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
-use QL\Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Remoting\SSHProcess;
 
 class Builder
 {

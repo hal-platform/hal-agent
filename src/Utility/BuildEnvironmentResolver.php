@@ -7,8 +7,8 @@
 
 namespace Hal\Agent\Utility;
 
-use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
-use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;
+use Hal\Agent\Build\Unix\UnixBuildHandler;
+use Hal\Agent\Build\Windows\WindowsBuildHandler;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Process\ProcessBuilder;

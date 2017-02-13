@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace Hal\Agent\Command;
 
 use Symfony\Component\Console\Formatter\OutputFormatter;
 

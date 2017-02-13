@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 

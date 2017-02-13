@@ -5,10 +5,10 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Push\ElasticBeanstalk;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Utility\ProcessRunnerTrait;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 

@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Script;
+namespace Hal\Agent\Push\Script;
 
-use QL\Hal\Agent\Build\DelegatingBuilder;
+use Hal\Agent\Build\DelegatingBuilder;
 
 class DeployDelegatingBuilder extends DelegatingBuilder
 {

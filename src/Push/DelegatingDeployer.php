@@ -5,11 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace Hal\Agent\Push;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Push\DeployerInterface;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Push\DeployerInterface;
+use Hal\Agent\Symfony\OutputAwareInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 

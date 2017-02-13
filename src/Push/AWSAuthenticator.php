@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace Hal\Agent\Push;
 
 use Aws\CodeDeploy\CodeDeployClient;
 use Aws\Ec2\Ec2Client;
@@ -14,7 +14,7 @@ use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Aws\Sdk;
 use Exception;
-use QL\Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
 use QL\Hal\Core\Entity\Credential\AWSCredential;
 use Symfony\Component\DependencyInjection\ContainerInterface;

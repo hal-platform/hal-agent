@@ -5,10 +5,10 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Symfony\OutputAwareInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 

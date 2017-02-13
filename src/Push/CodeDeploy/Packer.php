@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\CodeDeploy;
+namespace Hal\Agent\Push\CodeDeploy;
 
-use QL\Hal\Agent\Build\Packer as BuildPacker;
+use Hal\Agent\Build\Packer as BuildPacker;
 
 class Packer extends BuildPacker
 {

@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
 use Github\Api\Repository\Commits as CommitApi;
 use Github\Exception\RuntimeException;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Remoting\SSHProcess;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 

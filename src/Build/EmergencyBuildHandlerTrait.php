@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
-use QL\Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Symfony\OutputAwareTrait;
 
 trait EmergencyBuildHandlerTrait
 {

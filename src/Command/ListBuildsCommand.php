@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace Hal\Agent\Command;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,7 +14,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Agent\Utility\ResolverTrait;
+use Hal\Agent\Utility\ResolverTrait;
 use QL\MCP\Common\Time\TimePoint;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;

@@ -5,14 +5,14 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace Hal\Agent\Push;
 
 use Doctrine\ORM\EntityManagerInterface;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
-use QL\Hal\Agent\Utility\DefaultConfigHelperTrait;
-use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
-use QL\Hal\Agent\Utility\ResolverTrait;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Utility\BuildEnvironmentResolver;
+use Hal\Agent\Utility\DefaultConfigHelperTrait;
+use Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Agent\Utility\ResolverTrait;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
