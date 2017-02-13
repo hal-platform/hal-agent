@@ -2,7 +2,14 @@ services:
 
     github.archive:
         class: 'QL\Hal\Agent\Github\ArchiveApi'
-        arguments: ['@github.client']
+        arguments: ['@github.archive_guzzle', '%github.baseurl.api%']
+
+    github.archive_guzzle:
+        class: 'GuzzleHttp\Client'
+        arguments:
+            -
+                headers:
+                    Authorization: 'token %github.token%'
 
     github.references:
         class: 'Github\Api\GitData\References'
@@ -19,16 +26,19 @@ services:
     github.client:
         class: 'QL\Hal\Agent\Github\EnterpriseClient'
         arguments:
-            - '@github.http.client.builder'
+            - '@github.client_builder'
             - null
             - '%github.baseurl.site%'
         calls:
             - ['authenticate', ['%github.token%', null, 'http_token']]
 
-    github.http.client.builder:
+    github.client_builder:
         class: 'Github\HttpClient\Builder'
-        arguments:
-            - '@guzzle.github.adapter.client'
+        arguments: ['@github.guzzle_adapter']
 
-    github.guzzleHttpClient:
+    github.guzzle_adapter:
+        class: 'Http\Adapter\Guzzle6\Client'
+        arguments: ['@github.guzzle']
+
+    github.guzzle:
         class: 'GuzzleHttp\Client'

@@ -127,16 +127,6 @@ services:
             - ['setWindowsBuilder', ['%build.windows.remoteUser%', '%build.windows.server%', '%build.windows.temp%']]
             - ['setUnixBuilder', ['%build.unix.remoteUser%', '%build.unix.server%', '%build.unix.temp%']]
 
-    guzzle:
-        class: 'GuzzleHttp\Client'
-        arguments:
-            - { allow_redirects: false }
-
-    guzzle.github.adapter.client:
-        class: 'Http\Adapter\Guzzle6\Client'
-        arguments:
-            - '@guzzle'
-
     aws:
         class: 'Aws\Sdk'
         arguments:

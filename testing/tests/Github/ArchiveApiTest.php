@@ -7,50 +7,65 @@
 
 namespace QL\Hal\Agent\Github;
 
-use Github\Exception\RuntimeException;
-use Github\HttpClient\Builder;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Stream\Stream;
-use Http\Adapter\Guzzle6\Client as Guzzle6Adapter;
 use PHPUnit_Framework_TestCase;
 
 class ArchiveApiTest extends PHPUnit_Framework_TestCase
 {
-    public function testExceptionThrowIfDirectResponseIsNotRedirect()
+    public $targetFile;
+
+    public function setUp()
     {
-        $mock = new MockHandler([
-            new Response(200)
-        ]);
-        $guzzle = new GuzzleClient(['handler' => HandlerStack::create($mock)]);
+        $this->targetFile = __DIR__ . '/test.response';
+    }
 
-        $guzzleAdapter = new Guzzle6Adapter($guzzle);
-        $httpBuilder = new Builder($guzzleAdapter);
-
-        $client = new EnterpriseClient($httpBuilder, null, 'http://git');
-
-        $api = new ArchiveApi($client);
-
-        $this->expectException(GitHubException::class);
-        $api->download('user', 'repo', 'ref', 'path/derp');
+    public function tearDown()
+    {
+        @unlink($this->targetFile);
     }
 
     public function testSuccess()
     {
-        $mock = new MockHandler([
+        $mock = HandlerStack::create(new MockHandler([
+            new Response(200)
+        ]));
+
+        $guzzle = new GuzzleClient(['handler' => $mock]);
+        $api = new ArchiveApi($guzzle, 'http://git');
+
+        $success = $api->download('user', 'repo', 'ref', 'php://memory');
+        $this->assertTrue($success);
+    }
+
+
+    public function testSuccessWithRedirect()
+    {
+        $mock = HandlerStack::create(new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
             new Response(200)
-        ]);
+        ]));
+
         $guzzle = new GuzzleClient(['handler' => $mock]);
+        $api = new ArchiveApi($guzzle, 'http://github.local');
 
-        $guzzleAdapter = new Guzzle6Adapter($guzzle);
-        $httpBuilder = new Builder($guzzleAdapter);
+        $success = $api->download('user', 'repo', 'ref', $this->targetFile);
+        $this->assertTrue($success);
+    }
 
-        $client = new EnterpriseClient($httpBuilder, null, 'http://git');
+    public function testSuccessWithMultipleRedirect()
+    {
+        $mock = HandlerStack::create(new MockHandler([
+            new Response(302, ['Location' => 'http://foo']),
+            new Response(302, ['Location' => 'https://foo']),
+            new Response(200)
+        ]));
 
-        $api = new ArchiveApi($client);
+        $guzzle = new GuzzleClient(['handler' => $mock]);
+        $api = new ArchiveApi($guzzle, 'http://git');
 
         $success = $api->download('user', 'repo', 'ref', 'php://memory');
         $this->assertTrue($success);
@@ -58,43 +73,30 @@ class ArchiveApiTest extends PHPUnit_Framework_TestCase
 
     public function testFailureThrowsException()
     {
-        $mock = new MockHandler([
+        $this->expectException(GitHubException::class);
+
+        $mock = HandlerStack::create(new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
             new Response(503)
-        ]);
+        ]));
+
         $guzzle = new GuzzleClient(['handler' => $mock]);
+        $api = new ArchiveApi($guzzle, 'http://git');
 
-        $guzzleAdapter = new Guzzle6Adapter($guzzle);
-        $httpBuilder = new Builder($guzzleAdapter);
-
-        $client = new EnterpriseClient($httpBuilder, null, 'http://git');
-
-        $api = new ArchiveApi($client);
-
-        $this->expectException(RuntimeException::class);
         $success = $api->download('user', 'repo', 'ref', 'path/derp');
     }
 
     public function testMessageBodyGoesToTarget()
     {
-        $testFile = __DIR__ . '/test.request';
-
-        $mock = new MockHandler([
+        $mock = HandlerStack::create(new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
             new Response(200, [], Stream::factory('test-body'))
-        ]);
+        ]));
 
         $guzzle = new GuzzleClient(['handler' => $mock]);
+        $api = new ArchiveApi($guzzle, 'http://git');
 
-        $guzzleAdapter = new Guzzle6Adapter($guzzle);
-        $httpBuilder = new Builder($guzzleAdapter);
-
-        $client = new EnterpriseClient($httpBuilder, null, 'http://git');
-
-        $api = new ArchiveApi($client);
-        $api->download('user', 'repo', 'ref', $testFile);
-        $this->assertSame('test-body', file_get_contents($testFile));
-
-        unlink($testFile);
+        $api->download('user', 'repo', 'ref', $this->targetFile);
+        $this->assertSame('test-body', file_get_contents($this->targetFile));
     }
 }

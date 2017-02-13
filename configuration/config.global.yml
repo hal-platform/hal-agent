@@ -29,7 +29,7 @@ parameters:
     ############################################################################
 
     github.baseurl.site: 'http://git'
-    github.baseurl.api: 'http://git/api/v3'
+    github.baseurl.api: '%github.baseurl.site%/api/v3'
 
     ############################################################################
     # docker

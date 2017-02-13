@@ -10,33 +10,22 @@ use Github\Client;
 use Github\HttpClient\Plugin\PathPrepend;
 use Http\Client\Common\Plugin;
 use Http\Client\Common\Plugin\AddHostPlugin;
-use Http\Discovery\UriFactoryDiscovery;
+use function GuzzleHttp\Psr7\uri_for;
 
+/**
+ * @todo update to knplabs/php-github-api v2.0.2 when it is released
+ * https://github.com/KnpLabs/php-github-api/releases
+ */
 class EnterpriseClient extends Client
 {
     public function __construct($httpClientBuilder, $apiVersion, $enterpriseUrl)
     {
-        parent::__construct($httpClientBuilder, $apiVersion, $enterpriseUrl);
-        $this->getHttpClientBuilder()->removePlugin(AddHostPlugin::class);
-        $this->getHttpClientBuilder()->removePlugin(PathPrepend::class);
-        $this->getHttpClientBuilder()->addPlugin(new AddHostPlugin(UriFactoryDiscovery::find()->createUri($enterpriseUrl)));
-        $this->getHttpClientBuilder()->addPlugin(new PathPrepend(sprintf('/api/%s', $this->getApiVersion())));
-    }
+        parent::__construct($httpClientBuilder, $apiVersion);
 
-    /**
-     * Some of the knplab api methods require certain plugins to be on the http clients
-     * Like the History plugin for the ResultPager. But if you know better use this to conditionally
-     * remove and add plugins
-     *
-     * @param $pluginClassName
-     */
-    public function removePlugin($pluginClassName)
-    {
-        $this->getHttpClientBuilder()->removePlugin($pluginClassName);
-    }
+        $httpClientBuilder->removePlugin(AddHostPlugin::class);
+        $httpClientBuilder->removePlugin(PathPrepend::class);
 
-    public function addPlugin(Plugin $plugin)
-    {
-        $this->getHttpClientBuilder()->addPlugin($plugin);
+        $httpClientBuilder->addPlugin(new AddHostPlugin(uri_for($enterpriseUrl)));
+        $httpClientBuilder->addPlugin(new PathPrepend(sprintf('/api/%s', $this->getApiVersion())));
     }
 }
