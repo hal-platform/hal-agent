@@ -5,15 +5,15 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Logger;
+namespace Hal\Agent\Logger;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\EventLog;
-use QL\Hal\Agent\Testing\JsonableStub;
-use QL\Hal\Agent\Testing\StringableStub;
+use Hal\Agent\Testing\JsonableStub;
+use Hal\Agent\Testing\StringableStub;
 use stdClass;
 
 class EventFactoryTest extends PHPUnit_Framework_TestCase

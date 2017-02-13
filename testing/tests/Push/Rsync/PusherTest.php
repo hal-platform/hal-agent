@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -17,8 +17,8 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->syncer = Mockery::mock('QL\Hal\Agent\Remoting\FileSyncManager');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->syncer = Mockery::mock('Hal\Agent\Remoting\FileSyncManager');
     }
 
     public function testSuccess()

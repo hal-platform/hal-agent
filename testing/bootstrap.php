@@ -8,4 +8,4 @@ define(
     )
 );
 
-define('NAMESPACE_PREFIX', 'QL\Hal\Agent\\');
+define('NAMESPACE_PREFIX', 'Hal\Agent\\');

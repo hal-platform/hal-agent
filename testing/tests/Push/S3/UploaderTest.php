@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\S3;
+namespace Hal\Agent\Push\S3;
 
 use Aws\CommandInterface;
 use Aws\Exception\AwsException;
@@ -21,7 +21,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
         $this->s3 = Mockery::mock('Aws\S3\S3Client');
         $this->streamer = function() {return 'file';};
     }

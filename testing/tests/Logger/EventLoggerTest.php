@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Logger;
+namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManager;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventFactory;
+use Hal\Agent\Logger\EventFactory;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;

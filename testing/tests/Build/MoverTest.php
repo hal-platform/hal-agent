@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -17,7 +17,7 @@ class MoverTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
     }
 

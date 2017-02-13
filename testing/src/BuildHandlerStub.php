@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Testing;
+namespace Hal\Agent\Testing;
 
-use QL\Hal\Agent\Build\BuildHandlerInterface;
+use Hal\Agent\Build\BuildHandlerInterface;
 
 class BuildHandlerStub implements BuildHandlerInterface
 {

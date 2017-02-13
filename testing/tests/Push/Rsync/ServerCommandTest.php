@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -16,8 +16,8 @@ class ServerCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
-        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->remoter = Mockery::mock('Hal\Agent\Remoting\SSHProcess');
+        $this->command = Mockery::mock('Hal\Agent\Remoting\CommandContext');
     }
 
     public function testSuccess()

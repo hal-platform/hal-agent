@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Remoting;
+namespace Hal\Agent\Remoting;
 
 use Mockery;
 use phpseclib\Net\SSH2;
@@ -18,8 +18,8 @@ class SSHProcessTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->ssh = Mockery::mock('QL\Hal\Agent\Remoting\SSHSessionManager');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->ssh = Mockery::mock('Hal\Agent\Remoting\SSHSessionManager');
     }
 
     public function testFailedToCreateSession()

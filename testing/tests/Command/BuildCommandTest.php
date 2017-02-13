@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace Hal\Agent\Command;
 
 use Exception;
 use Mockery;
@@ -34,16 +34,16 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->resolver = Mockery::mock('QL\Hal\Agent\Build\Resolver');
-        $this->downloader = Mockery::mock('QL\Hal\Agent\Build\Downloader');
-        $this->unpacker = Mockery::mock('QL\Hal\Agent\Build\Unpacker');
-        $this->reader = Mockery::mock('QL\Hal\Agent\Build\ConfigurationReader');
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
-        $this->packer = Mockery::mock('QL\Hal\Agent\Build\Packer');
-        $this->mover = Mockery::mock('QL\Hal\Agent\Build\Mover');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->resolver = Mockery::mock('Hal\Agent\Build\Resolver');
+        $this->downloader = Mockery::mock('Hal\Agent\Build\Downloader');
+        $this->unpacker = Mockery::mock('Hal\Agent\Build\Unpacker');
+        $this->reader = Mockery::mock('Hal\Agent\Build\ConfigurationReader');
+        $this->builder = Mockery::mock('Hal\Agent\Build\DelegatingBuilder');
+        $this->packer = Mockery::mock('Hal\Agent\Build\Packer');
+        $this->mover = Mockery::mock('Hal\Agent\Build\Mover');
         $this->filesystem = Mockery::mock('Symfony\Component\FileSystem\Filesystem');
-        $this->ssh = Mockery::mock('QL\Hal\Agent\Remoting\SSHSessionManager');
+        $this->ssh = Mockery::mock('Hal\Agent\Remoting\SSHSessionManager');
 
         $this->output = new BufferedOutput;
     }

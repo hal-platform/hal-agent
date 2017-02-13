@@ -5,13 +5,13 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
 use Doctrine\ORM\EntityManager;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
-use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Agent\Utility\BuildEnvironmentResolver;
+use Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
@@ -35,7 +35,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
     }
     /**
-     * @expectedException QL\Hal\Agent\Build\BuildException
+     * @expectedException Hal\Agent\Build\BuildException
      * @expectedExceptionMessage Build "1234" could not be found!
      */
     public function testBuildNotFound()
@@ -50,7 +50,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException QL\Hal\Agent\Build\BuildException
+     * @expectedException Hal\Agent\Build\BuildException
      * @expectedExceptionMessage Build "1234" has a status of "Poo"! It cannot be rebuilt.
      */
     public function testBuildNotCorrectStatus()

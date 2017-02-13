@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -19,11 +19,11 @@ class ExporterTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->syncer = Mockery::mock('QL\Hal\Agent\Remoting\FileSyncManager');
-        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->syncer = Mockery::mock('Hal\Agent\Remoting\FileSyncManager');
+        $this->remoter = Mockery::mock('Hal\Agent\Remoting\SSHProcess');
 
-        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->command = Mockery::mock('Hal\Agent\Remoting\CommandContext');
         $this->command
             ->shouldReceive('withSanitized')
             ->andReturn($this->command)

@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Testing;
+namespace Hal\Agent\Testing;
 
-use QL\Hal\Agent\Push\DeployerInterface;
+use Hal\Agent\Push\DeployerInterface;
 
 class DeployerStub implements DeployerInterface
 {

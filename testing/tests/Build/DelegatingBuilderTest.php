@@ -5,11 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build;
+namespace Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Testing\BuildHandlerStub;
+use Hal\Agent\Testing\BuildHandlerStub;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
@@ -21,7 +21,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
         $this->container = Mockery::mock('Symfony\Component\DependencyInjection\ContainerInterface');
     }
 

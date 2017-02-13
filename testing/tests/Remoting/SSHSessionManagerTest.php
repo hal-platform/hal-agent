@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Remoting;
+namespace Hal\Agent\Remoting;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -17,8 +17,8 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->credentials = Mockery::mock('QL\Hal\Agent\Remoting\CredentialWallet');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->credentials = Mockery::mock('Hal\Agent\Remoting\CredentialWallet');
     }
 
     public function testNoCredentialsLogsError()
@@ -50,7 +50,7 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'server'
         ];
 
-        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+        $cred = Mockery::mock('Hal\Agent\Remoting\Credential', [
             'isKeyCredential' => true,
             'privateKey' => null
         ]);
@@ -77,7 +77,7 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'server'
         ];
 
-        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+        $cred = Mockery::mock('Hal\Agent\Remoting\Credential', [
             'isKeyCredential' => true,
             'privateKey' => 'derp'
         ]);
@@ -104,7 +104,7 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             'server' => 'localhost:3300'
         ];
 
-        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+        $cred = Mockery::mock('Hal\Agent\Remoting\Credential', [
             'isKeyCredential' => true,
             'privateKey' => $this->getSamplePrivateKeyForTesting()
         ]);
@@ -141,7 +141,7 @@ class SSHSessionManagerTest extends PHPUnit_Framework_TestCase
             ]
         ];
 
-        $cred = Mockery::mock('QL\Hal\Agent\Remoting\Credential', [
+        $cred = Mockery::mock('Hal\Agent\Remoting\Credential', [
             'isKeyCredential' => true,
             'privateKey' => $this->getSamplePrivateKeyForTesting()
         ]);

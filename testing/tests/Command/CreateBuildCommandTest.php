@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace Hal\Agent\Command;
 
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
@@ -57,7 +57,7 @@ class CreateBuildCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn($this->userRepo);
 
 
-        $this->resolver = Mockery::mock('QL\Hal\Agent\Github\ReferenceResolver');
+        $this->resolver = Mockery::mock('Hal\Agent\Github\ReferenceResolver');
         $this->unique = Mockery::mock('QL\Hal\Core\JobIdGenerator');
         $this->clock = new Clock('now', 'UTC');
 

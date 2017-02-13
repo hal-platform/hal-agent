@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -17,9 +17,9 @@ class BuilderTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->remoter = Mockery::mock('QL\Hal\Agent\Remoting\SSHProcess');
+        $this->remoter = Mockery::mock('Hal\Agent\Remoting\SSHProcess');
 
-        $this->command = Mockery::mock('QL\Hal\Agent\Remoting\CommandContext');
+        $this->command = Mockery::mock('Hal\Agent\Remoting\CommandContext');
         $this->command
             ->shouldReceive('withSanitized')
             ->andReturn($this->command)

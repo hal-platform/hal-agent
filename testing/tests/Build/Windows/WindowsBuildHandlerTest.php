@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Windows;
+namespace Hal\Agent\Build\Windows;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -25,13 +25,13 @@ class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
 
-        $this->exporter = Mockery::mock('QL\Hal\Agent\Build\Windows\Exporter', ['__invoke' => true]);
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\Windows\Builder', ['__invoke' => true]);
-        $this->importer = Mockery::mock('QL\Hal\Agent\Build\Windows\Importer', ['__invoke' => true]);
-        $this->cleaner = Mockery::mock('QL\Hal\Agent\Build\Windows\Cleaner', ['__invoke' => true]);
-        $this->decrypter = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
+        $this->exporter = Mockery::mock('Hal\Agent\Build\Windows\Exporter', ['__invoke' => true]);
+        $this->builder = Mockery::mock('Hal\Agent\Build\Windows\Builder', ['__invoke' => true]);
+        $this->importer = Mockery::mock('Hal\Agent\Build\Windows\Importer', ['__invoke' => true]);
+        $this->cleaner = Mockery::mock('Hal\Agent\Build\Windows\Cleaner', ['__invoke' => true]);
+        $this->decrypter = Mockery::mock('Hal\Agent\Utility\EncryptedPropertyResolver');
     }
 
     public function testSuccess()

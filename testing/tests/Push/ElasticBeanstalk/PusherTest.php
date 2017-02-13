@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\CommandInterface;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
@@ -13,9 +13,9 @@ use Aws\ElasticBeanstalk\Exception\ElasticBeanstalkException;
 use Aws\Result;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
-use QL\Hal\Agent\Waiter\Waiter;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
+use Hal\Agent\Waiter\Waiter;
 
 class PusherTest extends PHPUnit_Framework_TestCase
 {

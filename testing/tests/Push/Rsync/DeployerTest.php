@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -24,12 +24,12 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
 
-        $this->verify = Mockery::mock('QL\Hal\Agent\Push\Rsync\Verify');
-        $this->delta = Mockery::mock('QL\Hal\Agent\Push\Rsync\CodeDelta');
-        $this->command = Mockery::mock('QL\Hal\Agent\Push\Rsync\ServerCommand');
-        $this->pusher = Mockery::mock('QL\Hal\Agent\Push\Rsync\Pusher');
+        $this->verify = Mockery::mock('Hal\Agent\Push\Rsync\Verify');
+        $this->delta = Mockery::mock('Hal\Agent\Push\Rsync\CodeDelta');
+        $this->command = Mockery::mock('Hal\Agent\Push\Rsync\ServerCommand');
+        $this->pusher = Mockery::mock('Hal\Agent\Push\Rsync\Pusher');
     }
 
     public function testSuccess()

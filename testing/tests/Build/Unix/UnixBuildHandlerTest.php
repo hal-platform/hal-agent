@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Unix;
+namespace Hal\Agent\Build\Unix;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -25,17 +25,17 @@ class UnixBuildHandlerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
 
-        $this->exporter = Mockery::mock('QL\Hal\Agent\Build\Unix\Exporter', ['__invoke' => null]);
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\Unix\DockerBuilder', [
+        $this->exporter = Mockery::mock('Hal\Agent\Build\Unix\Exporter', ['__invoke' => null]);
+        $this->builder = Mockery::mock('Hal\Agent\Build\Unix\DockerBuilder', [
             '__invoke' => null,
             '__destruct' => null,
             'cleanup' => null
         ]);
-        $this->importer = Mockery::mock('QL\Hal\Agent\Build\Unix\Importer', ['__invoke' => null]);
-        $this->cleaner = Mockery::mock('QL\Hal\Agent\Build\Unix\Cleaner', ['__invoke' => null]);
-        $this->decrypter = Mockery::mock('QL\Hal\Agent\Utility\EncryptedPropertyResolver');
+        $this->importer = Mockery::mock('Hal\Agent\Build\Unix\Importer', ['__invoke' => null]);
+        $this->cleaner = Mockery::mock('Hal\Agent\Build\Unix\Cleaner', ['__invoke' => null]);
+        $this->decrypter = Mockery::mock('Hal\Agent\Utility\EncryptedPropertyResolver');
     }
 
     public function testSuccess()

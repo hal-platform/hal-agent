@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Github;
+namespace Hal\Agent\Github;
 
 use GuzzleHttp\Client as GuzzleClient;
 use function GuzzleHttp\Psr7\stream_for;

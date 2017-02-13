@@ -5,13 +5,13 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command\Docker;
+namespace Hal\Agent\Command\Docker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Remoting\FileSyncManager;
-use QL\Hal\Agent\Github\ArchiveApi;
+use Hal\Agent\Remoting\FileSyncManager;
+use Hal\Agent\Github\ArchiveApi;
 use QL\MCP\Common\Time\Clock;
 use QL\MCP\Common\Time\TimePoint;
 use QL\Hal\Core\Entity\User;

@@ -5,13 +5,13 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Build\Unix;
+namespace Hal\Agent\Build\Unix;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Remoting\CommandContext;
-use QL\Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Remoting\CommandContext;
+use Hal\Agent\Remoting\SSHProcess;
 
 class DockerBuilderTest extends PHPUnit_Framework_TestCase
 {

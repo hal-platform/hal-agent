@@ -5,18 +5,18 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Push\AWSAuthenticator;
-use QL\Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
-use QL\Hal\Agent\Push\ElasticBeanstalk\Packer;
-use QL\Hal\Agent\Push\ElasticBeanstalk\Pusher;
-use QL\Hal\Agent\Push\ElasticBeanstalk\Uploader;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Push\AWSAuthenticator;
+use Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
+use Hal\Agent\Push\ElasticBeanstalk\Packer;
+use Hal\Agent\Push\ElasticBeanstalk\Pusher;
+use Hal\Agent\Push\ElasticBeanstalk\Uploader;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;

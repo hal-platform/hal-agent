@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -18,7 +18,7 @@ class PackerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->file = FIXTURES_DIR . '/push.zip';
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
     }
 
     public function testFailCommand()

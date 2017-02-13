@@ -5,14 +5,14 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace Hal\Agent\Push;
 
 use Doctrine\ORM\EntityManager;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Utility\BuildEnvironmentResolver;
-use QL\Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Utility\BuildEnvironmentResolver;
+use Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Credential;
@@ -53,7 +53,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException QL\Hal\Agent\Push\PushException
+     * @expectedException Hal\Agent\Push\PushException
      * @expectedExceptionMessage Push "1234" could not be found!
      */
     public function testPushNotFound()
@@ -72,7 +72,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException QL\Hal\Agent\Push\PushException
+     * @expectedException Hal\Agent\Push\PushException
      * @expectedExceptionMessage Push "1234" has a status of "Poo"! It cannot be redeployed.
      */
     public function testPushNotCorrectStatus()
@@ -98,7 +98,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException QL\Hal\Agent\Push\PushException
+     * @expectedException Hal\Agent\Push\PushException
      * @expectedExceptionMessage Push "1234" is trying to clobber a running push! It cannot be deployed at this time.
      */
     public function testPushFindsActiveDeployment()

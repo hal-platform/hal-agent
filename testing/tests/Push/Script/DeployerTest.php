@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Script;
+namespace Hal\Agent\Push\Script;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Build\DelegatingBuilder;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Build\DelegatingBuilder;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DeployerTest extends PHPUnit_Framework_TestCase

@@ -4,7 +4,7 @@
  *    Confidential and Proprietary. Any dissemination outside of Quicken Loans
  *    is strictly prohibited.
  */
-namespace QL\Hal\Agent\Symfony;
+namespace Hal\Agent\Symfony;
 
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Config\FileLocator;

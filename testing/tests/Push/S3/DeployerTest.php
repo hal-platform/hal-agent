@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\S3;
+namespace Hal\Agent\Push\S3;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
@@ -27,11 +27,11 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
 
-        $this->authenticator = Mockery::mock('QL\Hal\Agent\Push\AWSAuthenticator');
-        $this->packer = Mockery::mock('QL\Hal\Agent\Push\S3\Packer');
-        $this->uploader = Mockery::mock('QL\Hal\Agent\Push\S3\Uploader');
+        $this->authenticator = Mockery::mock('Hal\Agent\Push\AWSAuthenticator');
+        $this->packer = Mockery::mock('Hal\Agent\Push\S3\Packer');
+        $this->uploader = Mockery::mock('Hal\Agent\Push\S3\Uploader');
     }
 
     public function testSuccess()

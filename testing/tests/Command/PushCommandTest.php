@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Command;
+namespace Hal\Agent\Command;
 
 use Exception;
 use Mockery;
@@ -35,13 +35,13 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
-        $this->resolver = Mockery::mock('QL\Hal\Agent\Push\Resolver');
-        $this->mover = Mockery::mock('QL\Hal\Agent\Push\Mover');
-        $this->unpacker = Mockery::mock('QL\Hal\Agent\Push\Unpacker');
-        $this->reader = Mockery::mock('QL\Hal\Agent\Build\ConfigurationReader');
-        $this->builder = Mockery::mock('QL\Hal\Agent\Build\DelegatingBuilder');
-        $this->deployer = Mockery::mock('QL\Hal\Agent\Push\DelegatingDeployer');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->resolver = Mockery::mock('Hal\Agent\Push\Resolver');
+        $this->mover = Mockery::mock('Hal\Agent\Push\Mover');
+        $this->unpacker = Mockery::mock('Hal\Agent\Push\Unpacker');
+        $this->reader = Mockery::mock('Hal\Agent\Build\ConfigurationReader');
+        $this->builder = Mockery::mock('Hal\Agent\Build\DelegatingBuilder');
+        $this->deployer = Mockery::mock('Hal\Agent\Push\DelegatingDeployer');
         $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
 
         $this->output = new BufferedOutput;

@@ -5,14 +5,14 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Remoting\SSHSessionManager;
-use QL\Hal\Agent\Remoting\SSHProcess;
-use QL\Hal\Agent\Remoting\CommandContext;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Remoting\SSHSessionManager;
+use Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Remoting\CommandContext;
 
 class VerifyTest extends PHPUnit_Framework_TestCase
 {

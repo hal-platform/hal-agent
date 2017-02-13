@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push\CodeDeploy;
+namespace Hal\Agent\Push\CodeDeploy;
 
 use Aws\CommandInterface;
 use Aws\CodeDeploy\CodeDeployClient;
@@ -13,8 +13,8 @@ use Aws\CodeDeploy\Exception\CodeDeployException;
 use Aws\Result;
 use Mockery;
 use PHPUnit_Framework_TestCase;
-use QL\Hal\Agent\Logger\EventLogger;
-use QL\Hal\Agent\Waiter\Waiter;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Waiter\Waiter;
 
 class PusherTest extends PHPUnit_Framework_TestCase
 {

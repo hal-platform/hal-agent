@@ -5,10 +5,10 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Push;
+namespace Hal\Agent\Push;
 
 use Mockery;
-use QL\Hal\Agent\Testing\DeployerStub;
+use Hal\Agent\Testing\DeployerStub;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -21,7 +21,7 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('QL\Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
         $this->container = Mockery::mock('Symfony\Component\DependencyInjection\ContainerInterface');
     }
 
