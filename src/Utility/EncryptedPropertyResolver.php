@@ -5,13 +5,13 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Utility;
+namespace Hal\Agent\Utility;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Exception;
-use QL\Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Logger\EventLogger;
 use QL\Hal\Core\Crypto\Decrypter;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\EncryptedProperty;

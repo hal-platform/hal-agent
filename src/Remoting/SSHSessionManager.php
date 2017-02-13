@@ -5,11 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Remoting;
+namespace Hal\Agent\Remoting;
 
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
-use QL\Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Logger\EventLogger;
 
 class SSHSessionManager
 {

@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Logger;
+namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
 use QL\Hal\Core\Entity\Build;

@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Logger;
+namespace Hal\Agent\Logger;
 
 use QL\MCP\Common\IPv4Address;
 use QL\MCP\Logger\MessageInterface;

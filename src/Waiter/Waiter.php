@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Waiter;
+namespace Hal\Agent\Waiter;
 
 class Waiter
 {

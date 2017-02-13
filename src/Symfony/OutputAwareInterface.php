@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Symfony;
+namespace Hal\Agent\Symfony;
 
 use Symfony\Component\Console\Output\OutputInterface;
 

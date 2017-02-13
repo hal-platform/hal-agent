@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Utility;
+namespace Hal\Agent\Utility;
 
 use QL\Hal\Agent\Build\Unix\UnixBuildHandler;
 use QL\Hal\Agent\Build\Windows\WindowsBuildHandler;

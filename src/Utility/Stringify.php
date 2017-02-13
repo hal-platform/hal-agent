@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Utility;
+namespace Hal\Agent\Utility;
 
 /**
  * String utilities for transforming config parameters in the symfony container

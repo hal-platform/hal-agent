@@ -5,10 +5,10 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Symfony;
+namespace Hal\Agent\Symfony;
 
 use Psr\Log\LoggerInterface;
-use QL\Hal\Agent\Utility\StacktraceFormatterTrait;
+use Hal\Agent\Utility\StacktraceFormatterTrait;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleExceptionEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

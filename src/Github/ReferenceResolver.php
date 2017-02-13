@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Github;
+namespace Hal\Agent\Github;
 
 use Github\Api\Repository\Commits as CommitApi;
 use Github\Api\GitData\References as ReferenceApi;

@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace QL\Hal\Agent\Utility;
+namespace Hal\Agent\Utility;
 
-use QL\Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 

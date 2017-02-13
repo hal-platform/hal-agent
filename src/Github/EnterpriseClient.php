@@ -4,7 +4,7 @@
  *    Confidential and Proprietary. Any dissemination outside of Quicken Loans
  *    is strictly prohibited.
  */
-namespace QL\Hal\Agent\Github;
+namespace Hal\Agent\Github;
 
 use Github\Client;
 use Github\HttpClient\Plugin\PathPrepend;
