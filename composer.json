@@ -6,7 +6,7 @@
         { "name": "IT Team Web Core", "email": "itteamwebcore@quickenloans.com" }
     ],
     "autoload": {
-        "psr-4": { "QL\\Hal\\Agent\\": "src/", "QL\\Hal\\Agent\\Testing\\": "testing/src" }
+        "psr-4": { "Hal\\Agent\\": "src/", "Hal\\Agent\\Testing\\": "testing/src" }
     },
 
     "require": {

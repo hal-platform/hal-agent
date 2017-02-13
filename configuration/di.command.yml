@@ -5,42 +5,42 @@ services:
     ####################################################################################################################
 
     lazy.command.build.create:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:create', 'command.build.create', '@service_container']
     lazy.command.build.build:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:build', 'command.build.build', '@service_container']
     lazy.command.build.remove:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:remove', 'command.build.remove', '@service_container']
 
     lazy.command.push.create:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:create', 'command.push.create', '@service_container']
     lazy.command.push.push:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:push', 'command.push.push', '@service_container']
 
     lazy.command.builds.list:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['builds:list', 'command.builds.list', '@service_container']
 
     lazy.command.worker.build:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['worker:build', 'command.worker.build', '@service_container']
     lazy.command.worker.push:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['worker:push', 'command.worker.push', '@service_container']
 
     lazy.command.docker.refresh:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['docker:refresh', 'command.docker.refresh', '@service_container']
     lazy.command.docker.status:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['docker:status', 'command.docker.status', '@service_container']
 
     lazy.command.server.connections:
-        class: 'QL\Hal\Agent\Command\LazyCommand'
+        class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['server:connections', 'command.server.connections', '@service_container']
 
     ####################################################################################################################
@@ -48,7 +48,7 @@ services:
     ####################################################################################################################
 
     command.build.create:
-        class: 'QL\Hal\Agent\Command\CreateBuildCommand'
+        class: 'Hal\Agent\Command\CreateBuildCommand'
         arguments:
             - 'build:create'
             - '@doctrine.em'
@@ -56,7 +56,7 @@ services:
             - '@utility.referenceResolver'
             - '@utility.id.generator'
     command.build.build:
-        class: 'QL\Hal\Agent\Command\BuildCommand'
+        class: 'Hal\Agent\Command\BuildCommand'
         arguments:
             - 'build:build'
             - '@logger.event'
@@ -70,7 +70,7 @@ services:
             - '@utility.filesystem'
             - '@ssh.manager'
     command.build.remove:
-        class: 'QL\Hal\Agent\Command\RemoveBuildCommand'
+        class: 'Hal\Agent\Command\RemoveBuildCommand'
         arguments:
             - 'build:remove'
             - '@doctrine.em'
@@ -78,21 +78,21 @@ services:
         calls:
             - ['setArchivePath', ['%environment.archive%']]
     command.builds.list:
-        class: 'QL\Hal\Agent\Command\ListBuildsCommand'
+        class: 'Hal\Agent\Command\ListBuildsCommand'
         arguments:
             - 'builds:list'
             - '@doctrine.em'
             - '@utility.filesystem'
             - '%environment.archive%'
     command.push.create:
-        class: 'QL\Hal\Agent\Command\CreatePushCommand'
+        class: 'Hal\Agent\Command\CreatePushCommand'
         arguments:
             - 'push:create'
             - '@doctrine.em'
             - '@clock'
             - '@utility.id.generator'
     command.push.push:
-        class: 'QL\Hal\Agent\Command\PushCommand'
+        class: 'Hal\Agent\Command\PushCommand'
         arguments:
             - 'push:push'
             - '@logger.event'
@@ -109,7 +109,7 @@ services:
     ####################################################################################################################
 
     command.worker.build:
-        class: 'QL\Hal\Agent\Command\Worker\BuildCommand'
+        class: 'Hal\Agent\Command\Worker\BuildCommand'
         arguments:
             - 'worker:build'
             - '@doctrine.em'
@@ -117,7 +117,7 @@ services:
             - '@mcp.logger'
             - '@root'
     command.worker.push:
-        class: 'QL\Hal\Agent\Command\Worker\PushCommand'
+        class: 'Hal\Agent\Command\Worker\PushCommand'
         arguments:
             - 'worker:push'
             - '@doctrine.em'
@@ -130,7 +130,7 @@ services:
     ####################################################################################################################
 
     command.docker.refresh:
-        class: 'QL\Hal\Agent\Command\Docker\UpdateSourcesCommand'
+        class: 'Hal\Agent\Command\Docker\UpdateSourcesCommand'
         arguments:
             - 'docker:refresh'
             - '@ssh.filemanager'
@@ -146,7 +146,7 @@ services:
             - '%docker.source.repository%'
             - '%docker.source.reference%'
     command.docker.status:
-        class: 'QL\Hal\Agent\Command\Docker\CheckStatusCommand'
+        class: 'Hal\Agent\Command\Docker\CheckStatusCommand'
         arguments:
             - 'docker:status'
             - '@ssh.manager'
@@ -159,7 +159,7 @@ services:
             - '%build.unix.temp%'
 
     command.server.connections:
-        class: 'QL\Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
+        class: 'Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
         arguments:
             - 'server:connections'
             - '@doctrine.em'

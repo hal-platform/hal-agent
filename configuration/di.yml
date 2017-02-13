@@ -37,15 +37,15 @@ services:
         arguments: ['now', 'UTC']
 
     ssh.manager:
-        class: 'QL\Hal\Agent\Remoting\SSHSessionManager'
+        class: 'Hal\Agent\Remoting\SSHSessionManager'
         arguments: ['@logger.event', '@ssh.wallet']
 
     ssh.filemanager:
-        class: 'QL\Hal\Agent\Remoting\FileSyncManager'
+        class: 'Hal\Agent\Remoting\FileSyncManager'
         arguments: ['@ssh.wallet']
 
     ssh.wallet:
-        class: 'QL\Hal\Agent\Remoting\CredentialWallet'
+        class: 'Hal\Agent\Remoting\CredentialWallet'
         calls:
             - ['importCredentials', ['%ssh.credentials%']]
 
@@ -102,13 +102,13 @@ services:
         calls:
             - ['inheritEnvironmentVariables', [false]]
     utility.referenceResolver:
-        class: 'QL\Hal\Agent\Github\ReferenceResolver'
+        class: 'Hal\Agent\Github\ReferenceResolver'
         arguments:
             - '@github.references'
             - '@github.commits'
             - '@github.pullRequests'
     utility.forker:
-        class: 'QL\Hal\Agent\Helper\ForkHelper'
+        class: 'Hal\Agent\Helper\ForkHelper'
 
     utility.id.generator:
         class: 'QL\Hal\Core\JobIdGenerator'
@@ -121,7 +121,7 @@ services:
         class: 'Symfony\Component\Yaml\Parser'
 
     utility.environment.resolver:
-        class: 'QL\Hal\Agent\Utility\BuildEnvironmentResolver'
+        class: 'Hal\Agent\Utility\BuildEnvironmentResolver'
         arguments: ['@utility.process.builder']
         calls:
             - ['setWindowsBuilder', ['%build.windows.remoteUser%', '%build.windows.server%', '%build.windows.temp%']]
@@ -147,11 +147,11 @@ services:
 
     encrypter.encryptedkey.squished:
         class: 'DERP'
-        factory: ['QL\Hal\Agent\Utility\Stringify', 'squish']
+        factory: ['Hal\Agent\Utility\Stringify', 'squish']
         arguments: ['%encrypter.encryptedkey%']
 
     encrypted.resolver:
-        class: 'QL\Hal\Agent\Utility\EncryptedPropertyResolver'
+        class: 'Hal\Agent\Utility\EncryptedPropertyResolver'
         arguments:
             - '@doctrine.em'
             - '@logger.event'
