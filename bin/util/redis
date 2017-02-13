@@ -4,11 +4,12 @@
 namespace Hal\Bin;
 
 use Hal\Agent\Application\Di;
+use Hal\Agent\;
 
 $root = __DIR__ . '/../..';
 require_once $root . '/configuration/bootstrap.php';
 
-$container = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
+$container = Di::getDi($root, CachedContainer::class);
 
 $redis = $container->get('redis');
 

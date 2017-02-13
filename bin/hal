@@ -1,20 +1,16 @@
 #!/usr/bin/env php
 <?php
-/**
- * @copyright ©2014 Quicken Loans Inc. All rights reserved. Trade Secret,
- *    Confidential and Proprietary. Any dissemination outside of Quicken Loans
- *    is strictly prohibited.
- */
 
 namespace Hal\Agent\Bootstrap;
 
 use Hal\Agent\Application\Di;
+use Hal\Agent\CachedContainer;
 use Symfony\Component\Debug\ErrorHandler;
 
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
-$di = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
+$di = Di::getDi($root, CachedContainer::class);
 
 $err = ErrorHandler::register();
 $err->setDefaultLogger($di->get('mcp.logger'));
