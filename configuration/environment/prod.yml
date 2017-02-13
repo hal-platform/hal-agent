@@ -1,4 +1,5 @@
 parameters:
+    application.environment: 'prod'
     debug: false
 
     github.token: ''

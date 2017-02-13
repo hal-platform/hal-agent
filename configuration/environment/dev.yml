@@ -1,4 +1,5 @@
 parameters:
+    application.environment: 'dev'
     debug: false
 
     github.token: ''

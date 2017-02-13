@@ -87,7 +87,7 @@ services:
 
     # subscriber to symfony/console event system to prepare mcp logger
     logger.mcp.subscriber:
-        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
+        class: 'QL\Hal\Agent\Logger\MCPLoggerSubscriber'
         arguments: ['@mcp.logger.factory']
 
     ####################################################################################################################

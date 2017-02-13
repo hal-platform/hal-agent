@@ -8,22 +8,23 @@
 namespace QL\Hal\Agent\Logger;
 
 use QL\MCP\Common\IPv4Address;
-use QL\MCP\Logger\Message\MessageFactory;
+use QL\MCP\Logger\MessageInterface;
+use QL\MCP\Logger\MessageFactoryInterface;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class McpLoggerSetupSubscriber implements EventSubscriberInterface
+class MCPLoggerSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var MessageFactory
+     * @var MessageFactoryInterface
      */
     private $factory;
 
     /**
-     * @param MessageFactory $factory
+     * @param MessageFactoryInterface $factory
      */
-    public function __construct(MessageFactory $factory)
+    public function __construct(MessageFactoryInterface $factory)
     {
         $this->factory = $factory;
     }
@@ -36,11 +37,11 @@ class McpLoggerSetupSubscriber implements EventSubscriberInterface
     public function addProperties(ConsoleEvent $event, $eventName)
     {
         $host = gethostname();
-        $this->factory->setDefaultProperty('machineName', $host);
+        $this->factory->setDefaultProperty(MessageInterface::SERVER_HOSTNAME, $host);
 
         $ip = gethostbyname($host);
-        if ($serverIp = IPv4Address::create($ip)) {
-            $this->factory->setDefaultProperty('machineIPAddress', $serverIp);
+        if ($serverIP = IPv4Address::create($ip)) {
+            $this->factory->setDefaultProperty(MessageInterface::SERVER_IP, $serverIP);
         }
     }
 
