@@ -63,31 +63,31 @@ services:
         parent: 'mcp.logger'
 
     logger.exception_handler:
-        class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
+        class: 'Hal\Agent\Symfony\ExceptionHandlerSubscriber'
         arguments: ['@logger']
         calls:
             - ['setStacktraceLogging', ['%logging.stacktrace%']]
 
     logger.event:
-        class: 'QL\Hal\Agent\Logger\EventLogger'
+        class: 'Hal\Agent\Logger\EventLogger'
         arguments:
             - '@doctrine.em'
             - '@logger.event.factory'
             - '@logger.process.handler'
             - '@clock'
     logger.event.factory:
-        class: 'QL\Hal\Agent\Logger\EventFactory'
+        class: 'Hal\Agent\Logger\EventFactory'
         arguments: ['@doctrine.em', '@doctrine.random']
         calls:
             - ['setRedisHandler', ['@redis']]
 
     logger.process.handler:
-        class: 'QL\Hal\Agent\Logger\ProcessHandler'
+        class: 'Hal\Agent\Logger\ProcessHandler'
         arguments: ['@doctrine.em', '@utility.id.generator']
 
     # subscriber to symfony/console event system to prepare mcp logger
     logger.mcp.subscriber:
-        class: 'QL\Hal\Agent\Logger\MCPLoggerSubscriber'
+        class: 'Hal\Agent\Logger\MCPLoggerSubscriber'
         arguments: ['@mcp.logger.factory']
 
     ####################################################################################################################
