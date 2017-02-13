@@ -441,6 +441,8 @@ SHELL;
         ];
 
         // Check if container exists, dont build if it does
+        // Note: this currently logs an event if the image doesn't exist even though its not a critical failure.
+        // @todo This should be changed to allow failures from this command and not log them ever.
         $isDockerImageBuilt = $this->runRemote($imageExists, sprintf(self::EVENT_VALIDATE_IMAGE_BUILT, $imageName));
         if ($isDockerImageBuilt) {
             return $this->runBuildRemote($imageInfo, sprintf(self::EVENT_BUILD_INFO, $imageName));
