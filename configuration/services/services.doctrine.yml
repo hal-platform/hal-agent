@@ -1,7 +1,7 @@
 services:
     doctrine.proxy.dir:
         class: 'DOES_NOT_MATTER'
-        factory: ['QL\Hal\Agent\Utility\Stringify', 'smush']
+        factory: ['Hal\Agent\Utility\Stringify', 'smush']
         arguments: ['@root', '/.doctrine']
 
     doctrine.cache:

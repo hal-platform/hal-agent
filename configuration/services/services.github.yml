@@ -1,7 +1,7 @@
 services:
 
     github.archive:
-        class: 'QL\Hal\Agent\Github\ArchiveApi'
+        class: 'Hal\Agent\Github\ArchiveApi'
         arguments: ['@github.archive_guzzle', '%github.baseurl.api%']
 
     github.archive_guzzle:
@@ -24,7 +24,7 @@ services:
         arguments: ['@github.client']
 
     github.client:
-        class: 'QL\Hal\Agent\Github\EnterpriseClient'
+        class: 'Hal\Agent\Github\EnterpriseClient'
         arguments:
             - '@github.client_builder'
             - null
