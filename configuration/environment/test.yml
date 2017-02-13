@@ -48,12 +48,16 @@ parameters:
     push.rsync.remoteUser: ''
 
     ############################################################################
-    # DATABASE / NOTIFICATIONS
+    # Logging
     ############################################################################
 
-    # Core logger service hostname
-    # Only required in standalone installations
-    logger.mcp.host: 'http://qlsonictest:2581/web/core/logentries'
+    mcp.logger.service.syslog.options:
+        ident: 'haltest'
+        facility: !php/const:LOG_USER
+
+    ############################################################################
+    # DATABASE / NOTIFICATIONS
+    ############################################################################
 
     # doctrine configuration
     doctrine.devmode: false

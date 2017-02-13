@@ -1,8 +1,5 @@
 services:
 
-    logger:
-        class: 'Psr\Log\NullLogger'
-
     ####################################################################################################################
     # Logging
     ####################################################################################################################
@@ -24,34 +21,16 @@ services:
         class: 'QL\Hal\Agent\Logger\ProcessHandler'
         arguments: ['@doctrine.em', '@utility.id.generator']
 
+    # subscriber to symfony/console event system to prepare mcp logger
+    logger.mcp.subscriber:
+        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
+        arguments: ['@mcp.logger.factory']
+
     ####################################################################################################################
     # mcp logger services
     ####################################################################################################################
 
-    # subscriber to symfony/console event system to prepare mcp logger
-    logger.mcp.subscriber:
-        class: 'QL\Hal\Agent\Logger\McpLoggerSetupSubscriber'
-        arguments: ['@logger.mcp.factory']
-
-    logger.mcp:
-        class: 'QL\MCP\Logger\Logger'
-        arguments: ['@logger.mcp.service', '@logger.mcp.factory']
-
-    logger.mcp.service:
-        class: 'QL\MCP\Logger\Service\GuzzleService'
-        arguments:
-            - '%logger.mcp.host%'
-            - '@logger.mcp.guzzle'
-            - '@logger.mcp.xml.serializer'
-
-    logger.mcp.guzzle:
-        class: 'GuzzleHttp\Client'
-
-    logger.mcp.xml.serializer:
-        class: 'QL\MCP\Logger\Service\Serializer\XMLSerializer'
-
-    logger.mcp.factory:
-        class: 'QL\MCP\Logger\Message\MessageFactory'
-        arguments: ['@clock']
-        calls:
-            - ['setDefaultProperty', ['applicationId', '%application.id%']]
+    logger.mcp.errorlog:
+        class: 'QL\MCP\Logger\Service\ErrorLogService'
+        factory: ['QL\Hal\Agent\Logger\McpErrorLogFactory', createMcpErrorLog]
+        arguments: ['@root', '%mcp.logger.service.errorlog.options%']

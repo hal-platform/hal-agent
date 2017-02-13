@@ -8,6 +8,7 @@
 
 namespace QL\Hal\Agent\Bootstrap;
 
+use Psr\Log\LoggerInterface;
 use QL\Hal\Agent\Application\Di;
 use Symfony\Component\Debug\ErrorHandler;
 
@@ -17,6 +18,10 @@ require_once $root . '/configuration/bootstrap.php';
 $di = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
 
 $err = ErrorHandler::register();
-$err->setDefaultLogger($di->get('logger.mcp'));
+$err->setDefaultLogger($di->get('mcp.logger'));
+
+/** @var LoggerInterface $logger */
+$logger = $di->get('mcp.logger');
+$logger->alert('alert danger');
 
 $di->get('application')->run();

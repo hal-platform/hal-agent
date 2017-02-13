@@ -77,7 +77,7 @@ services:
         class: 'QL\Hal\Agent\Helper\ForkHelper'
     utility.exceptionHandler:
         class: 'QL\Hal\Agent\Symfony\ExceptionHandlerSubscriber'
-        arguments: ['@logger.mcp']
+        arguments: ['@mcp.logger']
         calls:
             - ['setStacktraceLogging', ['%logging.stacktrace%']]
 

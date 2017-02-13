@@ -1,5 +1,6 @@
 imports:
     - resource: ../vendor/ql/hal-core/configuration/hal-core.yml
+    - resource: ../vendor/ql/mcp-logger/configuration/mcp-logger.yml
     - resource: di.yml
     - resource: config.global.yml
     - resource: config.env.yml
@@ -7,6 +8,9 @@ imports:
 parameters:
     application.id: '201359'
     application.name: 'HAL 9000 Agent'
+
+    mcp.logger.default_properties:
+        applicationId: '%application.id%'
 
     application.major.version: '2'
     application.minor.version: '6'

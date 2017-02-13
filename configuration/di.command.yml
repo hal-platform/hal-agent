@@ -114,7 +114,7 @@ services:
             - 'worker:build'
             - '@doctrine.em'
             - '@utility.process.builder'
-            - '@logger.mcp'
+            - '@mcp.logger'
             - '@root'
     command.worker.push:
         class: 'QL\Hal\Agent\Command\Worker\PushCommand'
@@ -122,7 +122,7 @@ services:
             - 'worker:push'
             - '@doctrine.em'
             - '@utility.process.builder'
-            - '@logger.mcp'
+            - '@mcp.logger'
             - '@root'
 
     ####################################################################################################################
