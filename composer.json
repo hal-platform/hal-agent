@@ -1,10 +1,16 @@
 {
     "name": "hal/hal-agent",
-    "description": "HAL9000 Console Application",
-    "license": "proprietary",
+    "description": "Hal Deployment Platform - Agent Console Application",
+    "license": "MIT",
     "authors": [
-        { "name": "IT Team Web Core", "email": "itteamwebcore@quickenloans.com" }
+        { "name": "Steve Kluck", "email": "steve@kluck.engineering" },
+        { "name": "Byron Nagi",  "email": "byro@fastmail.fm" }
     ],
+    "support": {
+        "source": "https://github.com/hal-platform/hal-agent",
+        "issues": "https://github.com/hal-platform/hal/issues"
+    },
+
     "autoload": {
         "psr-4": { "Hal\\Agent\\": "src/", "Hal\\Agent\\Testing\\": "testing/src" }
     },
