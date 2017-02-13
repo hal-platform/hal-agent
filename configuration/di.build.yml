@@ -1,6 +1,6 @@
 services:
     build.resolver:
-        class: 'QL\Hal\Agent\Build\Resolver'
+        class: 'Hal\Agent\Build\Resolver'
         arguments:
             - '@doctrine.em'
             - '@utility.environment.resolver'
@@ -10,23 +10,23 @@ services:
             - ['setArchivePath', ['%environment.archive%']]
 
     build.downloader:
-        class: 'QL\Hal\Agent\Build\Downloader'
+        class: 'Hal\Agent\Build\Downloader'
         arguments: ['@logger.event', '@github.archive']
     build.unpacker:
-        class: 'QL\Hal\Agent\Build\Unpacker'
+        class: 'Hal\Agent\Build\Unpacker'
         arguments:
             - '@logger.event'
             - '@utility.process.builder'
             - '%timeout.filepacking%'
     build.configuration.reader:
-        class: 'QL\Hal\Agent\Build\ConfigurationReader'
+        class: 'Hal\Agent\Build\ConfigurationReader'
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
             - '@yaml.parser'
 
     build.builder:
-        class: 'QL\Hal\Agent\Build\DelegatingBuilder'
+        class: 'Hal\Agent\Build\DelegatingBuilder'
         arguments:
             - '@logger.event'
             - '@service_container'
@@ -37,19 +37,19 @@ services:
             - ['enableStaging', []]
 
     build.packer:
-        class: 'QL\Hal\Agent\Build\Packer'
+        class: 'Hal\Agent\Build\Packer'
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
             - '@utility.process.builder'
             - '%timeout.filepacking%'
     build.mover:
-        class: 'QL\Hal\Agent\Build\Mover'
+        class: 'Hal\Agent\Build\Mover'
         arguments: ['@logger.event', '@utility.filesystem']
 
     # unix
     build.unix.handler:
-        class: 'QL\Hal\Agent\Build\Unix\UnixBuildHandler'
+        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
         arguments:
             - '@logger.event'
             - '@build.unix.exporter'
@@ -60,7 +60,7 @@ services:
             - '%docker.default.image%'
 
     build.unix.exporter:
-        class: 'QL\Hal\Agent\Build\Unix\Exporter'
+        class: 'Hal\Agent\Build\Unix\Exporter'
         arguments:
             - '@logger.event'
             - '@build.unix.exporter.packer'
@@ -70,12 +70,12 @@ services:
             - '%timeout.filetransfer%'
     build.unix.exporter.packer:
         parent: 'build.packer'
-        class: 'QL\Hal\Agent\Build\Unix\Packer'
+        class: 'Hal\Agent\Build\Unix\Packer'
         calls:
             - ['disableForcedLogging', []]
 
     build.unix.builder:
-        class: 'QL\Hal\Agent\Build\Unix\DockerBuilder'
+        class: 'Hal\Agent\Build\Unix\DockerBuilder'
         arguments:
             - '@logger.event'
             - '@build.unix.standard.remoter'
@@ -85,11 +85,11 @@ services:
         configurator: ['@build.unix.builder.configurator', 'configure']
 
     build.unix.builder.configurator:
-        class: 'QL\Hal\Agent\Build\Unix\DockerBuilderConfigurator'
+        class: 'Hal\Agent\Build\Unix\DockerBuilderConfigurator'
         arguments: ['%docker.option.sudo%', '%docker.option.debug%']
 
     build.unix.importer:
-        class: 'QL\Hal\Agent\Build\Unix\Importer'
+        class: 'Hal\Agent\Build\Unix\Importer'
         arguments:
             - '@logger.event'
             - '@build.unix.importer.unpacker'
@@ -98,28 +98,28 @@ services:
             - '%timeout.filetransfer%'
     build.unix.importer.unpacker:
         parent: 'build.unpacker'
-        class: 'QL\Hal\Agent\Build\Unix\Unpacker'
+        class: 'Hal\Agent\Build\Unix\Unpacker'
 
     build.unix.cleaner:
-        class: 'QL\Hal\Agent\Build\Unix\Cleaner'
+        class: 'Hal\Agent\Build\Unix\Cleaner'
         arguments: ['@build.unix.standard.remoter']
 
     build.unix.build.remoter:
-        class: 'QL\Hal\Agent\Remoting\SSHProcess'
+        class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.build%'
 
     build.unix.standard.remoter:
-        class: 'QL\Hal\Agent\Remoting\SSHProcess'
+        class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.standard%'
 
     build.unix.filetransfer.remoter:
-        class: 'QL\Hal\Agent\Remoting\SSHProcess'
+        class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
@@ -127,7 +127,7 @@ services:
 
     # windows
     build.windows.handler:
-        class: 'QL\Hal\Agent\Build\Windows\WindowsBuildHandler'
+        class: 'Hal\Agent\Build\Windows\WindowsBuildHandler'
         arguments:
             - '@logger.event'
             - '@build.windows.exporter'
@@ -137,7 +137,7 @@ services:
             - '@encrypted.resolver'
 
     build.windows.exporter:
-        class: 'QL\Hal\Agent\Build\Windows\Exporter'
+        class: 'Hal\Agent\Build\Windows\Exporter'
         arguments:
             - '@logger.event'
             - '@ssh.filemanager'
@@ -146,11 +146,11 @@ services:
             - '%timeout.filetransfer%'
 
     build.windows.builder:
-        class: 'QL\Hal\Agent\Build\Windows\Builder'
+        class: 'Hal\Agent\Build\Windows\Builder'
         arguments: ['@build.windows.build.remoter']
 
     build.windows.importer:
-        class: 'QL\Hal\Agent\Build\Windows\Importer'
+        class: 'Hal\Agent\Build\Windows\Importer'
         arguments:
             - '@logger.event'
             - '@ssh.filemanager'
@@ -158,17 +158,17 @@ services:
             - '%timeout.filetransfer%'
 
     build.windows.cleaner:
-        class: 'QL\Hal\Agent\Build\Windows\Cleaner'
+        class: 'Hal\Agent\Build\Windows\Cleaner'
         arguments: ['@build.windows.standard.remoter']
 
     build.windows.build.remoter:
-        class: 'QL\Hal\Agent\Remoting\SSHProcess'
+        class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.build%'
     build.windows.standard.remoter:
-        class: 'QL\Hal\Agent\Remoting\SSHProcess'
+        class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
