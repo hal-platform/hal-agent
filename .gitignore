@@ -14,6 +14,9 @@
 /phpunit.xml
 /.phpunit/
 
+# dev logs
+/.logs/
+
 # compiled configuration, package manager installation
 /bin/composer
 /configuration/config.env.yml
