@@ -80,6 +80,7 @@ services:
             - '@logger.event'
             - '@build.unix.standard.remoter'
             - '@build.unix.build.remoter'
+            - '@build.unix.filetransfer.remoter'
             - '%docker.source.path%'
         configurator: ['@build.unix.builder.configurator', 'configure']
 
@@ -116,6 +117,13 @@ services:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.standard%'
+
+    build.unix.filetransfer.remoter:
+        class: 'QL\Hal\Agent\Remoting\SSHProcess'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.filetransfer%'
 
     # windows
     build.windows.handler:

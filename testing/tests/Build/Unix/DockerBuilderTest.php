@@ -18,6 +18,7 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
     public $logger;
     public $remoter;
     public $buildRemoter;
+    public $transferRemoter;
     public $command;
     public $buildCommand;
     public $dockerSourcesPath;
@@ -30,6 +31,7 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->logger = Mockery::mock(EventLogger::class);
         $this->remoter = Mockery::mock(SSHProcess::class);
         $this->buildRemoter = Mockery::mock(SSHProcess::class);
+        $this->transferRemoter = Mockery::mock(SSHProcess::class);
 
         $this->command = Mockery::mock(CommandContext::class);
 
@@ -59,7 +61,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         $this->expectDockerCommand(['docker exec "container-name-2"', "bash -l -c 'command'"], 0);
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertTrue($success);
@@ -73,7 +81,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('run')
             ->never();
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
@@ -89,7 +103,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         $this->expectDockerCommand(['docker history', '--no-trunc', 'hal9000/unix'], 1);
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
@@ -105,7 +125,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         $this->expectDockerCommand(['docker build', '--tag="hal9000/unix"', '"/docker-images/unix"'], 1);
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
         $this->assertFalse($success);
@@ -134,7 +160,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
 
         $this->expectCommand($expectedCommand, 1);
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], ['HAL_DERP' => 'testing']);
         $this->assertFalse($success);
@@ -166,7 +198,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->expectCommand(['docker kill', '"container-name"']);
         $this->expectCommand(['docker rm', '"container-name"']);
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
         $action->disableShutdownHandler();
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
@@ -196,7 +234,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->expectCommand(['docker kill', '"container2"']);
         $this->expectCommand(['docker rm', '"container2"']);
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
         $action->disableShutdownHandler();
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
@@ -225,7 +269,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->expectCommand('docker kill');
         $this->expectCommand('docker rm');
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
         $action->disableShutdownHandler();
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command'], []);
@@ -260,7 +310,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
         $this->expectCommand('docker kill');
         $this->expectCommand('docker rm');
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
         $action->disableShutdownHandler();
 
         $success = $action('unix', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', ['command1', 'command2'], []);
@@ -350,7 +406,13 @@ class DockerBuilderTest extends PHPUnit_Framework_TestCase
                 'container4', 'cuser4'
             );
 
-        $action = new DockerBuilder($this->logger, $this->remoter, $this->buildRemoter, $this->dockerSourcesPath);
+        $action = new DockerBuilder(
+            $this->logger,
+            $this->remoter,
+            $this->buildRemoter,
+            $this->transferRemoter,
+            $this->dockerSourcesPath
+        );
         $action->disableShutdownHandler();
 
         $success = $action('legacy', $this->buildUser, $this->buildServer, 'buildfile.tar.gz', $userCommands, []);

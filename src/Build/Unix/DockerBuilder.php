@@ -74,6 +74,7 @@ SHELL;
      */
     private $remoter;
     private $buildRemoter;
+    private $transferRemoter;
 
     /**
      * @var string
@@ -98,17 +99,21 @@ SHELL;
      * @param EventLogger $logger
      * @param SSHProcess $remoter
      * @param SSHProcess $buildRemoter
+     * @param SSHProcess $transferRemoter
      * @param string $dockerSourcesPath
      */
     public function __construct(
         EventLogger $logger,
         SSHProcess $remoter,
         SSHProcess $buildRemoter,
+        SSHProcess $transferRemoter,
         $dockerSourcesPath
     ) {
         $this->logger = $logger;
         $this->remoter = $remoter;
         $this->buildRemoter = $buildRemoter;
+        $this->transferRemoter = $transferRemoter;
+
         $this->dockerSourcesPath = $dockerSourcesPath;
 
         $this->logDockerCommands = false;
@@ -293,7 +298,7 @@ SHELL;
         if (!$owner) $owner = 'root';
 
         // Copy in files
-        if (!$this->runRemote($copyInto, self::EVENT_DOCKER_COPY_IN)) {
+        if (!$this->runTransferRemote($copyInto, self::EVENT_DOCKER_COPY_IN)) {
             return false;
         }
 
@@ -310,7 +315,7 @@ SHELL;
             sprintf('chown -R %s:%s %s', $owner, $owner, self::CONTAINER_WORKING_DIR)
         ];
 
-        if (!$this->runRemote($fixPermissions, self::EVENT_DOCKER_FIX_PERMISSIONS)) {
+        if (!$this->runTransferRemote($fixPermissions, self::EVENT_DOCKER_FIX_PERMISSIONS)) {
             return false;
         }
 
@@ -342,7 +347,7 @@ SHELL;
             '>', $archiveFile
         ];
 
-        if (!$this->runRemote($copyFrom, self::EVENT_DOCKER_COPY_OUT)) {
+        if (!$this->runTransferRemote($copyFrom, self::EVENT_DOCKER_COPY_OUT)) {
             return false;
         }
 
@@ -583,6 +588,19 @@ SHELL;
         }
 
         return $this->buildRemoter->run($command, [], [true, $customMessage]);
+    }
+
+
+    /**
+     * @param string|string[] $command
+     * @param string $customMessage
+     *
+     * @return bool
+     */
+    private function runTransferRemote($command, $customMessage = '')
+    {
+        $command = $this->remoter->createCommand($this->remoteUser, $this->remoteServer, $command);
+        return $this->remoter->runWithLoggingOnFailure($command, [], [$this->logDockerCommands, $customMessage]);
     }
 
     /**
