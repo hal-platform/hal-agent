@@ -1,9 +1,9 @@
 #!/usr/bin/env php
 <?php
 
-namespace QL\Hal\Bin;
+namespace Hal\Bin;
 
-use QL\Hal\Agent\Application\Di;
+use Hal\Agent\Application\Di;
 use QL\Hal\Core\Entity\Credential\AWSCredential;
 
 $root = __DIR__ . '/../..';

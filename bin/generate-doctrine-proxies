@@ -1,15 +1,16 @@
 #!/usr/bin/env php
 <?php
 
-namespace QL\Hal\Bin;
+namespace Hal\Bin;
 
-use QL\Hal\Agent\Application\Di;
+use Hal\Agent\Application\Di;
 use QL\Hal\Core\Utility\DoctrineProxyGenerator;
 
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 $di = Di::getDi($root, 'QL\Hal\Agent\CachedContainer');
 
+/** @var DoctrineProxyGenerator $generator */
 $generator = $di->get('doctrine.proxy.generator');
 
 $success = $generator();

@@ -6,10 +6,9 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Bootstrap;
+namespace Hal\Agent\Bootstrap;
 
-use Psr\Log\LoggerInterface;
-use QL\Hal\Agent\Application\Di;
+use Hal\Agent\Application\Di;
 use Symfony\Component\Debug\ErrorHandler;
 
 $root = __DIR__ . '/..';

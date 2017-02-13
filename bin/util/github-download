@@ -3,19 +3,16 @@
 
 namespace QL\Hal\Bin;
 
-use Github\Client;
 use Github\Exception\RuntimeException;
-use Github\HttpClient\HttpClient;
-use Guzzle\Http\Client as Guzzle3;
-use QL\Hal\Agent\Github\ArchiveApi;
+use GuzzleHttp\Client;
+use Hal\Agent\Github\ArchiveApi;
 
 $root = __DIR__ . '/../..';
 require_once $root . '/configuration/bootstrap.php';
 
-$baseurl = 'http://git/api/v3/';
-$guzzle3 = new Guzzle3($baseurl);
-$client = new Client(new HttpClient([], $guzzle3));
-$archive = new ArchiveApi($client);
+$baseurl = 'http://git/api/v3';
+$guzzleClient = new Client();
+$archive = new ArchiveApi($guzzleClient, $baseurl);
 
 $params = $argv;
 array_shift($params);

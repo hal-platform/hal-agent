@@ -6,10 +6,10 @@
  *    is strictly prohibited.
  */
 
-namespace QL\Hal\Agent\Bootstrap;
+namespace Hal\Agent\Bootstrap;
 
-use QL\Hal\Agent\Application\Di;
-use QL\Hal\Agent\Application\EnvConfigLoader;
+use Hal\Agent\Application\Di;
+use Hal\Agent\Application\EnvConfigLoader;
 
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
