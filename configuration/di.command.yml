@@ -9,15 +9,12 @@ services:
     lazy.command.build.create:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:create', 'command.build.create', '@service_container']
-
     lazy.command.build.remove:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:remove', 'command.build.remove', '@service_container']
-
     lazy.command.builds.list:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['builds:list', 'command.builds.list', '@service_container']
-
     lazy.command.push.create:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:create', 'command.push.create', '@service_container']
@@ -27,7 +24,6 @@ services:
     lazy.command.build.build:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:build', 'command.build.build', '@service_container']
-
     lazy.command.push.push:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:push', 'command.push.push', '@service_container']
@@ -53,7 +49,6 @@ services:
         parent: 'command.template'
         arguments: ['docker:refresh', 'executor.docker.refresh']
         configurator: ['Hal\Agent\Executor\Docker\UpdateSourcesCommand', 'configure']
-
     command.docker.status:
         parent: 'command.template'
         arguments: ['docker:status', 'executor.docker.status']
@@ -73,6 +68,8 @@ services:
     # commands
     ####################################################################################################################
 
+    # management
+
     command.build.create:
         class: 'Hal\Agent\Command\CreateBuildCommand'
         arguments:
@@ -81,20 +78,6 @@ services:
             - '@clock'
             - '@utility.referenceResolver'
             - '@utility.id.generator'
-    command.build.build:
-        class: 'Hal\Agent\Command\BuildCommand'
-        arguments:
-            - 'build:build'
-            - '@logger.event'
-            - '@build.resolver'
-            - '@build.downloader'
-            - '@build.unpacker'
-            - '@build.configuration.reader'
-            - '@build.builder'
-            - '@build.packer'
-            - '@build.mover'
-            - '@utility.filesystem'
-            - '@ssh.manager'
     command.build.remove:
         class: 'Hal\Agent\Command\RemoveBuildCommand'
         arguments:
@@ -117,6 +100,23 @@ services:
             - '@doctrine.em'
             - '@clock'
             - '@utility.id.generator'
+
+    # job runners
+
+    command.build.build:
+        class: 'Hal\Agent\Command\BuildCommand'
+        arguments:
+            - 'build:build'
+            - '@logger.event'
+            - '@build.resolver'
+            - '@build.downloader'
+            - '@build.unpacker'
+            - '@build.configuration.reader'
+            - '@build.builder'
+            - '@build.packer'
+            - '@build.mover'
+            - '@utility.filesystem'
+            - '@ssh.manager'
     command.push.push:
         class: 'Hal\Agent\Command\PushCommand'
         arguments:
@@ -130,9 +130,7 @@ services:
             - '@push.deployer'
             - '@utility.filesystem'
 
-    ####################################################################################################################
-    # workers
-    ####################################################################################################################
+    # workers - cron
 
     command.worker.build:
         class: 'Hal\Agent\Command\Worker\BuildCommand'
@@ -151,9 +149,19 @@ services:
             - '@mcp.logger'
             - '@root'
 
-    ####################################################################################################################
     # utility
-    ####################################################################################################################
+
+    command.server.connections:
+        class: 'Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
+        arguments:
+            - 'server:connections'
+            - '@doctrine.em'
+            - '@ssh.manager'
+            - '@redis'
+            - '@clock'
+            - '%push.rsync.remoteUser%'
+
+    # docker
 
     executor.docker.refresh:
         class: 'Hal\Agent\Executor\Docker\UpdateSourcesCommand'
@@ -178,13 +186,3 @@ services:
             - '%docker.option.sudo%'
             - '%environment.temp%'
             - '%build.unix.temp%'
-
-    command.server.connections:
-        class: 'Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
-        arguments:
-            - 'server:connections'
-            - '@doctrine.em'
-            - '@ssh.manager'
-            - '@redis'
-            - '@clock'
-            - '%push.rsync.remoteUser%'
