@@ -8,9 +8,11 @@
 namespace Hal\Agent\Push;
 
 use Mockery;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\DeployerStub;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
 {
@@ -21,8 +23,8 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
-        $this->container = Mockery::mock('Symfony\Component\DependencyInjection\ContainerInterface');
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->container = Mockery::mock(ContainerInterface::class);
     }
 
     public function testNoDeployerFoundFails()
@@ -105,7 +107,7 @@ class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
         $properties = [];
         $actual = $deployer($this->output, 'pushmethod', $properties);
         $this->assertSame(false, $actual);
-        $this->assertSame(999, $deployer->getExitCode());
+        $this->assertSame('Unknown deployment failure', $deployer->getFailureMessage());
     }
 
     public function testSuccess()

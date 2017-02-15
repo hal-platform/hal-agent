@@ -12,7 +12,9 @@ use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
+use Hal\Agent\Command\IO;
 use QL\Hal\Core\Type\EnumType\ServerEnum;
+use Symfony\Component\Console\Input\ArrayInput;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -116,8 +118,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $builder = $this->builder;
 
         return $builder(
-            $this->getOutput(),
-            $properties['configuration']['system'],
+            new IO(new ArrayInput([]), $this->getOutput()), // this sucks. fix later when we refactor how
+            $properties['configuration']['system'],         // builder/deployer sends output to shell
             $properties['configuration']['deploy'],
             $properties
         );

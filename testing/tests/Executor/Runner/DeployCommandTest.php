@@ -5,21 +5,30 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command;
+namespace Hal\Agent\Executor\Runner;
 
 use Exception;
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Build\ConfigurationReader;
+use Hal\Agent\Build\DelegatingBuilder;
+use Hal\Agent\Push\DelegatingDeployer;
+use Hal\Agent\Push\Mover;
+use Hal\Agent\Push\Resolver;
+use Hal\Agent\Push\Unpacker;
+use Hal\Agent\Testing\ExecutorTestCase;
 use Mockery;
-use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
+use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Filesystem\Filesystem;
 
-class PushCommandTest extends PHPUnit_Framework_TestCase
+class DeployCommandTest extends ExecutorTestCase
 {
     public $logger;
     public $resolver;
@@ -30,42 +39,38 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public $filesystem;
 
-    public $input;
-    public $output;
-
     public function setUp()
     {
-        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
-        $this->resolver = Mockery::mock('Hal\Agent\Push\Resolver');
-        $this->mover = Mockery::mock('Hal\Agent\Push\Mover');
-        $this->unpacker = Mockery::mock('Hal\Agent\Push\Unpacker');
-        $this->reader = Mockery::mock('Hal\Agent\Build\ConfigurationReader');
-        $this->builder = Mockery::mock('Hal\Agent\Build\DelegatingBuilder');
-        $this->deployer = Mockery::mock('Hal\Agent\Push\DelegatingDeployer');
-        $this->filesystem = Mockery::mock('Symfony\Component\Filesystem\Filesystem');
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->resolver = Mockery::mock(Resolver::class);
+        $this->mover = Mockery::mock(Mover::class);
+        $this->unpacker = Mockery::mock(Unpacker::class);
+        $this->reader = Mockery::mock(ConfigurationReader::class);
+        $this->builder = Mockery::mock(DelegatingBuilder::class);
+        $this->deployer = Mockery::mock(DelegatingDeployer::class);
 
-        $this->output = new BufferedOutput;
+        $this->filesystem = Mockery::mock(Filesystem::class);
+    }
+
+    public function configureCommand($c)
+    {
+        DeployCommand::configure($c);
     }
 
     public function testBuildResolvingFails()
     {
-        $this->input = new ArrayInput([
-            'PUSH_ID' => '1'
-        ]);
-
         $this->resolver
             ->shouldReceive('__invoke')
             ->andReturnNull();
 
         $this->logger
             ->shouldReceive('failure')
-            ->twice();
+            ->once();
         $this->logger
             ->shouldReceive('setStage')
             ->once();
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->logger,
             $this->resolver,
             $this->mover,
@@ -77,14 +82,19 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         );
 
         $command->disableShutdownHandler();
-        $command->run($this->input, $this->output);
+
+        $io = $this->io('configureCommand', [
+            'RELEASE_ID' => '1'
+        ]);
+        $exit = $command->execute($io);
 
         $expected = [
-            '[Starting Deployment] Resolving push properties',
-            'Push details could not be resolved.'
+            'Runner - Deploy release',
+            '[1/6] Resolving configuration',
+            '[ERROR] Release cannot be run.'
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
@@ -92,45 +102,11 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function testSuccess()
     {
-        $this->input = new ArrayInput([
-            'PUSH_ID' => '1'
-        ]);
-
-        $push = Mockery::mock(Push::CLASS, [
-            'status' => null,
-
-            'withStatus' => null,
-            'withStart' => null,
-            'withEnd' => null,
-
-            'application' => Mockery::mock(Repository::CLASS, [
-                'name' => 'test_app'
-            ]),
-            'deployment' => Mockery::mock(Deployment::CLASS, [
-                'server' => Mockery::mock(Server::CLASS, [
-                    'environment' => Mockery::mock(Environment::CLASS, [
-                        'name' => null
-                    ]),
-                    'name' => null
-                ])
-            ]),
-            'id' => 1234,
-            'build' => Mockery::mock(Build::CLASS, [
-                'id' => 5678,
-                'environment' => Mockery::mock(Environment::CLASS, [
-                    'name' => 'test'
-                ])
-            ])
-        ]);
-
         $this->logger
             ->shouldReceive('start')
             ->once();
         $this->logger
             ->shouldReceive('success')
-            ->once();
-        $this->logger
-            ->shouldReceive('failure')
             ->once();
         $this->logger
             ->shouldReceive('event')
@@ -142,7 +118,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->resolver
             ->shouldReceive('__invoke')
             ->andReturn([
-                'push' => $push,
+                'push' => $this->generateMockPush(),
                 'method' => 'rsync',
 
                 'configuration' => [
@@ -173,7 +149,11 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn(true);
         $this->reader
             ->shouldReceive('__invoke')
-            ->andReturn(true);
+            ->andReturn([
+                'system' => 'ok',
+                'build_transform' => [],
+                'deploy' => ['command1 --flag', 'path/to/command2 arg1'],
+            ]);
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(true);
@@ -186,8 +166,7 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('remove')
             ->twice();
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->logger,
             $this->resolver,
             $this->mover,
@@ -199,23 +178,45 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         );
 
         $command->disableShutdownHandler();
-        $command->run($this->input, $this->output);
+
+        $io = $this->io('configureCommand', [
+            'RELEASE_ID' => '1'
+        ]);
+        $exit = $command->execute($io);
 
         $expected = [
-            '[Starting Deployment] Resolving push properties',
-            '[Starting Deployment] Application: test_app',
-            '[Starting Deployment] Environment: test',
-            '[Starting Deployment] Push: 1234',
-            '[Starting Deployment] Build: 5678',
-            '[Starting Deployment] Moving archive to local storage',
-            '[Starting Deployment] Unpacking build archive',
-            '[Starting Deployment] Reading .hal9000.yml',
-            '[Building] Running build transform command',
-            '[Deploying] Deploying application',
-            'Success!'
+            '[1/6] Resolving configuration',
+            ' * Push: 1234',
+            ' * Build: 5678',
+            ' * Application: test_app (ID: app123)',
+            ' * Environment: test (ID: env123)',
+
+            '[2/6] Importing build artifact',
+            ' * Artifact file: path/file',
+            ' * Target: path/file2',
+
+            '[3/6] Unpacking build artifact',
+            ' * Source file: path/file2',
+            ' * Release directory: path/dir',
+
+            '[4/6] Reading .hal.yml configuration',
+            ' * Application configuration:',
+
+            '[5/6] Running build transform process',
+            'No build transform commands found. Skipping transform process.',
+
+            '[6/6] Running build deployment process',
+            ' * Method: rsync',
+
+            'Deployment clean-up',
+            'Deployment artifacts to remove:',
+            ' * path/dir',
+            ' * path/file2',
+
+            '[OK] Release was deployed successfully.'
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
@@ -223,29 +224,6 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
 
     public function testEmergencyErrorHandling()
     {
-        $this->input = new ArrayInput([
-            'PUSH_ID' => '1'
-        ]);
-
-        $push = Mockery::mock(Push::CLASS, [
-            'status' => 'Pushing',
-
-            'withStart' => null,
-
-            'deployment' => Mockery::mock(Deployment::CLASS, [
-                'server' => Mockery::mock(Server::CLASS, [
-                    'environment' => Mockery::mock(Environment::CLASS, [
-                        'name' => null
-                    ]),
-                    'name' => null
-                ]),
-                'application' => Mockery::mock(Repository::CLASS, [
-                    'name' => null
-                ]),
-            ]),
-            'id' => 1234
-        ]);
-
         $this->logger
             ->shouldReceive('start')
             ->once();
@@ -258,11 +236,14 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         $this->logger
             ->shouldReceive('setStage')
             ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->once();
 
         $this->resolver
             ->shouldReceive('__invoke')
             ->andReturn([
-                'push' => $push,
+                'push' => $this->generateMockPush(),
                 'method' => 'rsync',
 
                 'configuration' => [],
@@ -285,10 +266,9 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
         // simulate an error
         $this->deployer
             ->shouldReceive('__invoke')
-            ->andThrow(new Exception);
+            ->andThrow(new RuntimeException);
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->logger,
             $this->resolver,
             $this->mover,
@@ -299,12 +279,48 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             $this->filesystem
         );
 
+        $isAborted = false;
         try {
-            $command->disableShutdownHandler();
-            $command->run($this->input, $this->output);
-        } catch (Exception $e) {}
+            $io = $this->io('configureCommand', [
+                'RELEASE_ID' => '1'
+            ]);
 
-        // this will call __destruct
-        unset($command);
+            $command->execute($io);
+
+        } catch (RuntimeException $e) {
+            $isAborted = true;
+        }
+
+        $this->assertSame(true, $isAborted);
+
+        $command->emergencyCleanup();
+    }
+
+    public function generateMockPush()
+    {
+        return Mockery::mock(Push::class, [
+            'status' => null,
+
+            'application' => Mockery::mock(Repository::class, [
+                'id' => 'app123',
+                'name' => 'test_app'
+            ]),
+            'deployment' => Mockery::mock(Deployment::class, [
+                'server' => Mockery::mock(Server::class, [
+                    'environment' => Mockery::mock(Environment::class, [
+                        'name' => null
+                    ]),
+                    'name' => null
+                ])
+            ]),
+            'id' => 1234,
+            'build' => Mockery::mock(Build::class, [
+                'id' => 5678,
+                'environment' => Mockery::mock(Environment::class, [
+                    'id' => 'env123',
+                    'name' => 'test'
+                ])
+            ])
+        ]);
     }
 }

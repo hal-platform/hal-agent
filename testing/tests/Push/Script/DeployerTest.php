@@ -10,6 +10,7 @@ namespace Hal\Agent\Push\Script;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Command\IO;
 use Hal\Agent\Build\DelegatingBuilder;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -40,7 +41,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with($this->output, 'unix', ['cmd1', 'cmd2'], $properties)
+            ->with(Mockery::type(IO::class), 'unix', ['cmd1', 'cmd2'], $properties)
             ->once()
             ->andReturn(true);
 
@@ -75,7 +76,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with($this->output, 'unix', ['cmd1', 'cmd2'], $properties)
+            ->with(Mockery::type(IO::class), 'unix', ['cmd1', 'cmd2'], $properties)
             ->once()
             ->andReturn(true);
 
@@ -160,7 +161,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with($this->output, 'unix', ['cmd1', 'cmd2'], $properties)
+            ->with(Mockery::type(IO::class), 'unix', ['cmd1', 'cmd2'], $properties)
             ->once()
             ->andReturn(false);
 

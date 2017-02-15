@@ -15,7 +15,8 @@ services:
         arguments: ['%application.name%', '%application.version%']
         calls:
             # - ['add', ['@lazy.command.build.create']]
-            # - ['add', ['@lazy.command.build.build']]
+            - ['add', ['@command.runner.build']]
+            - ['add', ['@command.runner.deploy']]
             # - ['add', ['@lazy.command.build.remove']]
             # - ['add', ['@lazy.command.push.create']]
             # - ['add', ['@lazy.command.push.push']]

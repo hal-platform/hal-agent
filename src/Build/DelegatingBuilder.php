@@ -7,11 +7,11 @@
 
 namespace Hal\Agent\Build;
 
-use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\StyleInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DelegatingBuilder
@@ -83,14 +83,14 @@ class DelegatingBuilder
     }
 
     /**
-     * @param IOInterface $io
+     * @param StyleInterface $io
      * @param string $method
      * @param array $properties
      * @param array $commands
      *
      * @return bool
      */
-    public function __invoke(IOInterface $io, $system, array $commands, array $properties)
+    public function __invoke(StyleInterface $io, $system, array $commands, array $properties)
     {
         // reset exit code
         $this->exitCode = 0;

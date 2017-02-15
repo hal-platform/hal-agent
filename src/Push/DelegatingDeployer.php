@@ -18,6 +18,39 @@ class DelegatingDeployer
     const ERR_INVALID_DEPLOYMENT = 'Invalid deployment method specified';
     const UNKNOWN_FAILURE_CODE = 6;
 
+    const ERR_UNKNOWN = 'Unknown deployment failure';
+
+    const EXIT_CODES = [
+        100 => 'Required properties for rsync are missing.',
+        101 => 'Could not verify target directory.',
+        102 => 'Pre push command failed.',
+        103 => 'Rsync push failed.',
+        104 => 'Post push command failed.',
+
+        200 => 'Required properties for EB are missing.',
+        201 => 'Failed to authenticate with AWS.',
+        202 => 'Elastic Beanstalk environment is not ready.',
+        203 => 'Build could not be packed for S3.',
+        204 => 'Upload to S3 failed.',
+        205 => 'Deploying application to EB failed.',
+
+        300 => 'Required properties for script are missing.',
+        301 => 'No deployment scripts are defined.',
+        302 => 'Deployment command failed.',
+
+        400 => 'Required properties for S3 are missing.',
+        401 => 'Failed to authenticate with AWS.',
+        402 => 'Build could not be packed for S3.',
+        403 => 'Upload to S3 failed.',
+
+        500 => 'Required properties for CodeDeploy are missing.',
+        501 => 'Failed to authenticate with AWS.',
+        502 => 'CodeDeploy group is not ready.',
+        503 => 'Build could not be packed for S3.',
+        504 => 'Upload to S3 failed.',
+        505 => 'Deploying application to CodeDeploy failed.'
+    ];
+
     /**
      * @var EventLogger
      */
@@ -108,10 +141,10 @@ class DelegatingDeployer
     }
 
     /**
-     * @return int
+     * @return string
      */
-    public function getExitCode()
+    public function getFailureMessage()
     {
-        return $this->exitCode;
+        return self::EXIT_CODES[$this->exitCode] ?? self::ERR_UNKNOWN;
     }
 }

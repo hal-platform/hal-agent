@@ -21,12 +21,14 @@ services:
 
     # job runners
 
-    lazy.command.build.build:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['build:build', 'command.build.build', '@service_container']
-    lazy.command.push.push:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['push:push', 'command.push.push', '@service_container']
+    command.runner.build:
+        parent: 'command.template'
+        arguments: ['runner:build', 'executor.runner.build']
+        configurator: ['Hal\Agent\Executor\Runner\BuildCommand', 'configure']
+    command.runner.deploy:
+        parent: 'command.template'
+        arguments: ['runner:deploy', 'executor.runner.deploy']
+        configurator: ['Hal\Agent\Executor\Runner\DeployCommand', 'configure']
 
     # workers - cron
 
@@ -103,10 +105,9 @@ services:
 
     # job runners
 
-    command.build.build:
-        class: 'Hal\Agent\Command\BuildCommand'
+    executor.runner.build:
+        class: 'Hal\Agent\Executor\Runner\BuildCommand'
         arguments:
-            - 'build:build'
             - '@logger.event'
             - '@build.resolver'
             - '@build.downloader'
@@ -117,10 +118,9 @@ services:
             - '@build.mover'
             - '@utility.filesystem'
             - '@ssh.manager'
-    command.push.push:
-        class: 'Hal\Agent\Command\PushCommand'
+    executor.runner.deploy:
+        class: 'Hal\Agent\Executor\Runner\DeployCommand'
         arguments:
-            - 'push:push'
             - '@logger.event'
             - '@push.resolver'
             - '@push.mover'
