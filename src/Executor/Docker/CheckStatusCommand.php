@@ -8,10 +8,10 @@
 namespace Hal\Agent\Executor\Docker;
 
 use DateTime;
-use Hal\Agent\Command\ExecutorTrait;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
+use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Remoting\SSHSessionManager;
 use phpseclib\Net\SSH2;
 use Predis\Client as Predis;
@@ -104,6 +104,8 @@ class CheckStatusCommand implements ExecutorInterface
     }
 
     /**
+     * @param Command $command
+     *
      * @return void
      */
     public static function configure(Command $command)

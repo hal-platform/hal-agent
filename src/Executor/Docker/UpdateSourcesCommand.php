@@ -106,6 +106,8 @@ class UpdateSourcesCommand implements ExecutorInterface
     }
 
     /**
+     * @param Command $command
+     *
      * @return void
      */
     public static function configure(Command $command)
