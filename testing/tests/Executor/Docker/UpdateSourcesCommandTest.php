@@ -5,58 +5,39 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Docker;
+namespace Hal\Agent\Executor\Docker;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Mockery;
-use PHPUnit_Framework_TestCase;
 use Hal\Agent\Remoting\FileSyncManager;
 use Hal\Agent\Github\ArchiveApi;
-use QL\MCP\Common\Time\Clock;
-use QL\MCP\Common\Time\TimePoint;
-use QL\Hal\Core\Entity\User;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
+use Hal\Agent\Testing\ExecutorTestCase;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
-class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
+class UpdateSourcesCommandTest extends ExecutorTestCase
 {
     public $fileSync;
     public $process;
     public $archiveDownloader;
-    public $em;
-    public $clock;
-    public $random;
-
-    public $input;
-    public $output;
 
     public function setUp()
     {
         $this->fileSync = Mockery::mock(FileSyncManager::class);
         $this->process = Mockery::mock(ProcessBuilder::class);
         $this->archiveDownloader = Mockery::mock(ArchiveApi::class);
-        $this->em = Mockery::mock(EntityManagerInterface::class);
-        $this->clock = Mockery::mock(Clock::class);
-        $this->random = function() {
-            return '1234';
-        };
+    }
 
-        $this->input = new ArrayInput([]);
-        $this->output = new BufferedOutput;
+    public function configureCommand($c)
+    {
+        UpdateSourcesCommand::configure($c);
     }
 
     public function testLocalTempNotWriteable()
     {
         $command = new UpdateSourcesCommand(
-            'cmd',
             $this->fileSync,
             $this->process,
             $this->archiveDownloader,
-            $this->em,
-            $this->clock,
-            $this->random,
             '/tmp/halscratch',
             'builduser',
             'buildserver',
@@ -65,17 +46,18 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             'master'
         );
 
-        $exit = $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            '[GitHub] Repository: hal/docker-images',
-            '[GitHub] Reference: master',
-            '[Temp] Download: /tmp/halscratch/docker-images.tar.gz',
-            '[Temp] Directory: /tmp/halscratch/docker-images',
-            'Temp directory "/tmp/halscratch" is not writeable!',
+            'Repository: hal/docker-images',
+            'Reference: master',
+            'Download: /tmp/halscratch/docker-images.tar.gz',
+            'Directory: /tmp/halscratch/docker-images',
+            '[ERROR] Temp directory "/tmp/halscratch" is not writeable!',
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
@@ -85,25 +67,30 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
 
     public function testDownloadFails()
     {
-        $this->input = new ArrayInput([
-            'GIT_REPOSITORY' => 'custom/repo',
-            'GIT_REFERENCE' => '1.0',
-        ]);
-
         $this->archiveDownloader
             ->shouldReceive('download')
             ->with('custom', 'repo', '1.0', Mockery::any())
             ->once()
             ->andReturn(false);
 
+        $process = Mockery::mock(Process::class, ['stop' => null]);
+        $this->process
+            ->shouldReceive('setWorkingDirectory')
+            ->andReturn($this->process);
+        $this->process
+            ->shouldReceive('setArguments')
+            ->andReturn($this->process);
+        $this->process
+            ->shouldReceive('getProcess')
+            ->andReturn($process);
+        $process
+            ->shouldReceive('run')
+            ->times(2);
+
         $command = new UpdateSourcesCommand(
-            'cmd',
             $this->fileSync,
             $this->process,
             $this->archiveDownloader,
-            $this->em,
-            $this->clock,
-            $this->random,
             __DIR__,
             'builduser',
             'buildserver',
@@ -112,20 +99,24 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             'master'
         );
 
-        $exit = $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand', [
+            'GIT_REPOSITORY' => 'custom/repo',
+            'GIT_REFERENCE' => '1.0',
+        ]);
+        $exit = $command->execute($io);
 
         $expected = [
-            '[GitHub] Repository: custom/repo',
-            '[GitHub] Reference: 1.0',
-            'Invalid GitHub repository or reference.',
+            'Repository: custom/repo',
+            'Reference: 1.0',
+            '[ERROR] Invalid GitHub repository or reference.',
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
 
-        $this->assertSame(2, $exit);
+        $this->assertSame(1, $exit);
     }
 
     public function testUnpackFails()
@@ -173,13 +164,9 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             ->times(2);
 
         $command = new UpdateSourcesCommand(
-            'cmd',
             $this->fileSync,
             $this->process,
             $this->archiveDownloader,
-            $this->em,
-            $this->clock,
-            $this->random,
             __DIR__,
             'builduser',
             'buildserver',
@@ -188,18 +175,19 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             'master'
         );
 
-        $exit = $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
             'Archive download and unpack failed.'
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
 
-        $this->assertSame(3, $exit);
+        $this->assertSame(1, $exit);
     }
 
     public function testTransferFails()
@@ -251,13 +239,9 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             ->andReturn("derp herp bad stuff happened\n");
 
         $command = new UpdateSourcesCommand(
-            'cmd',
             $this->fileSync,
             $this->process,
             $this->archiveDownloader,
-            $this->em,
-            $this->clock,
-            $this->random,
             __DIR__,
             'builduser',
             'buildserver',
@@ -266,21 +250,22 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             'master'
         );
 
-        $exit = $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            'Exit Code: 2',
+            '[NOTE] An error occurred while transferring dockerfiles to build server.',
             'derp herp bad stuff happened',
             'Ensure "/target/docker/images" exists on the build server and is owned by "builduser"',
-            'An error occured while transferring dockerfile sources to build server.'
+            '[ERROR] An error occurred while transferring dockerfiles to build server.'
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
 
-        $this->assertSame(4, $exit);
+        $this->assertSame(1, $exit);
     }
 
     public function testSuccess()
@@ -321,37 +306,10 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             ->with('rsync my stuff plz')
             ->andReturn($process);
 
-        // audit
-        $user = new User;
-
-        $timepoint = Mockery::mock(TimePoint::class);
-        $this->clock
-            ->shouldReceive('read')
-            ->andReturn($timepoint);
-
-        $this->em
-            ->shouldReceive('flush');
-        $this->em
-            ->shouldReceive('find')
-            ->with(User::class, 9000)
-            ->andReturn($user);
-
-        $log = null;
-        $this->em
-            ->shouldReceive('persist')
-            ->with(Mockery::on(function($v) use (&$log) {
-                $log = $v;
-                return true;
-            }));
-
         $command = new UpdateSourcesCommand(
-            'cmd',
             $this->fileSync,
             $this->process,
             $this->archiveDownloader,
-            $this->em,
-            $this->clock,
-            $this->random,
             __DIR__,
             'builduser',
             'buildserver',
@@ -360,21 +318,18 @@ class UpdateSourcesCommandTest extends PHPUnit_Framework_TestCase
             'master'
         );
 
-        $exit = $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            'Dockerfiles refreshed!'
+            '[OK] Dockerfiles refreshed!'
         ];
 
-        $output = $this->output->fetch();
+        $output = $this->output();
         foreach ($expected as $exp) {
             $this->assertContains($exp, $output);
         }
 
         $this->assertSame(0, $exit);
-
-        $this->assertSame($user, $log->user());
-        $this->assertSame('DockerImages', $log->entity());
-        $this->assertSame('UPDATE', $log->action());
     }
 }

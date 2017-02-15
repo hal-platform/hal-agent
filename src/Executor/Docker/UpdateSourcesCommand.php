@@ -5,39 +5,35 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Docker;
+namespace Hal\Agent\Executor\Docker;
 
 use Doctrine\ORM\EntityManagerInterface;
-use QL\Hal\Core\Entity\AuditLog;
-use QL\Hal\Core\Entity\User;
-use QL\Hal\Core\Repository\AuditLogRepository;
-use Hal\Agent\Command\CommandTrait;
 use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Command\IOInterface;
+use Hal\Agent\Executor\ExecutorInterface;
+use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Remoting\FileSyncManager;
 use Hal\Agent\Github\ArchiveApi;
-use Hal\Agent\Symfony\OutputAwareInterface;
-use Hal\Agent\Symfony\OutputAwareTrait;
-use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Update dockerfiles on build server
- *
- * BUILT FOR COMMAND LINE ONLY
  */
-class UpdateSourcesCommand extends Command implements OutputAwareInterface
+class UpdateSourcesCommand implements ExecutorInterface
 {
-    use CommandTrait;
+    use ExecutorTrait;
     use FormatterTrait;
-    use OutputAwareTrait;
+    // use OutputAwareTrait;
 
-    const STATIC_HELP = <<<'HELP'
-<fg=cyan>Exit codes:</fg=cyan>
-HELP;
+    const COMMAND_TITLE = 'Docker - Update Dockerfile Sources';
+
+    const ERRT_TEMP = 'Temp directory "%s" is not writeable!';
+    const ERR_DOWNLOAD = 'Invalid GitHub repository or reference.';
+    const ERR_UNPACK = 'Archive download and unpack failed.';
+    const ERR_TRANSFER = 'An error occurred while transferring dockerfiles to build server.';
+    const ERRT_TRANSFER_TIP = 'Ensure "%s" exists on the build server and is owned by "%s"';
 
     /**
      * A list of all possible exit codes of this command
@@ -48,7 +44,7 @@ HELP;
         0 => 'Success',
         1 => 'Invalid temp directory.',
         2 => 'Invalid GitHub repository or reference.',
-        3 => 'Archive download and unpack failed.',
+        3 => '',
         4 => 'An error occured while transferring dockerfile sources to build server.'
     ];
 
@@ -66,21 +62,6 @@ HELP;
      * @var ArchiveApi
      */
     private $archiveApi;
-
-    /**
-     * @var EntityManagerInterface
-     */
-    private $em;
-
-    /**
-     * @var Clock
-     */
-    private $clock;
-
-    /**
-     * @var callable
-     */
-    private $random;
 
     /**
      * @var string
@@ -101,9 +82,6 @@ HELP;
      * @param FileSyncManager $fileSyncManager
      * @param ProcessBuilder $processBuilder
      * @param ArchiveApi $archiveApi
-     * @param EntityManagerInterface $em
-     * @param Clock $clock
-     * @param callable $random
      *
      * @param string $localTemp
      * @param string $unixBuildUser
@@ -114,13 +92,9 @@ HELP;
      * @param string $defaultReference
      */
     public function __construct(
-        $name,
         FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
         ArchiveApi $archiveApi,
-        EntityManagerInterface $em,
-        Clock $clock,
-        callable $random,
 
         $localTemp,
         $unixBuildUser,
@@ -130,14 +104,9 @@ HELP;
         $defaultRepository,
         $defaultReference
     ) {
-        parent::__construct($name);
-
         $this->fileSyncManager = $fileSyncManager;
         $this->processBuilder = $processBuilder;
         $this->archiveApi = $archiveApi;
-        $this->em = $em;
-        $this->clock = $clock;
-        $this->random = $random;
 
         $this->localTemp = $localTemp;
         $this->unixBuildUser = $unixBuildUser;
@@ -149,11 +118,11 @@ HELP;
     }
 
     /**
-     * Configure the command
+     * @return void
      */
-    protected function configure()
+    public static function configure(Command $command)
     {
-        $this
+        $command
             ->setDescription('Update dockerfile sources on build server.')
             ->addArgument(
                 'GIT_REPOSITORY',
@@ -165,83 +134,69 @@ HELP;
                 InputArgument::OPTIONAL,
                 'Customize the source version of the dockerfiles.'
             );
-
-        $help = [self::STATIC_HELP];
-        foreach (static::$codes as $code => $message) {
-            $help[] = $this->formatSection($code, $message);
-        }
-
-        $this->setHelp(implode("\n", $help));
     }
 
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
+     * @param IOInterface $io
      *
-     * @return int
+     * @return int|null
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    public function execute(IOInterface $io)
     {
-        $this->setOutput($output);
+        $io->title(self::COMMAND_TITLE);
 
-        $repository = $input->getArgument('GIT_REPOSITORY') ?: $this->defaultRepository;
-        $reference = $input->getArgument('GIT_REFERENCE') ?: $this->defaultReference;
+        $repository = $io->getArgument('GIT_REPOSITORY') ?: $this->defaultRepository;
+        $reference = $io->getArgument('GIT_REFERENCE') ?: $this->defaultReference;
 
-        $this->status(sprintf('Repository: <info>%s</info>', $repository), 'GitHub');
-        $this->status(sprintf('Reference: <info>%s</info>', $reference), 'GitHub');
+        $io->section('GitHub');
+        $io->text([
+            sprintf('Repository: <info>%s</info>', $repository),
+            sprintf('Reference: <info>%s</info>', $reference)
+        ]);
 
         $archive = sprintf('%s/docker-images.tar.gz', rtrim($this->localTemp, '/'));
         $tempDir = sprintf('%s/docker-images', rtrim($this->localTemp, '/'));
 
-        $this->status(sprintf('Download: <info>%s</info>', $archive), 'Temp');
-        $this->status(sprintf('Directory: <info>%s</info>', $tempDir), 'Temp');
+        $io->section('Temp');
+        $io->text([
+            sprintf('Download: <info>%s</info>', $archive),
+            sprintf('Directory: <info>%s</info>', $tempDir)
+        ]);
 
-        if (!$this->sanityCheck($output, $this->localTemp)) {
-            return $this->failure($output, 1);
+        if (!$this->sanityCheck($this->localTemp)) {
+            return $this->error($io, sprintf(self::ERRT_TEMP, $this->localTemp));
         }
 
         if (!$this->download($repository, $reference, $archive)) {
-            return $this->failure($output, 2);
+            $this->cleanupArtifacts($tempDir, $archive);
+            return $this->error($io, self::ERR_DOWNLOAD);
         }
 
         if (!$this->unpackArchive($tempDir, $archive)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 3);
+            return $this->error($io, self::ERR_UNPACK);
         }
 
-        $transfer = $this->transferFiles(
-            $output,
-            $tempDir,
-            $this->unixBuildUser,
-            $this->unixBuildServer,
-            $this->unixDockerSourcePath
-        );
-
-        if (!$transfer) {
+        if (!$this->transferFiles($io, $tempDir, $this->unixDockerSourcePath)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->failure($output, 4);
+            return $this->error($io, self::ERR_TRANSFER);
         }
-
-        // Audit
-        $this->audit($repository, $reference);
 
         $this->cleanupArtifacts($tempDir, $archive);
-        return $this->success($output, 'Dockerfiles refreshed!');
+        return $this->success($io, 'Dockerfiles refreshed!');
     }
 
     /**
-     * @param OutputInterface $output
      * @param string $tempDir
      *
      * @return bool
      */
-    private function sanityCheck(OutputInterface $output, $tempDir)
+    private function sanityCheck($tempDir)
     {
         if (is_writeable($tempDir)) {
             return true;
         }
 
-        $output->writeln(sprintf('Temp directory "%s" is not writeable!', $tempDir));
         return false;
     }
 
@@ -297,21 +252,26 @@ HELP;
         }
 
         $unpackProcess->run();
+
         return $unpackProcess->isSuccessful();
     }
 
     /**
-     * @param OutputInterface $output
+     * @param IOInterface $io
      * @param string $localPath
-     * @param string $remoteUser
-     * @param string $remoteServer
      * @param string $remotePath
      *
      * @return bool
      */
-    private function transferFiles(OutputInterface $output, $localPath, $remoteUser, $remoteServer, $remotePath)
+    private function transferFiles(IOInterface $io, $localPath, $remotePath)
     {
-        $command = $this->fileSyncManager->buildOutgoingRsync($localPath, $remoteUser, $remoteServer, $remotePath);
+        $command = $this->fileSyncManager->buildOutgoingRsync(
+            $localPath,
+            $this->unixBuildUser,
+            $this->unixBuildServer,
+            $remotePath
+        );
+
         if ($command === null) {
             return false;
         }
@@ -326,20 +286,15 @@ HELP;
             ->setCommandLine($rsyncCommand);
 
         $process->run();
+        $success = $process->isSuccessful();
 
-        if (!$isSuccessful = $process->isSuccessful()) {
-            // most likely to fail, so dump output to shell
-            $message = sprintf('<info>Exit Code:</info> %s', $process->getExitCode());
-            $output->writeln($message);
-
-            $output->writeln('<info>Std Err:</info>');
-            $output->write($process->getErrorOutput());
-
-            $output->writeln('<info>Protip:</info>');
-            $output->write(sprintf('Ensure "%s" exists on the build server and is owned by "%s"', $remotePath, $remoteUser), true);
+        if (!$success) {
+            $io->note(self::ERR_TRANSFER);
+            $io->text($process->getErrorOutput());
+            $io->note(sprintf(self::ERRT_TRANSFER_TIP, $remotePath, $this->unixBuildUser));
         }
 
-        return $isSuccessful;
+        return $success;
     }
 
     /**
@@ -364,37 +319,5 @@ HELP;
 
         $rmDir->run();
         $rmArchive->run();
-    }
-
-    /**
-     * @param string $repository
-     * @param string $reference
-     *
-     * @return void
-     */
-    private function audit($repository, $reference)
-    {
-        if (!$user = $this->em->find(User::CLASS, 9000)) {
-            return;
-        }
-
-        $suffix = (1 === preg_match('/^([a-f0-9]{40})$/', $reference)) ? 'commit' : 'tree';
-        $data = [
-            'repository' => $repository,
-            'reference' => $reference,
-            'github' => sprintf('http://git/%s/%s/%s', $repository, $suffix, $reference),
-            'agent' => gethostname()
-        ];
-
-        $id = call_user_func($this->random);
-        $log = (new AuditLog($id))
-            ->withUser($user)
-            ->withCreated($this->clock->read())
-            ->withEntity('DockerImages')
-            ->withAction('UPDATE')
-            ->withData(json_encode($data));
-
-        $this->em->persist($log);
-        $this->em->flush();
     }
 }

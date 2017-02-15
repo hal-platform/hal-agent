@@ -5,34 +5,29 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Docker;
+namespace Hal\Agent\Executor\Docker;
 
 use DateTime;
+use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Command\IOInterface;
+use Hal\Agent\Executor\ExecutorInterface;
+use Hal\Agent\Remoting\SSHSessionManager;
 use phpseclib\Net\SSH2;
 use Predis\Client as Predis;
-use Hal\Agent\Command\CommandTrait;
-use Hal\Agent\Command\FormatterTrait;
-use Hal\Agent\Remoting\SSHSessionManager;
-use Hal\Agent\Symfony\OutputAwareInterface;
-use Hal\Agent\Symfony\OutputAwareTrait;
 use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\StyleInterface;
 
 /**
  * Get the status of docker containers and images
  * - docker ps -a
  * - docker images
- *
- * BUILT FOR COMMAND LINE ONLY
  */
-class CheckStatusCommand extends Command implements OutputAwareInterface
+class CheckStatusCommand implements ExecutorInterface
 {
-    use CommandTrait;
     use FormatterTrait;
-    use OutputAwareTrait;
+
+    const COMMAND_TITLE = 'Docker - Check Status';
 
     const REDIS_KEY = 'agent-status:docker';
     const REDIS_LIST_SIZE = 20;
@@ -40,19 +35,7 @@ class CheckStatusCommand extends Command implements OutputAwareInterface
     const TIMEOUT = 10;
     const DOCKER_DIR = '/var/lib/docker';
 
-    const STATIC_HELP = <<<'HELP'
-<fg=cyan>Exit codes:</fg=cyan>
-HELP;
-
-    /**
-     * A list of all possible exit codes of this command
-     *
-     * @var array
-     */
-    private static $codes = [
-        0 => 'Success',
-        1 => 'Failed to initiate session with build server.',
-    ];
+    const ERR_SESSION = 'Failed to initiate session with build server.';
 
     /**
      * @var SSHSessionManager
@@ -83,7 +66,6 @@ HELP;
     private $useSudoForDocker;
 
     /**
-     * @param string $name
      * @param SSHSessionManager $sshManager
      * @param Predis $predis
      * @param Clock $clock
@@ -96,7 +78,6 @@ HELP;
      * @param string $buildTemp
      */
     public function __construct(
-        $name,
         SSHSessionManager $sshManager,
         Predis $predis,
         Clock $clock,
@@ -108,8 +89,6 @@ HELP;
         $localTemp,
         $buildTemp
     ) {
-        parent::__construct($name);
-
         $this->sshManager = $sshManager;
         $this->predis = $predis;
         $this->clock = $clock;
@@ -123,39 +102,27 @@ HELP;
     }
 
     /**
-     * Configure the command
+     * @return void
      */
-    protected function configure()
+    public static function configure(Command $command)
     {
-        $this
-            ->setDescription('Get the status of docker containers and images.')
-            ->addArgument(
-                'SAMPLE_ARG',
-                InputArgument::OPTIONAL,
-                'Description of arg.'
-            );
-
-        $help = [self::STATIC_HELP];
-        foreach (static::$codes as $code => $message) {
-            $help[] = $this->formatSection($code, $message);
-        }
-
-        $this->setHelp(implode("\n", $help));
+        $command
+            ->setDescription('Get the status of docker containers and images.');
     }
 
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
+     * @param IOInterface $io
      *
-     * @return int
+     * @return int|null
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    public function execute(IOInterface $io)
     {
-        $this->setOutput($output);
+        $io->title(self::COMMAND_TITLE);
 
         $session = $this->sshManager->createSession($this->unixBuildUser, $this->unixBuildServer);
         if (!$session) {
-            return $this->failure($output, 1);
+            $io->error(self::ERR_SESSION);
+            return 1;
         }
 
         $session->setTimeout(self::TIMEOUT);
@@ -166,29 +133,20 @@ HELP;
 
         $this->sshManager->disconnectAll();
 
-        $this->status('System', 'Agent');
-        $output->writeln($agent['system']);
+        $io->section('Agent');
+        foreach (['system', 'temp'] as $info) {
+            $io->text(sprintf("<info>%s</info>\n%s\n", ucfirst($info), $agent[$info]));
+        }
 
-        $this->status('Temp', 'Agent');
-        $output->writeln($agent['temp']);
+        $io->section('Builder');
+        foreach (['system', 'temp', 'docker'] as $info) {
+            $io->text(sprintf("<info>%s</info>\n%s\n", ucfirst($info), $builder[$info]));
+        }
 
-        $this->status('System', 'Builder');
-        $output->writeln($builder['system']);
-
-        $this->status('Temp', 'Builder');
-        $output->writeln($builder['temp']);
-
-        $this->status('Docker', 'Builder');
-        $output->writeln($builder['docker']);
-
-        $this->status('Info', 'Docker');
-        $output->writeln($docker['info']);
-
-        $this->status('Images', 'Docker');
-        $output->writeln($docker['images']);
-
-        $this->status('Containers', 'Docker');
-        $output->writeln($docker['containers']);
+        $io->section('Docker');
+        foreach (['info', 'images', 'containers'] as $info) {
+            $io->text(sprintf("<info>%s</info>\n%s\n", ucfirst($info), $docker[$info]));
+        }
 
         $this->sendToRedis([
             'agent' => $agent,

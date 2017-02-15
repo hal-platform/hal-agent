@@ -4,26 +4,35 @@ services:
     # lazy commands
     ####################################################################################################################
 
+    # management
+
     lazy.command.build.create:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:create', 'command.build.create', '@service_container']
-    lazy.command.build.build:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['build:build', 'command.build.build', '@service_container']
+
     lazy.command.build.remove:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:remove', 'command.build.remove', '@service_container']
 
+    lazy.command.builds.list:
+        class: 'Hal\Agent\Command\LazyCommand'
+        arguments: ['builds:list', 'command.builds.list', '@service_container']
+
     lazy.command.push.create:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:create', 'command.push.create', '@service_container']
+
+    # job runners
+
+    lazy.command.build.build:
+        class: 'Hal\Agent\Command\LazyCommand'
+        arguments: ['build:build', 'command.build.build', '@service_container']
+
     lazy.command.push.push:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:push', 'command.push.push', '@service_container']
 
-    lazy.command.builds.list:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['builds:list', 'command.builds.list', '@service_container']
+    # workers - cron
 
     lazy.command.worker.build:
         class: 'Hal\Agent\Command\LazyCommand'
@@ -32,16 +41,33 @@ services:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['worker:push', 'command.worker.push', '@service_container']
 
-    lazy.command.docker.refresh:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['docker:refresh', 'command.docker.refresh', '@service_container']
-    lazy.command.docker.status:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['docker:status', 'command.docker.status', '@service_container']
+    # utility
 
     lazy.command.server.connections:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['server:connections', 'command.server.connections', '@service_container']
+
+    # docker
+
+    command.docker.refresh:
+        parent: 'command.template'
+        arguments: ['docker:refresh', 'executor.docker.refresh']
+        configurator: ['Hal\Agent\Executor\Docker\UpdateSourcesCommand', 'configure']
+
+    command.docker.status:
+        parent: 'command.template'
+        arguments: ['docker:status', 'executor.docker.status']
+        configurator: ['Hal\Agent\Executor\Docker\CheckStatusCommand', 'configure']
+
+    # shared
+
+    command.template:
+        class: 'Symfony\Component\Console\Command\Command'
+        factory: ['@command.factory', 'build']
+
+    command.factory:
+        class: 'Hal\Agent\Command\HalCommandFactory'
+        arguments: ['@service_container']
 
     ####################################################################################################################
     # commands
@@ -129,26 +155,21 @@ services:
     # utility
     ####################################################################################################################
 
-    command.docker.refresh:
-        class: 'Hal\Agent\Command\Docker\UpdateSourcesCommand'
+    executor.docker.refresh:
+        class: 'Hal\Agent\Executor\Docker\UpdateSourcesCommand'
         arguments:
-            - 'docker:refresh'
             - '@ssh.filemanager'
             - '@utility.process.builder'
             - '@github.archive'
-            - '@doctrine.em'
-            - '@clock'
-            - '@doctrine.random'
             - '%environment.temp%'
             - '%build.unix.remoteUser%'
             - '%build.unix.server%'
             - '%docker.source.path%'
             - '%docker.source.repository%'
             - '%docker.source.reference%'
-    command.docker.status:
-        class: 'Hal\Agent\Command\Docker\CheckStatusCommand'
+    executor.docker.status:
+        class: 'Hal\Agent\Executor\Docker\CheckStatusCommand'
         arguments:
-            - 'docker:status'
             - '@ssh.manager'
             - '@redis'
             - '@clock'
