@@ -11,7 +11,7 @@ use Symfony\Component\Console\Style\StyleInterface;
 
 trait ExecutorTrait
 {
-    private function error(StyleInterface $io, $message = '', $exitCode = 1)
+    private function failure(StyleInterface $io, $message = '', $exitCode = 1)
     {
         if ($message) {
             $io->error($message);
@@ -20,7 +20,7 @@ trait ExecutorTrait
         return $exitCode;
     }
 
-    private function success(StyleInterface $io, $message)
+    private function success(StyleInterface $io, $message = '')
     {
         if ($message) {
             $io->success($message);

@@ -25,28 +25,16 @@ class UpdateSourcesCommand implements ExecutorInterface
 {
     use ExecutorTrait;
     use FormatterTrait;
-    // use OutputAwareTrait;
 
     const COMMAND_TITLE = 'Docker - Update Dockerfile Sources';
+
+    const MSG_SUCCESS = 'Dockerfiles refreshed!';
 
     const ERRT_TEMP = 'Temp directory "%s" is not writeable!';
     const ERR_DOWNLOAD = 'Invalid GitHub repository or reference.';
     const ERR_UNPACK = 'Archive download and unpack failed.';
     const ERR_TRANSFER = 'An error occurred while transferring dockerfiles to build server.';
     const ERRT_TRANSFER_TIP = 'Ensure "%s" exists on the build server and is owned by "%s"';
-
-    /**
-     * A list of all possible exit codes of this command
-     *
-     * @var array
-     */
-    private static $codes = [
-        0 => 'Success',
-        1 => 'Invalid temp directory.',
-        2 => 'Invalid GitHub repository or reference.',
-        3 => '',
-        4 => 'An error occured while transferring dockerfile sources to build server.'
-    ];
 
     /**
      * @var FileSyncManager
@@ -164,26 +152,26 @@ class UpdateSourcesCommand implements ExecutorInterface
         ]);
 
         if (!$this->sanityCheck($this->localTemp)) {
-            return $this->error($io, sprintf(self::ERRT_TEMP, $this->localTemp));
+            return $this->failure($io, sprintf(self::ERRT_TEMP, $this->localTemp));
         }
 
         if (!$this->download($repository, $reference, $archive)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->error($io, self::ERR_DOWNLOAD);
+            return $this->failure($io, self::ERR_DOWNLOAD);
         }
 
         if (!$this->unpackArchive($tempDir, $archive)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->error($io, self::ERR_UNPACK);
+            return $this->failure($io, self::ERR_UNPACK);
         }
 
         if (!$this->transferFiles($io, $tempDir, $this->unixDockerSourcePath)) {
             $this->cleanupArtifacts($tempDir, $archive);
-            return $this->error($io, self::ERR_TRANSFER);
+            return $this->failure($io, self::ERR_TRANSFER);
         }
 
         $this->cleanupArtifacts($tempDir, $archive);
-        return $this->success($io, 'Dockerfiles refreshed!');
+        return $this->success($io, self::MSG_SUCCESS);
     }
 
     /**

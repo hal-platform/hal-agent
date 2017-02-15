@@ -8,6 +8,7 @@
 namespace Hal\Agent\Executor\Docker;
 
 use DateTime;
+use Hal\Agent\Command\ExecutorTrait;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
@@ -25,6 +26,7 @@ use Symfony\Component\Console\Style\StyleInterface;
  */
 class CheckStatusCommand implements ExecutorInterface
 {
+    use ExecutorTrait;
     use FormatterTrait;
 
     const COMMAND_TITLE = 'Docker - Check Status';
@@ -121,8 +123,7 @@ class CheckStatusCommand implements ExecutorInterface
 
         $session = $this->sshManager->createSession($this->unixBuildUser, $this->unixBuildServer);
         if (!$session) {
-            $io->error(self::ERR_SESSION);
-            return 1;
+            return $this->failure($io, self::ERR_SESSION);
         }
 
         $session->setTimeout(self::TIMEOUT);
@@ -156,7 +157,7 @@ class CheckStatusCommand implements ExecutorInterface
             'generated_by' => gethostname()
         ]);
 
-        return 0;
+        return $this->success($io);
     }
 
     /**
