@@ -13,6 +13,6 @@ require_once $root . '/configuration/bootstrap.php';
 $di = Di::getDi($root, CachedContainer::class);
 
 $err = ErrorHandler::register();
-$err->setDefaultLogger($di->get('mcp.logger'));
+$err->setDefaultLogger($di->get('logger'));
 
 $di->get('application')->run();
