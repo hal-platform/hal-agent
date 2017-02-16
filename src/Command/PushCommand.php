@@ -252,7 +252,7 @@ class PushCommand extends Command implements OutputAwareInterface
 
         // read hal9000.yml
         // NOTE: this action takes properties by reference and MODIFIES configuration IN PLACE
-        if (!$this->read($output, $properties)) {
+        if (!$properties = $this->read($output, $properties)) {
             return $this->failure($output, 4);
         }
 
@@ -311,16 +311,15 @@ class PushCommand extends Command implements OutputAwareInterface
 
     /**
      * @param OutputInterface $output
-     * @param string $pushId
+     * @param string $pushID
      *
      * @return array|null
      */
-    private function resolve(OutputInterface $output, $pushId)
+    private function resolve(OutputInterface $output, $pushID)
     {
         $this->status('Resolving push properties', self::SECTION_START);
 
-        $resolver = $this->resolver;
-        return $resolver($pushId);
+        return ($this->resolver)($pushID);
     }
 
     /**
@@ -376,8 +375,10 @@ class PushCommand extends Command implements OutputAwareInterface
     {
         $this->status('Moving archive to local storage', self::SECTION_START);
 
-        $mover = $this->mover;
-        return $mover($properties['location']['archive'], $properties['location']['tempArchive']);
+        return ($this->mover)(
+            $properties['location']['archive'],
+            $properties['location']['tempArchive']
+        );
     }
 
     /**
@@ -390,8 +391,7 @@ class PushCommand extends Command implements OutputAwareInterface
     {
         $this->status('Unpacking build archive', self::SECTION_START);
 
-        $unpacker = $this->unpacker;
-        return $unpacker(
+        return ($this->unpacker)(
             $properties['location']['tempArchive'],
             $properties['location']['path'],
             $properties['pushProperties']
@@ -402,17 +402,23 @@ class PushCommand extends Command implements OutputAwareInterface
      * @param OutputInterface $output
      * @param array $properties
      *
-     * @return bool
+     * @return array|null
      */
-    private function read(OutputInterface $output, array &$properties)
+    private function read(OutputInterface $output, array $properties)
     {
         $this->status('Reading .hal9000.yml', self::SECTION_START);
 
-        $reader = $this->reader;
-        return $reader(
+        $config = ($this->reader)(
             $properties['location']['path'],
             $properties['configuration']
         );
+
+        if ($config) {
+            $properties['configuration'] = $config;
+            return $properties;
+        }
+
+        return null;
     }
 
     /**
@@ -430,9 +436,7 @@ class PushCommand extends Command implements OutputAwareInterface
 
         $this->status('Running build transform command', self::SECTION_BUILDING);
 
-        $builder = $this->builder;
-
-        return $builder(
+        return ($this->builder)(
             $output,
             $properties['configuration']['system'],
             $properties['configuration']['build_transform'],
@@ -450,8 +454,11 @@ class PushCommand extends Command implements OutputAwareInterface
     {
         $this->status('Deploying application', self::SECTION);
 
-        $deployer = $this->deployer;
-        return $deployer($output, $properties['method'], $properties);
+        return ($this->deployer)(
+            $output,
+            $properties['method'],
+            $properties
+        );
     }
 
     /**

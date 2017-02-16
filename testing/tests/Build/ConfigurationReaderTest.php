@@ -39,7 +39,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame(true, $result);
+        $this->assertSame([], $result);
     }
 
     public function testParseFailureReturnsFalse()
@@ -66,7 +66,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame(false, $result);
+        $this->assertSame(null, $result);
     }
 
     public function testBadSystemIsFailure()
@@ -90,7 +90,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame(false, $result);
+        $this->assertSame(null, $result);
     }
 
     public function testBadDistIsFailure()
@@ -114,7 +114,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame(false, $result);
+        $this->assertSame(null, $result);
     }
 
     public function testBadListIsFailure()
@@ -143,7 +143,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame(false, $result);
+        $this->assertSame(null, $result);
     }
 
     public function testTooManyCommandsIsFailure()
@@ -180,7 +180,7 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame(false, $result);
+        $this->assertSame(null, $result);
     }
 
     public function testFileIsParsed()
@@ -221,7 +221,6 @@ class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
 
         $result = $reader('path', $default);
 
-        $this->assertSame(true, $result);
-        $this->assertSame($config, $default);
+        $this->assertSame($config, $result);
     }
 }

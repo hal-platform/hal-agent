@@ -71,14 +71,14 @@ class ConfigurationReader
      * @param string $buildPath
      * @param array $config
      *
-     * @return bool
+     * @return array|null
      */
-    public function __invoke($buildPath, array &$config)
+    public function __invoke($buildPath, array $config)
     {
         $configFile = rtrim($buildPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::FS_CONFIG_FILE;
 
         if (!$this->filesystem->exists($configFile)) {
-            return true;
+            return $config;
         }
 
         $file = call_user_func($this->fileLoader, $configFile);
@@ -88,19 +88,19 @@ class ConfigurationReader
             $yaml = $this->parser->parse($file);
         } catch (ParseException $e) {
             $this->logger->event('failure', self::ERR_INVALID_YAML);
-            return false;
+            return null;
         }
 
         if (!is_array($yaml)) {
             $this->logger->event('failure', self::ERR_INVALID_YAML);
-            return false;
+            return null;
         }
 
         // load system
         if (array_key_exists('system', $yaml) && $yaml['system']) {
             if (!is_scalar($yaml['system'])) {
                 $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'system'), $context);
-                return false;
+                return null;
             }
 
             $config['system'] = (string) trim($yaml['system']);
@@ -110,26 +110,26 @@ class ConfigurationReader
         if (array_key_exists('dist', $yaml) && $yaml['dist']) {
             if (!is_scalar($yaml['dist'])) {
                 $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'dist'), $context);
-                return false;
+                return null;
             }
 
             $config['dist'] = (string) trim($yaml['dist']);
         }
 
         $parsed = ['exclude', 'build', 'build_transform', 'pre_push', 'deploy', 'post_push'];
-
         foreach ($parsed as $p) {
             $config[$p] = $this->validateList($yaml, $p, $context);
 
             // If any of the lists are null, an error occured.
             if ($config[$p] === null) {
-                return false;
+                return null;
             }
         }
 
         $context['configuration'] = $config;
         $this->logger->event('success', self::FOUND, $context);
-        return true;
+
+        return $config;
     }
 
     /**

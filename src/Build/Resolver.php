@@ -64,7 +64,7 @@ class Resolver
         BuildEnvironmentResolver $environmentResolver,
         EncryptedPropertyResolver $encryptedResolver
     ) {
-        $this->buildRepo = $em->getRepository(Build::CLASS);
+        $this->buildRepo = $em->getRepository(Build::class);
         $this->environmentResolver = $environmentResolver;
         $this->encryptedResolver = $encryptedResolver;
     }
