@@ -22,10 +22,10 @@ services:
         parent: 'command.template'
         arguments: ['management:release:start', 'executor.release.start']
         configurator: ['Hal\Agent\Executor\Management\StartReleaseCommand', 'configure']
-
-    lazy.command.build.remove:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['build:remove', 'command.build.remove', '@service_container']
+    command.management.build.remove:
+        parent: 'command.template'
+        arguments: ['management:build:remove', 'executor.build.remove']
+        configurator: ['Hal\Agent\Executor\Build\RemoveBuildCommand', 'configure']
     lazy.command.builds.list:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['builds:list', 'command.builds.list', '@service_container']
@@ -92,15 +92,14 @@ services:
     executor.build.start:
         class: 'Hal\Agent\Executor\Management\StartBuildCommand'
         arguments: ['@executor.build.create', '@executor.runner.build']
-
-    command.build.remove:
-        class: 'Hal\Agent\Command\RemoveBuildCommand'
+    executor.build.remove:
+        class: 'Hal\Agent\Executor\Management\RemoveBuildCommand'
         arguments:
-            - 'build:remove'
             - '@doctrine.em'
             - '@utility.filesystem'
         calls:
             - ['setArchivePath', ['%environment.archive%']]
+
     command.builds.list:
         class: 'Hal\Agent\Command\ListBuildsCommand'
         arguments:
