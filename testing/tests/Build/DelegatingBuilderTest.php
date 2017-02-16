@@ -9,20 +9,27 @@ namespace Hal\Agent\Build;
 
 use Mockery;
 use PHPUnit_Framework_TestCase;
+use Hal\Agent\Command\IO;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\BuildHandlerStub;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
 {
     public $output;
+    public $io;
     public $logger;
     public $container;
 
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
-        $this->container = Mockery::mock('Symfony\Component\DependencyInjection\ContainerInterface');
+        $this->io = new IO(Mockery::mock(InputInterface::class), $this->output);
+
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->container = Mockery::mock(ContainerInterface::class);
     }
 
     public function testNoDeployerFoundFails()
@@ -32,12 +39,10 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
             ->with('failure', Mockery::any(), ['system' => 'buildsystem'])
             ->once();
 
-        $deployer = new DelegatingBuilder($this->logger, $this->container, [
-
-        ]);
+        $deployer = new DelegatingBuilder($this->logger, $this->container, []);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem', [], $properties);
+        $actual = $deployer($this->io, 'buildsystem', [], $properties);
         $this->assertSame(false, $actual);
     }
 
@@ -58,7 +63,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem', [], $properties);
+        $actual = $deployer($this->io, 'buildsystem', [], $properties);
         $this->assertSame(false, $actual);
     }
 
@@ -79,7 +84,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem', [], $properties);
+        $actual = $deployer($this->io, 'buildsystem', [], $properties);
         $this->assertSame(false, $actual);
     }
 
@@ -98,9 +103,9 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem.a', [], $properties);
+        $actual = $deployer($this->io, 'buildsystem.a', [], $properties);
         $this->assertSame(false, $actual);
-        $this->assertSame(999, $deployer->getExitCode());
+        $this->assertSame('Unknown build failure', $deployer->getFailureMessage());
     }
 
     public function testSuccess()
@@ -118,7 +123,7 @@ class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
         ]);
 
         $properties = [];
-        $actual = $deployer($this->output, 'buildsystem.b', [], $properties);
+        $actual = $deployer($this->io, 'buildsystem.b', [], $properties);
         $this->assertSame(true, $actual);
     }
 }

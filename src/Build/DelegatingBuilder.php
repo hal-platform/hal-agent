@@ -7,8 +7,10 @@
 
 namespace Hal\Agent\Build;
 
+use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -18,6 +20,22 @@ class DelegatingBuilder
     const ERR_INVALID_BUILDER = 'Invalid build system specified';
     const UNKNOWN_FAILURE_CODE = 5;
     const DOCKER_PREFIX = 'docker:';
+
+    const ERR_UNKNOWN = 'Unknown build failure';
+
+    const EXIT_CODES = [
+        100 => 'Required properties for unix are missing.',
+        101 => 'Exporting files to build server failed.',
+        102 => 'Encryption failure.',
+        103 => 'Build command failed.',
+        104 => 'Importing files from build server failed.',
+
+        200 => 'Required properties for windows are missing.',
+        201 => 'Exporting files to build server failed.',
+        202 => 'Encryption failure.',
+        203 => 'Build command failed.',
+        204 => 'Importing files from build server failed.',
+    ];
 
     /**
      * @var EventLogger
@@ -65,14 +83,14 @@ class DelegatingBuilder
     }
 
     /**
-     * @param OutputInterface $output
+     * @param IOInterface $io
      * @param string $method
      * @param array $properties
      * @param array $commands
      *
      * @return bool
      */
-    public function __invoke(OutputInterface $output, $system, array $commands, array $properties)
+    public function __invoke(IOInterface $io, $system, array $commands, array $properties)
     {
         // reset exit code
         $this->exitCode = 0;
@@ -105,8 +123,9 @@ class DelegatingBuilder
             $this->logger->event('success', static::PREPARING_BUILD_ENVIRONMENT, $properties[$system]);
         }
 
-        if ($builder instanceof OutputAwareInterface) {
-            $builder->setOutput($output);
+        // this sucks!
+        if ($builder instanceof OutputAwareInterface && $io instanceof OutputInterface) {
+            $builder->setOutput($io);
         }
 
         $this->exitCode = $builder($commands, $properties);
@@ -115,6 +134,7 @@ class DelegatingBuilder
 
     /**
      * @param string $system
+     *
      * @return bool
      */
     private function explode($system)
@@ -143,10 +163,10 @@ class DelegatingBuilder
     }
 
     /**
-     * @return int
+     * @return string
      */
-    public function getExitCode()
+    public function getFailureMessage()
     {
-        return $this->exitCode;
+        return self::EXIT_CODES[$this->exitCode] ?? self::ERR_UNKNOWN;
     }
 }
