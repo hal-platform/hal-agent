@@ -248,7 +248,7 @@ class UpdateSourcesCommandTest extends ExecutorTestCase
         $expected = [
             '[NOTE] An error occurred while transferring dockerfiles to build server.',
             'derp herp bad stuff happened',
-            'Ensure "/target/docker/images" exists on the build server and is owned by "builduser"',
+            '[NOTE] Ensure "/target/docker/images" exists on the build server',
             '[ERROR] An error occurred while transferring dockerfiles to build server.'
         ];
 
