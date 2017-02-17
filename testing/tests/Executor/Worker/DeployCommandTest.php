@@ -5,17 +5,19 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Worker;
+namespace Hal\Agent\Executor\Worker;
 
-use Mockery;
-use PHPUnit_Framework_TestCase;
+use Doctrine\ORM\EntityManager;
+use Hal\Agent\Testing\ExecutorTestCase;
 use Hal\Agent\Testing\MemoryLogger;
+use Mockery;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
-use Symfony\Component\Console\Input\StringInput;
-use Symfony\Component\Console\Output\BufferedOutput;
+use QL\Hal\Core\Repository\PushRepository;
+use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\Process;
 
-class PushCommandTest extends PHPUnit_Framework_TestCase
+class DeployCommandTest extends ExecutorTestCase
 {
     public $pushRepo;
     public $em;
@@ -24,21 +26,20 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
     public $process;
     public $logger;
 
-    public $input;
-    public $output;
-
     public function setUp()
     {
-        $this->pushRepo = Mockery::mock('QL\Hal\Core\Repository\PushRepository');
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+        $this->pushRepo = Mockery::mock(PushRepository::class);
+        $this->em = Mockery::mock(EntityManager::class, [
             'getRepository' => $this->pushRepo
         ]);
-        $this->builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
-        $this->process = Mockery::mock('Symfony\Component\Process\Process', ['stop' => null]);
+        $this->builder = Mockery::mock(ProcessBuilder::class);
+        $this->process = Mockery::mock(Process::class, ['stop' => null]);
         $this->logger = new MemoryLogger;
+    }
 
-        $this->input = new StringInput('');
-        $this->output = new BufferedOutput;
+    public function configureCommand($c)
+    {
+        DeployCommand::configure($c);
     }
 
     public function testNoPushesFound()
@@ -47,30 +48,33 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('findBy')
             ->andReturnNull();
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->em,
             $this->builder,
             $this->logger,
             'workdir'
         );
 
-        $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
-        $this->assertContains('No waiting pushes found.', $this->output->fetch());
+        $expected = [
+            '[NOTE] No pending releases found.',
+            '[OK] All pending deployments were completed.'
+        ];
+
+        $this->assertContainsLines($expected, $this->output());
     }
 
     public function testOutputWithMultipleBuilds()
     {
-        $push1 = (new Push)
-            ->withId('1234')
+        $push1 = (new Push('1234'))
             ->withDeployment(
                 (new Deployment)
                     ->withId('6666')
             );
 
-        $push2 = (new Push)
-            ->withId('5555')
+        $push2 = (new Push('5555'))
             ->withDeployment(
                 (new Deployment)
                     ->withId('8888')
@@ -108,27 +112,28 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
                 'getErrorOutput' => ''
             ]);
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->em,
             $this->builder,
             $this->logger,
             'workdir'
         );
-        $command->run($this->input, $this->output);
+
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            '[Worker] Waiting pushes: 2',
-            '[Worker] Starting push: 1234',
-            '[Worker] Starting push: 5555',
-            'Build 1234 finished: success',
-            'Build 5555 finished: error',
+            'Found 2 releases:',
+            ' * Starting release: 1234',
+            '   > bin/hal runner:deploy 1234',
+            ' * Starting release: 5555',
+            '   > bin/hal runner:deploy 5555',
+
+            'Release 1234 finished: success',
+            'Release 5555 finished: error',
         ];
 
-        $output = $this->output->fetch();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 
     public function testOutputWithPushWithoutDeployment()
@@ -148,24 +153,23 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('flush')
             ->once();
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->em,
             $this->builder,
             $this->logger,
             'workdir'
         );
-        $command->run($this->input, $this->output);
+
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            '[Worker] Waiting pushes: 1',
-            '[Worker] Push 1234 has no deployment. Marking as error.',
+            'Found 1 releases:',
+            ' * Skipping release: 1234',
+            '   > Release 1234 has no target. Marking as failure.'
         ];
 
-        $output = $this->output->fetch();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 
     public function testOutputWhenDuplicateDeploymentSkipsPush()
@@ -210,25 +214,24 @@ class PushCommandTest extends PHPUnit_Framework_TestCase
                 'getExitCode' => 0
             ]);
 
-        $command = new PushCommand(
-            'cmd',
+        $command = new DeployCommand(
             $this->em,
             $this->builder,
             $this->logger,
             'workdir'
         );
-        $command->run($this->input, $this->output);
+
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            '[Worker] Waiting pushes: 2',
-            '[Worker] Starting push: 1234',
-            '[Worker] Skipping push: 5555 - A push to deployment 6666 is already running',
-            'Build 1234 finished: success'
+            ' Found 2 releases:',
+            ' * Starting release: 1234',
+            '   > bin/hal runner:deploy 1234',
+            ' * Skipping release: 5555',
+            '   > A release to target 6666 is already in progress.'
         ];
 
-        $output = $this->output->fetch();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 }

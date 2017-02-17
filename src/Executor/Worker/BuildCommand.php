@@ -5,32 +5,36 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Worker;
+namespace Hal\Agent\Executor\Worker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Command\IOInterface;
+use Hal\Agent\Executor\ExecutorInterface;
+use Hal\Agent\Executor\ExecutorTrait;
+use Hal\Agent\Executor\JobStatsTrait;
 use Psr\Log\LoggerInterface;
 use QL\Hal\Core\Entity\Build;
-use Hal\Agent\Command\CommandTrait;
-use Hal\Agent\Symfony\OutputAwareInterface;
-use Hal\Agent\Symfony\OutputAwareTrait;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
 /**
- * Cron worker that will pick up and build any available builds.
- *
- * BUILT FOR COMMAND LINE ONLY
+ * Cron worker that will pick up and run any "waiting" builds.
  */
-class BuildCommand extends Command implements OutputAwareInterface
+class BuildCommand implements ExecutorInterface
 {
-    use CommandTrait;
-    use OutputAwareTrait;
+    use ExecutorTrait;
+    use FormatterTrait;
+    use JobStatsTrait;
     use WorkerTrait;
+
+    const COMMAND_TITLE = 'Worker - Run pending builds';
+    const MSG_SUCCESS = 'All pending builds were completed.';
+
+    const INFO_NO_PENDING = 'No pending builds found.';
 
     const SUCCESS_JOB = 'Build Success: %s';
     const ERR_JOB = 'Build Failed: %s';
@@ -75,22 +79,18 @@ class BuildCommand extends Command implements OutputAwareInterface
     private $sleepTime;
 
     /**
-     * @param string $name
      * @param EntityManagerInterface $em
      * @param ProcessBuilder $builder
      * @param LoggerInterface $logger
      * @param string $workingDir
      */
     public function __construct(
-        $name,
         EntityManagerInterface $em,
         ProcessBuilder $builder,
         LoggerInterface $logger,
         $workingDir
     ) {
-        parent::__construct($name);
-
-        $this->buildRepo = $em->getRepository(Build::CLASS);
+        $this->buildRepo = $em->getRepository(Build::class);
         $this->builder = $builder;
         $this->logger = $logger;
         $this->workingDir = $workingDir;
@@ -102,6 +102,8 @@ class BuildCommand extends Command implements OutputAwareInterface
     }
 
     /**
+     * Set a sleep time in seconds. Only values between 1-30 are allowed.
+     *
      * @param int $seconds
      *
      * @return void
@@ -109,41 +111,45 @@ class BuildCommand extends Command implements OutputAwareInterface
     public function setSleepTime($seconds)
     {
         $seconds = (int) $seconds;
-        if ($seconds > 0 && $seconds < 30) {
+        if ($seconds > 0 && $seconds <= 30) {
             $this->sleepTime = $seconds;
         }
     }
 
     /**
-     * Configure the command
+     * @param Command $command
+     *
+     * @return void
      */
-    protected function configure()
+    public static function configure(Command $command)
     {
-        $this->setDescription('Find and build all waiting builds.');
+        $command
+            ->setDescription('Find and run all pending builds.');
     }
 
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
+     * @param IOInterface $io
      *
-     * @return null
+     * @return int|null
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    public function execute(IOInterface $io)
     {
-        $this->setOutput($output);
+        $io->title(self::COMMAND_TITLE);
 
-        if (!$builds = $this->buildRepo->findBy(['status' => 'Waiting'], null)) {
-            $this->write('No waiting builds found.');
-            return $this->finish($output, 0);
+        if (!$builds = $this->buildRepo->findBy(['status' => 'Waiting'])) {
+            $io->note(self::INFO_NO_PENDING);
+            return $this->success($io, self::MSG_SUCCESS);
         }
 
-        $this->status(sprintf('Waiting builds: %s', count($builds)), 'Worker');
+        $io->section('Starting pending builds');
+        $io->text(sprintf('Found %s builds:', count($builds)));
 
         foreach ($builds as $build) {
             $id = $build->id();
+
             $command = [
                 'bin/hal',
-                'build:build',
+                'runner:build',
                 $id
             ];
 
@@ -153,34 +159,47 @@ class BuildCommand extends Command implements OutputAwareInterface
                 ->setTimeout(self::MAX_JOB_TIMEOUT)
                 ->getProcess();
 
-            $this->status(sprintf('Starting build: <info>%s</info>', $id), 'Worker');
-            $this->processes[$id] = $process;
+            $io->listing([
+                sprintf("Starting build: <info>%s</info>\n   > %s", $id, implode(' ', $command))
+            ]);
 
+            $this->processes[$id] = $process;
             $process->start();
         }
 
-        $this->wait();
+        $io->section('Waiting for running builds to finish');
 
-        return $this->finish($output, 0);
+        $this->wait($io);
+
+        $this->outputJobStats($io);
+
+        return $this->success($io, self::MSG_SUCCESS);
     }
 
     /**
+     * @param IOInterface $io
+     *
      * @return void
      */
-    private function wait()
+    private function wait(IOInterface $io)
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
+
+            $name = sprintf('Build %s', $id);
+
             if ($process->isRunning()) {
                 try {
-                    $this->status(sprintf('Checking build status: <info>%s</info>', $id), 'Worker');
+                    $io->comment(sprintf('Checking build status: <info>%s</info>', $id));
 
                     $process->checkTimeout();
                     $allDone = false;
 
                 } catch (ProcessTimedOutException $e) {
-                    $output = $this->outputJob($id, $process, true);
-                    $this->write($output);
+                    $output = $this->outputJob($name, $process, true);
+
+                    $io->section(sprintf('Build <info>%s</info> timed out', $id));
+                    $io->text($output);
 
                     $this->logger->warn(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
 
@@ -188,8 +207,10 @@ class BuildCommand extends Command implements OutputAwareInterface
                 }
 
             } else {
-                $output = $this->outputJob($id, $process, false);
-                $this->write($output);
+                $output = $this->outputJob($name, $process, false);
+
+                $io->section(sprintf('Build <info>%s</info> finished', $id));
+                $io->text($output);
 
                 if ($exit = $process->getExitCode()) {
                     $this->logger->info(sprintf(self::ERR_JOB, $id), ['exceptionData' => $output, 'exitCode' => $exit]);
@@ -202,9 +223,10 @@ class BuildCommand extends Command implements OutputAwareInterface
         }
 
         if (!$allDone) {
-            $this->status(sprintf('Waiting %d seconds...', $this->sleepTime), 'Worker');
+            $io->comment(sprintf('Waiting %d seconds...', $this->sleepTime));
+
             sleep($this->sleepTime);
-            $this->wait();
+            $this->wait($io);
         }
     }
 }

@@ -32,12 +32,14 @@ services:
 
     # workers - cron
 
-    lazy.command.worker.build:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['worker:build', 'command.worker.build', '@service_container']
-    lazy.command.worker.push:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['worker:push', 'command.worker.push', '@service_container']
+    command.worker.build:
+        parent: 'command.template'
+        arguments: ['worker:build', 'executor.worker.build']
+        configurator: ['Hal\Agent\Executor\Worker\BuildCommand', 'configure']
+    command.worker.deploy:
+        parent: 'command.template'
+        arguments: ['worker:deploy', 'executor.worker.deploy']
+        configurator: ['Hal\Agent\Executor\Worker\DeployCommand', 'configure']
 
     # utility
 
@@ -132,18 +134,16 @@ services:
 
     # workers - cron
 
-    command.worker.build:
-        class: 'Hal\Agent\Command\Worker\BuildCommand'
+    executor.worker.build:
+        class: 'Hal\Agent\Executor\Worker\BuildCommand'
         arguments:
-            - 'worker:build'
             - '@doctrine.em'
             - '@utility.process.builder'
             - '@mcp.logger'
             - '@root'
-    command.worker.push:
-        class: 'Hal\Agent\Command\Worker\PushCommand'
+    executor.worker.deploy:
+        class: 'Hal\Agent\Executor\Worker\DeployCommand'
         arguments:
-            - 'worker:push'
             - '@doctrine.em'
             - '@utility.process.builder'
             - '@mcp.logger'

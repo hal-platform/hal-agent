@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Worker;
+namespace Hal\Agent\Executor\Worker;
 
 use Symfony\Component\Process\Process;
 
@@ -16,13 +16,13 @@ trait WorkerTrait
 STDOUT;
 
     /**
-     * @param string $id
+     * @param string $job
      * @param Process $process
      * @param bool $timedOut
      *
      * @return string
      */
-    private function outputJob($id, Process $process, $timedOut = false)
+    private function outputJob($job, Process $process, $timedOut = false)
     {
         $exit = $process->getExitCode();
         $stdout = $process->getOutput() . $process->getErrorOutput();
@@ -34,10 +34,10 @@ STDOUT;
         }
 
         if ($timedOut) {
-            $status = ' timed out';
+            $status = 'timed out';
         }
 
-        $header = sprintf('Build %s finished: %s', $id, $status);
+        $header = sprintf('%s finished: %s', $job, $status);
 
         $output = $this->BOOKEND .
             $this->buildRows($header, 116) .

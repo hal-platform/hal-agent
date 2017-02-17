@@ -24,8 +24,6 @@ use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Repository;
 use QL\Hal\Core\Entity\Server;
 use RuntimeException;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Filesystem\Filesystem;
 
 class DeployCommandTest extends ExecutorTestCase
@@ -94,10 +92,7 @@ class DeployCommandTest extends ExecutorTestCase
             '[ERROR] Release cannot be run.'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 
     public function testSuccess()
@@ -216,10 +211,7 @@ class DeployCommandTest extends ExecutorTestCase
             '[OK] Release was deployed successfully.'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 
     public function testEmergencyErrorHandling()

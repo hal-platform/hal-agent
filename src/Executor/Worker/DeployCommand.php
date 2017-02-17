@@ -5,37 +5,41 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Worker;
+namespace Hal\Agent\Executor\Worker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\Command\IOInterface;
+use Hal\Agent\Executor\ExecutorInterface;
+use Hal\Agent\Executor\ExecutorTrait;
+use Hal\Agent\Executor\JobStatsTrait;
 use Psr\Log\LoggerInterface;
-use Hal\Agent\Command\CommandTrait;
-use Hal\Agent\Symfony\OutputAwareInterface;
-use Hal\Agent\Symfony\OutputAwareTrait;
 use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Repository\PushRepository;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
- * Cron worker that will pick up and push any available pushes.
- *
- * BUILT FOR COMMAND LINE ONLY
+ * Cron worker that will pick up and run any "waiting" pushes.
  */
-class PushCommand extends Command
+class DeployCommand implements ExecutorInterface
 {
-    use CommandTrait;
-    use OutputAwareTrait;
+    use ExecutorTrait;
+    use FormatterTrait;
+    use JobStatsTrait;
     use WorkerTrait;
 
-    const SUCCESS_JOB = 'Push Success: %s';
-    const ERR_JOB = 'Push Failed: %s';
-    const ERR_JOB_TIMEOUT = 'Push Timeout: %s';
+    const COMMAND_TITLE = 'Worker - Run pending deployments';
+    const MSG_SUCCESS = 'All pending deployments were completed.';
+
+    const INFO_NO_PENDING = 'No pending releases found.';
+
+    const SUCCESS_JOB = 'Deployment Success: %s';
+    const ERR_JOB = 'Deployment Failed: %s';
+    const ERR_JOB_TIMEOUT = 'Deployment Timeout: %s';
 
     // 1 hour max
     const MAX_JOB_TIMEOUT = 3600;
@@ -86,22 +90,18 @@ class PushCommand extends Command
     private $sleepTime;
 
     /**
-     * @param string $name
      * @param EntityManagerInterface $em
      * @param ProcessBuilder $builder
      * @param LoggerInterface $logger
      * @param string $workingDir
      */
     public function __construct(
-        $name,
         EntityManagerInterface $em,
         ProcessBuilder $builder,
         LoggerInterface $logger,
         $workingDir
     ) {
-        parent::__construct($name);
-
-        $this->pushRepo = $em->getRepository(Push::CLASS);
+        $this->pushRepo = $em->getRepository(Push::class);
         $this->em = $em;
         $this->builder = $builder;
         $this->logger = $logger;
@@ -114,6 +114,8 @@ class PushCommand extends Command
     }
 
     /**
+     * Set a sleep time in seconds. Only values between 1-30 are allowed.
+     *
      * @param int $seconds
      *
      * @return void
@@ -127,50 +129,60 @@ class PushCommand extends Command
     }
 
     /**
-     * Configure the command
+     * @param Command $command
+     *
+     * @return void
      */
-    protected function configure()
+    public static function configure(Command $command)
     {
-        $this->setDescription('Find and sync all waiting pushes.');
+        $command
+            ->setDescription('Find and deploy all pending releases.');
     }
 
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
+     * @param IOInterface $io
      *
-     * @return null
+     * @return int|null
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    public function execute(IOInterface $io)
     {
-        $this->setOutput($output);
+        $io->title(self::COMMAND_TITLE);
 
         if (!$pushes = $this->pushRepo->findBy(['status' => 'Waiting'])) {
-            $this->write('No waiting pushes found.');
-            return $this->finish($output, 0);
+            $io->note(self::INFO_NO_PENDING);
+            return $this->success($io, self::MSG_SUCCESS);
         }
 
-        $this->status(sprintf('Waiting pushes: %s', count($pushes)), 'Worker');
+        $io->section('Starting pending deployments');
+        $io->text(sprintf('Found %s releases:', count($pushes)));
 
         foreach ($pushes as $push) {
             $id = $push->id();
             $command = [
                 'bin/hal',
-                'push:push',
+                'runner:deploy',
                 $id
             ];
 
             // Skip pushes without deployment target
             if (!$push->deployment()) {
+                $io->listing([
+                    sprintf("<fg=red>Skipping</> release: <info>%s</info>\n", $id) .
+                    sprintf('   > Release <info>%s</info> has no target. Marking as failure.', $push->id())
+                ]);
+
                 $this->stopWeirdPush($push);
                 continue;
             }
 
             // Every time the worker runs we need to ensure all deployments spawned are unique.
-            // This helps prevent concurrent syncs.
+            // This helps prevent concurrent deployments.
             if ($this->hasConcurrentDeployment($push->deployment())) {
-                $deploymentId = $push->deployment()->id();
-                $msg = sprintf('Skipping push: <info>%s</info> - A push to deployment <info>%s</info> is already running', $push->id(), $deploymentId);
-                $this->status($msg, 'Worker');
+                $io->listing([
+                    sprintf("<fg=red>Skipping</> release: <info>%s</info>\n", $id) .
+                    sprintf('   > A release to target <info>%s</info> is already in progress.', $push->deployment()->id())
+                ]);
+
                 continue;
             }
 
@@ -180,42 +192,59 @@ class PushCommand extends Command
                 ->setTimeout(self::MAX_JOB_TIMEOUT)
                 ->getProcess();
 
-            $this->status(sprintf('Starting push: <info>%s</info>', $id), 'Worker');
-            $this->processes[$id] = $process;
+            $io->listing([
+                sprintf("Starting release: <info>%s</info>\n   > %s", $id, implode(' ', $command))
+            ]);
 
+            $this->processes[$id] = $process;
             $process->start();
         }
 
-        $this->wait();
+        $io->section('Waiting for running deployments to finish');
 
-        return $this->finish($output, 0);
+        $this->wait($io);
+
+        $this->outputJobStats($io);
+
+        return $this->success($io, self::MSG_SUCCESS);
     }
 
     /**
+     * @param IOInterface $io
+     *
      * @return void
      */
-    private function wait()
+    private function wait(IOInterface $io)
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
+
+            $name = sprintf('Release %s', $id);
+
             if ($process->isRunning()) {
                 try {
-                    $this->status(sprintf('Checking push status: <info>%s</info>', $id), 'Worker');
+                    $io->comment(sprintf('Checking release status: <info>%s</info>', $id));
 
                     $process->checkTimeout();
                     $allDone = false;
 
                 } catch (ProcessTimedOutException $e) {
-                    $output = $this->outputJob($id, $process, true);
+                    $output = $this->outputJob($name, $process, true);
                     $this->write($output);
 
+                    $io->section(sprintf('Release <info>%s</info> timed out', $id));
+                    $io->text($output);
+
                     $this->logger->warn(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
+
                     unset($this->processes[$id]);
                 }
 
             } else {
-                $output = $this->outputJob($id, $process, false);
-                $this->write($output);
+                $output = $this->outputJob($name, $process, false);
+
+                $io->section(sprintf('Release <info>%s</info> finished', $id));
+                $io->text($output);
 
                 if ($exit = $process->getExitCode()) {
                     $this->logger->info(sprintf(self::ERR_JOB, $id), ['exceptionData' => $output, 'exitCode' => $exit]);
@@ -228,9 +257,10 @@ class PushCommand extends Command
         }
 
         if (!$allDone) {
-            $this->status(sprintf('Waiting %d seconds...', $this->sleepTime), 'Worker');
+            $io->comment(sprintf('Waiting %d seconds...', $this->sleepTime));
+
             sleep($this->sleepTime);
-            $this->wait();
+            $this->wait($io);
         }
     }
 
@@ -241,8 +271,6 @@ class PushCommand extends Command
      */
     private function stopWeirdPush(Push $push)
     {
-        $this->status(sprintf('Push %s has no deployment. Marking as error.', $push->id()), 'Worker');
-
         $push->withStatus('Error');
         $this->em->merge($push);
         $this->em->flush();

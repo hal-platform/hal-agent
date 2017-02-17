@@ -7,10 +7,10 @@
 
 namespace Hal\Agent\Executor\Docker;
 
-use Mockery;
 use Hal\Agent\Remoting\FileSyncManager;
 use Hal\Agent\Github\ArchiveApi;
 use Hal\Agent\Testing\ExecutorTestCase;
+use Mockery;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
@@ -111,11 +111,7 @@ class UpdateSourcesCommandTest extends ExecutorTestCase
             '[ERROR] Invalid GitHub repository or reference.',
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(1, $exit);
     }
 
@@ -182,11 +178,7 @@ class UpdateSourcesCommandTest extends ExecutorTestCase
             'Archive download and unpack failed.'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(1, $exit);
     }
 
@@ -260,11 +252,7 @@ class UpdateSourcesCommandTest extends ExecutorTestCase
             '[ERROR] An error occurred while transferring dockerfiles to build server.'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(1, $exit);
     }
 
@@ -325,11 +313,7 @@ class UpdateSourcesCommandTest extends ExecutorTestCase
             '[OK] Dockerfiles refreshed!'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(0, $exit);
     }
 }

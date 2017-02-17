@@ -5,16 +5,18 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Command\Worker;
+namespace Hal\Agent\Executor\Worker;
 
-use Mockery;
-use PHPUnit_Framework_TestCase;
+use Doctrine\ORM\EntityManager;
+use Hal\Agent\Testing\ExecutorTestCase;
 use Hal\Agent\Testing\MemoryLogger;
+use Mockery;
 use QL\Hal\Core\Entity\Build;
-use Symfony\Component\Console\Input\StringInput;
-use Symfony\Component\Console\Output\BufferedOutput;
+use QL\Hal\Core\Repository\BuildRepository;
+use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\Process;
 
-class BuildCommandTest extends PHPUnit_Framework_TestCase
+class BuildCommandTest extends ExecutorTestCase
 {
     public $em;
     public $buildRepo;
@@ -23,22 +25,21 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
     public $process;
     public $logger;
 
-    public $input;
-    public $output;
-
     public function setUp()
     {
-        $this->buildRepo = Mockery::mock('QL\Hal\Core\Repository\BuildRepository');
-        $this->em = Mockery::mock('Doctrine\ORM\EntityManager', [
+        $this->buildRepo = Mockery::mock(BuildRepository::class);
+        $this->em = Mockery::mock(EntityManager::class, [
             'getRepository' => $this->buildRepo
         ]);
 
-        $this->builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder');
-        $this->process = Mockery::mock('Symfony\Component\Process\Process', ['stop' => null]);
+        $this->builder = Mockery::mock(ProcessBuilder::class);
+        $this->process = Mockery::mock(Process::class, ['stop' => null]);
         $this->logger = new MemoryLogger;
+    }
 
-        $this->input = new StringInput('');
-        $this->output = new BufferedOutput;
+    public function configureCommand($c)
+    {
+        BuildCommand::configure($c);
     }
 
     public function testNoBuildsFound()
@@ -48,31 +49,27 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             ->andReturnNull();
 
         $command = new BuildCommand(
-            'cmd',
             $this->em,
             $this->builder,
             $this->logger,
             'workdir'
         );
 
-        $command->run($this->input, $this->output);
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            'No waiting builds found.'
+            '[NOTE] No pending builds found.',
+            '[OK] All pending builds were completed.'
         ];
 
-        $output = $this->output->fetch();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 
     public function testOutputWithMultipleBuilds()
     {
-        $build1 = new Build;
-        $build1->withId('1234');
-        $build2 = new Build;
-        $build2->withId('5555');
+        $build1 = new Build('1234');
+        $build2 = new Build('5555');
 
         $this->buildRepo
             ->shouldReceive('findBy')
@@ -110,29 +107,30 @@ class BuildCommandTest extends PHPUnit_Framework_TestCase
             ]);
 
         $command = new BuildCommand(
-            'cmd',
             $this->em,
             $this->builder,
             $this->logger,
             'workdir'
         );
         $command->setSleepTime(1);
-        $command->run($this->input, $this->output);
+
+        $io = $this->io('configureCommand');
+        $exit = $command->execute($io);
 
         $expected = [
-            '[Worker] Waiting builds: 2',
-            '[Worker] Starting build: 1234',
-            '[Worker] Starting build: 5555',
+            'Found 2 builds:',
+            ' * Starting build: 1234',
+            '   > bin/hal runner:build 1234',
+            ' * Starting build: 5555',
+            '   > bin/hal runner:build 5555',
+
             'Build 1234 finished: success',
 
-            '[Worker] Checking build status: 5555',
-            '[Worker] Waiting 1 seconds...',
+            '// Checking build status: 5555',
+            '// Waiting 1 seconds...',
             'Build 5555 finished: error'
         ];
 
-        $output = $this->output->fetch();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
+        $this->assertContainsLines($expected, $this->output());
     }
 }

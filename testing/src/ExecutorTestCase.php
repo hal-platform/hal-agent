@@ -39,4 +39,11 @@ class ExecutorTestCase extends PHPUnit_Framework_TestCase
 
         return '';
     }
+
+    public function assertContainsLines(array $expected, $actual)
+    {
+        foreach ($expected as $line) {
+            $this->assertContains($line, $actual);
+        }
+    }
 }

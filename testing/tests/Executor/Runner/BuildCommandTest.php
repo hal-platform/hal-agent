@@ -22,8 +22,6 @@ use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use RuntimeException;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\FileSystem\Filesystem;
 
 class BuildCommandTest extends ExecutorTestCase
@@ -102,11 +100,7 @@ class BuildCommandTest extends ExecutorTestCase
             '[ERROR] Build cannot be run.'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $line) {
-            $this->assertContains($line, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(1, $exit);
     }
 
@@ -253,11 +247,7 @@ class BuildCommandTest extends ExecutorTestCase
             '[OK] Build was run successfully.'
         ];
 
-        $output = $this->output();
-        foreach ($expected as $line) {
-            $this->assertContains($line, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(0, $exit);
     }
 
