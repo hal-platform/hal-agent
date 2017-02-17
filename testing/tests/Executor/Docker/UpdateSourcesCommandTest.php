@@ -57,11 +57,7 @@ class UpdateSourcesCommandTest extends ExecutorTestCase
             '[ERROR] Temp directory "/tmp/halscratch" is not writeable!',
         ];
 
-        $output = $this->output();
-        foreach ($expected as $exp) {
-            $this->assertContains($exp, $output);
-        }
-
+        $this->assertContainsLines($expected, $this->output());
         $this->assertSame(1, $exit);
     }
 

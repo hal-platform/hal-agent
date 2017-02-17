@@ -27,7 +27,6 @@ class UpdateSourcesCommand implements ExecutorInterface
     use FormatterTrait;
 
     const COMMAND_TITLE = 'Docker - Update Dockerfile Sources';
-
     const MSG_SUCCESS = 'Dockerfiles refreshed!';
 
     const ERRT_TEMP = 'Temp directory "%s" is not writeable!';

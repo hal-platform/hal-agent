@@ -6,16 +6,23 @@ services:
 
     # management
 
-    lazy.command.build.create:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['build:create', 'command.build.create', '@service_container']
+    command.build.create:
+        parent: 'command.template'
+        arguments: ['management:build:create', 'executor.build.create']
+        configurator: ['Hal\Agent\Executor\Management\CreateBuildCommand', 'configure']
+    command.release.create:
+        parent: 'command.template'
+        arguments: ['management:release:create', 'executor.release.create']
+        configurator: ['Hal\Agent\Executor\Management\CreateReleaseCommand', 'configure']
+
+
     lazy.command.build.remove:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['build:remove', 'command.build.remove', '@service_container']
     lazy.command.builds.list:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['builds:list', 'command.builds.list', '@service_container']
-    lazy.command.push.create:
+    command.release.create:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:create', 'command.push.create', '@service_container']
 
@@ -74,10 +81,9 @@ services:
 
     # management
 
-    command.build.create:
-        class: 'Hal\Agent\Command\CreateBuildCommand'
+    executor.build.create:
+        class: 'Hal\Agent\Executor\Management\CreateBuildCommand'
         arguments:
-            - 'build:create'
             - '@doctrine.em'
             - '@clock'
             - '@utility.referenceResolver'
@@ -97,10 +103,9 @@ services:
             - '@doctrine.em'
             - '@utility.filesystem'
             - '%environment.archive%'
-    command.push.create:
-        class: 'Hal\Agent\Command\CreatePushCommand'
+    executor.release.create:
+        class: 'Hal\Agent\Executor\Management\CreateReleaseCommand'
         arguments:
-            - 'push:create'
             - '@doctrine.em'
             - '@clock'
             - '@utility.id.generator'

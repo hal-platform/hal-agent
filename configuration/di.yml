@@ -14,12 +14,11 @@ services:
         class: 'Symfony\Component\Console\Application'
         arguments: ['%application.name%', '%application.version%']
         calls:
-            # - ['add', ['@lazy.command.build.create']]
+            - ['add', ['@command.build.create']]
+            - ['add', ['@command.release.create']]
             - ['add', ['@command.runner.build']]
             - ['add', ['@command.runner.deploy']]
             # - ['add', ['@lazy.command.build.remove']]
-            # - ['add', ['@lazy.command.push.create']]
-            # - ['add', ['@lazy.command.push.push']]
             # - ['add', ['@lazy.command.builds.list']]
             - ['add', ['@command.worker.build']]
             - ['add', ['@command.worker.deploy']]
