@@ -34,15 +34,17 @@ bin/hal [command] [options] --help
 
 ## Available Commands
 
-Command              | Description
--------------------- | -----------
-`build:create`       | Create a build job for an application based on an environment
-`push:create`        | Create a push job for an application based on a build and deployment
-`runner:deploy`      | Push a built application to a server
-`runneer:build`      | Download, build, and archive a build
-`docker:refresh`     | Refresh dockerfile sources on build server
-`docker:status`      | Get docker status and filesystem useage
-`server:connections` | Validate agent can talk to servers
+Command                       | Description
+----------------------------- | -----------
+`management:build:create`     | Create a build job for an application and environment.
+`management:release:create`   | Create a release job for a build and target.
+`management:build:start`      | Create and run a build.
+`management:release:start`    | Create and deploy a release.
+`runner:deploy`               | Deploy a release.
+`runner:build`                | Run a build.
+`docker:refresh`              | Refresh dockerfile sources on build server
+`docker:status`               | Get docker status and filesystem useage
+`server:connections`          | Validate agent can talk to servers
 
 ## Worker Commands
 
