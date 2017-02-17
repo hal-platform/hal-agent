@@ -6,15 +6,22 @@ services:
 
     # management
 
-    command.build.create:
+    command.management.build.create:
         parent: 'command.template'
         arguments: ['management:build:create', 'executor.build.create']
         configurator: ['Hal\Agent\Executor\Management\CreateBuildCommand', 'configure']
-    command.release.create:
+    command.management.build.start:
+        parent: 'command.template'
+        arguments: ['management:build:start', 'executor.build.start']
+        configurator: ['Hal\Agent\Executor\Management\StartBuildCommand', 'configure']
+    command.management.release.create:
         parent: 'command.template'
         arguments: ['management:release:create', 'executor.release.create']
         configurator: ['Hal\Agent\Executor\Management\CreateReleaseCommand', 'configure']
-
+    command.management.release.start:
+        parent: 'command.template'
+        arguments: ['management:release:start', 'executor.release.start']
+        configurator: ['Hal\Agent\Executor\Management\StartReleaseCommand', 'configure']
 
     lazy.command.build.remove:
         class: 'Hal\Agent\Command\LazyCommand'
@@ -88,6 +95,10 @@ services:
             - '@clock'
             - '@utility.referenceResolver'
             - '@utility.id.generator'
+    executor.build.start:
+        class: 'Hal\Agent\Executor\Management\StartBuildCommand'
+        arguments: ['@executor.build.create', '@executor.runner.build']
+
     command.build.remove:
         class: 'Hal\Agent\Command\RemoveBuildCommand'
         arguments:
@@ -109,6 +120,9 @@ services:
             - '@doctrine.em'
             - '@clock'
             - '@utility.id.generator'
+    executor.release.start:
+        class: 'Hal\Agent\Executor\Management\StartReleaseCommand'
+        arguments: ['@executor.release.create', '@executor.runner.deploy']
 
     # job runners
 

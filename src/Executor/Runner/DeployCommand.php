@@ -41,6 +41,8 @@ class DeployCommand implements ExecutorInterface
     const COMMAND_TITLE = 'Runner - Deploy release';
     const MSG_SUCCESS = 'Release was deployed successfully.';
 
+    const PARAM_RELEASE = 'RELEASE_ID';
+
     const STEPS = [
         1 => 'Resolving configuration',
         2 => 'Importing build artifact',
@@ -188,11 +190,7 @@ class DeployCommand implements ExecutorInterface
     {
         $command
             ->setDescription('Deploy a previously built application.')
-            ->addArgument(
-                'RELEASE_ID',
-                InputArgument::REQUIRED,
-                'The ID of the Release to deploy.'
-            );
+            ->addArgument(self::PARAM_RELEASE, InputArgument::REQUIRED, 'The ID of the Release to deploy.');
     }
 
     /**
@@ -202,7 +200,7 @@ class DeployCommand implements ExecutorInterface
      */
     public function execute(IOInterface $io)
     {
-        $releaseID = $io->getArgument('RELEASE_ID');
+        $releaseID = $io->getArgument(self::PARAM_RELEASE);
 
         $io->title(self::COMMAND_TITLE);
 

@@ -41,6 +41,8 @@ class BuildCommand implements ExecutorInterface
     const COMMAND_TITLE = 'Runner - Run build';
     const MSG_SUCCESS = 'Build was run successfully.';
 
+    const PARAM_BUILD = 'BUILD_ID';
+
     const STEPS = [
         1 => 'Resolving configuration',
         2 => 'Downloading source code',
@@ -200,11 +202,7 @@ class BuildCommand implements ExecutorInterface
     {
         $command
             ->setDescription('Run an application build.')
-            ->addArgument(
-                'BUILD_ID',
-                InputArgument::REQUIRED,
-                'The ID of the Build to run.'
-            );
+            ->addArgument(self::PARAM_BUILD, InputArgument::REQUIRED, 'The ID of the Build to run.');
     }
 
     /**
@@ -214,7 +212,7 @@ class BuildCommand implements ExecutorInterface
      */
     public function execute(IOInterface $io)
     {
-        $buildID = $io->getArgument('BUILD_ID');
+        $buildID = $io->getArgument(self::PARAM_BUILD);
 
         $io->title(self::COMMAND_TITLE);
 

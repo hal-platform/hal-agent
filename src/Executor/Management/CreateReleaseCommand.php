@@ -32,25 +32,30 @@ class CreateReleaseCommand implements ExecutorInterface
     const ERR_NO_TARGET = 'Deployment target not found.';
 
     /**
-     * type EntityManagerInterface
+     * @var EntityManagerInterface
      */
     private $em;
 
     /**
-     * type Clock
+     * @var Clock
      */
     private $clock;
 
     /**
-     * type EntityRepository
+     * @var EntityRepository
      */
     private $buildRepo;
     private $deploymentRepo;
 
     /**
-     * type JobIdGenerator
+     * @var JobIdGenerator
      */
     private $unique;
+
+    /**
+     * @var Push
+     */
+    private $release;
 
     /**
      * @param EntityManagerInterface $em
@@ -146,6 +151,19 @@ class CreateReleaseCommand implements ExecutorInterface
             sprintf('Target: <info>%s</info>', $deployment->formatPretty(true)),
         ]);
 
+        $this->release = $push;
         $this->success($io, self::MSG_SUCCESS);
+    }
+
+    /**
+     * Used to expose the created release to other commands.
+     *
+     * It's rather hacky.
+     *
+     * @return Push|null
+     */
+    public function release()
+    {
+        return $this->release;
     }
 }

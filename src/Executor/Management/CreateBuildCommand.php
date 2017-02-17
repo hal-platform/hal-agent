@@ -67,6 +67,11 @@ HELP;
     private $unique;
 
     /**
+     * @var Build|null
+     */
+    private $build;
+
+    /**
      * @param EntityManagerInterface $em
      * @param Clock $clock
      * @param ReferenceResolver $refResolver
@@ -169,7 +174,20 @@ HELP;
             sprintf('Reference: <info>%s</info> (%s)', $ref, $commitSha)
         ]);
 
+        $this->build = $build;
         $this->success($io, self::MSG_SUCCESS);
+    }
+
+    /**
+     * Used to expose the created build to other commands.
+     *
+     * It's rather hacky.
+     *
+     * @return Build|null
+     */
+    public function build()
+    {
+        return $this->build;
     }
 
     /**
