@@ -16,6 +16,7 @@ services:
         calls:
             - ['add', ['@command.management.build.create']]
             - ['add', ['@command.management.build.start']]
+            - ['add', ['@command.management.build.remove']]
             - ['add', ['@command.management.release.create']]
             - ['add', ['@command.management.release.start']]
             - ['add', ['@command.runner.build']]

@@ -25,10 +25,7 @@ services:
     command.management.build.remove:
         parent: 'command.template'
         arguments: ['management:build:remove', 'executor.build.remove']
-        configurator: ['Hal\Agent\Executor\Build\RemoveBuildCommand', 'configure']
-    lazy.command.builds.list:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['builds:list', 'command.builds.list', '@service_container']
+        configurator: ['Hal\Agent\Executor\Management\RemoveBuildCommand', 'configure']
     command.release.create:
         class: 'Hal\Agent\Command\LazyCommand'
         arguments: ['push:create', 'command.push.create', '@service_container']
@@ -99,7 +96,6 @@ services:
             - '@utility.filesystem'
         calls:
             - ['setArchivePath', ['%environment.archive%']]
-
     command.builds.list:
         class: 'Hal\Agent\Command\ListBuildsCommand'
         arguments:
