@@ -26,7 +26,6 @@ services:
             - ['add', ['@command.worker.deploy']]
             - ['add', ['@command.docker.refresh']]
             - ['add', ['@command.docker.status']]
-            # - ['add', ['@lazy.command.server.connections']]
             - ['setDispatcher', ['@dispatcher']]
     dispatcher:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'

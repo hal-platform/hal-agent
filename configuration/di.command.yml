@@ -55,12 +55,6 @@ services:
         arguments: ['worker:deploy', 'executor.worker.deploy']
         configurator: ['Hal\Agent\Executor\Worker\DeployCommand', 'configure']
 
-    # utility
-
-    lazy.command.server.connections:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['server:connections', 'command.server.connections', '@service_container']
-
     # docker
 
     command.docker.refresh:
@@ -167,18 +161,6 @@ services:
             - '@utility.process.builder'
             - '@mcp.logger'
             - '@root'
-
-    # utility
-
-    command.server.connections:
-        class: 'Hal\Agent\Command\Utility\VerifyServerConnectionsCommand'
-        arguments:
-            - 'server:connections'
-            - '@doctrine.em'
-            - '@ssh.manager'
-            - '@redis'
-            - '@clock'
-            - '%push.rsync.remoteUser%'
 
     # docker
 
