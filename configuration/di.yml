@@ -21,8 +21,6 @@ services:
             - ['add', ['@command.management.release.start']]
             - ['add', ['@command.runner.build']]
             - ['add', ['@command.runner.deploy']]
-            # - ['add', ['@lazy.command.build.remove']]
-            # - ['add', ['@lazy.command.builds.list']]
             - ['add', ['@command.worker.build']]
             - ['add', ['@command.worker.deploy']]
             - ['add', ['@command.docker.refresh']]

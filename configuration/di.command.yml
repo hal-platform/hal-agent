@@ -96,13 +96,6 @@ services:
             - '@utility.filesystem'
         calls:
             - ['setArchivePath', ['%environment.archive%']]
-    command.builds.list:
-        class: 'Hal\Agent\Command\ListBuildsCommand'
-        arguments:
-            - 'builds:list'
-            - '@doctrine.em'
-            - '@utility.filesystem'
-            - '%environment.archive%'
     executor.release.create:
         class: 'Hal\Agent\Executor\Management\CreateReleaseCommand'
         arguments:
