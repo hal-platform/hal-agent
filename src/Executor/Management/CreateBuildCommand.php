@@ -40,6 +40,10 @@ class CreateBuildCommand implements ExecutorInterface
 <info>Pull Request</info> pull/{PULL_REQUEST_NUMBER}
 HELP;
 
+    const HELP_APPLICATION = 'The ID or key of the application to build.';
+    const HELP_ENVIRONMENT = 'The ID or name of the environment to build.';
+    const HELP_REF = 'The git reference to build.';
+
     /**
      * @var EntityManagerInterface
      */
@@ -102,23 +106,11 @@ HELP;
     {
         $command
             ->setDescription('Create a build for an environment.')
-            ->addArgument(
-                'APPLICATION',
-                InputArgument::REQUIRED,
-                'The ID or key of the application to build.'
-            )
-            ->addArgument(
-                'ENVIRONMENT',
-                InputArgument::REQUIRED,
-                'The ID or name of the environment to build.'
-            )
-            ->addArgument(
-                'GIT_REFERENCE',
-                InputArgument::REQUIRED,
-                'The git reference to build.'
-            );
+            ->setHelp(self::STATIC_HELP)
 
-        $command->setHelp(self::STATIC_HELP);
+            ->addArgument('APPLICATION', InputArgument::REQUIRED, self::HELP_APPLICATION)
+            ->addArgument('ENVIRONMENT', InputArgument::REQUIRED, self::HELP_ENVIRONMENT)
+            ->addArgument('GIT_REFERENCE', InputArgument::REQUIRED, self::HELP_REF);
     }
 
     /**

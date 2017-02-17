@@ -29,6 +29,9 @@ class UpdateSourcesCommand implements ExecutorInterface
     const COMMAND_TITLE = 'Docker - Update Dockerfile Sources';
     const MSG_SUCCESS = 'Dockerfiles refreshed!';
 
+    const HELP_REPO = 'Customize the source respository of the dockerfiles.';
+    const HELP_REF = 'Customize the source version of the dockerfiles.';
+
     const ERRT_TEMP = 'Temp directory "%s" is not writeable!';
     const ERR_DOWNLOAD = 'Invalid GitHub repository or reference.';
     const ERR_UNPACK = 'Archive download and unpack failed.';
@@ -113,16 +116,9 @@ class UpdateSourcesCommand implements ExecutorInterface
     {
         $command
             ->setDescription('Update dockerfile sources on build server.')
-            ->addArgument(
-                'GIT_REPOSITORY',
-                InputArgument::OPTIONAL,
-                'Customize the source respository of the dockerfiles.'
-            )
-            ->addArgument(
-                'GIT_REFERENCE',
-                InputArgument::OPTIONAL,
-                'Customize the source version of the dockerfiles.'
-            );
+
+            ->addArgument('GIT_REPOSITORY', InputArgument::OPTIONAL, self::HELP_REPO)
+            ->addArgument('GIT_REFERENCE', InputArgument::OPTIONAL, self::HELP_REF);
     }
 
     /**

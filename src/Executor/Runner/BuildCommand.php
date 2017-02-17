@@ -42,6 +42,7 @@ class BuildCommand implements ExecutorInterface
     const MSG_SUCCESS = 'Build was run successfully.';
 
     const PARAM_BUILD = 'BUILD_ID';
+    const HELP_BUILD = 'The ID of the Build to run.';
 
     const STEPS = [
         1 => 'Resolving configuration',
@@ -202,7 +203,8 @@ class BuildCommand implements ExecutorInterface
     {
         $command
             ->setDescription('Run an application build.')
-            ->addArgument(self::PARAM_BUILD, InputArgument::REQUIRED, 'The ID of the Build to run.');
+
+            ->addArgument(self::PARAM_BUILD, InputArgument::REQUIRED, self::HELP_BUILD);
     }
 
     /**

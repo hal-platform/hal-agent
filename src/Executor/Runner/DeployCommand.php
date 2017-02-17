@@ -42,6 +42,7 @@ class DeployCommand implements ExecutorInterface
     const MSG_SUCCESS = 'Release was deployed successfully.';
 
     const PARAM_RELEASE = 'RELEASE_ID';
+    const HELP_RELEASE = 'The ID of the Release to deploy.';
 
     const STEPS = [
         1 => 'Resolving configuration',
@@ -190,7 +191,8 @@ class DeployCommand implements ExecutorInterface
     {
         $command
             ->setDescription('Deploy a previously built application.')
-            ->addArgument(self::PARAM_RELEASE, InputArgument::REQUIRED, 'The ID of the Release to deploy.');
+
+            ->addArgument(self::PARAM_RELEASE, InputArgument::REQUIRED, self::HELP_RELEASE);
     }
 
     /**

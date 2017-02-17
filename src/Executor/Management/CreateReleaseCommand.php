@@ -27,6 +27,9 @@ class CreateReleaseCommand implements ExecutorInterface
     const COMMAND_TITLE = 'Create release';
     const MSG_SUCCESS = 'Release created.';
 
+    const HELP_BUILD = 'The ID of the build to deploy.';
+    const HELP_TARGET = 'The ID of the target to deploy to.';
+
     const ERR_NO_BUILD = 'Build not found.';
     const ERR_NOT_RUNNABLE = 'Build cannot be deployed. It is invalid or removed.';
     const ERR_NO_TARGET = 'Deployment target not found.';
@@ -85,16 +88,9 @@ class CreateReleaseCommand implements ExecutorInterface
     {
         $command
             ->setDescription('Create a release to be deployed to a target by a runner.')
-            ->addArgument(
-                'BUILD_ID',
-                InputArgument::REQUIRED,
-                'The ID of the build to deploy.'
-            )
-            ->addArgument(
-                'TARGET_ID',
-                InputArgument::REQUIRED,
-                'The ID of the target to deploy to.'
-            );
+
+            ->addArgument('BUILD_ID', InputArgument::REQUIRED, self::HELP_BUILD)
+            ->addArgument('TARGET_ID', InputArgument::REQUIRED, self::HELP_TARGET);
     }
 
     /**
