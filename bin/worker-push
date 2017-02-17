@@ -2,11 +2,11 @@
 DIR=$( cd "$( dirname "$0" )" && pwd )
 
 function runAsync() {
-    "$DIR/hal" "worker:push" &
+    "$DIR/hal" "worker:deploy" &
 }
 
 function runSync() {
-    "$DIR/hal" "worker:push"
+    "$DIR/hal" "worker:deploy"
 }
 
 if [[ "$1" != "--alt" ]] ; then

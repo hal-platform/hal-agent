@@ -37,57 +37,21 @@ bin/hal [command] [options] --help
 Command              | Description
 -------------------- | -----------
 `build:create`       | Create a build job for an application based on an environment
-`build:build`        | Download, build, and archive a build
-`build:remove`       | Remove archive for a build.
 `push:create`        | Create a push job for an application based on a build and deployment
-`push:push`          | Push a built application to a server
-`builds:list`        | List all existing builds.
+`runner:deploy`      | Push a built application to a server
+`runneer:build`      | Download, build, and archive a build
 `docker:refresh`     | Refresh dockerfile sources on build server
 `docker:status`      | Get docker status and filesystem useage
 `server:connections` | Validate agent can talk to servers
 
-## A note on `builds:list` and `build:remove`
-
-The build removal command can take multiple build IDs as arguments to remove multiple builds at once.
-`builds:list` can be used to generate porcelain output that can be consumed by `build:remove` using xargs.
-
-The default output of `builds:list` is a table that shows the full path of the build archive.
-```bash
-./hal builds:list
-```
-
-Note that output is limited to 500 results, and paged. Specify further pages with the `--pages` flag.
-```bash
-./hal builds:list --page=2
-```
-
-Results can be filtered by build status, repository ID, environment name, and age. See the help documentation for more information.
-```bash
-./hal builds:list --status=Success --environment=test --repository=5 --older-than=2014-05-01
-
-// help documentation
-./hal help builds:list
-```
-
-The `--verify` flag will check that the archive file actually exists where we think it should. It will only verify successful builds.
-```bash
-./hal help builds:list --verify
-```
-
-Generate porcelain output (newline delimited build IDs) to pipe to build removal.
-The `--spaces` flag specifies space as the delimiter instead of newline, for easier xargs usability.
-```bash
-./hal builds:list --status=Success --environment=test --porcelain --spaces | xargs ./hal build:remove
-```
-
 ## Worker Commands
 
-These commands can be set on a timer or cron to pick up and process waiting actions.
+These commands can be set on a timer or cron to pick up and process pending jobs.
 
 Command          | Description
 ---------------- | -----------
-`worker:build`   | Find and build all waiting builds.
-`worker:push`    | Find and push all waiting pushes.
+`worker:build`   | Find and build all pending builds.
+`worker:deploy`  | Find and deploy all pending releases.
 
 ### Convenience bins
 Two convenience bash scripts are included to make it easier to set up cronjobs every 15 seconds, rather than every minute which cron supports.
@@ -207,16 +171,14 @@ This agent supports the following:
 
 Build Systems:
 - `unix` (Remotely run through docker with default docker image)
-- `docker:$image` (Remotely run through docker with custom docker image`$image`)
+- `docker:$image` (Remotely run through docker with custom docker image `$image`)
 - `windows` (Remotely run)
 
-Deployment Types:
+Deployment Systems:
 - Rsync
 - Code Deploy
 - Elastic Beanstalk
-
-**Please note:** 
-For CD and EB deployments "server commands" are skipped (Both pre-push and post-push).
+- Script
 
 ### .hal9000.yml
 
@@ -279,7 +241,7 @@ Variable         | Description
 HAL_BUILDID      | ID of the build
 HAL_COMMIT       | 40 character commit SHA
 HAL_GITREF       | Git reference (such as `master`)
-HAL_ENVIRONMENT  | Environment (such as `test`, `beta`, `prod`)
+HAL_ENVIRONMENT  | Environment (such as `staging`, `prod`)
 HAL_REPO         | Hal name for the deployed application
 
 ### On Push
@@ -298,7 +260,7 @@ commit: ''     # Git commit SHA
 date: ''       # ISO 8601 date
 ```
 
-The following environment variables are available to application **build_transform**, **pre_push** and **post_push** scripts:
+The following environment variables are available to application `build_transform`, `pre_push` and `post_push` scripts:
 
 Variable         | Description
 ---------------- | -----------
