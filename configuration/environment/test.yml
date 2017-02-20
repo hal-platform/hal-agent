@@ -1,3 +1,15 @@
+hal_core:
+    database_connection:
+        driver: 'pdo_mysql'
+        user: 'placeholder'
+        password: 'placeholder'
+        host: 'test.example.com'
+        port: ''
+        dbname: 'hal9000'
+
+mcp_logger:
+    logging_service: 'syslog'
+
 parameters:
     application.environment: 'test'
     debug: false
@@ -49,7 +61,7 @@ parameters:
     push.rsync.remoteUser: ''
 
     ############################################################################
-    # DATABASE / NOTIFICATIONS
+    # NOTIFICATIONS
     ############################################################################
 
     # doctrine configuration

@@ -34,4 +34,15 @@ class Stringify
     {
         return str_replace(["\n", "\t", ''], '', $data);
     }
+
+    /**
+     * @param string $template Valid printf template
+     * @param array $parameters
+     * @return string
+     */
+    public static function template($template, array $parameters)
+    {
+        array_unshift($parameters, $template);
+        return call_user_func_array('sprintf', $parameters);
+    }
 }

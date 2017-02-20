@@ -1,3 +1,15 @@
+hal_core:
+    database_connection:
+        driver: 'pdo_mysql'
+        user: 'placeholder'
+        password: 'placeholder'
+        host: 'prod.example.com'
+        port: ''
+        dbname: 'hal9000'
+
+mcp_logger:
+    logger_service: 'syslog'
+
 parameters:
     application.environment: 'prod'
     debug: false
@@ -55,7 +67,7 @@ parameters:
     logging.stacktrace: false
 
     ############################################################################
-    # DATABASE / NOTIFICATIONS
+    # NOTIFICATIONS
     ############################################################################
 
     # doctrine configuration

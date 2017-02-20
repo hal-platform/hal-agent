@@ -4,14 +4,13 @@
 namespace Hal\Agent\Bootstrap;
 
 use Hal\Agent\Application\Di;
-use Hal\Agent\Application\EnvConfigLoader;
 
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
 $file = $root . '/src/CachedContainer.php';
 $class = 'QL\Hal\Agent\CachedContainer';
-$container = Di::buildDi($root, [new EnvConfigLoader, 'load']);
+$container = Di::buildHalDI($root);
 
 file_put_contents($file, Di::dumpDi($container, $class));
 

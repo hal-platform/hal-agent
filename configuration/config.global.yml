@@ -1,5 +1,31 @@
-parameters:
+hal_core:
+    proxy_dir: '.doctrine'
 
+    cache:
+        type: 'predis'
+        predis_service_id: 'redis'
+        lvl2_enabled: true
+        lvl2_ttl: 600
+        lvl2_lock: 60
+
+    clock:
+        service_id: 'clock'
+
+    event_listeners:
+        prePersist: ['doctrine.listener.persist']
+
+mcp_logger:
+       syslog_options:
+            ident: 'hal-%application.id%'
+            facility: 'LOG_USER'
+            silent: true
+            options: ['LOG_ODELAY', 'LOG_CONS']
+
+       default_properties:
+            applicationID: '%application.id%'
+            serverEnvironment: '%application.environment%'
+
+parameters:
     application.environment: ''
     clock.timezone: 'America/Detroit'
 
@@ -43,34 +69,7 @@ parameters:
     docker.option.debug: false
 
     ############################################################################
-    # error handling and logging
+    # error handling
     ############################################################################
 
     logging.stacktrace: true
-
-    mcp.logger.service.syslog.options:
-        ident: 'hal-%application.id%'
-        facility: !php/const:LOG_USER
-    mcp.logger.service.errorlog.options:
-        type: 3
-        facility: !php/const:QL\MCP\Logger\Service\ErrorLogService::FILE
-        file: '../.error.log'
-    mcp.logger.default_properties:
-        applicationID: '%application.id%'
-        serverEnvironment: '%application.environment%'
-
-    ############################################################################
-    # database
-    ############################################################################
-
-    # Replaced by env
-    database.username: ''
-    database.server: ''
-    database.database: ''
-
-    doctrine.connection:
-        driver: pdo_mysql
-        host: '%database.server%'
-        user: '%database.username%'
-        password: '%database.password%'
-        dbname: '%database.database%'

@@ -2,7 +2,6 @@ imports:
     - resource: 'di.command.yml'
     - resource: 'di.build.yml'
     - resource: 'di.push.yml'
-    - resource: 'services/services.doctrine.yml'
     - resource: 'services/services.github.yml'
 
 services:

@@ -10,7 +10,7 @@ use Symfony\Component\Debug\ErrorHandler;
 $root = __DIR__ . '/..';
 require_once $root . '/configuration/bootstrap.php';
 
-$di = Di::getDi($root, CachedContainer::class);
+$di = Di::getHalDI($root);
 
 $err = ErrorHandler::register();
 $err->setDefaultLogger($di->get('logger'));
