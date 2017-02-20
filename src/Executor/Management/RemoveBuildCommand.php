@@ -26,32 +26,33 @@ class RemoveBuildCommand implements ExecutorInterface
     use FormatterTrait;
     use ResolverTrait;
 
-    const COMMAND_TITLE = 'Build - Remove';
+    const COMMAND_TITLE = 'Remove build';
+    const MSG_SUCCESS = 'Build removed successfully.';
 
-    const ERR_MISSING_BUILD_ARGS = 'At least one build must be specified for removal.';
-    const ERR_BUILD_NOT_FOUND = 'Build "%s" not found.';
-    const ERR_NOT_FINISHED = 'Build "%s" must be status "Success" or "Error" to be removed';
-    const ERR_ALREADY_REMOVED = 'Archive for build "%s" was already removed.';
+    const HELP_BUILD = 'ID of the build to remove.';
 
-    const SUCCESS_MSG = 'Archive for build "%s" removed.';
-
-    const REMOVED_SUMMARY = '%s builds processed. (%s successes, %s failures)';
-
-    const FS_ARCHIVE_PREFIX = 'hal9000-%s.tar.gz';
+    const ERR_INVALID_BUILD = 'Invalid build specified.';
+    const ERR_INVALID_STATUS = 'Invalid build status. Cannot remove in-progress or failed builds.';
 
     /**
      * @var EntityManagerInterface
      */
     private $em;
+
     /**
      * @var BuildRepository
      */
     private $buildRepo;
+
     /**
      * @var Filesystem
      */
     private $filesystem;
 
+    /**
+     * @param EntityManagerInterface $em
+     * @param Filesystem $filesystem
+     */
     public function __construct(EntityManagerInterface $em, Filesystem $filesystem)
     {
         $this->em = $em;
@@ -61,21 +62,15 @@ class RemoveBuildCommand implements ExecutorInterface
     }
 
     /**
-     * Configure the command.
-     *
-     * Set the command definition such as expected arguments, flags, or help text.
-     *
      * @param Command $command
+     *
+     * @return void
      */
     public static function configure(Command $command)
     {
         $command
-            ->setDescription('Remove build archive')
-            ->addArgument(
-                'BUILD_ID',
-                InputArgument::IS_ARRAY,
-                'The ID(s) of the build(s)'
-            );
+            ->setDescription('Remove build from the artifact repository.')
+            ->addArgument('BUILD_ID', InputArgument::REQUIRED, self::HELP_BUILD);
     }
 
     /**
@@ -85,99 +80,49 @@ class RemoveBuildCommand implements ExecutorInterface
      */
     public function execute(IOInterface $io)
     {
+        $buildID = $io->getArgument('BUILD_ID');
+
         $io->title(self::COMMAND_TITLE);
 
-        $builds = $io->getArgument('BUILD_ID');
-
-        if (!$builds) {
-            return $this->failure($io, self::ERR_MISSING_BUILD_ARGS);
+        if (!$build = $this->buildRepo->find($buildID)) {
+            return $this->failure($io, self::ERR_INVALID_BUILD);
         }
 
-        $success = 0;
-        $failure = 0;
+        $archive = $this->generateArchiveLocation($build);
 
-        foreach ($builds as $buildId) {
-            if ($this->removeBuild($io, $buildId) === 0) {
-                $success++;
-            } else {
-                $failure++;
-            }
-        }
+        $io->section('Build Information');
+        $io->listing([
+            sprintf('ID: <info>%s</info>', $build->id()),
+            sprintf('Status: <info>%s</info>', $build->status()),
+            sprintf('Archive: <info>%s</info>', $archive ?: 'Unknown'),
+        ]);
 
-        // bubble up the build exit status if only one build
-        if (count($builds) === 1) {
-            if ($success > 0) {
-                return 0;
-            } else {
-                return 1;
-            }
-        }
-
-        // determine messaging for multi-removals
-        $msg = sprintf(self::REMOVED_SUMMARY, count($builds), $success, $failure);
-        if ($failure > 0) {
-            return $this->failure($io, $msg);
-        }
-
-        return $this->success($io, $msg);
-    }
-
-    private function removeBuild(StyleInterface $io, $buildId)
-    {
-        /** @var Build $build */
-        $build = $this->buildRepo->find($buildId);
-
-        if (!$build instanceof Build) {
-            return $this->failure($io, sprintf(self::ERR_BUILD_NOT_FOUND, $buildId));
-        }
-
-        if (!$archives = $this->generateArchiveLocations($build)) {
-            return $this->failure($io, sprintf(self::ERR_NOT_FINISHED, $buildId));
+        if (!$archive) {
+            return $this->failure($io, self::ERR_INVALID_STATUS);
         }
 
         $build->withStatus('Removed');
         $this->em->merge($build);
         $this->em->flush();
 
-        if (!$source = $this->findSource($archives)) {
-            return $this->failure($io, sprintf(self::ERR_ALREADY_REMOVED, $buildId));
+        if ($this->filesystem->exists($archive)) {
+            $this->filesystem->remove($archive);
         }
 
-        $this->filesystem->remove($source);
-        return $this->success($io, sprintf(self::SUCCESS_MSG, $buildId));
+        return $this->success($io, self::MSG_SUCCESS);
     }
 
     /**
      * @param Build $build
      *
-     * @return string[]
+     * @return string
      */
-    private function generateArchiveLocations(Build $build)
+    private function generateArchiveLocation(Build $build)
     {
-        //error and success builds? why not?
-        if (!in_array($build->status(), ['Error', 'Success'], true)) {
-            return [];
+        if (!$build->isSuccess()) {
+            return '';
         }
 
-        return [
-            $this->generateBuildArchiveFile($build->id()),
-            $this->generateLegacyBuildArchiveFile($build->id()) //still need this?
-        ];
-    }
-
-    /**
-     * @param string[] $sources
-     *
-     * @return string|null
-     */
-    private function findSource(array $sources)
-    {
-        foreach ($sources as $potentialSource) {
-            if ($this->filesystem->exists($potentialSource)) {
-                return $potentialSource;
-            }
-        }
-
-        return null;
+        return $this->generateBuildArchiveFile($build->id());
     }
 }
