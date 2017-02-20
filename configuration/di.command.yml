@@ -26,9 +26,6 @@ services:
         parent: 'command.template'
         arguments: ['management:build:remove', 'executor.build.remove']
         configurator: ['Hal\Agent\Executor\Management\RemoveBuildCommand', 'configure']
-    command.release.create:
-        class: 'Hal\Agent\Command\LazyCommand'
-        arguments: ['push:create', 'command.push.create', '@service_container']
 
     # job runners
 
