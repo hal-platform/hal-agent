@@ -8,7 +8,7 @@ hal_core:
         dbname: 'hal9000'
 
 mcp_logger:
-    logger_service: 'syslog'
+    logging_service: 'syslog'
 
 parameters:
     application.environment: 'prod'
