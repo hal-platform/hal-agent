@@ -7,9 +7,11 @@
 
 namespace Hal\Agent\Symfony;
 
+use Hal\Agent\Application\Di;
 use PHPUnit_Framework_TestCase;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class ContainerIntegrationTest extends PHPUnit_Framework_TestCase
@@ -29,12 +31,8 @@ class ContainerIntegrationTest extends PHPUnit_Framework_TestCase
      */
     public function testContainerCompiles()
     {
-        $configRoot = __dir__ . '/../../../configuration';
-        $container = new ContainerBuilder();
-        $builder = new YamlFileLoader($container, new FileLocator($configRoot));
+        $container = Di::getHalDI(__dir__ . '/../../..');
 
-        $builder->load($configRoot . '/config.yml');
-
-        $container->compile();
+        $this->assertInstanceOf(ContainerInterface::class, $container);
     }
 }
