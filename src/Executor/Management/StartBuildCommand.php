@@ -54,7 +54,8 @@ class StartBuildCommand implements ExecutorInterface
         CreateBuildCommand::configure($command);
 
         $command
-            ->setDescription('Create and run a build for an environment.');
+            ->setDescription('Create and run a build for an environment.')
+            ->setAliases(['build']);
     }
 
     /**

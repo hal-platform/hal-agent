@@ -54,7 +54,8 @@ class StartReleaseCommand implements ExecutorInterface
         CreateReleaseCommand::configure($command);
 
         $command
-            ->setDescription('Create and deploy a release.');
+            ->setDescription('Create and deploy a release.')
+            ->setAliases(['deploy']);
     }
 
     /**
