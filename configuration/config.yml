@@ -8,7 +8,7 @@ parameters:
     application.name: 'Hal Agent'
 
     application.major.version: '3'
-    application.version: '3.0.0'
+    application.version: '3.0.0-alpha'
 
     # base58
     unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'

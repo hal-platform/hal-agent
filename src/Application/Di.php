@@ -9,6 +9,7 @@ namespace Hal\Agent\Application;
 
 use Hal\Agent\Application\Config\HalCoreExtension;
 use Hal\Agent\Application\Config\McpLoggerExtension;
+use Hal\Agent\CachedContainer;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -77,7 +78,8 @@ class Di
                 (new EnvConfigLoader)->load($di);
                 foreach ($extensions as $ext) {
                     $di->registerExtension($ext);
-                }            },
+                }
+            },
             function (ContainerBuilder $di) use ($extensions) {
                 foreach ($extensions as $ext) {
                     $di->loadFromExtension($ext->getAlias());

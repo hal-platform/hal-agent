@@ -1,11 +1,13 @@
 hal_core:
+    dev_mode: false
+
     database_connection:
         driver: 'pdo_mysql'
+        host: 'test.example.com'
+        port: 3306
+        dbname: 'hal9000'
         user: 'placeholder'
         password: 'placeholder'
-        host: 'test.example.com'
-        port: ''
-        dbname: 'hal9000'
 
 mcp_logger:
     logging_service: 'syslog'
