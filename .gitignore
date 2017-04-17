@@ -6,6 +6,7 @@
 
 # recommended location for "build server" build artifacts
 /.buildserver/
+/.dockerimages/
 
 # doctrine proxy location
 /.doctrine/
