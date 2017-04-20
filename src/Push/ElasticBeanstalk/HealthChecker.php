@@ -35,15 +35,20 @@ class HealthChecker
     /**
      * @param ElasticBeanstalkClient $eb
      * @param string $applicationName
-     * @param string $environmentId
+     * @param string $environment
      *
      * @return array
      */
-    public function __invoke(ElasticBeanstalkClient $eb, $applicationName, $environmentId)
+    public function __invoke(ElasticBeanstalkClient $eb, $applicationName, $environment)
     {
+        $prop = 'EnvironmentNames';
+        if (substr($environment, 0, 2) === 'e-') {
+            $prop = 'EnvironmentIds';
+        }
+
         $result = $eb->describeEnvironments([
             'ApplicationName' => $applicationName,
-            'EnvironmentIds' => [$environmentId]
+            $prop => [$environment]
         ]);
 
         if (!$environment = $result->search('Environments[0]')) {

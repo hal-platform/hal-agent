@@ -32,12 +32,12 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
-                'EnvironmentIds' => ['envId']
+                'EnvironmentIds' => ['e-envId']
             ])
             ->andReturn($result);
 
         $checker = new HealthChecker;
-        $actual = $checker($this->eb, 'appName', 'envId');
+        $actual = $checker($this->eb, 'appName', 'e-envId');
 
         $this->assertSame('Terminated', $actual['status']);
         $this->assertSame('Red', $actual['health']);
@@ -51,7 +51,7 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
-                'EnvironmentIds' => ['envId']
+                'EnvironmentNames' => ['envId']
             ])
             ->andReturn($result);
 
@@ -72,12 +72,12 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
-                'EnvironmentIds' => ['envId']
+                'EnvironmentNames' => ['example-e-1234']
             ])
             ->andReturn($result);
 
         $checker = new HealthChecker;
-        $actual = $checker($this->eb, 'appName', 'envId');
+        $actual = $checker($this->eb, 'appName', 'example-e-1234');
 
         $this->assertSame(HealthChecker::NON_STANDARD_MISSING, $actual['status']);
         $this->assertSame('Grey', $actual['health']);
@@ -96,12 +96,12 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('describeEnvironments')
             ->with([
                 'ApplicationName' => 'appName',
-                'EnvironmentIds' => ['envId']
+                'EnvironmentIds' => ['e-1234']
             ])
             ->andReturn($result);
 
         $checker = new HealthChecker;
-        $actual = $checker($this->eb, 'appName', 'envId');
+        $actual = $checker($this->eb, 'appName', 'e-1234');
 
         $this->assertSame('DerpHerp', $actual['status']);
         $this->assertSame('Grey', $actual['health']);

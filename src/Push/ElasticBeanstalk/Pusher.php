@@ -100,9 +100,14 @@ class Pusher
                 ]
             ]);
 
+            $prop = 'EnvironmentName';
+            if (substr($awsEnvironment, 0, 2) === 'e-') {
+                $prop = 'EnvironmentId';
+            }
+
             // update environment
             $result = $eb->updateEnvironment([
-                'EnvironmentId' => $awsEnvironment,
+                $prop => $awsEnvironment,
                 'VersionLabel' => $pushId
             ]);
 
