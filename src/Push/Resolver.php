@@ -31,15 +31,8 @@ class Resolver
     use HostnameValidatorTrait;
     use ResolverTrait;
 
-    /**
-     * @var string
-     */
-    const ZIP_FILE = 'hal9000-eb-%s.zip';
-
-    /**
-     * @var string
-     */
-    const TAR_FILE = 'hal9000-s3-%s.tar.gz';
+    const SRC_DEST_DELIMITER = ':';
+    const ARCHIVE_FILE = 'hal9000-aws-%s';
 
     /**
      * @var string
@@ -54,6 +47,7 @@ class Resolver
     const DEFAULT_EB_FILENAME = '$APPID/$PUSHID.zip';
     const DEFAULT_S3_FILENAME = '$PUSHID.tar.gz';
     const DEFAULT_CD_FILENAME = '$APPID/$PUSHID.tar.gz';
+    const DEFAULT_AWS_SRC = '.';
 
     /**
      * @var EventLogger
@@ -167,11 +161,10 @@ class Resolver
 
                 'tempArchive' => $this->generateTempBuildArchiveFile($push->id(), 'push'),
 
+                // codedeploy
                 // elastic beanstalk
-                'tempZipArchive' => $this->generateTempZipArchiveFile($push->id()),
-
                 // s3
-                'tempTarArchive' => $this->generateTempTarArchiveFile($push->id()),
+                'tempUploadArchive' => $this->generateTempArchiveFile($push->id()),
             ],
 
             'pushProperties' => [
@@ -209,7 +202,11 @@ class Resolver
         $properties = array_merge($properties, $encryptedProperties);
 
         // add artifacts to delete
-        $properties['artifacts'] = $this->findPushArtifacts($properties);
+        $properties['artifacts'] = [
+            $properties['location']['tempArchive'],
+            $properties['location']['tempUploadArchive'],
+            $properties['location']['path']
+        ];
 
         return $properties;
     }
@@ -292,7 +289,8 @@ class Resolver
                 'environment' => $deployment->ebEnvironment(),
 
                 'bucket' => $deployment->s3bucket(),
-                'file' => $this->buildS3Filename($replacements, $template)
+                'file' => $this->buildS3Filename($replacements, $template),
+                'src' => $this->buildS3SourcePath($template)
             ];
 
         } elseif ($method === ServerEnum::TYPE_S3) {
@@ -303,7 +301,8 @@ class Resolver
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
                 'bucket' => $deployment->s3bucket(),
-                'file' => $this->buildS3Filename($replacements, $template)
+                'file' => $this->buildS3Filename($replacements, $template),
+                'src' => $this->buildS3SourcePath($template)
             ];
 
         } elseif ($method === ServerEnum::TYPE_CD) {
@@ -318,7 +317,8 @@ class Resolver
                 'configuration' => $deployment->cdConfiguration(),
 
                 'bucket' => $deployment->s3bucket(),
-                'file' => $this->buildS3Filename($replacements, $template)
+                'file' => $this->buildS3Filename($replacements, $template),
+                'src' => $this->buildS3SourcePath($template)
             ];
 
         }
@@ -393,6 +393,9 @@ class Resolver
      */
     private function buildS3Filename(array $replacements, $template)
     {
+        $delimited = explode(self::SRC_DEST_DELIMITER, $template);
+        $file = array_pop($delimited);
+
         $file = $template;
 
         foreach ($replacements as $name => $val) {
@@ -404,20 +407,20 @@ class Resolver
     }
 
     /**
-     * Find the push artifacts that must be cleaned up after push.
+     * @param string $template
      *
-     * @param array $properties
-     *
-     * @return array
+     * @return string
      */
-    private function findPushArtifacts(array $properties)
+    private function buildS3SourcePath($template)
     {
-        return [
-            $properties['location']['tempArchive'],
-            $properties['location']['tempZipArchive'],
-            $properties['location']['tempTarArchive'],
-            $properties['location']['path']
-        ];
+        $delimited = explode(self::SRC_DEST_DELIMITER, $template);
+        $parts = count($delimited);
+        if ($parts === 2) {
+            return array_shift($delimited);
+        } else {
+            // Should be an error, but oh well.
+            return self::DEFAULT_AWS_SRC;
+        }
     }
 
     /**
@@ -439,27 +442,15 @@ class Resolver
     }
 
     /**
-     * Generate a temporary target for the zip archive (Used for EB Deployments)
+     * Generate a temporary target for the archive (Used for AWS deployments)
      *
      * @param string $id
      *
      * @return string
      */
-    private function generateTempZipArchiveFile($id)
+    private function generateTempArchiveFile($id)
     {
-        return $this->getLocalTempPath() . sprintf(static::ZIP_FILE, $id);
-    }
-
-    /**
-     * Generate a temporary target for the zip archive (Used for EB Deployments)
-     *
-     * @param string $id
-     *
-     * @return string
-     */
-    private function generateTempTarArchiveFile($id)
-    {
-        return $this->getLocalTempPath() . sprintf(static::TAR_FILE, $id);
+        return $this->getLocalTempPath() . sprintf(static::ARCHIVE_FILE, $id);
     }
 
     /**

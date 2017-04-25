@@ -11,6 +11,7 @@ use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
 use Hal\Agent\Push\AWSAuthenticator;
 use Hal\Agent\Push\DeployerInterface;
+use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
@@ -45,7 +46,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $health;
 
     /**
-     * @var Packer
+     * @var ReleasePacker
      */
     private $packer;
 
@@ -63,7 +64,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      * @param EventLogger $logger
      * @param AWSAuthenticator $authenticator
      * @param HealthChecker $health
-     * @param Packer $packer
+     * @param ReleasePacker $packer
      * @param Uploader $uploader
      * @param Pusher $pusher
      */
@@ -71,7 +72,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         EventLogger $logger,
         AWSAuthenticator $authenticator,
         HealthChecker $health,
-        Packer $packer,
+        ReleasePacker $packer,
         Uploader $uploader,
         Pusher $pusher
     ) {
@@ -150,29 +151,24 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
-        if (!array_key_exists('region', $properties)) {
-            return false;
-        }
+        $required = [
+            // aws
+            'region',
+            'credential',
+            // codedeploy
+            'application',
+            'environment',
+            // s3
+            'bucket',
+            'file',
+            'src'
+        ];
 
-        if (!array_key_exists('credential', $properties)) {
-            return false;
-        }
-
-        if (!array_key_exists('application', $properties)) {
-            return false;
-        }
-
-        if (!array_key_exists('environment', $properties)) {
-            return false;
-        }
-
-        if (!array_key_exists('bucket', $properties)) {
-            return false;
-        }
-
-        if (!array_key_exists('file', $properties)) {
-            return false;
-        }
+        foreach ($required as $prop) {
+            if (!array_key_exists($prop, $properties)) {
+                return false;
+            }
+         }
 
         return true;
     }
@@ -237,10 +233,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Packing build for S3', self::SECTION);
 
-        $packer = $this->packer;
-        return $packer(
+        return $this->packer->packZip(
             $properties['location']['path'],
-            $properties['location']['tempZipArchive']
+            $properties[ServerEnum::TYPE_EB]['src'],
+            $properties['location']['tempUploadArchive']
         );
     }
 
@@ -261,7 +257,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $uploader = $this->uploader;
         return $uploader(
             $s3,
-            $properties['location']['tempZipArchive'],
+            $properties['location']['tempUploadArchive'],
             $properties[ServerEnum::TYPE_EB]['bucket'],
             $properties[ServerEnum::TYPE_EB]['file'],
             $build->id(),

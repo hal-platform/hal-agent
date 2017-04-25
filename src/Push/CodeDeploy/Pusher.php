@@ -117,7 +117,7 @@ class Pusher
                     'revisionType' => 'S3',
                     's3Location' => [
                         'bucket' => $s3bucket,
-                        'bundleType' => 'tgz',
+                        'bundleType' => $this->detectBundleType($s3version), // 'tar|tgz|zip'
                         'key' => $s3version
                     ]
                 ]
@@ -210,6 +210,38 @@ class Pusher
                 $this->logOngoingDeploymentHealth($health);
             }
         };
+    }
+
+    /**
+     * Detect the bundle type based on the s3 file extension.
+     *
+     * http://docs.aws.amazon.com/codedeploy/latest/APIReference/API_S3Location.html#CodeDeploy-Type-S3Location-bundleType
+     *
+     * Supported types:
+     * - 'tar'
+     * - 'tgz'
+     * - 'zip'
+     *
+     * @param string $s3file
+     *
+     * @return string
+     */
+    private function detectBundleType($s3file)
+    {
+        $supported = [
+            '.zip' => 'zip',
+            '.tgz' => 'tgz',
+            '.tar.gz' => 'tgz',
+        ];
+
+        foreach ($supported as $extension => $bundleType) {
+            if (1 === preg_match('/' .  preg_quote($extension) . '$/', $s3file)) {
+                return $bundleType;
+            }
+        }
+
+        // fall back to "tgz"
+        return 'tgz';
     }
 
     /**

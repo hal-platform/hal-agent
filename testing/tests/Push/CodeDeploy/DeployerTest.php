@@ -13,6 +13,7 @@ use Mockery;
 use PHPUnit_Framework_TestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\AWSAuthenticator;
+use Hal\Agent\Push\ReleasePacker;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
@@ -31,13 +32,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock(EventLogger::CLASS);
+        $this->logger = Mockery::mock(EventLogger::class);
 
-        $this->authenticator = Mockery::mock(AWSAuthenticator::CLASS);
-        $this->health = Mockery::mock(HealthChecker::CLASS);
-        $this->packer = Mockery::mock(Packer::CLASS);
-        $this->uploader = Mockery::mock(Uploader::CLASS);
-        $this->pusher = Mockery::mock(Pusher::CLASS);
+        $this->authenticator = Mockery::mock(AWSAuthenticator::class);
+        $this->health = Mockery::mock(HealthChecker::class);
+        $this->packer = Mockery::mock(ReleasePacker::class);
+        $this->uploader = Mockery::mock(Uploader::class);
+        $this->pusher = Mockery::mock(Pusher::class);
     }
 
     public function testSuccess()
@@ -55,6 +56,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'configuration' => '',
                 'bucket' => '',
                 'file' => '',
+                'src' => ''
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -66,13 +68,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '',
-                'tempTarArchive' => ''
+                'tempUploadArchive' => ''
             ],
             'environmentVariables' => []
         ];
 
-        $cd = Mockery::mock(CodeDeployClient::CLASS);
-        $s3 = Mockery::mock(S3Client::CLASS);
+        $cd = Mockery::mock(CodeDeployClient::class);
+        $s3 = Mockery::mock(S3Client::class);
         $this->authenticator
             ->shouldReceive(['getCD' => $cd, 'getS3' => $s3]);
 
@@ -80,7 +82,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Succeeded']);
         $this->packer
-            ->shouldReceive('__invoke')
+            ->shouldReceive('packZipOrTar')
             ->andReturn(true);
         $this->uploader
             ->shouldReceive('__invoke')
@@ -117,6 +119,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'configuration' => 'rollout_config',
                 'bucket' => 'cd_bucket',
                 'file' => 'cd_file',
+                'src' => '.',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -128,13 +131,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '',
-                'tempTarArchive' => '/local/build.tar.gz'
+                'tempUploadArchive' => '/local/build.tar.gz'
             ],
             'environmentVariables' => []
         ];
 
-        $cd = Mockery::mock(CodeDeployClient::CLASS);
-        $s3 = Mockery::mock(S3Client::CLASS);
+        $cd = Mockery::mock(CodeDeployClient::class);
+        $s3 = Mockery::mock(S3Client::class);
         $this->authenticator
             ->shouldReceive(['getCD' => $cd, 'getS3' => $s3]);
 
@@ -143,7 +146,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->with($cd, 'test_app', 'test_group_id')
             ->andReturn(['status' => 'Succeeded']);
         $this->packer
-            ->shouldReceive('__invoke')
+            ->shouldReceive('packZipOrTar')
             ->andReturn(true);
         $this->uploader
             ->shouldReceive('__invoke')
@@ -236,18 +239,19 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'configuration' => '',
                 'bucket' => '',
                 'file' => '',
+                'src' => '',
             ],
             'pushProperties' => [],
             'configuration' => [],
             'location' => [
                 'path' => '',
-                'tempTarArchive' => ''
+                'tempUploadArchive' => ''
             ],
             'environmentVariables' => []
         ];
 
-        $cd = Mockery::mock(CodeDeployClient::CLASS);
-        $s3 = Mockery::mock(S3Client::CLASS);
+        $cd = Mockery::mock(CodeDeployClient::class);
+        $s3 = Mockery::mock(S3Client::class);
         $this->authenticator
             ->shouldReceive(['getCD' => $cd, 'getS3' => $s3]);
 
@@ -284,6 +288,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'configuration' => '',
                 'bucket' => '',
                 'file' => '',
+                'src' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -292,13 +297,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '',
-                'tempTarArchive' => ''
+                'tempUploadArchive' => ''
             ],
             'environmentVariables' => []
         ];
 
-        $cd = Mockery::mock(CodeDeployClient::CLASS);
-        $s3 = Mockery::mock(S3Client::CLASS);
+        $cd = Mockery::mock(CodeDeployClient::class);
+        $s3 = Mockery::mock(S3Client::class);
         $this->authenticator
             ->shouldReceive(['getCD' => $cd, 'getS3' => $s3]);
 
@@ -306,7 +311,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Stopped']);
         $this->packer
-            ->shouldReceive('__invoke')
+            ->shouldReceive('packZipOrTar')
             ->andReturn(false);
 
         $deployer = new Deployer(
@@ -337,6 +342,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'configuration' => '',
                 'bucket' => '',
                 'file' => '',
+                'src' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -347,13 +353,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '',
-                'tempTarArchive' => ''
+                'tempUploadArchive' => ''
             ],
             'environmentVariables' => []
         ];
 
-        $cd = Mockery::mock(CodeDeployClient::CLASS);
-        $s3 = Mockery::mock(S3Client::CLASS);
+        $cd = Mockery::mock(CodeDeployClient::class);
+        $s3 = Mockery::mock(S3Client::class);
         $this->authenticator
             ->shouldReceive(['getCD' => $cd, 'getS3' => $s3]);
 
@@ -361,7 +367,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'Stopped']);
         $this->packer
-            ->shouldReceive('__invoke')
+            ->shouldReceive('packZipOrTar')
             ->andReturn(true);
         $this->uploader
             ->shouldReceive('__invoke')
@@ -395,6 +401,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'configuration' => '',
                 'bucket' => '',
                 'file' => '',
+                'src' => '',
             ],
             'pushProperties' => [],
             'configuration' => [
@@ -405,13 +412,13 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '',
-                'tempTarArchive' => ''
+                'tempUploadArchive' => ''
             ],
             'environmentVariables' => []
         ];
 
-        $cd = Mockery::mock(CodeDeployClient::CLASS);
-        $s3 = Mockery::mock(S3Client::CLASS);
+        $cd = Mockery::mock(CodeDeployClient::class);
+        $s3 = Mockery::mock(S3Client::class);
         $this->authenticator
             ->shouldReceive(['getCD' => $cd, 'getS3' => $s3]);
 
@@ -419,7 +426,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('__invoke')
             ->andReturn(['status' => 'None']);
         $this->packer
-            ->shouldReceive('__invoke')
+            ->shouldReceive('packZipOrTar')
             ->andReturn(true);
         $this->uploader
             ->shouldReceive('__invoke')

@@ -27,6 +27,14 @@ services:
             - '@yaml.dumper'
             - '%timeout.filepacking%'
 
+    push.packer:
+        class: 'Hal\Agent\Push\ReleasePacker'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
+
     push.configuration.reader:
         class: 'Hal\Agent\Build\ConfigurationReader'
         arguments:
@@ -65,19 +73,12 @@ services:
             - '@logger.event'
             - '@push.aws.authenticator'
             - '@push.eb.healthchecker'
-            - '@push.eb.packer'
+            - '@push.packer'
             - '@push.eb.uploader'
             - '@push.eb.pusher'
 
     push.eb.healthchecker:
         class: 'Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
-
-    push.eb.packer:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Packer'
-        arguments:
-            - '@logger.event'
-            - '@utility.process.builder'
-            - '%timeout.push%'
 
     push.eb.uploader:
         class: 'Hal\Agent\Push\ElasticBeanstalk\Uploader'
@@ -191,7 +192,7 @@ services:
             - '@logger.event'
             - '@push.aws.authenticator'
             - '@push.cd.healthchecker'
-            - '@push.cd.packer'
+            - '@push.packer'
             - '@push.cd.uploader'
             - '@push.cd.pusher'
 
@@ -200,14 +201,6 @@ services:
         arguments:
             - '@clock'
             - '%clock.timezone%'
-
-    push.cd.packer:
-        class: 'Hal\Agent\Push\CodeDeploy\Packer'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '%timeout.filepacking%'
 
     push.cd.uploader:
         class: 'Hal\Agent\Push\CodeDeploy\Uploader'

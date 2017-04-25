@@ -206,14 +206,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/2015-02/hal9000-b2.5tnbBn8.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
-                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz'
+                'tempUploadArchive' => 'testdir/hal9000-aws-1234'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-eb-1234.zip',
-                'testdir/hal9000-s3-1234.tar.gz',
+                'testdir/hal9000-aws-1234',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -317,6 +315,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
                 'bucket' => 'eb_bucket',
                 'file' => 'repo-id/1234.zip',
+                'src' => '.'
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -342,14 +341,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
-                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
+                'tempUploadArchive' => 'testdir/hal9000-aws-1234',
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-eb-1234.zip',
-                'testdir/hal9000-s3-1234.tar.gz',
+                'testdir/hal9000-aws-1234',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -455,6 +452,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
                 'bucket' => 'cd_bucket',
                 'file' => 'repo-id/1234.tar.gz',
+                'src' => '.'
             ],
             'configuration' => [
                 'system' => 'unix',
@@ -480,14 +478,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
-                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
+                'tempUploadArchive' => 'testdir/hal9000-aws-1234',
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-eb-1234.zip',
-                'testdir/hal9000-s3-1234.tar.gz',
+                'testdir/hal9000-aws-1234',
                 'testdir/hal9000-push-1234'
             ],
 
@@ -599,14 +595,12 @@ class ResolverTest extends PHPUnit_Framework_TestCase
                 'path' => 'testdir/hal9000-push-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
-                'tempZipArchive' => 'testdir/hal9000-eb-1234.zip',
-                'tempTarArchive' => 'testdir/hal9000-s3-1234.tar.gz',
+                'tempUploadArchive' => 'testdir/hal9000-aws-1234'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-push-1234.tar.gz',
-                'testdir/hal9000-eb-1234.zip',
-                'testdir/hal9000-s3-1234.tar.gz',
+                'testdir/hal9000-aws-1234',
                 'testdir/hal9000-push-1234'
             ],
 
