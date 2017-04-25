@@ -167,15 +167,17 @@ services:
         arguments:
             - '@logger.event'
             - '@push.aws.authenticator'
-            - '@push.s3.packer'
+            - '@push.s3.preparer'
             - '@push.s3.uploader'
 
-    push.s3.packer:
-        class: 'Hal\Agent\Push\S3\Packer'
+    push.s3.preparer:
+        class: 'Hal\Agent\Push\S3\Preparer'
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
             - '@utility.process.builder'
+            - '@push.mover'
+            - '@push.packer'
             - '%timeout.filepacking%'
 
     push.s3.uploader:

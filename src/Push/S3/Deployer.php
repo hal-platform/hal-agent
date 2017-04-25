@@ -38,9 +38,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $authenticator;
 
     /**
-     * @var Packer
+     * @var Preparer
      */
-    private $packer;
+    private $preparer;
 
     /**
      * @var Uploader
@@ -50,19 +50,19 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     /**
      * @param EventLogger $logger
      * @param AWSAuthenticator $authenticator
-     * @param Packer $packer
+     * @param Preparer $preparer
      * @param Uploader $uploader
      */
     public function __construct(
         EventLogger $logger,
         AWSAuthenticator $authenticator,
-        Packer $packer,
+        Preparer $preparer,
         Uploader $uploader
     ) {
         $this->logger = $logger;
 
         $this->authenticator = $authenticator;
-        $this->packer = $packer;
+        $this->preparer = $preparer;
         $this->uploader = $uploader;
     }
 
@@ -84,8 +84,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return 401;
         }
 
-        // create zip for s3
-        if (!$this->pack($properties)) {
+        // Prepare upload file - move or create archive
+        if (!$this->prepareFile($properties)) {
             return 402;
         }
 
@@ -121,20 +121,20 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
-        if (!array_key_exists('region', $properties)) {
-            return false;
-        }
+        $required = [
+            // aws
+            'region',
+            'credential',
+            // s3
+            'bucket',
+            'file',
+            'src'
+        ];
 
-        if (!array_key_exists('credential', $properties)) {
-            return false;
-        }
-
-        if (!array_key_exists('bucket', $properties)) {
-            return false;
-        }
-
-        if (!array_key_exists('file', $properties)) {
-            return false;
+        foreach ($required as $prop) {
+            if (!array_key_exists($prop, $properties)) {
+                return false;
+            }
         }
 
         return true;
@@ -156,19 +156,28 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     }
 
     /**
+     *  Supported situations:
+     *
+     * - src_file : file(.zip|.tgz|.tar.gz)   OK (just upload)
+     * - src_file : file                      OK (just upload)
+     *
+     * - src_dir  : file(.zip|.tgz|.tar.gz)   OK (pack with zip or tar)
+     * - src_dir  : file                      OK (default to tgz)
+     *
      * @param array $properties
      *
-     * @return boolean
+     * @return bool
      */
-    private function pack(array $properties)
+    private function prepareFile(array $properties)
     {
         $this->status('Packing build for S3', self::SECTION);
 
-        $packer = $this->packer;
-        return $packer(
+        $preparer = $this->preparer;
+        return $preparer(
             $properties['location']['path'],
-            '.',
-            $properties['location']['tempTarArchive']
+            $properties[ServerEnum::TYPE_S3]['src'],
+            $properties['location']['tempUploadArchive'],
+            $properties[ServerEnum::TYPE_S3]['file']
         );
     }
 
@@ -176,7 +185,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      * @param S3Client $s3
      * @param array $properties
      *
-     * @return boolean
+     * @return bool
      */
     private function upload(S3Client $s3, array $properties)
     {
@@ -189,7 +198,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $uploader = $this->uploader;
         return $uploader(
             $s3,
-            $properties['location']['tempTarArchive'],
+            $properties['location']['tempUploadArchive'],
             $properties[ServerEnum::TYPE_S3]['bucket'],
             $properties[ServerEnum::TYPE_S3]['file'],
             $build->id(),

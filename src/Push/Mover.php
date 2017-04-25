@@ -11,5 +11,5 @@ use Hal\Agent\Build\Mover as BaseMover;
 
 class Mover extends BaseMover
 {
-    const EVENT_MESSAGE = 'Copy archive to local storage';
+    const EVENT_MESSAGE = 'Copy file to prepare upload';
 }

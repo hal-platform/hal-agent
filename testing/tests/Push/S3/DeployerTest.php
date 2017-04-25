@@ -7,6 +7,8 @@
 
 namespace Hal\Agent\Push\S3;
 
+use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Push\AWSAuthenticator;
 use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Application;
@@ -20,18 +22,18 @@ class DeployerTest extends PHPUnit_Framework_TestCase
     public $output;
     public $logger;
     public $health;
-    public $packer;
+    public $preparer;
     public $uploader;
     public $pusher;
 
     public function setUp()
     {
         $this->output = new BufferedOutput;
-        $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
+        $this->logger = Mockery::mock(EventLogger::class);
 
-        $this->authenticator = Mockery::mock('Hal\Agent\Push\AWSAuthenticator');
-        $this->packer = Mockery::mock('Hal\Agent\Push\S3\Packer');
-        $this->uploader = Mockery::mock('Hal\Agent\Push\S3\Uploader');
+        $this->authenticator = Mockery::mock(AWSAuthenticator::class);
+        $this->preparer = Mockery::mock(Preparer::class);
+        $this->uploader = Mockery::mock(Uploader::class);
     }
 
     public function testSuccess()
@@ -43,6 +45,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'credential' => 'aws-cred',
                 'bucket' => 'eb_bucket',
                 'file' => 'eb_file',
+                'src' => 's3_file',
             ],
             'configuration' => [
                 'pre_push' => [],
@@ -50,7 +53,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '/temp/build',
-                'tempTarArchive' => 'file.tar.gz'
+                'tempUploadArchive' => 'file.tar.gz'
             ]
         ];
 
@@ -60,9 +63,9 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->with('aws-region', 'aws-cred')
             ->andReturn($s3);
 
-        $this->packer
+        $this->preparer
             ->shouldReceive('__invoke')
-            ->with('/temp/build', '.', 'file.tar.gz')
+            ->with('/temp/build', 's3_file', 'file.tar.gz', 'eb_file')
             ->andReturn(true);
 
         $this->uploader
@@ -81,7 +84,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
@@ -101,7 +104,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
@@ -126,7 +129,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
@@ -142,6 +145,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'credential' => 'aws-cred',
                 'bucket' => 'eb_bucket',
                 'file' => 'eb_file',
+                'src' => '.'
             ]
         ];
 
@@ -152,7 +156,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
@@ -160,7 +164,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $this->assertSame(401, $actual);
     }
 
-    public function testPackerFails()
+    public function testPreparerFails()
     {
         $properties = [
             'push' => $this->buildMockPush(),
@@ -169,10 +173,11 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'credential' => 'aws-cred',
                 'bucket' => 'eb_bucket',
                 'file' => 'eb_file',
+                'src' => '.'
             ],
             'location' => [
                 'path' => '/temp/build',
-                'tempTarArchive' => 'file.tar.gz'
+                'tempUploadArchive' => 'file.tar.gz'
             ]
         ];
 
@@ -180,14 +185,14 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getS3')
             ->andReturn(Mockery::mock('Aws\S3\S3Client'));
 
-        $this->packer
+        $this->preparer
             ->shouldReceive('__invoke')
             ->andReturn(false);
 
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
@@ -204,6 +209,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'credential' => 'aws-cred',
                 'bucket' => 'eb_bucket',
                 'file' => 'eb_file',
+                'src' => '.'
             ],
             'configuration' => [
                 'pre_push' => [],
@@ -211,7 +217,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '/temp/build',
-                'tempTarArchive' => 'file.tar.gz'
+                'tempUploadArchive' => 'file.tar.gz'
             ]
         ];
 
@@ -219,7 +225,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getS3')
             ->andReturn(Mockery::mock('Aws\S3\S3Client'));
 
-        $this->packer
+        $this->preparer
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
@@ -230,7 +236,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
@@ -247,6 +253,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
                 'credential' => 'aws-cred',
                 'bucket' => 'eb_bucket',
                 'file' => 'eb_file',
+                'src' => '.'
             ],
             'configuration' => [
                 'pre_push' => ['derp'],
@@ -254,7 +261,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ],
             'location' => [
                 'path' => '/temp/build',
-                'tempTarArchive' => 'file.tar.gz'
+                'tempUploadArchive' => 'file.tar.gz'
             ]
         ];
 
@@ -262,7 +269,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
             ->shouldReceive('getS3')
             ->andReturn(Mockery::mock('Aws\S3\S3Client'));
 
-        $this->packer
+        $this->preparer
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
@@ -282,7 +289,7 @@ class DeployerTest extends PHPUnit_Framework_TestCase
         $deployer = new Deployer(
             $this->logger,
             $this->authenticator,
-            $this->packer,
+            $this->preparer,
             $this->uploader
         );
 
