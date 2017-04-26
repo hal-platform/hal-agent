@@ -52,7 +52,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
                     'HAL_COMMIT' => '5555',
                     'HAL_GITREF' => 'master',
                     'HAL_ENVIRONMENT' => 'envkey',
-                    'HAL_REPO' => 'repokey'
+                    'HAL_APP' => 'appkey'
                 ]
             ]
         ];
@@ -94,7 +94,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
                     'HAL_COMMIT' => '5555',
                     'HAL_GITREF' => 'master',
                     'HAL_ENVIRONMENT' => 'envkey',
-                    'HAL_REPO' => 'repokey',
+                    'HAL_APP' => 'appkey',
                     'HAL_PUSHID' => '4321',
                     'HAL_METHOD' => 'derp',
                     'HAL_CONTEXT' => 'context'
@@ -111,7 +111,7 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
     {
         $app = (new Application)
             ->withId(1234)
-            ->withKey('repokey')
+            ->withKey('appkey')
             ->withGithubOwner('user1')
             ->withGithubOwner('repo1');
         $app->setBuildCmd('derp');

@@ -143,7 +143,7 @@ class BuildEnvironmentResolver
             'HAL_COMMIT' => $build->commit(),
             'HAL_GITREF' => $build->branch(),
             'HAL_ENVIRONMENT' => $build->environment()->name(),
-            'HAL_REPO' => $build->application()->key()
+            'HAL_APP' => $build->application()->key()
         ];
 
         $properties = [
@@ -176,7 +176,7 @@ class BuildEnvironmentResolver
             'HAL_COMMIT' => $build->commit(),
             'HAL_GITREF' => $build->branch(),
             'HAL_ENVIRONMENT' => $build->environment()->name(),
-            'HAL_REPO' => $build->application()->key()
+            'HAL_APP' => $build->application()->key()
         ];
 
         $properties = [
