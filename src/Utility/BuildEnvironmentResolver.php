@@ -78,8 +78,16 @@ class BuildEnvironmentResolver
 
         $properties = $this->getUnixProperties($push->build(), $uniqueId);
 
-        if (isset($properties['unix']['environmentVariables'])) {
-            $properties['unix']['environmentVariables']['HAL_PUSHID'] = $push->id();
+        if (isset($properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables'])) {
+            $env = $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables'];
+
+            $method = $push->deployment()->server()->type();
+
+            $env['HAL_PUSHID'] = $push->id();
+            $env['HAL_METHOD'] = $method;
+            $env['HAL_CONTEXT'] = $push->deployment()->scriptContext();
+
+            $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables'] = $env;
         }
 
         return $properties;

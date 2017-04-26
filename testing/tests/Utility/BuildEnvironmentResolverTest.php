@@ -11,8 +11,10 @@ use Mockery;
 use PHPUnit_Framework_TestCase;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
+use QL\Hal\Core\Entity\Deployment;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
+use QL\Hal\Core\Entity\Server;
 use Symfony\Component\Process\ProcessBuilder;
 
 class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
@@ -66,7 +68,15 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
 
         $push = (new Push)
             ->withId('4321')
-            ->withBuild($build);
+            ->withBuild($build)
+            ->withDeployment(
+                (new Deployment)
+                    ->withScriptContext('context')
+                    ->withServer(
+                        (new Server)
+                            ->withType('derp')
+                    )
+            );
 
         $processBuilder = Mockery::mock(ProcessBuilder::class);
 
@@ -85,7 +95,9 @@ class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
                     'HAL_GITREF' => 'master',
                     'HAL_ENVIRONMENT' => 'envkey',
                     'HAL_REPO' => 'repokey',
-                    'HAL_PUSHID' => '4321'
+                    'HAL_PUSHID' => '4321',
+                    'HAL_METHOD' => 'derp',
+                    'HAL_CONTEXT' => 'context'
                 ]
             ]
         ];

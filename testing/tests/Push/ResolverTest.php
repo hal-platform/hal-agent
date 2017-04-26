@@ -52,12 +52,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         ]);
     }
 
-    /**
-     * @expectedException Hal\Agent\Push\PushException
-     * @expectedExceptionMessage Push "1234" could not be found!
-     */
     public function testPushNotFound()
     {
+        $this->expectException('Hal\Agent\Push\PushException');
+        $this->expectExceptionMessage('Push "1234" could not be found!');
+
         $action = new Resolver(
             $this->logger,
             $this->em,
@@ -71,12 +70,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
     }
 
-    /**
-     * @expectedException Hal\Agent\Push\PushException
-     * @expectedExceptionMessage Push "1234" has a status of "Poo"! It cannot be redeployed.
-     */
     public function testPushNotCorrectStatus()
     {
+        $this->expectException('Hal\Agent\Push\PushException');
+        $this->expectExceptionMessage('Push "1234" has a status of "Poo"! It cannot be redeployed.');
+
         $push = new Push;
         $push->withStatus('Poo');
 
@@ -97,12 +95,11 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $properties = $action('1234');
     }
 
-    /**
-     * @expectedException Hal\Agent\Push\PushException
-     * @expectedExceptionMessage Push "1234" is trying to clobber a running push! It cannot be deployed at this time.
-     */
     public function testPushFindsActiveDeployment()
     {
+        $this->expectException('Hal\Agent\Push\PushException');
+        $this->expectExceptionMessage('Push "1234" is trying to clobber a running push! It cannot be deployed at this time.');
+
         $push = (new Push)
             ->withStatus('Waiting')
             ->withDeployment(new Deployment);
@@ -174,12 +171,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
 
                 'environmentVariables' => [
                     'HAL_HOSTNAME' => '127.0.0.1',
-                    'HAL_PATH' => '/herp/derp',
-                    'HAL_BUILDID' => 'b2.5tnbBn8',
-                    'HAL_COMMIT' => '5555',
-                    'HAL_GITREF' => 'master',
-                    'HAL_ENVIRONMENT' => 'envname',
-                    'HAL_REPO' => 'repokey'
+                    'HAL_PATH' => '/herp/derp'
                 ]
             ],
             'configuration' => [
@@ -567,16 +559,7 @@ class ResolverTest extends PHPUnit_Framework_TestCase
         $expected = [
             'method' => 'script',
 
-            'script' => [
-                'environmentVariables' => [
-                    'HAL_CONTEXT' => 'testdata',
-                    'HAL_BUILDID' => 'b9.1234',
-                    'HAL_COMMIT' => '5555',
-                    'HAL_GITREF' => 'master',
-                    'HAL_ENVIRONMENT' => 'envname',
-                    'HAL_REPO' => 'repokey'
-                ]
-            ],
+            'script' => [],
             'configuration' => [
                 'system' => 'unix',
                 'dist' => '.',

@@ -8,6 +8,7 @@
 namespace Hal\Agent\Push;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Hal\Agent\Build\Unix\UnixBuildHandler;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
@@ -184,15 +185,16 @@ class Resolver
         ];
 
         // deployment system configuration
-        $deploymentSystemProperties = $this->buildDeploymentSystemProperties($method, $push);
-        $properties = array_merge($properties, $deploymentSystemProperties);
+        $properties[$method] = $this->buildDeploymentSystemProperties($method, $push);
 
         // build system configuration
         $buildSystemProperties = $this->buildEnvironmentResolver->getPushProperties($push);
         $properties = array_merge($properties, $buildSystemProperties);
 
-        // attempt to add push-specific properties to build system props
-        $this->addPushVarsToBuildVars($properties);
+        // Merge build and push env for rsync deployment method (used for server commands)
+        if ($method === ServerEnum::TYPE_RSYNC) {
+            $properties = $this->mergeRsyncBuildAndPushEnvironment($properties);
+        }
 
         // Get encrypted properties for use in build_transform, with sources as well (for logging)
         $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
@@ -212,42 +214,6 @@ class Resolver
     }
 
     /**
-     * @todo Clean up this terrible method
-     *
-     * @param array $properties
-     *
-     * @return void
-     */
-    private function addPushVarsToBuildVars(array &$properties)
-    {
-        if (!isset($properties['rsync']['environmentVariables']) && !isset($properties['script']['environmentVariables'])) {
-            return;
-        }
-
-        // add rsync props
-        if (isset($properties['rsync']['environmentVariables'])) {
-            $hostname = $properties['rsync']['environmentVariables']['HAL_HOSTNAME'];
-            $path = $properties['rsync']['environmentVariables']['HAL_PATH'];
-
-            // Add to unix env
-            if (isset($properties['unix']['environmentVariables'])) {
-                $properties['unix']['environmentVariables']['HAL_HOSTNAME'] = $hostname;
-                $properties['unix']['environmentVariables']['HAL_PATH'] = $path;
-            }
-        }
-
-        // add script props
-        if (isset($properties['script']['environmentVariables'])) {
-            $context = $properties['script']['environmentVariables']['HAL_CONTEXT'];
-
-            // Add to unix env
-            if (isset($properties['unix']['environmentVariables'])) {
-                $properties['unix']['environmentVariables']['HAL_CONTEXT'] = $context;
-            }
-        }
-    }
-
-    /**
      * @param string $method
      * @param Push $push
      *
@@ -260,28 +226,32 @@ class Resolver
         $application = $push->application();
         $server = $deployment->server();
 
-        $properties = [];
-
-        $now = $this->clock->read();
-        $replacements = [
-            'APPID' => $application->id(),
-            'APPNAME' => $application->name(),
-            'BUILDID' => $build->id(),
-            'PUSHID' => $push->id(),
-            'DATE' => $now->format('Ymd', 'UTC'),
-            'TIME' => $now->format('His', 'UTC')
-        ];
-
         if ($method === ServerEnum::TYPE_RSYNC) {
-            $properties[$method] = $this->buildRsyncProperties($build, $deployment, $server);
+
+            $hostname = $this->attemptHostnameValidation($server);
+
+            return [
+                'remoteUser' => $this->sshUser,
+                'remoteServer' => $hostname,
+                'remotePath' => $deployment->path(),
+                'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->path()),
+
+                'environmentVariables' => [
+                    'HAL_HOSTNAME' => $hostname,
+                    'HAL_PATH' => $deployment->path(),
+                ]
+            ];
 
         } elseif ($method === ServerEnum::TYPE_SCRIPT) {
-            $properties[$method] = $this->buildScriptProperties($build, $deployment);
+
+            return [];
 
         } elseif ($method === ServerEnum::TYPE_EB) {
 
+            $replacements = $this->buildTokenReplacements($push);
             $template = $deployment->s3file() ?: self::DEFAULT_EB_FILENAME;
-            $properties[$method] = [
+
+            return [
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
@@ -295,8 +265,10 @@ class Resolver
 
         } elseif ($method === ServerEnum::TYPE_S3) {
 
+            $replacements = $this->buildTokenReplacements($push);
             $template = $deployment->s3file() ?: self::DEFAULT_S3_FILENAME;
-            $properties[$method] = [
+
+            return [
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
@@ -307,8 +279,10 @@ class Resolver
 
         } elseif ($method === ServerEnum::TYPE_CD) {
 
+            $replacements = $this->buildTokenReplacements($push);
             $template = $deployment->s3file() ?: self::DEFAULT_CD_FILENAME;
-            $properties[$method] = [
+
+            return [
                 'region' => $server->name(),
                 'credential' => $deployment->credential() ? $deployment->credential()->aws() : null,
 
@@ -327,13 +301,11 @@ class Resolver
     }
 
     /**
-     * @param Build $build
-     * @param Deployment $deployment
      * @param Server $server
      *
-     * @return array
+     * @return string
      */
-    private function buildRsyncProperties(Build $build, Deployment $deployment, Server $server)
+    private function attemptHostnameValidation(Server $server)
     {
         // validate remote hostname
         $serverName = $server->name();
@@ -344,45 +316,48 @@ class Resolver
             $hostname = $serverName;
         }
 
-        $env = [
-            'HAL_HOSTNAME' => $hostname,
-            'HAL_PATH' => $deployment->path(),
+        return $hostname;
+    }
 
-            'HAL_BUILDID' => $build->id(),
-            'HAL_COMMIT' => $build->commit(),
-            'HAL_GITREF' => $build->branch(),
-            'HAL_ENVIRONMENT' => $build->environment()->name(),
-            'HAL_REPO' => $build->application()->key()
-        ];
+    /**
+     * @param Push $push
+     *
+     * @return array
+     */
+    private function buildTokenReplacements(Push $push)
+    {
+        $application = $push->application();
+        $build = $push->build();
 
+        $now = $this->clock->read();
         return [
-            'remoteUser' => $this->sshUser,
-            'remoteServer' => $hostname,
-            'remotePath' => $deployment->path(),
-            'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $deployment->path()),
-            'environmentVariables' => $env
+            'APPID' => $application->id(),
+            'APP' => $application->key(),
+            'BUILDID' => $build->id(),
+            'PUSHID' => $push->id(),
+            'DATE' => $now->format('Ymd', 'UTC'),
+            'TIME' => $now->format('His', 'UTC')
         ];
     }
 
     /**
-     * @param Build $build
-     * @param Deployment $deployment
+     * @param array $properties
      *
      * @return array
      */
-    private function buildScriptProperties(Build $build, Deployment $deployment)
+    private function mergeRsyncBuildAndPushEnvironment(array $properties)
     {
-        return [
-            'environmentVariables' => [
-                'HAL_CONTEXT' => $deployment->scriptContext(),
+        $system = UnixBuildHandler::SERVER_TYPE;
+        $method = ServerEnum::TYPE_RSYNC;
 
-                'HAL_BUILDID' => $build->id(),
-                'HAL_COMMIT' => $build->commit(),
-                'HAL_GITREF' => $build->branch(),
-                'HAL_ENVIRONMENT' => $build->environment()->name(),
-                'HAL_REPO' => $build->application()->key()
-            ]
-        ];
+        if (!isset($properties[$method]['environmentVariables']) || !isset($properties[$system]['environmentVariables'])) {
+            return $properties;
+        }
+
+        $env = array_merge($properties[$method]['environmentVariables'], $properties[$system]['environmentVariables']);
+
+        $properties[$method]['environmentVariables'] = $env;
+        $properties[$system]['environmentVariables'] = $env;
     }
 
     /**
