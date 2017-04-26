@@ -206,8 +206,8 @@ class Pusher
                 return true;
             }
 
-            // Pop a status every 12 iterations (4 minutes, using 20s interval)
-            if (++$iteration % 12 === 0) {
+            // Pop a status every 9 iterations (3 minutes, using 20s interval)
+            if (++$iteration % 9 === 0) {
                 $this->logOngoingDeploymentHealth($health);
             }
         };

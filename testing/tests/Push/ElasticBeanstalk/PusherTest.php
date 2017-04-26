@@ -208,14 +208,14 @@ class PusherTest extends PHPUnit_Framework_TestCase
                 'status' => 'Updating',
                 'health' => 'Grey'
             ])
-            ->times(10);
+            ->times(5);
 
         $this->logger
             ->shouldReceive('event')
             ->with('failure', Pusher::ERR_WAITING, Mockery::any())
             ->once();
 
-        $pusher = new Pusher($this->logger, $this->health, new Waiter(.1, 10));
+        $pusher = new Pusher($this->logger, $this->health, new Waiter(.1, 5));
         $actual = $pusher(
             $this->eb,
             'appName',
