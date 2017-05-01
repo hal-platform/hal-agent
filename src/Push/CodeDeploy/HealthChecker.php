@@ -146,7 +146,7 @@ class HealthChecker
     /**
      * @param ResultInterface $result
      *
-     * @return array
+     * @return string
      */
     private function parseInstancesStatus(ResultInterface $result)
     {

@@ -79,6 +79,9 @@ services:
 
     push.eb.healthchecker:
         class: 'Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
+        arguments:
+            - '@clock'
+            - '%clock.timezone%'
 
     push.eb.uploader:
         class: 'Hal\Agent\Push\ElasticBeanstalk\Uploader'
