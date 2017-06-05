@@ -24,6 +24,8 @@ class SSHProcess
     const EVENT_MESSAGE = 'Run remote command';
     const ERR_COMMAND_TIMEOUT = 'Remote command took too long';
 
+    const MAX_OUTPUT_SIZE = 1000000; // 1 mb
+
     /**
      * @var EventLogger
      */
@@ -252,6 +254,15 @@ class SSHProcess
         $this->lastOutput = $output;
         $this->lastErrorOutput = $sshSession->getStdError();
         $this->lastExitCode = $sshSession->getExitStatus();
+
+        // just a dumb sanity check.
+        if (strlen($this->lastOutput) > self::MAX_OUTPUT_SIZE) {
+            $this->lastOutput = substr($this->lastOutput, 0, self::MAX_OUTPUT_SIZE);
+        }
+
+        if (strlen($this->lastErrorOutput) > self::MAX_OUTPUT_SIZE) {
+            $this->lastErrorOutput = substr($this->lastErrorOutput, 0, self::MAX_OUTPUT_SIZE);
+        }
     }
 
     /**
