@@ -38,7 +38,7 @@ class UploaderTest extends PHPUnit_Framework_TestCase
                 'bucket-name',
                 's3-object.tar.gz',
                 Mockery::any(),
-                'private',
+                'bucket-owner-full-control',
                 [
                     'params' => [
                         'Metadata' => [
