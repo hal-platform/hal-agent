@@ -340,8 +340,15 @@ class HealthCheckerTest extends PHPUnit_Framework_TestCase
             ->andReturn($instancesInfoResult);
 
         $expectedInstanceSummary = <<<'TEXT'
+Instance ID          | Type                 | Status          | Start Time                     | End Time                       | Duration             | Most Recent Event   
+-------------------- | -------------------- | --------------- | ------------------------------ | ------------------------------ | -------------------- | --------------------
+abcd                 | Original             | Failed          | Jan 13, 2017 12:45:09 EST      | N/A                            |                      | ValidateService     
+efgh                 | Original             | Failed          | Jan 13, 2017 01:49:42 EST      | Jan 13, 2017 02:06:44 EST      | 17 min, 2 sec        | Install             
+ijkl                 | Original             | Skipped         | Jan 13, 2017 02:07:09 EST      | N/A                            |                      |                     
+TEXT;
+        $expectedInstanceDetailed = <<<'TEXT'
 >>>> Instance ID: abcd
->>>> Status: Failed
+>>>> Status: Failed (Type: Original)
 >>>> Last Update: Jan 13, 2017 02:07:09 EST
 
 Event Name           | Status               | Start                          | End                            | Duration            
@@ -367,7 +374,7 @@ Script - scripts/test_script
 
 
 >>>> Instance ID: efgh
->>>> Status: Failed
+>>>> Status: Failed (Type: Original)
 >>>> Last Update: Jan 13, 2017 02:06:44 EST
 
 Event Name           | Status               | Start                          | End                            | Duration            
@@ -384,7 +391,7 @@ Error Code: ScriptFailed
 [stdout] test
 
 >>>> Instance ID: ijkl
->>>> Status: Skipped
+>>>> Status: Skipped (Type: Original)
 >>>> Last Update: Jan 13, 2017 02:07:09 EST
 
 Event Name           | Status               | Start                          | End                            | Duration            
@@ -404,5 +411,6 @@ TEXT;
         // Instances info
         $this->assertSame(['abcd', 'efgh', 'ijkl'], $actual['instances']);
         $this->assertSame($expectedInstanceSummary, $actual['instancesSummary']);
+        $this->assertSame($expectedInstanceDetailed, $actual['instancesDetailed']);
     }
 }

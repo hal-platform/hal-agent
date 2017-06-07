@@ -22,7 +22,8 @@ class Pusher
     const ERR_ALREADY_EXISTS = 'Application version already exists';
     const ERR_WAITING = 'Waited for deployment to finish, but the operation timed out.';
 
-    const INFO_STILL_DEPLOYING = 'Deployment Status Check';
+    const INFO_STILL_DEPLOYING = 'Still deploying. Latest status: %s';
+    const INFO_WAITING_HEALTH_CHECK = 'Deployment finished. Waiting for health check';
 
     /**
      * @var EventLogger
@@ -125,6 +126,10 @@ class Pusher
             return false;
         }
 
+        // Deployment has finished
+        $this->logger->event('success', self::INFO_WAITING_HEALTH_CHECK);
+        $this->pauseWait();
+
         // We waited, now get the results
         $health = call_user_func($this->health, $eb, $awsApplication, $awsEnvironment);
         $context = array_merge($context, $health);
@@ -183,11 +188,13 @@ class Pusher
     }
 
     /**
+     * RUNS AT LEAST 3 ITERATIONS (1 minute), unless aws error occurs.
+     *
      * @param ElasticBeanstalkClient $eb
      * @param string $awsApplication
      * @param string $awsEnvironment
      *
-     * @return bool
+     * @return callable
      */
     private function buildWaiter(ElasticBeanstalkClient $eb, $awsApplication, $awsEnvironment)
     {
@@ -202,24 +209,45 @@ class Pusher
             }
 
             // deployment is still running if following states
-            if (!in_array($health['status'], ['Updating'])) {
+            if ($iteration > 3 && !in_array($health['status'], ['Updating'])) {
                 return true;
             }
 
             // Pop a status every 9 iterations (3 minutes, using 20s interval)
             if (++$iteration % 9 === 0) {
-                $this->logOngoingDeploymentHealth($health);
+                $this->logger->event('info', sprintf(self::INFO_STILL_DEPLOYING, $health['status']), $health);
             }
         };
     }
 
     /**
-     * @param array $health
+     * Sit still, look pretty.
      *
-     * @return void
+     * Wait 5 iterations after finished (20s * 5 = 1m40s)
+     *
+     * This ensures we wait a minimum time after a successful beanstalk deploy,
+     * to allow time for healthchecks to update.
+     *
+     * @return bool
      */
-    private function logOngoingDeploymentHealth($health)
-    {
-        $this->logger->event('info', self::INFO_STILL_DEPLOYING, $health);
+    private function pauseWait()
+     {
+        $iteration = 0;
+        $waiter = function() use (&$iteration) {
+            if ($iteration > 4) {
+                return true;
+            }
+
+            $iteration++;
+        };
+
+        try {
+            $this->waiter->wait($waiter);
+            return true;
+
+        } catch (TimeoutException $e) {
+            // timeout expired
+            return false;
+        }
     }
 }

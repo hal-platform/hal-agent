@@ -24,6 +24,7 @@ use QL\MCP\Common\Time\TimePoint;
  *     - Succeeded
  *     - Failed
  *     - Stopped
+ *     - Ready <----- bluegreen can continue
  *
  *     - Invalid
  *     - None
@@ -104,7 +105,7 @@ class HealthChecker
         $health = $this->getDeploymentHealth($cd, $id);
 
         // Only get instance statuses if deployment is active
-        if (!in_array($health['status'], ['InProgress', 'Succeeded', 'Failed'])) {
+        if (!in_array($health['status'], ['InProgress', 'Succeeded', 'Ready', 'Stopped', 'Failed'])) {
             return $health;
         }
 
@@ -123,9 +124,15 @@ class HealthChecker
             'instanceIds' => $instanceIDs
         ]);
 
-        $summary = $this->parseInstancesStatus($result);
+        $summary = $this->parseInstancesSummary($result);
+        $detailed = $this->parseInstancesStatus($result);
 
-        $context = $health + ['instances' => $instanceIDs] + ['instancesSummary' => $summary];
+        $context = $health + [
+            'instances' => $instanceIDs,
+            'instancesSummary' => $summary,
+            'instancesDetailed' => $detailed
+        ];
+
         return $context;
     }
 
@@ -148,6 +155,80 @@ class HealthChecker
      *
      * @return string
      */
+    public function parseInstancesSummary(ResultInterface $result)
+    {
+        $outputs = [];
+
+        if ($err = $result->search('errorMessage')) {
+            $outputs[] = "Error message: $err\n\n";
+        }
+
+        // @todo - identify first start, last end, total duration from events?
+
+        $config = [20, 20, 15, 30, 30, 20, 20];
+        $rows = [
+            ['Instance ID', 'Type', 'Status', 'Start Time', 'End Time', 'Duration', 'Most Recent Event'],
+            array_map(function($size) {
+                return str_repeat('-', $size);
+            }, $config)
+        ];
+
+        $summaries = $result->search('instancesSummary') ?: [];
+        foreach ($summaries as $summary) {
+            $id = $summary['instanceId'];
+            $parts = explode('/', $id);
+            $id = array_pop($parts);
+
+            $type = $this->nullable($summary, 'instanceType');
+            if ($type) {
+                $type = ($type === 'Green') ? 'Replacement (Green)' : 'Original (Blue)';
+            } else {
+                $type = 'Original';
+            }
+
+            $status = $this->nullable($summary, 'status', 'Unknown');
+            $events = $summary['lifecycleEvents'];
+
+            $lastFinishedEvent = null;
+            foreach ($events as $e) {
+                if (in_array($e['status'], ['Succeeded', 'Failed'])) {
+                    $lastFinishedEvent = $e;
+                }
+            }
+
+            $start = $this->clock->fromString($summary['lastUpdatedAt'], DateTime::ATOM);
+            $firstEvent = array_shift($events);
+            if ($firstEventTime = $this->nullable($firstEvent, 'startTime')) {
+                $start = $this->clock->fromString($firstEventTime, DateTime::ATOM);
+            }
+
+            $end = null;
+            $lastEvent = array_pop($events);
+            if ($lastEventTime = $this->nullable($lastEvent, 'endTime')) {
+                $end = $this->clock->fromString($lastEventTime, DateTime::ATOM);
+            }
+
+            $rows[] = [
+                $id,
+                $type,
+                $status,
+                $this->formatTime($start),
+                $this->formatTime($end),
+                $this->formatDuration($start, $end),
+                $lastFinishedEvent ? $lastFinishedEvent['lifecycleEventName'] : ''
+            ];
+        }
+
+        $outputs[] = $this->renderSummaryLines($rows, $config);
+
+        return implode("\n", $outputs);
+    }
+
+    /**
+     * @param ResultInterface $result
+     *
+     * @return string
+     */
     private function parseInstancesStatus(ResultInterface $result)
     {
         $outputs = [];
@@ -159,11 +240,12 @@ class HealthChecker
         $summaries = $result->search('instancesSummary') ?: [];
         foreach ($summaries as $summary) {
             $id = $summary['instanceId'];
+            $type = $this->nullable($summary, 'instanceType', 'Original');
             $status = $summary['status'];
             $events = $summary['lifecycleEvents'];
             $updated = $this->formatTime($summary['lastUpdatedAt']);
 
-            $outputs[] = $this->renderInstanceStatus($id, $status, $updated, $events);
+            $outputs[] = $this->renderInstanceStatus($id, $type, $status, $updated, $events);
         }
 
         return implode("\n", $outputs);
@@ -193,7 +275,7 @@ class HealthChecker
      *
      * @return string
      */
-    private function renderInstanceStatus($id, $status, $updated, array $events)
+    private function renderInstanceStatus($id, $type, $status, $updated, array $events)
     {
         $config = [20, 20, 30, 30, 20];
         $output = [
@@ -235,7 +317,7 @@ class HealthChecker
 
         $log = implode("\n", [
             ">>>> Instance ID: $id",
-            ">>>> Status: $status",
+            ">>>> Status: $status (Type: $type)",
             ">>>> Last Update: $updated\n",
             "$table\n"
         ]);

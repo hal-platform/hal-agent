@@ -30,7 +30,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
         $this->logger = Mockery::mock(EventLogger::class);
         $this->health = Mockery::mock(HealthChecker::class);
-        $this->waiter = new Waiter(.25, 10);
+        $this->waiter = new Waiter(.1, 10);
     }
 
     public function testSuccess()
@@ -40,10 +40,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
         ]);
 
         $expectedDescription = <<<TEXT
-[Environment]test
-[Build]b2.build
-[Push]p2.push
-[Hal]http://hal.local/pushes/p2.push
+[test]http://hal.local/pushes/p2.push
 TEXT;
         $this->cd
             ->shouldReceive('createDeployment')
@@ -71,7 +68,7 @@ TEXT;
             ->andReturn([
                 'status' => 'Succeeded'
             ])
-            ->twice();
+            ->times(6);
 
         $this->logger
             ->shouldReceive('event')
@@ -141,7 +138,7 @@ TEXT;
             ->andReturn([
                 'status' => 'Failed'
             ])
-            ->twice();
+            ->times(6);
 
         $this->logger
             ->shouldReceive('event')
@@ -183,14 +180,14 @@ TEXT;
             ->andReturn([
                 'status' => 'Queued',
                 'overview' => [
-                    'Pending' => 0,
+                    'Pending' => 11,
                     'InProgress' => 0,
-                    'Succeeded' => 3,
+                    'Succeeded' => 0,
                     'Failed' => 0,
                     'Skipped' => 0
                 ]
             ])
-            ->times(11);
+            ->times(9);
         $this->health
             ->shouldReceive('getDeploymentInstancesHealth')
             ->andReturn([
@@ -203,7 +200,7 @@ TEXT;
                     'Skipped' => 4
                 ]
             ])
-            ->times(1);
+            ->times(6);
         $this->health
             ->shouldReceive('getDeploymentInstancesHealth')
             ->andReturn([
@@ -216,11 +213,11 @@ TEXT;
                     'Skipped' => 4
                 ]
             ])
-            ->times(4);
+            ->times(1);
 
         $this->logger
             ->shouldReceive('event')
-            ->with('info', 'Deployed 2 of 11', Mockery::type('array'))
+            ->with('info', 'Still deploying. Completed 0 of 11', Mockery::type('array'))
             ->once();
         $this->logger
             ->shouldReceive('event')

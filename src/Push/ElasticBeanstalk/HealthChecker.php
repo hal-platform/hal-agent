@@ -18,21 +18,30 @@ use QL\MCP\Common\Time\TimePoint;
  * Get the health status for an elastic beanstalk environment
  *
  * Status:
- *     - Launching
- *     - Updating
- *     - Ready
- *     - Terminating
- *     - Terminated
+ *   - Launching
+ *   - Updating
+ *   - Ready
+ *   - Terminating
+ *   - Terminated
  *
- *     - Missing
- *     - Invalid
+ *   - Missing
+ *   - Invalid
  *
  * Health:
- *     - Red
- *     - Yellow
- *     - Green
- *     - Grey
+ *   - Red
+ *   - Yellow
+ *   - Green
+ *   - Grey
  *
+ *  HealthStatus:
+ *   - NoData
+ *   - Unknown
+ *   - Pending
+ *   - Ok
+ *   - Info
+ *   - Warning
+ *   - Degraded
+ *   - Severe
  */
 class HealthChecker
 {
@@ -104,7 +113,11 @@ class HealthChecker
             return $this->buildResponse(self::NON_STANDARD_MISSING, 'Grey');
         }
 
-        return $this->buildResponse($result->search('Environments[0].Status'), $result->search('Environments[0].Health'));
+        return $this->buildResponse(
+            $result->search('Environments[0].Status'),
+            $result->search('Environments[0].Health'),
+            $result->search('Environments[0].HealthStatus')
+    );
     }
 
     /**
@@ -127,14 +140,16 @@ class HealthChecker
     /**
      * @param string $status
      * @param string $health
+     * @param string $healthStatus
      *
      * @return array
      */
-    private function buildResponse($status, $health = '')
+    private function buildResponse($status, $health = '', $healthStatus = '')
     {
         return [
             'status' => $status,
-            'health' => $health
+            'health' => $health,
+            'healthStatus' => $healthStatus
         ];
     }
 

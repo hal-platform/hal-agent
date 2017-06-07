@@ -22,7 +22,7 @@ class Pusher
     const ERR_ALREADY_EXISTS = 'Application version already exists';
     const ERR_WAITING = 'Waited for deployment to finish, but the operation timed out.';
 
-    const INFO_STILL_DEPLOYING = 'Deployed %d of %d';
+    const INFO_STILL_DEPLOYING = 'Still deploying. Completed %d of %d';
 
     /**
      * @var EventLogger
@@ -97,13 +97,6 @@ class Pusher
             'object' => $s3version
         ];
 
-        $description = implode("\n", [
-            "[Environment]$environmentName",
-            "[Build]$buildId",
-            "[Push]$pushId",
-            sprintf('[Hal]%s/pushes/%s', $this->halBaseURL, $pushId)
-        ]);
-
         try {
 
             $result = $cd->createDeployment([
@@ -111,7 +104,7 @@ class Pusher
                 'deploymentGroupName' => $cdGroup,
                 'deploymentConfigName' => $cdConfiguration,
 
-                'description' => $description,
+                'description' => sprintf('[%s]%s/pushes/%s', $environmentName, $this->halBaseURL, $pushId),
                 'ignoreApplicationStopFailures' => false,
                 'revision' => [
                     'revisionType' => 'S3',
@@ -181,6 +174,8 @@ class Pusher
     }
 
     /**
+     * RUNS AT LEAST 3 ITERATIONS (1 minute), unless aws error occurs.
+     *
      * Custom waiter logic because amazon removed a lot of waiters between v2 and v3 of the sdk. LAME.
      *
      * @param CodeDeployClient $cd
@@ -201,12 +196,12 @@ class Pusher
             }
 
             // deployment is still running if following states
-            if (!in_array($health['status'], ['Created', 'Queued', 'InProgress'])) {
+            if ($iteration > 3 && !in_array($health['status'], ['Created', 'Queued', 'InProgress'])) {
                 return true;
             }
 
-            // Pop a status every 12 iterations (4 minutes, using 20s interval)
-            if (++$iteration % 12 === 0) {
+            // Pop a status every 9 iterations (3 minutes, using 20s interval)
+            if (++$iteration % 9 === 0) {
                 $this->logOngoingDeploymentHealth($health);
             }
         };
@@ -258,7 +253,8 @@ class Pusher
 
         $this->logger->event('info', $msg, [
             'status' => $health['status'],
-            'overview' => $health['overview']
+            'overview' => $health['overview'],
+            'instancesSummary' => $health['instancesSummary'] ?? ''
         ]);
     }
 }

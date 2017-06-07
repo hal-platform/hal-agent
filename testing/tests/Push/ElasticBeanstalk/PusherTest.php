@@ -28,12 +28,12 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->logger = Mockery::mock(EventLogger::CLASS);
-        $this->eb = Mockery::mock(ElasticBeanstalkClient::CLASS);
+        $this->logger = Mockery::mock(EventLogger::class);
+        $this->eb = Mockery::mock(ElasticBeanstalkClient::class);
         $this->streamer = function() {return 'file';};
 
-        $this->health = Mockery::mock(HealthChecker::CLASS);
-        $this->waiter = new Waiter(.25, 10);
+        $this->health = Mockery::mock(HealthChecker::class);
+        $this->waiter = new Waiter(.1, 10);
     }
 
     public function testSuccess()
@@ -56,7 +56,7 @@ class PusherTest extends PHPUnit_Framework_TestCase
                 'status' => 'Updating',
                 'health' => 'Grey',
             ])
-            ->once();
+            ->times(4);
         $this->health
             ->shouldReceive('__invoke')
             ->with($this->eb, 'appName', 'envId')
@@ -64,11 +64,15 @@ class PusherTest extends PHPUnit_Framework_TestCase
                 'status' => 'Ready',
                 'health' => 'Green'
             ])
-            ->twice();
+            ->times(2);
 
         $this->logger
             ->shouldReceive('event')
-            ->with('success', Mockery::any(), Mockery::any())
+            ->with('success', 'Deployment finished. Waiting for health check')
+            ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->with('success', 'Code Deployment', Mockery::any())
             ->once();
 
         $pusher = new Pusher($this->logger, $this->health, $this->waiter);
@@ -171,6 +175,10 @@ class PusherTest extends PHPUnit_Framework_TestCase
 
         $this->logger
             ->shouldReceive('event')
+            ->with('success', 'Deployment finished. Waiting for health check')
+            ->once();
+        $this->logger
+            ->shouldReceive('event')
             ->with('success', Pusher::EVENT_MESSAGE, Mockery::any())
             ->once();
 
@@ -216,6 +224,65 @@ class PusherTest extends PHPUnit_Framework_TestCase
             ->once();
 
         $pusher = new Pusher($this->logger, $this->health, new Waiter(.1, 5));
+        $actual = $pusher(
+            $this->eb,
+            'appName',
+            'envId',
+            'bucket-name',
+            's3_object.zip',
+            'b.1234',
+            'p.abcd',
+            'test'
+        );
+
+        $this->assertSame(false, $actual);
+    }
+
+    public function testPushWorksButThenHealthCheckFails()
+    {
+        $this->eb
+            ->shouldReceive('describeApplicationVersions')
+            ->andReturn(new Result(['ApplicationVersions' => []]));
+
+        $this->eb
+            ->shouldReceive('createApplicationVersion')
+            ->once();
+        $this->eb
+            ->shouldReceive('updateEnvironment')
+            ->once();
+
+        $this->health
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'status' => 'Updating',
+                'health' => 'Grey'
+            ])
+            ->times(3);
+        $this->health
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'status' => 'Ready',
+                'health' => 'Green'
+            ])
+            ->times(2);
+        $this->health
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'status' => 'Ready',
+                'health' => 'Red'
+            ])
+            ->times(1);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('success', 'Deployment finished. Waiting for health check')
+            ->once();
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', 'Code Deployment', Mockery::any())
+            ->once();
+
+        $pusher = new Pusher($this->logger, $this->health, $this->waiter);
         $actual = $pusher(
             $this->eb,
             'appName',
