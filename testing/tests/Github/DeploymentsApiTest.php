@@ -10,10 +10,10 @@ namespace Hal\Agent\Github;
 use GuzzleHttp\Client as GuzzleClient;
 use function GuzzleHttp\Psr7\stream_for;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Psr\Http\Message\ResponseInterface;
 
-class DeploymentsApiTest extends PHPUnit_Framework_TestCase
+class DeploymentsApiTest extends MockeryTestCase
 {
     public function testCreateDeploymentSuccess()
     {

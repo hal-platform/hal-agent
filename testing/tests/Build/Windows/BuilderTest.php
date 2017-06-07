@@ -8,9 +8,9 @@
 namespace Hal\Agent\Build\Windows;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class BuilderTest extends PHPUnit_Framework_TestCase
+class BuilderTest extends MockeryTestCase
 {
     public $remoter;
     public $command;

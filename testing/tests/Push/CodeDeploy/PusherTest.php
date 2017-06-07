@@ -12,11 +12,11 @@ use Aws\CodeDeploy\CodeDeployClient;
 use Aws\CodeDeploy\Exception\CodeDeployException;
 use Aws\Result;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Waiter\Waiter;
 
-class PusherTest extends PHPUnit_Framework_TestCase
+class PusherTest extends MockeryTestCase
 {
     public $cd;
 

@@ -8,7 +8,7 @@
 namespace Hal\Agent\Push;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use QL\Hal\Core\Crypto\CryptoException;
 use RuntimeException;
 use Aws\CodeDeploy\CodeDeployClient;
@@ -17,7 +17,7 @@ use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
 use Aws\Sdk;
 
-class AWSAuthenticatorTest extends PHPUnit_Framework_TestCase
+class AWSAuthenticatorTest extends MockeryTestCase
 {
     private $logger;
     private $di;

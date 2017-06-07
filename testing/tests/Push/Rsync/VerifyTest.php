@@ -8,13 +8,13 @@
 namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Agent\Remoting\SSHProcess;
 use Hal\Agent\Remoting\CommandContext;
 
-class VerifyTest extends PHPUnit_Framework_TestCase
+class VerifyTest extends MockeryTestCase
 {
     public $logger;
     public $ssh;

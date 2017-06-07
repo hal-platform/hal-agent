@@ -8,9 +8,9 @@
 namespace Hal\Agent\Build;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class UnpackerTest extends PHPUnit_Framework_TestCase
+class UnpackerTest extends MockeryTestCase
 {
     public $logger;
 

@@ -8,7 +8,7 @@
 namespace Hal\Agent\Push\S3;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Push\Mover;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Logger\EventLogger;
@@ -16,7 +16,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
-class PreparerTest extends PHPUnit_Framework_TestCase
+class PreparerTest extends MockeryTestCase
 {
     public $logger;
     public $filesystem;

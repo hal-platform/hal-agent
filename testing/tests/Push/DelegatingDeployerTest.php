@@ -10,11 +10,11 @@ namespace Hal\Agent\Push;
 use Mockery;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\DeployerStub;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class DelegatingDeployerTest extends PHPUnit_Framework_TestCase
+class DelegatingDeployerTest extends MockeryTestCase
 {
     public $output;
     public $logger;

@@ -12,9 +12,9 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Stream\Stream;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class ArchiveApiTest extends PHPUnit_Framework_TestCase
+class ArchiveApiTest extends MockeryTestCase
 {
     public $targetFile;
 

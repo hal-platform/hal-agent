@@ -8,7 +8,7 @@
 namespace Hal\Agent\Build;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Command\IO;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\BuildHandlerStub;
@@ -16,7 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class DelegatingBuilderTest extends PHPUnit_Framework_TestCase
+class DelegatingBuilderTest extends MockeryTestCase
 {
     public $output;
     public $io;

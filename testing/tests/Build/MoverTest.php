@@ -8,9 +8,9 @@
 namespace Hal\Agent\Build;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class MoverTest extends PHPUnit_Framework_TestCase
+class MoverTest extends MockeryTestCase
 {
     public $logger;
     public $filesystem;

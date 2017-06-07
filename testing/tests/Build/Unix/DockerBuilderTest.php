@@ -8,12 +8,12 @@
 namespace Hal\Agent\Build\Unix;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\CommandContext;
 use Hal\Agent\Remoting\SSHProcess;
 
-class DockerBuilderTest extends PHPUnit_Framework_TestCase
+class DockerBuilderTest extends MockeryTestCase
 {
     public $logger;
     public $remoter;

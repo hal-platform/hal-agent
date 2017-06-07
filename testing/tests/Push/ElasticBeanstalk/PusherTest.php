@@ -12,12 +12,12 @@ use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\ElasticBeanstalk\Exception\ElasticBeanstalkException;
 use Aws\Result;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
 use Hal\Agent\Waiter\Waiter;
 
-class PusherTest extends PHPUnit_Framework_TestCase
+class PusherTest extends MockeryTestCase
 {
     public $logger;
     public $eb;

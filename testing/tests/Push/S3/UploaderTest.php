@@ -11,9 +11,9 @@ use Aws\CommandInterface;
 use Aws\Exception\AwsException;
 use Aws\S3\Exception\S3Exception;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class UploaderTest extends PHPUnit_Framework_TestCase
+class UploaderTest extends MockeryTestCase
 {
     public $logger;
     public $s3;

@@ -8,9 +8,9 @@
 namespace Hal\Agent\Remoting;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class CredentialWalletTest extends PHPUnit_Framework_TestCase
+class CredentialWalletTest extends MockeryTestCase
 {
     public function testServerSpecificCredentialsPreferredOverWildcard()
     {

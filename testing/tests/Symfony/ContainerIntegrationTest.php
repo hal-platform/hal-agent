@@ -8,13 +8,13 @@
 namespace Hal\Agent\Symfony;
 
 use Hal\Agent\Application\Di;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-class ContainerIntegrationTest extends PHPUnit_Framework_TestCase
+class ContainerIntegrationTest extends MockeryTestCase
 {
     public function setUp()
     {

@@ -8,12 +8,12 @@
 namespace Hal\Agent\Build;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Github\ArchiveApi;
 use Hal\Agent\Github\GitHubException;
 use Hal\Agent\Logger\EventLogger;
 
-class DownloaderTest extends PHPUnit_Framework_TestCase
+class DownloaderTest extends MockeryTestCase
 {
     public $file;
     public $logger;

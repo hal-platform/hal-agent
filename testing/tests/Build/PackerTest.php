@@ -8,13 +8,13 @@
 namespace Hal\Agent\Build;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
-class PackerTest extends PHPUnit_Framework_TestCase
+class PackerTest extends MockeryTestCase
 {
     public $file;
     public $logger;

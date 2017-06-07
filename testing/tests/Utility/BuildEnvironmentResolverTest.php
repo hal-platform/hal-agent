@@ -8,7 +8,7 @@
 namespace Hal\Agent\Utility;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
@@ -17,7 +17,7 @@ use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\Server;
 use Symfony\Component\Process\ProcessBuilder;
 
-class BuildEnvironmentResolverTest extends PHPUnit_Framework_TestCase
+class BuildEnvironmentResolverTest extends MockeryTestCase
 {
     public function testNoPropertiesReturnedIfWindowsAndUnixDataNotSet()
     {

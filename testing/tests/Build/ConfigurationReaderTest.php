@@ -8,13 +8,13 @@
 namespace Hal\Agent\Build;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 
-class ConfigurationReaderTest extends PHPUnit_Framework_TestCase
+class ConfigurationReaderTest extends MockeryTestCase
 {
     public $logger;
     public $filesystem;

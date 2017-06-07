@@ -8,9 +8,9 @@
 namespace Hal\Agent\Build\Generic;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class CleanerTest extends PHPUnit_Framework_TestCase
+class CleanerTest extends MockeryTestCase
 {
     public $remoter;
 

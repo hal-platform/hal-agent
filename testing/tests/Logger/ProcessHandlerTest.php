@@ -10,7 +10,7 @@ namespace Hal\Agent\Logger;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Deployment;
@@ -18,7 +18,7 @@ use QL\Hal\Core\Entity\Process;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\JobIdGenerator;
 
-class ProcessHandlerTest extends PHPUnit_Framework_TestCase
+class ProcessHandlerTest extends MockeryTestCase
 {
     public $em;
     public $repo;

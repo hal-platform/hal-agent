@@ -8,9 +8,9 @@
 namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class PusherTest extends PHPUnit_Framework_TestCase
+class PusherTest extends MockeryTestCase
 {
     public $logger;
     public $syncer;

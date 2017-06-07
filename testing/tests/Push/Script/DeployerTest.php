@@ -8,13 +8,13 @@
 namespace Hal\Agent\Push\Script;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Command\IO;
 use Hal\Agent\Build\DelegatingBuilder;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class DeployerTest extends PHPUnit_Framework_TestCase
+class DeployerTest extends MockeryTestCase
 {
     public $output;
     public $logger;

@@ -8,10 +8,10 @@
 namespace Hal\Agent\Build\Windows;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class WindowsBuildHandlerTest extends PHPUnit_Framework_TestCase
+class WindowsBuildHandlerTest extends MockeryTestCase
 {
     public $output;
     public $logger;

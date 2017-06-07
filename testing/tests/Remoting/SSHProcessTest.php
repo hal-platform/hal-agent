@@ -9,9 +9,9 @@ namespace Hal\Agent\Remoting;
 
 use Mockery;
 use phpseclib\Net\SSH2;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class SSHProcessTest extends PHPUnit_Framework_TestCase
+class SSHProcessTest extends MockeryTestCase
 {
     public $logger;
     public $ssh;

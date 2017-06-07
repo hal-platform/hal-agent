@@ -10,7 +10,7 @@ namespace Hal\Agent\Push\ElasticBeanstalk;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\AWSAuthenticator;
 use Hal\Agent\Push\ReleasePacker;
@@ -23,7 +23,7 @@ use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class DeployerTest extends PHPUnit_Framework_TestCase
+class DeployerTest extends MockeryTestCase
 {
     public $output;
     public $logger;

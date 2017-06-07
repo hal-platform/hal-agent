@@ -8,11 +8,11 @@
 namespace Hal\Agent\Push;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Yaml\Dumper;
 
-class UnpackerTest extends PHPUnit_Framework_TestCase
+class UnpackerTest extends MockeryTestCase
 {
     public $logger;
 

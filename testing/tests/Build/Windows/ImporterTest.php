@@ -8,14 +8,14 @@
 namespace Hal\Agent\Build\Windows;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\FileSyncManager;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
-class ImporterTest extends PHPUnit_Framework_TestCase
+class ImporterTest extends MockeryTestCase
 {
     public $logger;
     public $syncer;

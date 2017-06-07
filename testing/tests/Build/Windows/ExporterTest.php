@@ -8,9 +8,9 @@
 namespace Hal\Agent\Build\Windows;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
-class ExporterTest extends PHPUnit_Framework_TestCase
+class ExporterTest extends MockeryTestCase
 {
     public $logger;
     public $syncer;

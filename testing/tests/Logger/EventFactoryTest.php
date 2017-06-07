@@ -8,7 +8,7 @@
 namespace Hal\Agent\Logger;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Push;
 use QL\Hal\Core\Entity\EventLog;
@@ -16,7 +16,7 @@ use Hal\Agent\Testing\JsonableStub;
 use Hal\Agent\Testing\StringableStub;
 use stdClass;
 
-class EventFactoryTest extends PHPUnit_Framework_TestCase
+class EventFactoryTest extends MockeryTestCase
 {
     public $em;
     public $random;

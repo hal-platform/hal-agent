@@ -10,13 +10,13 @@ namespace Hal\Agent\Push\ElasticBeanstalk;
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\Result;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
 use DateTime;
 use QL\MCP\Common\Time\Clock;
 use QL\MCP\Common\Time\TimePoint;
 
-class HealthCheckerTest extends PHPUnit_Framework_TestCase
+class HealthCheckerTest extends MockeryTestCase
 {
     public $eb;
     public $clock;

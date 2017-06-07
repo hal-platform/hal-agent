@@ -10,14 +10,14 @@ namespace Hal\Agent\Push\S3;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\AWSAuthenticator;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Entity\Push;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class DeployerTest extends PHPUnit_Framework_TestCase
+class DeployerTest extends MockeryTestCase
 {
     public $output;
     public $logger;

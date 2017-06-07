@@ -9,12 +9,12 @@ namespace Hal\Agent\Push;
 
 use Hal\Agent\Logger\EventLogger;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
-class ReleasePackerTest extends PHPUnit_Framework_TestCase
+class ReleasePackerTest extends MockeryTestCase
 {
     public $file;
     public $filesystem;

@@ -9,7 +9,7 @@ namespace Hal\Agent\Build;
 
 use Doctrine\ORM\EntityManager;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use QL\Hal\Core\Entity\Application;
@@ -17,7 +17,7 @@ use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
 use QL\Hal\Core\Repository\BuildRepository;
 
-class ResolverTest extends PHPUnit_Framework_TestCase
+class ResolverTest extends MockeryTestCase
 {
     public $em;
     public $buildRepo;

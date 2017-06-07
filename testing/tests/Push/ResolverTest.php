@@ -9,7 +9,7 @@ namespace Hal\Agent\Push;
 
 use Doctrine\ORM\EntityManager;
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
@@ -24,7 +24,7 @@ use QL\Hal\Core\Entity\Server;
 use QL\Hal\Core\Repository\PushRepository;
 use QL\MCP\Common\Time\Clock;
 
-class ResolverTest extends PHPUnit_Framework_TestCase
+class ResolverTest extends MockeryTestCase
 {
     public $logger;
     public $em;

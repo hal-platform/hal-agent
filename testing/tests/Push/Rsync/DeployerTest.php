@@ -8,10 +8,10 @@
 namespace Hal\Agent\Push\Rsync;
 
 use Mockery;
-use PHPUnit_Framework_TestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class DeployerTest extends PHPUnit_Framework_TestCase
+class DeployerTest extends MockeryTestCase
 {
     public $output;
     public $logger;
