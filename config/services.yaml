@@ -1,0 +1,182 @@
+services:
+
+    application:
+        class: 'Symfony\Component\Console\Application'
+        arguments: ['%application.title%', '%application.version%']
+        calls:
+            - ['add', ['@command.management.build.create']]
+            - ['add', ['@command.management.build.start']]
+            - ['add', ['@command.management.build.remove']]
+            - ['add', ['@command.management.release.create']]
+            - ['add', ['@command.management.release.start']]
+            - ['add', ['@command.runner.build']]
+            - ['add', ['@command.runner.deploy']]
+            - ['add', ['@command.worker.build']]
+            - ['add', ['@command.worker.deploy']]
+            - ['add', ['@command.docker.refresh']]
+            - ['add', ['@command.docker.status']]
+            - ['setDispatcher', ['@dispatcher']]
+    dispatcher:
+        class: 'Symfony\Component\EventDispatcher\EventDispatcher'
+        calls:
+            - ['addSubscriber', ['@logger.mcp.subscriber']]
+            - ['addSubscriber', ['@logger.exception_handler']]
+
+    clock:
+        class: 'QL\MCP\Common\Time\Clock'
+        arguments: ['now', 'UTC']
+
+    ssh.manager:
+        class: 'Hal\Agent\Remoting\SSHSessionManager'
+        arguments: ['@logger.event', '@ssh.wallet']
+
+    ssh.filemanager:
+        class: 'Hal\Agent\Remoting\FileSyncManager'
+        arguments: ['@ssh.wallet']
+
+    ssh.wallet:
+        class: 'Hal\Agent\Remoting\CredentialWallet'
+        calls:
+            - ['importCredentials', ['%ssh.credentials%']]
+
+    ####################################################################################################################
+    # CACHING
+    ####################################################################################################################
+
+    # cache.github:
+    #     class: 'QL\MCP\Cache\CacheInterface'
+    #     factory: ['@service_container', 'get']
+    #     arguments: ['cache.%cache.type.github%']
+    #
+    # cache.memory:
+    #     class: 'QL\MCP\Cache\MemoryCache'
+
+    # cache.redis:
+    #     class: 'QL\MCP\Cache\PredisCache'
+    #     arguments: ['@redis']
+    #
+    # cache.redis_github:
+    #     class: 'QL\MCP\Cache\PredisCache'
+    #     parent: 'cache.redis'
+    #     calls:
+    #         - ['setMaximumTtl', ['%cache.github.default.ttl%']]
+
+    redis:
+        class: 'Predis\Client'
+        arguments:
+            - '%redis.server%'
+            - { prefix: '%redis.prefix%:' }
+
+    ####################################################################################################################
+    # ERROR & EXCEPTION HANDLING
+    ####################################################################################################################
+
+    logger:
+        parent: 'mcp.logger'
+
+    logger.exception_handler:
+        class: 'Hal\Agent\Symfony\ExceptionHandlerSubscriber'
+        arguments: ['@logger']
+        calls:
+            - ['setStacktraceLogging', ['%error_handling.log_stacktrace%']]
+
+    logger.event:
+        class: 'Hal\Agent\Logger\EventLogger'
+        arguments:
+            - '@doctrine.em'
+            - '@logger.event.factory'
+            - '@logger.process.handler'
+            - '@clock'
+    logger.event.factory:
+        class: 'Hal\Agent\Logger\EventFactory'
+        arguments: ['@doctrine.em', '@doctrine.random']
+        calls:
+            - ['setRedisHandler', ['@redis']]
+
+    logger.process.handler:
+        class: 'Hal\Agent\Logger\ProcessHandler'
+        arguments: ['@doctrine.em', '@utility.id.generator']
+
+    # subscriber to symfony/console event system to prepare mcp logger
+    logger.mcp.subscriber:
+        class: 'Hal\Agent\Logger\MCPLoggerSubscriber'
+        arguments: ['@mcp.logger.factory']
+
+    ####################################################################################################################
+    # DOCTRINE-SPECIFIC SERVICES
+    ####################################################################################################################
+
+    doctrine.cache.redis:
+        class: 'QL\Hal\Core\Utility\DoctrinePredisCache'
+        arguments: ['@redis', '%doctrine.cache.ttl%']
+
+    ####################################################################################################################
+    # utility / shared
+    ####################################################################################################################
+
+    utility.filesystem:
+        class: 'Symfony\Component\Filesystem\Filesystem'
+    utility.process.builder:
+        class: 'Symfony\Component\Process\ProcessBuilder'
+        shared: false
+        calls:
+            - ['inheritEnvironmentVariables', [false]]
+    utility.referenceResolver:
+        class: 'Hal\Agent\Github\ReferenceResolver'
+        arguments:
+            - '@github.references'
+            - '@github.commits'
+            - '@github.pullRequests'
+    utility.forker:
+        class: 'Hal\Agent\Helper\ForkHelper'
+
+    utility.id.generator:
+        class: 'QL\Hal\Core\JobIdGenerator'
+        arguments:
+            - '%application.major.version%'
+            - '%unique.alphabet%'
+            - '%unique.size%'
+
+    yaml.parser:
+        class: 'Symfony\Component\Yaml\Parser'
+
+    utility.environment.resolver:
+        class: 'Hal\Agent\Utility\BuildEnvironmentResolver'
+        arguments: ['@utility.process.builder']
+        calls:
+            - ['setWindowsBuilder', ['%build.windows.user%', '%build.windows.server%', '%path.win_builder%']]
+            - ['setUnixBuilder',    ['%build.linux.user%',    '%build.linux.server%',    '%path.linux_builder%']]
+
+    aws:
+        class: 'Aws\Sdk'
+        arguments:
+            - { version: 'latest' }
+
+    ####################################################################################################################
+    # encryption
+    ####################################################################################################################
+
+    encrypter:
+        class: 'QL\Hal\Core\Crypto\Encrypter'
+        arguments: ['%encrypter.publickey%']
+
+    decrypter:
+        class: 'QL\Hal\Core\Crypto\Decrypter'
+        factory: ['@decrypter.factory', 'getAsymmetricDecrypter']
+        lazy: true
+
+    decrypter.factory:
+        class: 'QL\Hal\Core\Crypto\CryptoFactory'
+        arguments: ['@encrypter.encryptedkey.squished', '%encrypter.secret.path%']
+
+    encrypted.resolver:
+        class: 'Hal\Agent\Utility\EncryptedPropertyResolver'
+        arguments:
+            - '@doctrine.em'
+            - '@logger.event'
+            - '@service_container'
+
+    encrypter.encryptedkey.squished:
+        class: 'stdClass'
+        factory: ['Hal\Agent\Utility\Stringify', 'squish']
+        arguments: ['%encrypter.encryptedkey%']

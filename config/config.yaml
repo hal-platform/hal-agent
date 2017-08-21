@@ -1,0 +1,6 @@
+imports:
+    - resource: 'vendor/*.yaml'
+    - resource: 'services/*.yaml'
+
+    - resource: 'services.yaml'
+    - resource: 'parameters.yaml'

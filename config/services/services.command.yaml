@@ -1,0 +1,174 @@
+services:
+
+    ####################################################################################################################
+    # lazy commands
+    ####################################################################################################################
+
+    # management
+
+    command.management.build.create:
+        parent: 'command.template'
+        arguments: ['management:build:create', 'executor.build.create']
+        configurator: ['Hal\Agent\Executor\Management\CreateBuildCommand', 'configure']
+    command.management.build.start:
+        parent: 'command.template'
+        arguments: ['management:build:start', 'executor.build.start']
+        configurator: ['Hal\Agent\Executor\Management\StartBuildCommand', 'configure']
+    command.management.release.create:
+        parent: 'command.template'
+        arguments: ['management:release:create', 'executor.release.create']
+        configurator: ['Hal\Agent\Executor\Management\CreateReleaseCommand', 'configure']
+    command.management.release.start:
+        parent: 'command.template'
+        arguments: ['management:release:start', 'executor.release.start']
+        configurator: ['Hal\Agent\Executor\Management\StartReleaseCommand', 'configure']
+    command.management.build.remove:
+        parent: 'command.template'
+        arguments: ['management:build:remove', 'executor.build.remove']
+        configurator: ['Hal\Agent\Executor\Management\RemoveBuildCommand', 'configure']
+
+    # job runners
+
+    command.runner.build:
+        parent: 'command.template'
+        arguments: ['runner:build', 'executor.runner.build']
+        configurator: ['Hal\Agent\Executor\Runner\BuildCommand', 'configure']
+    command.runner.deploy:
+        parent: 'command.template'
+        arguments: ['runner:deploy', 'executor.runner.deploy']
+        configurator: ['Hal\Agent\Executor\Runner\DeployCommand', 'configure']
+
+    # workers - cron
+
+    command.worker.build:
+        parent: 'command.template'
+        arguments: ['worker:build', 'executor.worker.build']
+        configurator: ['Hal\Agent\Executor\Worker\BuildCommand', 'configure']
+    command.worker.deploy:
+        parent: 'command.template'
+        arguments: ['worker:deploy', 'executor.worker.deploy']
+        configurator: ['Hal\Agent\Executor\Worker\DeployCommand', 'configure']
+
+    # docker
+
+    command.docker.refresh:
+        parent: 'command.template'
+        arguments: ['docker:refresh', 'executor.docker.refresh']
+        configurator: ['Hal\Agent\Executor\Docker\UpdateSourcesCommand', 'configure']
+    command.docker.status:
+        parent: 'command.template'
+        arguments: ['docker:status', 'executor.docker.status']
+        configurator: ['Hal\Agent\Executor\Docker\CheckStatusCommand', 'configure']
+
+    # shared
+
+    command.template:
+        class: 'Symfony\Component\Console\Command\Command'
+        factory: ['@command.factory', 'build']
+
+    command.factory:
+        class: 'Hal\Agent\Command\HalCommandFactory'
+        arguments: ['@service_container']
+
+    ####################################################################################################################
+    # commands
+    ####################################################################################################################
+
+    # management
+
+    executor.build.create:
+        class: 'Hal\Agent\Executor\Management\CreateBuildCommand'
+        arguments:
+            - '@doctrine.em'
+            - '@clock'
+            - '@utility.referenceResolver'
+            - '@utility.id.generator'
+    executor.build.start:
+        class: 'Hal\Agent\Executor\Management\StartBuildCommand'
+        arguments: ['@executor.build.create', '@executor.runner.build']
+    executor.build.remove:
+        class: 'Hal\Agent\Executor\Management\RemoveBuildCommand'
+        arguments:
+            - '@doctrine.em'
+            - '@utility.filesystem'
+        calls:
+            - ['setArchivePath', ['%path.archive%']]
+    executor.release.create:
+        class: 'Hal\Agent\Executor\Management\CreateReleaseCommand'
+        arguments:
+            - '@doctrine.em'
+            - '@clock'
+            - '@utility.id.generator'
+    executor.release.start:
+        class: 'Hal\Agent\Executor\Management\StartReleaseCommand'
+        arguments: ['@executor.release.create', '@executor.runner.deploy']
+
+    # job runners
+
+    executor.runner.build:
+        class: 'Hal\Agent\Executor\Runner\BuildCommand'
+        arguments:
+            - '@logger.event'
+            - '@build.resolver'
+            - '@build.downloader'
+            - '@build.unpacker'
+            - '@build.configuration.reader'
+            - '@build.builder'
+            - '@build.packer'
+            - '@build.mover'
+            - '@utility.filesystem'
+            - '@ssh.manager'
+    executor.runner.deploy:
+        class: 'Hal\Agent\Executor\Runner\DeployCommand'
+        arguments:
+            - '@logger.event'
+            - '@push.resolver'
+            - '@push.mover'
+            - '@push.unpacker'
+            - '@push.configuration.reader'
+            - '@push.builder'
+            - '@push.deployer'
+            - '@utility.filesystem'
+
+    # workers - cron
+
+    executor.worker.build:
+        class: 'Hal\Agent\Executor\Worker\BuildCommand'
+        arguments:
+            - '@doctrine.em'
+            - '@utility.process.builder'
+            - '@mcp.logger'
+            - '%root%'
+    executor.worker.deploy:
+        class: 'Hal\Agent\Executor\Worker\DeployCommand'
+        arguments:
+            - '@doctrine.em'
+            - '@utility.process.builder'
+            - '@mcp.logger'
+            - '%root%'
+
+    # docker
+
+    executor.docker.refresh:
+        class: 'Hal\Agent\Executor\Docker\UpdateSourcesCommand'
+        arguments:
+            - '@ssh.filemanager'
+            - '@utility.process.builder'
+            - '@github.archive'
+            - '%path.temp%'
+            - '%build.linux.user%'
+            - '%build.linux.server%'
+            - '%path.linux_dockerfiles%'
+            - '%docker.source.repository%'
+            - '%docker.source.reference%'
+    executor.docker.status:
+        class: 'Hal\Agent\Executor\Docker\CheckStatusCommand'
+        arguments:
+            - '@ssh.manager'
+            - '@redis'
+            - '@clock'
+            - '%build.linux.user%'
+            - '%build.linux.server%'
+            - '%docker.option.sudo%'
+            - '%path.temp%'
+            - '%path.linux_builder%'

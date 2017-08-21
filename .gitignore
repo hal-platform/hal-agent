@@ -1,26 +1,24 @@
-# recommended location for archives
+# recommended location for builds, archives, docker artifacts
 /.archive/
-
-# recommended location for build artifacts
 /.build/
-
-# recommended location for "build server" build artifacts
 /.buildserver/
-/.dockerimages/
-
-# doctrine proxy location
-/.doctrine/
+/.dockerfiles/
 
 # testing
 /.error.log
 /phpunit.xml
 /.phpunit/
 
-# compiled configuration, package manager installation
+# package installation
 /bin/composer
-/configuration/config.env.yml
-/src/CachedContainer.php
 /vendor/
+
+# compiled configuration
+/config/.env
+/src/CachedContainer.php
+
+# deployment caches
+/.doctrine/
 
 # sensitive stuff
 /.keys/

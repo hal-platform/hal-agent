@@ -12,46 +12,54 @@
     },
 
     "autoload": {
-        "psr-4": { "Hal\\Agent\\": "src/", "Hal\\Agent\\Testing\\": "testing/src" }
+        "psr-4": { "Hal\\Agent\\": "src" }
+    },
+
+    "autoload-dev": {
+        "psr-4": { "Hal\\Agent\\Testing\\": "testing/src" }
     },
 
     "require": {
         "php-64bit": "~7.1",
 
-        "ext-curl": "*",
-        "ext-openssl": "*",
-        "ext-pdo": "*",
-        "ext-pdo_mysql": "*",
-        "ext-pdo_sqlite": "*",
+        "ext-curl":           "*",
+        "ext-libsodium":      "*",
+        "ext-openssl":        "*",
+        "ext-pdo":            "*",
+        "ext-pdo_mysql":      "*",
+        "ext-pdo_sqlite":     "*",
 
         "aws/aws-sdk-php": "~3.20",
-        "doctrine/orm": "~2.5",
-        "doctrine/cache": "~1.6",
+        "doctrine/orm":    "~2.5",
+        "doctrine/cache":  "~1.6",
 
-        "guzzlehttp/guzzle": "^6.0",
-        "knplabs/github-api": "~2.0.1",
-        "paragonie/random_compat": "~1.1",
-        "phpseclib/phpseclib": "2.0.4",
-        "php-http/guzzle6-adapter": "^1.1.0",
-        "predis/predis": "~1.0",
-        "psr/log": "*",
+        "guzzlehttp/guzzle":            "^6.0",
+        "knplabs/github-api":           "~2.5.0",
+        "paragonie/random_compat":      "~1.1",
+        "phpseclib/phpseclib":          "2.0.4",
+        "php-http/guzzle6-adapter":     "^1.1.0",
+        "predis/predis":                "~1.0",
+        "psr/log":                      "*",
 
-        "ql/hal-core":   "2.10.0",
+        "ql/hal-core":                  "2.10.0",
 
-        "ql/mcp-common": "^1.1",
-        "ql/mcp-logger": "^3.0.0",
+        "ql/mcp-common":                "~1.1",
+        "ql/mcp-logger":                "~3.0.0",
 
-        "symfony/config":                "~3.2",
-        "symfony/console":               "~3.2",
-        "symfony/debug":                 "~3.2",
-        "symfony/dependency-injection":  "~3.2",
-        "symfony/event-dispatcher":      "~3.2",
-        "symfony/filesystem":            "~3.2",
-        "symfony/process":               "~3.2",
-        "symfony/yaml":                  "~3.2"
+        "symfony/config":                "~3.3",
+        "symfony/console":               "~3.3",
+        "symfony/debug":                 "~3.3",
+        "symfony/dependency-injection":  "~3.3",
+        "symfony/dotenv":                "~3.3",
+        "symfony/event-dispatcher":      "~3.3",
+        "symfony/filesystem":            "~3.3",
+        "symfony/process":               "~3.3",
+        "symfony/proxy-manager-bridge":  "~3.3",
+        "symfony/yaml":                  "~3.3"
     },
     "require-dev": {
-        "mockery/mockery": "~0.9",
-        "phpunit/phpunit": "~6.2"
+        "mockery/mockery":      "~0.9",
+        "phpunit/phpunit":      "~6.2",
+        "symfony/var-dumper":   "~3.3"
     }
 }

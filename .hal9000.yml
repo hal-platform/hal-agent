@@ -1,6 +1,5 @@
 system: docker:php7.1
-exclude: []
 build:
+    - 'do_not_deploy_this'
     - 'bin/install --deploy'
     - 'bin/deploy --deploy'
-

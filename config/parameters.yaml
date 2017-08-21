@@ -1,0 +1,129 @@
+parameters:
+    ############################################################################
+    # application
+    ############################################################################
+    application.id: '201359'
+    application.title: 'Hal Agent'
+    application.environment: '%env(ENVIRONMENT)%'
+
+    application.major.version: '%env(HAL_APPLICATION_VERSION_MAJOR)%'
+    application.minor.version: '%env(HAL_APPLICATION_VERSION_MINOR)%'
+    application.version: '%application.major.version%.%application.minor.version%'
+
+    application.sha: '%env(HAL_APPLICATION_SHA)%'
+
+    hal.pushfile.path: '%root%/.hal9000.push.yml'
+
+    ############################################################################
+    # general
+    ############################################################################
+    root: '%env(HAL_ROOT)%'
+    hal.baseurl: '%env(HAL_BASEURL)%'
+
+    unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
+    unique.size: 4
+    date.timezone: 'America/Detroit'
+
+    ############################################################################
+    # paths
+    ############################################################################
+    path.archive: '%env(HAL_PATH_ARTIFACT_ARCHIVE)%'        # permanent filesystem artifact repository
+    path.temp: '%env(HAL_PATH_BUILD_TEMP)%'                 # temporary scratch, local
+    path.linux_builder: '%env(HAL_PATH_LINUX_BUILDER)%'     # temporary scratch, linux builder
+    path.win_builder: '%env(HAL_PATH_WIN_BUILDER)%'         # temporary scratch, windows builder
+    path.linux_dockerfiles: '%env(HAL_PATH_DOCKERFILES)%'
+
+    ############################################################################
+    # builders
+    ############################################################################
+    build.linux.user: '%env(HAL_LINUX_BUILDER_USER)%'
+    build.linux.server: '%env(HAL_LINUX_BUILDER_SERVER)%'
+    build.linux.keypath: '%env(HAL_LINUX_SSH_KEYPATH)%'
+
+    build.windows.user: '%env(HAL_WIN_BUILDER_USER)%'
+    build.windows.server: '%env(HAL_WIN_BUILDER_SERVER)%'
+    build.windows.keypath: '%env(HAL_WIN_SSH_KEYPATH)%'
+
+    deploy.rsync.user: '%env(HAL_RSYNC_DEPLOY_USER)%'
+    deploy.rsync.keypath: '%env(HAL_RSYNC_SSH_KEYPATH)%'
+
+    ############################################################################
+    # logging
+    ############################################################################
+    error_handling.log_stacktrace: '%env(HAL_LOG_STACKTRACES_ON)%'
+    error_handling.docker.debug: '%env(HAL_LOG_DOCKER_DEBUG_ON)%'
+
+    ############################################################################
+    # doctrine
+    ############################################################################
+    doctrine.user.service: 'doctrine.utility.lazy.user'
+
+    ############################################################################
+    # timeouts
+    ############################################################################
+    timeout.build: 1800
+    timeout.push: 300
+
+    timeout.push.build: 300
+    timeout.push.serverCommand: 120
+
+    timeout.standard: 20
+    timeout.filepacking: 120
+    timeout.filetransfer: 120
+
+    push.cd.waiter.interval: 20
+    push.cd.waiter.max: 60
+
+    push.eb.waiter.interval: 20
+    push.eb.waiter.max: 60
+
+    ############################################################################
+    # github
+    ############################################################################
+    github.token: '%env(HAL_GITHUB_ENTERPRISE_TOKEN)%'
+    github.baseurl.site: '%env(HAL_GITHUB_ENTERPRISE_URL)%'
+    github.baseurl.api: '%github.baseurl.site%/api/v3'
+
+    ############################################################################
+    # cache
+    ############################################################################
+    redis.server: '%env(HAL_REDIS_SERVER)%'
+    redis.prefix: '%env(HAL_REDIS_PREFIX)%'
+
+    ############################################################################
+    # docker
+    ############################################################################
+    docker.source.repository: 'skluck/docker-images'
+    docker.source.reference: 'master'
+
+    docker.option.default_image: 'base_debian8'
+    docker.option.sudo: false
+
+    ############################################################################
+    # credentials / encryption
+    ############################################################################
+    ssh.credentials:
+        - ['%build.linux.user%',  '*', 'key:%build.linux.keypath%']
+        - ['%deploy.rsync.user%', '*', 'key:%deploy.rsync.keypath%']
+
+    encrypter.secret.path: '%env(HAL_CRYPTO_SECRETPATH)%'
+    encrypter.publickey: '%env(HAL_CRYPTO_PUBLICKEY)%'
+    encrypter.encryptedkey: '%env(HAL_CRYPTO_PRIVATEKEY)%'
+
+    ############################################################################
+    # platform modules
+    ############################################################################
+
+    build.platforms:
+        unix: 'build.unix.handler'
+        #windows: 'build.windows.handler'
+
+    deployment.script.platforms:
+        unix: 'push.script.build.unix.handler'
+
+    deployment.platforms:
+        rsync: 'push.rsync.deployer'
+        eb: 'push.eb.deployer'
+        s3: 'push.s3.deployer'
+        cd: 'push.cd.deployer'
+        script: 'push.script.deployer'
