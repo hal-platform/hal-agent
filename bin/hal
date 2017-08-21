@@ -3,16 +3,19 @@
 
 namespace Hal\Agent\Bootstrap;
 
-use Hal\Agent\Application\Di;
+use Hal\Agent\Application\DI2;
 use Hal\Agent\CachedContainer;
 use Symfony\Component\Debug\ErrorHandler;
 
-$root = __DIR__ . '/..';
-require_once $root . '/configuration/bootstrap.php';
-
-$di = Di::getHalDI($root);
+$root = realpath(__DIR__ . '/..');
+if (!$container = @include "${root}/config/bootstrap.php") {
+    echo "Boom goes the dynamite.\n";
+    exit(1);
+};
 
 $err = ErrorHandler::register();
-$err->setDefaultLogger($di->get('logger'));
+$err->setDefaultLogger($container->get('logger'));
 
-$di->get('application')->run();
+$app = $container->get('application');
+
+$app->run();

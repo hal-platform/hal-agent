@@ -1,4 +1,4 @@
-# recommended location for builds, archives, docker artifacts
+# temp spaces for dev
 /.archive/
 /.build/
 /.buildserver/
@@ -22,3 +22,4 @@
 
 # sensitive stuff
 /.keys/
+/bin/util/aws-scripts/

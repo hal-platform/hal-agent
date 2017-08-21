@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+namespace Hal\Bin;
+
+use Hal\Agent\Application\DoctrineProxyGenerator;
+
+$root = realpath(__DIR__ . '/../');
+putenv("HAL_ROOT=${root}");
+
+if (!$container = @include "${root}/config/bootstrap.php") {
+    echo "An error occured while attempting to generate doctrine proxies.\n";
+    exit(1);
+};
+
+$em = $container->get('doctrine.em.proxy');
+$success = DoctrineProxyGenerator::generateProxies($em);
+if (!$success) {
+    exit(1);
+}
