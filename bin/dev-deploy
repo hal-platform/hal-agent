@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+set -e
+
+curdir=$( cd "$( dirname "$0" )" && pwd )
+
+build_id="$1"
+deploy_id="$2"
+
+push_id=$($curdir/hal push:create $build_id $deploy_id --porcelain)
+
+$curdir/hal push:push $push_id
