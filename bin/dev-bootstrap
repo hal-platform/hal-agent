@@ -1,0 +1,65 @@
+#!/usr/bin/env php
+<?php
+
+namespace Hal\Bin;
+
+$root = realpath(__DIR__ . '/../');
+
+#
+echo "\nRunning \"normalize-configuration\" ...\n";
+#
+
+exec("${root}/bin/normalize-configuration", $dontcare, $normalizeExit);
+
+if (!$normalizeExit) {
+    echo "  - Created \"${root}/config/.env\".\n";
+    output("Please go through this file and update required configuration and run this command again");
+    exit(0);
+} else {
+    echo "  - \"${root}/config/.env\" exists.\n";
+}
+
+if (!file_exists("${root}/config/.env")) {
+    bombout("ERROR: \"${root}/config/.env\" not found.");
+}
+
+#
+echo "\nValidating temp directories ...\n";
+#
+
+$dirs = ['.archive', '.build', '.buildserver', '.dockerfiles', '.doctrine'];
+foreach ($dirs as $dir) {
+    $fulldir = "${root}/${dir}";
+    if (!is_dir($fulldir)) {
+        mkdir($fulldir);
+        echo "  - Created \"${dir}\".\n";
+    } else {
+        echo "  - \"${dir}\" exists.\n";
+    }
+}
+
+#
+# finish
+#
+
+echo "\n";
+echo "Development environment setup is complete.";
+echo "\n";
+
+# helpers
+function output($msg)
+{
+    if (is_array($msg)) {
+        $msg = implode("\n", $msg);
+    }
+
+    echo "\n";
+    echo "${msg}";
+    echo "\n";
+}
+
+function bombout($msg)
+{
+    output($msg);
+    exit(1);
+}
