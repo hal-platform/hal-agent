@@ -34,6 +34,16 @@ class ResolverTest extends MockeryTestCase
         $this->envResolver = Mockery::mock(BuildEnvironmentResolver::class);
         $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
     }
+
+    public function tearDown()
+    {
+        $tempBuildDir = 'testdir';
+
+        if (is_dir($tempBuildDir)) {
+            rmdir($tempBuildDir);
+        }
+    }
+
     /**
      * @expectedException Hal\Agent\Build\BuildException
      * @expectedExceptionMessage Build "1234" could not be found!

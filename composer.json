@@ -16,7 +16,7 @@
     },
 
     "autoload-dev": {
-        "psr-4": { "Hal\\Agent\\Testing\\": "testing/src" }
+        "psr-4": { "Hal\\Agent\\Testing\\": "tests/src" }
     },
 
     "require": {
