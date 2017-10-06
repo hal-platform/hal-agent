@@ -11,8 +11,8 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Stream\Stream;
 use Hal\Agent\Testing\MockeryTestCase;
+use function GuzzleHttp\Psr7\stream_for;
 
 class ArchiveApiTest extends MockeryTestCase
 {
@@ -90,7 +90,7 @@ class ArchiveApiTest extends MockeryTestCase
     {
         $mock = HandlerStack::create(new MockHandler([
             new Response(302, ['Location' => 'http://foo']),
-            new Response(200, [], Stream::factory('test-body'))
+            new Response(200, [], stream_for('test-body'))
         ]));
 
         $guzzle = new GuzzleClient(['handler' => $mock]);
