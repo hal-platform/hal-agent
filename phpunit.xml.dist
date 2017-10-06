@@ -32,7 +32,9 @@
     </filter>
 
     <logging>
+        <log type="junit" target=".phpunit/report/junit.xml" />
         <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
+        <log type="coverage-html" target=".phpunit/code-coverage" charset="UTF-8" highlight="true" lowUpperBound="98" highLowerBound="99" />
     </logging>
 
     <php>
