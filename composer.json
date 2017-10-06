@@ -23,7 +23,6 @@
         "php-64bit": "~7.1",
 
         "ext-curl":           "*",
-        "ext-libsodium":      "*",
         "ext-openssl":        "*",
         "ext-pdo":            "*",
         "ext-pdo_mysql":      "*",
@@ -58,8 +57,15 @@
         "symfony/yaml":                  "~3.3"
     },
     "require-dev": {
-        "mockery/mockery":      "~0.9",
-        "phpunit/phpunit":      "~6.2",
-        "symfony/var-dumper":   "~3.3"
+        "overtrue/phplint":          "~0.2",
+        "mockery/mockery":           "~0.9",
+        "phpunit/phpunit":           "~6.2",
+        "squizlabs/php_codesniffer": "~3.0",
+        "symfony/var-dumper":        "~3.3"
+    },
+
+    "suggests": {
+        "ext-libsodium": "~1.0",
+        "ext-sodium":    "~2.0"
     }
 }

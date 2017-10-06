@@ -10,7 +10,6 @@ namespace Hal\Bootstrap;
 use Hal\Agent\Application\DI2;
 use Hal\Agent\CachedContainer;
 use Symfony\Component\Dotenv\Dotenv;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 $root = realpath(__DIR__ . '/..');
 require_once "${root}/vendor/autoload.php";

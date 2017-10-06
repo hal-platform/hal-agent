@@ -7,23 +7,23 @@
 
 namespace Hal\Agent\Symfony;
 
-use Hal\Agent\Application\Di;
+use Hal\Agent\Application\DI2;
+use Hal\Agent\CachedContainer;
 use Hal\Agent\Testing\MockeryTestCase;
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\Dotenv\Dotenv;
 
 class ContainerIntegrationTest extends MockeryTestCase
 {
+    private $rootPath;
+    private $envFile;
+
     public function setUp()
     {
-        //kind of lame
-        $configRoot = __dir__ . '/../../../configuration';
-        if (!file_exists($configRoot . '/config.env.yml')) {
-            touch($configRoot . '/config.env.yml');
-            copy($configRoot . '/environment/dev.yml', $configRoot . '/config.env.yml');
-        }
+        $this->rootPath = realpath(__DIR__ . '/../../..');
+        $this->envFile = "{$this->rootPath}/config/.env.ci.dist";
+
+        putenv("HAL_ROOT={$this->rootPath}");
     }
 
     /**
@@ -31,7 +31,15 @@ class ContainerIntegrationTest extends MockeryTestCase
      */
     public function testContainerCompiles()
     {
-        $container = Di::getHalDI(__dir__ . '/../../..');
+        $dotenv = new Dotenv;
+        $dotenv->load($this->envFile);
+
+        $options = [
+            'class' => CachedContainer::class,
+            'file' => "{$this->rootPath}/src/CachedContainer.php"
+        ];
+
+        $container = DI2::getDI($this->rootPath, $options);
 
         $this->assertInstanceOf(ContainerInterface::class, $container);
     }
