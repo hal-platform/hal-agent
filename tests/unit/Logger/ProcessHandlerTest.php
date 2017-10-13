@@ -11,18 +11,16 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Process;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\JobProcess;
+use Hal\Core\Entity\Release;
 
 class ProcessHandlerTest extends MockeryTestCase
 {
     public $em;
     public $repo;
-    public $unique;
 
     public function setUp()
     {
@@ -30,7 +28,6 @@ class ProcessHandlerTest extends MockeryTestCase
         $this->em = Mockery::mock(EntityManager::class, [
             'getRepository' => $this->repo
         ]);
-        $this->unique = Mockery::mock(JobIdGenerator::class);
     }
 
     public function testUnknownAbortionDoesNothing()
@@ -39,7 +36,7 @@ class ProcessHandlerTest extends MockeryTestCase
             ->shouldReceive('findBy')
             ->never();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
         $handler->abort(new \stdClass);
     }
@@ -50,7 +47,7 @@ class ProcessHandlerTest extends MockeryTestCase
             ->shouldReceive('findBy')
             ->never();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
         $handler->abort(new \stdClass);
     }
@@ -59,15 +56,15 @@ class ProcessHandlerTest extends MockeryTestCase
     {
         $parent = new Build('abcdef');
 
-        $process1 = new Process('1234');
+        $process1 = new JobProcess('1234');
         $process1->withParent($parent);
 
-        $process2 = new Process('1234');
+        $process2 = new JobProcess('1234');
         $process2->withParent($parent);
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parent' => 'abcdef'])
+            ->with(['parentID' => 'abcdef'])
             ->andReturn([$process1, $process2]);
 
         $this->em
@@ -79,30 +76,30 @@ class ProcessHandlerTest extends MockeryTestCase
             ->with($process2)
             ->once();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('Pending', $process1->status());
-        $this->assertSame('Pending', $process2->status());
+        $this->assertSame('pending', $process1->status());
+        $this->assertSame('pending', $process2->status());
 
         $handler->abort($parent);
 
-        $this->assertSame('Aborted', $process1->status());
-        $this->assertSame('Aborted', $process2->status());
+        $this->assertSame('aborted', $process1->status());
+        $this->assertSame('aborted', $process2->status());
     }
 
     public function testLaunchAbortsWeirdChildren()
     {
         $parent = new Build('abcdef');
 
-        $process1 = new Process('1234');
+        $process1 = new JobProcess('1234');
         $process1->withParent($parent);
 
-        $process2 = new Process('1234');
+        $process2 = new JobProcess('1234');
         $process2->withParent($parent);
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parent' => 'abcdef'])
+            ->with(['parentID' => 'abcdef'])
             ->andReturn([$process1, $process2]);
 
         $this->em
@@ -114,42 +111,42 @@ class ProcessHandlerTest extends MockeryTestCase
             ->with($process2)
             ->once();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('Pending', $process1->status());
-        $this->assertSame('Pending', $process2->status());
+        $this->assertSame('pending', $process1->status());
+        $this->assertSame('pending', $process2->status());
 
         $handler->launch($parent);
 
-        $this->assertSame('Aborted', $process1->status());
-        $this->assertSame('Aborted', $process2->status());
+        $this->assertSame('aborted', $process1->status());
+        $this->assertSame('aborted', $process2->status());
     }
 
     public function testLaunchesChildPush()
     {
-        $deployment = new Deployment('d1234');
+        $target = new Target('d1234');
         $parent = (new Build('abcdef'))
             ->withApplication(new Application);
 
-        $process1 = new Process('1234');
+        $process1 = new JobProcess('1234');
         $process1
             ->withParent($parent)
-            ->withChildType('Push')
-            ->withContext(['deployment' => 'd1234']);
+            ->withChildType('Release')
+            ->withParameters(['deployment' => 'd1234']);
 
-        $process2 = new Process('1234');
+        $process2 = new JobProcess('1234');
         $process2->withParent($parent);
 
-        $push = null;
+        $release = null;
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parent' => 'abcdef'])
+            ->with(['parentID' => 'abcdef'])
             ->andReturn([$process1, $process2]);
         $this->repo
             ->shouldReceive('findOneBy')
             ->with(['id' => 'd1234', 'application' => $parent->application()])
-            ->andReturn($deployment);
+            ->andReturn($target);
 
         $this->em
             ->shouldReceive('merge')
@@ -161,54 +158,49 @@ class ProcessHandlerTest extends MockeryTestCase
             ->once();
         $this->em
             ->shouldReceive('merge')
-            ->with($deployment)
+            ->with($target)
             ->once();
         $this->em
             ->shouldReceive('persist')
-            ->with(Mockery::on(function($v) use (&$push) {
-                    $push = $v;
+            ->with(Mockery::on(function($v) use (&$release) {
+                    $release = $v;
                     return true;
                 })
             )
             ->once();
 
-        $this->unique
-            ->shouldReceive('generatePushId')
-            ->andReturn('h5678');
+        $handler = new ProcessHandler($this->em);
 
-        $handler = new ProcessHandler($this->em, $this->unique);
-
-        $this->assertSame('Pending', $process1->status());
-        $this->assertSame('Pending', $process2->status());
+        $this->assertSame('pending', $process1->status());
+        $this->assertSame('pending', $process2->status());
 
         $handler->launch($parent);
 
-        $this->assertSame('Launched', $process1->status());
-        $this->assertSame('Aborted', $process2->status());
+        $this->assertSame('launched', $process1->status());
+        $this->assertSame('aborted', $process2->status());
 
-        $this->assertInstanceOf(Push::class, $push);
+        $this->assertInstanceOf(Release::class, $release);
 
-        $this->assertSame('h5678', $push->id());
-        $this->assertSame($parent, $push->build());
-        $this->assertSame($parent->application(), $push->application());
-        $this->assertSame($deployment, $push->deployment());
+        $this->assertSame($parent, $release->build());
+        $this->assertSame($parent->application(), $release->application());
+        $this->assertSame($target, $release->target());
     }
 
     public function testPreventMissingDeployment()
     {
-        $deployment = (new Deployment('d1234'))
-            ->withPush(new Push('derp123'));
+        $target = (new Target('d1234'))
+            ->withRelease(new Release('derp123'));
 
         $parent = (new Build('abcdef'));
 
-        $process1 = new Process('1234');
+        $process1 = new JobProcess('1234');
         $process1
             ->withParent($parent)
-            ->withChildType('Push');
+            ->withChildType('Release');
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parent' => 'abcdef'])
+            ->with(['parentID' => 'abcdef'])
             ->andReturn([$process1]);
 
         $this->em
@@ -219,33 +211,33 @@ class ProcessHandlerTest extends MockeryTestCase
             ->shouldReceive('persist')
             ->never();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('Pending', $process1->status());
+        $this->assertSame('pending', $process1->status());
 
         $handler->launch($parent);
 
-        $this->assertSame('Aborted', $process1->status());
+        $this->assertSame('aborted', $process1->status());
         $this->assertSame('No target specified', $process1->message());
     }
 
     public function testPreventInvalidDeployment()
     {
-        $deployment = (new Deployment('d1234'))
-            ->withPush(new Push('derp123'));
+        $target = (new Target('d1234'))
+            ->withRelease(new Release('derp123'));
 
         $parent = (new Build('abcdef'))
             ->withApplication(new Application);
 
-        $process1 = new Process('1234');
+        $process1 = new JobProcess('1234');
         $process1
             ->withParent($parent)
-            ->withChildType('Push')
-            ->withContext(['deployment' => 'd1234']);
+            ->withChildType('Release')
+            ->withParameters(['deployment' => 'd1234']);
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parent' => 'abcdef'])
+            ->with(['parentID' => 'abcdef'])
             ->andReturn([$process1]);
         $this->repo
             ->shouldReceive('findOneBy')
@@ -260,43 +252,43 @@ class ProcessHandlerTest extends MockeryTestCase
             ->shouldReceive('persist')
             ->never();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('Pending', $process1->status());
+        $this->assertSame('pending', $process1->status());
 
         $handler->launch($parent);
 
-        $this->assertSame('Aborted', $process1->status());
+        $this->assertSame('aborted', $process1->status());
         $this->assertSame('Invalid target specified', $process1->message());
     }
 
     public function testPreventClobbering()
     {
-        $deployment = (new Deployment('d1234'))
-            ->withPush(new Push('derp123'));
+        $target = (new Target('d1234'))
+            ->withRelease(new Release('derp123'));
 
         $parent = (new Build('abcdef'))
             ->withApplication(new Application);
 
-        $process1 = new Process('1234');
+        $process1 = new JobProcess('1234');
         $process1
             ->withParent($parent)
-            ->withChildType('Push')
-            ->withContext(['deployment' => 'd1234']);
+            ->withChildType('Release')
+            ->withParameters(['deployment' => 'd1234']);
 
-        $process2 = new Process('1234');
+        $process2 = new JobProcess('1234');
         $process2->withParent($parent);
 
         $push = null;
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parent' => 'abcdef'])
+            ->with(['parentID' => 'abcdef'])
             ->andReturn([$process1, $process2]);
         $this->repo
             ->shouldReceive('findOneBy')
             ->with(['id' => 'd1234', 'application' => $parent->application()])
-            ->andReturn($deployment);
+            ->andReturn($target);
 
         $this->em
             ->shouldReceive('merge')
@@ -310,17 +302,17 @@ class ProcessHandlerTest extends MockeryTestCase
             ->shouldReceive('persist')
             ->never();
 
-        $handler = new ProcessHandler($this->em, $this->unique);
+        $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('Pending', $process1->status());
-        $this->assertSame('Pending', $process2->status());
+        $this->assertSame('pending', $process1->status());
+        $this->assertSame('pending', $process2->status());
 
         $handler->launch($parent);
 
-        $this->assertSame('Aborted', $process1->status());
-        $this->assertSame('Aborted', $process2->status());
+        $this->assertSame('aborted', $process1->status());
+        $this->assertSame('aborted', $process2->status());
 
         $this->assertSame(null, $push);
-        $this->assertSame('Push derp123 to target already in progress', $process1->message());
+        $this->assertSame('Release derp123 to target already in progress', $process1->message());
     }
 }

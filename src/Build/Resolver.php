@@ -15,9 +15,9 @@ use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
 use Hal\Agent\Utility\ResolverTrait;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Environment;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Environment;
 
 /**
  * Resolve build properties from user and environment input
@@ -82,7 +82,7 @@ class Resolver
             throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildId));
         }
 
-        if ($build->status() !== 'Waiting') {
+        if ($build->status() !== 'pending') {
             throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->status()));
         }
 
@@ -90,7 +90,7 @@ class Resolver
             'build' => $build,
 
             // default, overwritten by .hal9000.yml
-            'configuration' => $this->buildDefaultConfiguration($build->application()),
+            'configuration' => ['deploy' => []],
 
             'location' => [
                 'download' => $this->generateRepositoryDownloadFile($build->id()),
@@ -100,8 +100,8 @@ class Resolver
             ],
 
             'github' => [
-                'user' => $build->application()->githubOwner(),
-                'repo' => $build->application()->githubRepo(),
+                'user' => $build->application()->github()->owner(),
+                'repo' => $build->application()->github()->repository(),
                 'reference' => $build->commit()
             ]
         ];

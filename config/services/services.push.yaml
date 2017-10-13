@@ -246,7 +246,7 @@ services:
             - '@build.unix.importer'
             - '@build.unix.cleaner'
             - '@encrypted.resolver'
-            - '%docker.option.default_image%'
+            - '%build.platforms.option.docker.default_image%'
 
     push.script.build.unix.builder:
         parent: 'build.unix.builder'

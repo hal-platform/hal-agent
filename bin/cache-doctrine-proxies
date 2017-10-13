@@ -3,7 +3,7 @@
 
 namespace Hal\Bin;
 
-use Hal\Agent\Application\DoctrineProxyGenerator;
+use Hal\Core\Database\DoctrineUtility\DoctrineProxyGenerator;
 
 $root = realpath(__DIR__ . '/../');
 putenv("HAL_ROOT=${root}");

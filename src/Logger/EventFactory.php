@@ -8,12 +8,12 @@
 namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\JobEvent;
+use Hal\Core\Entity\Release;
+use Hal\Core\Type\JobEventStageEnum;
 use JsonSerializable;
 use Predis\Client as Predis;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\EventLog;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Type\EnumType\EventEnum;
 
 /**
  * This makes attaching logs to events very simple.
@@ -59,7 +59,6 @@ use QL\Hal\Core\Type\EnumType\EventEnum;
  * - success|failure
  *
  */
-
 class EventFactory
 {
     const REDIS_LOG_KEY = 'event-logs:%s';
@@ -71,7 +70,7 @@ class EventFactory
     private $currentStage;
 
     /**
-     * @var Build|Push
+     * @var Build|Release
      */
     private $entity;
 
@@ -81,17 +80,12 @@ class EventFactory
     private $em;
 
     /**
-     * @var callable
-     */
-    private $random;
-
-    /**
      * @var Predis|null
      */
     private $predis;
 
     /**
-     * @var EventLog[]
+     * @var JobEvent[]
      */
     private $logs;
 
@@ -99,13 +93,12 @@ class EventFactory
      * @param EntityManagerInterface $em
      * @param callable $random
      */
-    public function __construct(EntityManagerInterface $em, callable $random)
+    public function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
-        $this->random = $random;
         $this->predis = null;
 
-        $this->currentStage = 'unknown';
+        $this->currentStage = JobEventStageEnum::defaultOption();
         $this->logs = [];
     }
 
@@ -165,13 +158,13 @@ class EventFactory
     }
 
     /**
-     * @param Push $push
+     * @param Release $release
      *
      * @return null
      */
-    public function setPush(Push $push)
+    public function setRelease(Release $release)
     {
-        $this->entity = $push;
+        $this->entity = $release;
     }
 
     /**
@@ -181,7 +174,7 @@ class EventFactory
      */
     public function setStage($stage)
     {
-        if (!in_array($stage, EventEnum::values())) {
+        if (!JobEventStageEnum::isValid($stage)) {
             // error?
             return;
         }
@@ -200,10 +193,9 @@ class EventFactory
     {
         $count = count($this->logs) + 1;
 
-        $id = call_user_func($this->random);
-        $log = (new EventLog($id))
+        $log = (new JobEvent())
             ->withStatus($type)
-            ->withEvent($this->currentStage)
+            ->withStage($this->currentStage)
             ->withOrder($count);
 
         if ($message) {
@@ -212,14 +204,13 @@ class EventFactory
 
         $context = $this->sanitizeContext($context);
         if ($context) {
-            $log->withData($context);
+            $log->withParameters($context);
         }
 
         if ($this->entity instanceof Build) {
-            $log->withBuild($this->entity);
-
-        } elseif ($this->entity instanceof Push) {
-            $log->withPush($this->entity);
+            $log->withParentID($this->entity->id());
+        } elseif ($this->entity instanceof Release) {
+            $log->withParentID($this->entity->id());
         }
 
         // persist
@@ -232,19 +223,17 @@ class EventFactory
     }
 
     /**
-     * @param EventLog $log
+     * @param JobEvent $log
      *
      * @return void
      */
-    private function trySendingToRedis(EventLog $log)
+    private function trySendingToRedis(JobEvent $log)
     {
         if ($this->predis === null) {
             return;
         }
 
-        $parent = null;
-        if ($log->build()) $parent = $log->build()->id();
-        if ($log->push()) $parent = $log->push()->id();
+        $parent = $log->parentID();
 
         if (!$parent) {
             return;
@@ -274,7 +263,7 @@ class EventFactory
 
             if (is_object($data)) {
                 if (method_exists($data, '__toString')) {
-                    $data = (string) $data;
+                    $data = (string)$data;
 
                 } elseif ($data instanceof JsonSerializable) {
                     $data = $data->jsonSerialize();
@@ -282,7 +271,7 @@ class EventFactory
                     $data = '';
                 }
             } elseif (!is_array($data)) {
-                $data = (string) $data;
+                $data = (string)$data;
             }
 
             // must be array or string at this point
@@ -301,6 +290,7 @@ class EventFactory
 
     /**
      * @param string $key
+     *
      * @return string
      */
     private function deCamelCase($key)

@@ -9,8 +9,9 @@ namespace Hal\Agent\Utility;
 
 use Hal\Agent\Build\Unix\UnixBuildHandler;
 use Hal\Agent\Build\Windows\WindowsBuildHandler;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Push;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Release;
+use Hal\Core\Entity\Target;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
@@ -66,26 +67,26 @@ class BuildEnvironmentResolver
     }
 
     /**
-     * Retrieve build-system specific properties for push
+     * Retrieve build-system specific properties for release
      *
-     * @param Push $push
+     * @param Release $release
      *
      * @return array
      */
-    public function getPushProperties(Push $push)
+    public function getReleaseProperties(Release $release)
     {
-        $uniqueId = sprintf('push-%s', $push->id());
+        $uniqueId = sprintf('release-%s', $release->id());
 
-        $properties = $this->getUnixProperties($push->build(), $uniqueId);
+        $properties = $this->getUnixProperties($release->build(), $uniqueId);
 
         if (isset($properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables'])) {
             $env = $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables'];
 
-            $method = $push->deployment()->server()->type();
+            $method = $release->target()->group()->type();
 
-            $env['HAL_PUSHID'] = $push->id();
+            $env['HAL_PUSHID'] = $release->id();
             $env['HAL_METHOD'] = $method;
-            $env['HAL_CONTEXT'] = $push->deployment()->scriptContext();
+            $env['HAL_CONTEXT'] = $release->target()->parameter(Target::PARAM_CONTEXT);
 
             $properties[UnixBuildHandler::SERVER_TYPE]['environmentVariables'] = $env;
         }
@@ -141,9 +142,9 @@ class BuildEnvironmentResolver
         $env = [
             'HAL_BUILDID' => $build->id(),
             'HAL_COMMIT' => $build->commit(),
-            'HAL_GITREF' => $build->branch(),
+            'HAL_GITREF' => $build->reference(),
             'HAL_ENVIRONMENT' => $build->environment()->name(),
-            'HAL_APP' => $build->application()->key()
+            'HAL_APP' => $build->application()->identifier()
         ];
 
         $properties = [
@@ -174,9 +175,9 @@ class BuildEnvironmentResolver
         $env = [
             'HAL_BUILDID' => $build->id(),
             'HAL_COMMIT' => $build->commit(),
-            'HAL_GITREF' => $build->branch(),
+            'HAL_GITREF' => $build->reference(),
             'HAL_ENVIRONMENT' => $build->environment()->name(),
-            'HAL_APP' => $build->application()->key()
+            'HAL_APP' => $build->application()->identifier()
         ];
 
         $properties = [

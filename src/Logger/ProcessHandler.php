@@ -9,11 +9,12 @@ namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Process;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\JobProcess;
+use Hal\Core\Entity\Release;
+use Hal\Core\Type\JobProcessStatusEnum;
+use Hal\Core\Type\JobStatusEnum;
 
 /**
  * This can launch or abort Processes for the following scenarios:
@@ -29,7 +30,7 @@ class ProcessHandler
 {
     const ERR_NO_DEPLOYMENT = 'No target specified';
     const ERR_INVALID_DEPLOYMENT = 'Invalid target specified';
-    const ERR_IN_PROGRESS = 'Push %s to target already in progress';
+    const ERR_IN_PROGRESS = 'Release %s to target already in progress';
 
     /**
      * @var EntityManagerInterface
@@ -40,75 +41,68 @@ class ProcessHandler
      * @var EntityRepository
      */
     private $processRepo;
-    private $deploymentRepo;
-
-    /**
-     * @var JobIdGenerator
-     */
-    private $unique;
+    private $targetRepo;
 
     /**
      * @param EntityManagerInterface $em
-     * @param JobIdGenerator $unique
      */
-    public function __construct(EntityManagerInterface $em, JobIdGenerator $unique)
+    public function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
-        $this->unique = $unique;
 
-        $this->processRepo = $em->getRepository(Process::class);
-        $this->deploymentRepo = $em->getRepository(Deployment::class);
+        $this->processRepo = $em->getRepository(JobProcess::class);
+        $this->targetRepo = $em->getRepository(Target::class);
     }
 
     /**
-     * @param Build|Push $job
+     * @param Build|Release $job
      *
      * @return void
      */
     public function abort($job)
     {
         // Silently fail for non-jobs
-        if (!$job instanceof Build && !$job instanceof Push) {
+        if (!$job instanceof Build && !$job instanceof Release) {
             return;
         }
 
-        $children = $this->processRepo->findBy(['parent' => $job->id()]);
+        $children = $this->processRepo->findBy(['parentID' => $job->id()]);
 
         if (!$children) {
             return;
         }
 
         foreach ($children as $process) {
-            $process->withStatus('Aborted');
+            $process->withStatus(JobProcessStatusEnum::TYPE_ABORTED);
             $this->em->merge($process);
         }
     }
 
     /**
-     * @param Build|Push $job
+     * @param Build|Release $job
      *
      * @return void
      */
     public function launch($job)
     {
         // Silently fail for non-jobs
-        if (!$job instanceof Build && !$job instanceof Push) {
+        if (!$job instanceof Build && !$job instanceof Release) {
             return;
         }
 
-        $children = $this->processRepo->findBy(['parent' => $job->id()]);
+        $children = $this->processRepo->findBy(['parentID' => $job->id()]);
 
         if (!$children) {
             return;
         }
 
         foreach ($children as $process) {
-            $status = 'Aborted';
+            $status = JobProcessStatusEnum::TYPE_ABORTED;
 
-            if ($process->childType() === 'Push') {
-                if ($push = $this->launchPush($job, $process)) {
-                    $status = 'Launched';
-                    $process->withChild($push);
+            if ($process->childType() === 'Release') {
+                if ($release = $this->launchRelease($job, $process)) {
+                    $status = JobProcessStatusEnum::TYPE_LAUNCHED;
+                    $process->withChild($release);
                 }
             }
 
@@ -126,16 +120,16 @@ class ProcessHandler
      * From context:
      *   - Deployment (must match parent application)
      *
-     * @param Build|Push $parent
-     * @param Process $process
+     * @param Build|Release $parent
+     * @param JobProcess $process
      *
-     * @return Push|null
+     * @return Release|null
      */
-    private function launchPush($parent, Process $process)
+    private function launchRelease($parent, JobProcess $process)
     {
         $build = ($parent instanceof Build) ? $parent : $parent->build();
         $application = $parent->application();
-        $context = $process->context();
+        $context = $process->parameters();
 
         // Invalid context
         if (!isset($context['deployment'])) {
@@ -144,33 +138,32 @@ class ProcessHandler
         }
 
         // Err: no valid deployment
-        $deployment = $this->deploymentRepo->findOneBy(['id' => $context['deployment'], 'application' => $application]);
-        if (!$deployment) {
+        /** @var Target $target */
+        $target = $this->targetRepo->findOneBy(['id' => $context['deployment'], 'application' => $application]);
+        if (!$target) {
             $process->withMessage(self::ERR_INVALID_DEPLOYMENT);
             return;
         }
 
         // Err: active push already underway
-        $activePush = $deployment->push();
-        if ($activePush && $activePush->isPending()) {
-            $process->withMessage(sprintf(self::ERR_IN_PROGRESS, $activePush->id()));
+        $activeRelease = $target->release();
+        if ($activeRelease && in_array($activeRelease->status(), [JobStatusEnum::TYPE_RUNNING, JobStatusEnum::TYPE_PENDING, JobStatusEnum::TYPE_DEPLOYING])) {
+            $process->withMessage(sprintf(self::ERR_IN_PROGRESS, $activeRelease->id()));
             return;
         }
 
-        $id = $this->unique->generatePushId();
-
-        $push = (new Push($id))
+        $release = (new Release())
             ->withBuild($build)
             ->withUser($parent->user())
             ->withApplication($application)
-            ->withDeployment($deployment);
+            ->withTarget($target);
 
         // Record active push on deployment
-        $deployment->withPush($push);
+        $target->withRelease($release);
 
-        $this->em->merge($deployment);
-        $this->em->persist($push);
+        $this->em->merge($target);
+        $this->em->persist($release);
 
-        return $push;
+        return $release;
     }
 }

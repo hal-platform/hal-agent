@@ -9,9 +9,9 @@ namespace Hal\Agent\Logger;
 
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\EventLog;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Release;
+use Hal\Core\Entity\JobEvent;
 use Hal\Agent\Testing\JsonableStub;
 use Hal\Agent\Testing\StringableStub;
 use stdClass;
@@ -24,9 +24,6 @@ class EventFactoryTest extends MockeryTestCase
     public function setUp()
     {
         $this->em = Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->random = function() {
-            return 42;
-        };
     }
 
     public function testDefaultStageIsUnknown()
@@ -39,13 +36,13 @@ class EventFactoryTest extends MockeryTestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em, $this->random);
+        $factory = new EventFactory($this->em);
         $factory->info();
 
-        $this->assertInstanceOf(EventLog::CLASS, $spy);
+        $this->assertInstanceOf(JobEvent::CLASS, $spy);
 
         $this->assertSame('info', $spy->status());
-        $this->assertSame('unknown', $spy->event());
+        $this->assertSame('unknown', $spy->stage());
         $this->assertSame(1, $spy->order());
     }
 
@@ -60,7 +57,7 @@ class EventFactoryTest extends MockeryTestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em, $this->random);
+        $factory = new EventFactory($this->em);
         $factory->info();
         $factory->failure();
         $factory->success();
@@ -82,17 +79,18 @@ class EventFactoryTest extends MockeryTestCase
             }));
 
         $build = Mockery::mock(Build::CLASS);
+        $build->shouldReceive('id')->andReturn('blah');
 
-        $factory = new EventFactory($this->em, $this->random);
+        $factory = new EventFactory($this->em);
         $factory->setBuild($build);
         $factory->setStage('build.end');
         $factory->success();
 
-        $this->assertSame($build, $spy->build());
-        $this->assertSame('build.end', $spy->event());
+        $this->assertSame('blah', $spy->parentID());
+        $this->assertSame('build.end', $spy->stage());
     }
 
-    public function testPushIsAttached()
+    public function testReleaseIsAttached()
     {
         $spy = null;
 
@@ -103,15 +101,16 @@ class EventFactoryTest extends MockeryTestCase
                 return true;
             }));
 
-        $push = Mockery::mock(Push::CLASS);
+        $release = Mockery::mock(Release::CLASS);
+        $release->shouldReceive('id')->andReturn('blah');
 
-        $factory = new EventFactory($this->em, $this->random);
-        $factory->setPush($push);
-        $factory->setStage('push.end');
+        $factory = new EventFactory($this->em);
+        $factory->setRelease($release);
+        $factory->setStage('release.end');
         $factory->success();
 
-        $this->assertSame($push, $spy->push());
-        $this->assertSame('push.end', $spy->event());
+        $this->assertSame('blah', $spy->parentID());
+        $this->assertSame('release.end', $spy->stage());
     }
 
     public function testFullLogCreated()
@@ -125,7 +124,7 @@ class EventFactoryTest extends MockeryTestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em, $this->random);
+        $factory = new EventFactory($this->em);
 
         $jsonable = new JsonableStub;
         $stringable = new StringableStub;
@@ -148,7 +147,7 @@ class EventFactoryTest extends MockeryTestCase
         ];
 
         $this->assertSame('testing message', $spy->message());
-        $this->assertSame($expectedContext, $spy->data());
+        $this->assertSame($expectedContext, $spy->parameters());
     }
 
     public function testSerializedLogSentToRedisWithoutData()
@@ -173,7 +172,7 @@ class EventFactoryTest extends MockeryTestCase
                 return true;
             }));
 
-        $factory = new EventFactory($this->em, $this->random);
+        $factory = new EventFactory($this->em);
         $factory->setRedisHandler($predis);
         $factory->setBuild($build);
 
@@ -191,17 +190,14 @@ class EventFactoryTest extends MockeryTestCase
         ]);
 
         $expected = [
-            'id' => 42,
-            'created' => null,
-            'event' => 'unknown',
+            'stage' => 'unknown',
             'order' => 1,
             'message' => 'testing message',
             'status' => 'success',
-            'build' => 'b2.1234',
-            'push' => null,
-            'data' => '**DATA**'
+            'parent_id' => 'b2.1234',
+            'parameters' => '**DATA**'
         ];
 
-        $this->assertSame($expected, json_decode($spy, true));
+        $this->assertArraySubset($expected, json_decode($spy, true));
     }
 }

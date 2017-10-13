@@ -8,9 +8,10 @@
 namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Type\EnumType\EventStatusEnum;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Release;
+use Hal\Core\Type\JobEventStatusEnum;
+use Hal\Core\Type\JobStatusEnum;
 use QL\MCP\Common\Time\Clock;
 
 /**
@@ -41,7 +42,7 @@ class EventLogger
     private $clock;
 
     /**
-     * @var Build|Push|null
+     * @var Build|Release|null
      */
     private $entity;
 
@@ -86,8 +87,7 @@ class EventLogger
      */
     public function event($status, $message = '', array $context = [])
     {
-        $statuses = EventStatusEnum::values();
-        if (!in_array($status, $statuses)) {
+        if (!JobEventStatusEnum::isValid($status)) {
             // error?
             return;
         }
@@ -96,7 +96,7 @@ class EventLogger
     }
 
     /**
-     * @param Build|Push $job
+     * @param Build|Release $job
      *
      * @return null
      */
@@ -105,8 +105,8 @@ class EventLogger
         if ($job instanceof Build) {
             $this->startBuild($job);
 
-        } elseif ($job instanceof Push) {
-            $this->startPush($job);
+        } elseif ($job instanceof Release) {
+            $this->startRelease($job);
         }
     }
 
@@ -119,7 +119,7 @@ class EventLogger
     public function failure()
     {
         if ($this->isInProgress()) {
-            $this->entity->withStatus('Error');
+            $this->entity->withStatus(JobStatusEnum::TYPE_FAILURE);
             $this->entity->withEnd($this->clock->read());
             $this->em->merge($this->entity);
 
@@ -140,7 +140,7 @@ class EventLogger
     public function success()
     {
         if ($this->isInProgress()) {
-            $this->entity->withStatus('Success');
+            $this->entity->withStatus(JobStatusEnum::TYPE_SUCCESS);
             $this->entity->withEnd($this->clock->read());
             $this->em->merge($this->entity);
 
@@ -161,11 +161,7 @@ class EventLogger
             return false;
         }
 
-        if ($this->entity instanceof Build && $this->entity->status() === 'Building') {
-            return true;
-        }
-
-        if ($this->entity instanceof Push && $this->entity->status() === 'Pushing') {
+        if ($this->entity->status() === JobStatusEnum::TYPE_RUNNING) {
             return true;
         }
 
@@ -179,11 +175,12 @@ class EventLogger
      */
     private function normalizeStage($stage)
     {
-        if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 5) === 'push.') {
+        if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 5) === 'release.') {
             return $stage;
 
         } elseif ($this->entity) {
-            $prefix = ($this->entity instanceof Build) ? 'build' : 'push';
+            $prefix = ($this->entity instanceof Build) ? 'build' : 'release';
+
             return sprintf('%s.%s', $prefix, $stage);
         }
 
@@ -198,7 +195,7 @@ class EventLogger
     private function startBuild(Build $build)
     {
         $this->entity = $build;
-        $this->entity->withStatus('Building');
+        $this->entity->withStatus(JobStatusEnum::TYPE_RUNNING);
         $this->entity->withStart($this->clock->read());
 
         $this->factory->setBuild($build);
@@ -209,20 +206,20 @@ class EventLogger
     }
 
     /**
-     * @param Push $push
+     * @param Release $release
      *
      * @return void
      */
-    private function startPush(Push $push)
+    private function startRelease(Release $release)
     {
-        $this->entity = $push;
-        $this->entity->withStatus('Pushing');
+        $this->entity = $release;
+        $this->entity->withStatus(JobStatusEnum::TYPE_RUNNING);
         $this->entity->withStart($this->clock->read());
 
-        $this->factory->setPush($push);
+        $this->factory->setRelease($release);
 
         // immediately merge and flush, so frontend picks up changes
-        $this->em->merge($push);
+        $this->em->merge($release);
         $this->em->flush();
     }
 }

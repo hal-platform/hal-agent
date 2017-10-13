@@ -8,11 +8,11 @@ services:
             - ['add', ['@command.management.build.start']]
             - ['add', ['@command.management.build.remove']]
             - ['add', ['@command.management.release.create']]
-            - ['add', ['@command.management.release.start']]
+#            - ['add', ['@command.management.release.start']]
             - ['add', ['@command.runner.build']]
-            - ['add', ['@command.runner.deploy']]
+#            - ['add', ['@command.runner.deploy']]
             - ['add', ['@command.worker.build']]
-            - ['add', ['@command.worker.deploy']]
+#            - ['add', ['@command.worker.deploy']]
             - ['add', ['@command.docker.refresh']]
             - ['add', ['@command.docker.status']]
             - ['setDispatcher', ['@dispatcher']]
@@ -95,7 +95,7 @@ services:
 
     logger.process.handler:
         class: 'Hal\Agent\Logger\ProcessHandler'
-        arguments: ['@doctrine.em', '@utility.id.generator']
+        arguments: ['@doctrine.em']
 
     # subscriber to symfony/console event system to prepare mcp logger
     logger.mcp.subscriber:
@@ -107,7 +107,7 @@ services:
     ####################################################################################################################
 
     doctrine.cache.redis:
-        class: 'QL\Hal\Core\Utility\DoctrinePredisCache'
+        class: 'Hal\Core\Database\DoctrineUtility\DoctrinePredisCache'
         arguments: ['@redis', '%doctrine.cache.ttl%']
 
     ####################################################################################################################
@@ -129,13 +129,6 @@ services:
             - '@github.pullRequests'
     utility.forker:
         class: 'Hal\Agent\Helper\ForkHelper'
-
-    utility.id.generator:
-        class: 'QL\Hal\Core\JobIdGenerator'
-        arguments:
-            - '%application.major.version%'
-            - '%unique.alphabet%'
-            - '%unique.size%'
 
     yaml.parser:
         class: 'Symfony\Component\Yaml\Parser'

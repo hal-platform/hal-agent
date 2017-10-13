@@ -55,7 +55,7 @@ services:
             - '@build.unix.importer'
             - '@build.unix.cleaner'
             - '@encrypted.resolver'
-            - '%docker.option.default_image%'
+            - '%build.platforms.option.docker.default_image%'
 
     build.unix.exporter:
         class: 'Hal\Agent\Build\Unix\Exporter'
@@ -85,7 +85,7 @@ services:
     build.unix.builder.configurator:
         class: 'Hal\Agent\Build\Unix\DockerBuilderConfigurator'
         arguments:
-            - '%docker.option.sudo%'
+            - '%build.platforms.option.docker.sudo%'
             - '%error_handling.docker.debug%'
 
     build.unix.importer:

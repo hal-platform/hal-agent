@@ -17,7 +17,6 @@ use phpseclib\Net\SSH2;
 use Predis\Client as Predis;
 use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Style\StyleInterface;
 
 /**
  * Get the status of docker containers and images
@@ -84,12 +83,12 @@ class CheckStatusCommand implements ExecutorInterface
         Predis $predis,
         Clock $clock,
 
-        $unixBuildUser,
-        $unixBuildServer,
-        $useSudoForDocker,
+        string $unixBuildUser,
+        string $unixBuildServer,
+        bool $useSudoForDocker,
 
-        $localTemp,
-        $buildTemp
+        string $localTemp,
+        string $buildTemp
     ) {
         $this->sshManager = $sshManager;
         $this->predis = $predis;

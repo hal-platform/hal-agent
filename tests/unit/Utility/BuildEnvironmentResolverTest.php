@@ -9,12 +9,12 @@ namespace Hal\Agent\Utility;
 
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Server;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\Release;
+use Hal\Core\Entity\Group;
 use Symfony\Component\Process\ProcessBuilder;
 
 class BuildEnvironmentResolverTest extends MockeryTestCase
@@ -66,15 +66,14 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
     {
         $build = $this->createMockBuild();
 
-        $push = (new Push)
-            ->withId('4321')
+        $push = (new Release('4321'))
             ->withBuild($build)
-            ->withDeployment(
-                (new Deployment)
-                    ->withScriptContext('context')
-                    ->withServer(
-                        (new Server)
-                            ->withType('derp')
+            ->withTarget(
+                (new Target())
+                    ->withParameter('context', 'context')
+                    ->withGroup(
+                        (new Group())
+                            ->withType('script')
                     )
             );
 
@@ -87,7 +86,7 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
             'unix' => [
                 'buildUser' => 'builduser',
                 'buildServer' => 'nixserver',
-                'remoteFile' => '/var/buildserver/hal9000-push-4321.tar.gz',
+                'remoteFile' => '/var/buildserver/hal9000-release-4321.tar.gz',
 
                 'environmentVariables' => [
                     'HAL_BUILDID' => '1234',
@@ -96,13 +95,13 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
                     'HAL_ENVIRONMENT' => 'envkey',
                     'HAL_APP' => 'appkey',
                     'HAL_PUSHID' => '4321',
-                    'HAL_METHOD' => 'derp',
+                    'HAL_METHOD' => 'script',
                     'HAL_CONTEXT' => 'context'
                 ]
             ]
         ];
 
-        $actual = $resolver->getPushProperties($push);
+        $actual = $resolver->getReleaseProperties($push);
 
         $this->assertSame($expected, $actual);
     }
@@ -111,20 +110,18 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
     {
         $app = (new Application)
             ->withId(1234)
-            ->withKey('appkey')
-            ->withGithubOwner('user1')
-            ->withGithubOwner('repo1');
-        $app->setBuildCmd('derp');
+            ->withIdentifier('appkey')
+            ->withGitHub(new Application\GitHubApplication('user1', 'repo1'));
 
         $build = (new Build)
             ->withId('1234')
-            ->withStatus('Waiting')
+            ->withStatus('pending')
             ->withEnvironment(
                 (new Environment)
                     ->withName('envkey')
             )
             ->withApplication($app)
-            ->withBranch('master')
+            ->withReference('master')
             ->withCommit('5555');
 
         return $build;

@@ -12,10 +12,10 @@ use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Repository\BuildRepository;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Repository\BuildRepository;
 
 class ResolverTest extends MockeryTestCase
 {
@@ -61,12 +61,12 @@ class ResolverTest extends MockeryTestCase
 
     /**
      * @expectedException Hal\Agent\Build\BuildException
-     * @expectedExceptionMessage Build "1234" has a status of "Poo"! It cannot be rebuilt.
+     * @expectedExceptionMessage Build "1234" has a status of "removed"! It cannot be rebuilt.
      */
     public function testBuildNotCorrectStatus()
     {
         $build = new Build;
-        $build->withStatus('Poo');
+        $build->withStatus('removed');
 
         $this->buildRepo
             ->shouldReceive('find')
@@ -85,20 +85,7 @@ class ResolverTest extends MockeryTestCase
             'build' => $build,
 
             'configuration' => [
-                'system' => 'unix',
-                'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
-
-                'build' => [
-                    'derp'
-                ],
-                'build_transform' => [],
-                'pre_push' => [],
                 'deploy' => [],
-                'post_push' => []
             ],
 
             'location' => [
@@ -146,20 +133,18 @@ class ResolverTest extends MockeryTestCase
     private function createMockBuild()
     {
         $app = (new Application)
-            ->withGithubOwner('user1')
-            ->withGithubRepo('repo1')
-            ->withKey('repokey');
-        $app->setBuildCmd('derp');
+            ->withGitHub(new Application\GitHubApplication('user1', 'repo1'))
+            ->withIdentifier('repokey');
 
         $build = (new Build)
             ->withId('1234')
-            ->withStatus('Waiting')
+            ->withStatus('Pending')
             ->withEnvironment(
                 (new Environment)
                     ->withName('envkey')
             )
             ->withApplication($app)
-            ->withBranch('master')
+            ->withReference('master')
             ->withCommit('5555');
 
         return $build;

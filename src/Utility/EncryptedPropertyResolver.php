@@ -12,10 +12,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Exception;
 use Hal\Agent\Logger\EventLogger;
-use QL\Hal\Core\Crypto\Decrypter;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\EncryptedProperty;
-use QL\Hal\Core\Entity\Environment;
+use Hal\Core\Crypto\Encryption;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\EncryptedProperty;
+use Hal\Core\Entity\Environment;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -42,7 +42,7 @@ class EncryptedPropertyResolver
     private $di;
 
     /**
-     * @var Decrypter|null
+     * @var Encryption|null
      */
     private $decrypter;
 

@@ -93,11 +93,11 @@ parameters:
     ############################################################################
     # docker
     ############################################################################
-    docker.source.repository: 'skluck/docker-images'
-    docker.source.reference: 'master'
+    build.platforms.option.docker.source.repository: 'skluck/docker-images'
+    build.platforms.option.docker.source.reference: 'master'
 
-    docker.option.default_image: 'base_debian8'
-    docker.option.sudo: false
+    build.platforms.option.docker.default_image: 'base_debian8'
+    build.platforms.option.docker.sudo: '%env(HAL_DOCKER_SUDO)%'
 
     ############################################################################
     # credentials / encryption

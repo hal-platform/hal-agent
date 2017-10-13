@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "b0ef8b15373bd931fc652e49b77bfb22",
+    "content-hash": "15f254bc81dbaea4e6cae542a93b7973",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -924,6 +924,64 @@
                 "url"
             ],
             "time": "2017-03-20T17:10:46+00:00"
+        },
+        {
+            "name": "hal/hal-core",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hal-platform/hal-core.git",
+                "reference": "bce4aa2f3935e5865725464fddab7d5ee04a72d1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hal-platform/hal-core/zipball/bce4aa2f3935e5865725464fddab7d5ee04a72d1",
+                "reference": "bce4aa2f3935e5865725464fddab7d5ee04a72d1",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/orm": "~2.5.10",
+                "ext-pdo": "*",
+                "ext-pdo_mysql": "*",
+                "ext-pdo_pgsql": "*",
+                "ext-pdo_sqlite": "*",
+                "ext-sodium": "~2.0",
+                "ext-zlib": "*",
+                "php-64bit": "~7.1",
+                "ql/mcp-common": "~1.1"
+            },
+            "require-dev": {
+                "mockery/mockery": "~0.9",
+                "overtrue/phplint": "~0.2",
+                "phpunit/phpunit": "~6.2",
+                "robmorgan/phinx": "~0.8",
+                "squizlabs/php_codesniffer": "~3.0",
+                "symfony/config": "~3.3",
+                "symfony/dependency-injection": "~3.3",
+                "symfony/yaml": "~3.3"
+            },
+            "bin": [
+                "bin/hal-build-id",
+                "bin/hal-random-id"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Hal\\Core\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Steve Kluck",
+                    "email": "steve@kluck.engineering"
+                }
+            ],
+            "description": "Core domain entities and shared resources for Hal UI and Agent.",
+            "time": "2017-10-11T16:24:27+00:00"
         },
         {
             "name": "knplabs/github-api",
@@ -2013,65 +2071,6 @@
                 "psr-3"
             ],
             "time": "2016-10-10T12:19:37+00:00"
-        },
-        {
-            "name": "ql/hal-core",
-            "version": "2.10.0",
-            "source": {
-                "type": "git",
-                "url": "https://git/hal/hal-core.git",
-                "reference": "cf5f0ea943482afe58aff5c4fcc455c5b1320f73"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "http://composer/dist/ql-hal-core-2.10.0-d755ee.zip",
-                "reference": "cf5f0ea943482afe58aff5c4fcc455c5b1320f73",
-                "shasum": "6acf8c0deeb87ecd7e2fecca8b5021b490135f81"
-            },
-            "archive": {
-                "exclude": [
-                    ".gitignore",
-                    "/bin",
-                    "/phpunit.xml.dist",
-                    "/testing"
-                ]
-            },
-            "require": {
-                "doctrine/orm": "~2.5.6",
-                "ext-openssl": "*",
-                "ext-pdo": "*",
-                "ext-pdo_mysql": "*",
-                "ext-pdo_sqlite": "*",
-                "php-64bit": "~5.6 || ~7.0",
-                "ql/mcp-common": "~1.0"
-            },
-            "require-dev": {
-                "mockery/mockery": "*",
-                "paragonie/random_compat": "~1.1",
-                "phpunit/phpunit": "*",
-                "robmorgan/phinx": "~0.5",
-                "symfony/config": "*",
-                "symfony/dependency-injection": "*",
-                "symfony/yaml": "*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "QL\\Hal\\Core\\": "src/",
-                    "QL\\Hal\\Core\\Testing\\": "testing/src/"
-                }
-            },
-            "license": [
-                "proprietary"
-            ],
-            "authors": [
-                {
-                    "name": "Steve Kluck",
-                    "email": "stevekluck@quickenloans.com"
-                }
-            ],
-            "description": "Hal shared components and domain resources",
-            "time": "2017-01-19T13:10:49+00:00"
         },
         {
             "name": "ql/mcp-common",
@@ -4722,7 +4721,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "hal/hal-core": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

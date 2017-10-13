@@ -13,11 +13,10 @@ use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Utility\ResolverTrait;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Repository\BuildRepository;
+use Hal\Core\Entity\Build;
+use Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Style\StyleInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 class RemoveBuildCommand implements ExecutorInterface
@@ -101,7 +100,7 @@ class RemoveBuildCommand implements ExecutorInterface
             return $this->failure($io, self::ERR_INVALID_STATUS);
         }
 
-        $build->withStatus('Removed');
+        $build->withStatus('removed');
         $this->em->merge($build);
         $this->em->flush();
 

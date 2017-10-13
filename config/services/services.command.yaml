@@ -82,7 +82,6 @@ services:
             - '@doctrine.em'
             - '@clock'
             - '@utility.referenceResolver'
-            - '@utility.id.generator'
     executor.build.start:
         class: 'Hal\Agent\Executor\Management\StartBuildCommand'
         arguments: ['@executor.build.create', '@executor.runner.build']
@@ -98,7 +97,6 @@ services:
         arguments:
             - '@doctrine.em'
             - '@clock'
-            - '@utility.id.generator'
     executor.release.start:
         class: 'Hal\Agent\Executor\Management\StartReleaseCommand'
         arguments: ['@executor.release.create', '@executor.runner.deploy']
@@ -159,8 +157,8 @@ services:
             - '%build.linux.user%'
             - '%build.linux.server%'
             - '%path.linux_dockerfiles%'
-            - '%docker.source.repository%'
-            - '%docker.source.reference%'
+            - '%build.platforms.option.docker.source.repository%'
+            - '%build.platforms.option.docker.source.reference%'
     executor.docker.status:
         class: 'Hal\Agent\Executor\Docker\CheckStatusCommand'
         arguments:
@@ -169,6 +167,6 @@ services:
             - '@clock'
             - '%build.linux.user%'
             - '%build.linux.server%'
-            - '%docker.option.sudo%'
+            - '%build.platforms.option.docker.sudo%'
             - '%path.temp%'
             - '%path.linux_builder%'

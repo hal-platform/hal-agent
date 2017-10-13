@@ -10,7 +10,7 @@ namespace Hal\Agent\Utility;
 use DateTime;
 use Hal\Agent\Build\Unix\UnixBuildHandler;
 use Hal\Agent\Build\Windows\WindowsBuildHandler;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\JobGenerator;
 
 trait ResolverTrait
 {
@@ -105,27 +105,6 @@ trait ResolverTrait
     }
 
     /**
-     * Generate a target for the build archive.
-     *
-     * @deprecated
-     *
-     * Example:
-     * var/archive/hal9000/build-1234.tar.gz
-     *
-     * @param string $id
-     *
-     * @return string
-     */
-    private function generateLegacyBuildArchiveFile($id)
-    {
-        return sprintf(
-            '%s/hal9000/%s',
-            $this->archivePath,
-            sprintf(static::$ARCHIVE_FILE, $id)
-        );
-    }
-
-    /**
      * Generate a local temporary target for the build archive.
      *
      * This is so we can transfer the entire archive to/from the remote archive as a single file, and perform actual unpack/pack functions locally.
@@ -139,7 +118,7 @@ trait ResolverTrait
      */
     private function generateTempBuildArchiveFile($id, $type = 'build')
     {
-        $type = ($type === 'push') ? 'push' : 'build';
+        $type = ($type === 'release') ? 'release' : 'build';
 
         return $this->getLocalTempPath() . sprintf(static::$TEMP_ARCHIVE_FILE, $type, $id);
     }
@@ -151,22 +130,23 @@ trait ResolverTrait
      */
     private function parseDateFromJobId($id)
     {
-        if (1 !== preg_match('/^(b|p)[\d]{1}\.([a-zA-Z0-9]{3})/', $id, $matches)) {
+        //todo fix all this
+        if (1 !== preg_match('/^(b|r)([a-zA-Z0-9]{4})/', $id, $matches)) {
             return null;
         }
 
         $base58 = str_split(array_pop($matches));
-        if (count($base58) !== 3) {
+        if (count($base58) !== 4) {
             return null;
         }
 
         // parse base58 to base10
         $base10 = 0;
         array_walk($base58, function($v, $k) use (&$base10) {
-            $base = strpos(JobIdGenerator::BASE58, $v);
+            $base = strpos(JobGenerator::BASE58, $v);
 
             if ($base === false) $base = 0;
-            $base10 += ($base * pow(58, 2 - $k));
+            $base10 += $k * $base;
         });
 
         $base10 = (string) $base10;
