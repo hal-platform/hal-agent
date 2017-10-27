@@ -14,10 +14,11 @@ use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Core\Entity\JobProcess;
 use Psr\Log\LoggerInterface;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Repository\PushRepository;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Release;
+use Hal\Core\Repository\ReleaseRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\ProcessBuilder;
@@ -48,12 +49,12 @@ class DeployCommand implements ExecutorInterface
     const DEFAULT_SLEEP_TIME = 5;
 
     /**
-     * @var PushRepository
+     * @var ReleaseRepository
      */
-    private $pushRepo;
+    private $releaseRepo;
 
     /**
-     * @var EntityManager
+     * @var EntityManagerInterface
      */
     private $entityManager;
 
@@ -68,7 +69,7 @@ class DeployCommand implements ExecutorInterface
     private $logger;
 
     /**
-     * @var Process[]
+     * @var JobProcess[]
      */
     private $processes;
 
@@ -101,7 +102,7 @@ class DeployCommand implements ExecutorInterface
         LoggerInterface $logger,
         $workingDir
     ) {
-        $this->pushRepo = $em->getRepository(Push::class);
+        $this->releaseRepo = $em->getRepository(Release::class);
         $this->em = $em;
         $this->builder = $builder;
         $this->logger = $logger;
@@ -148,16 +149,17 @@ class DeployCommand implements ExecutorInterface
     {
         $io->title(self::COMMAND_TITLE);
 
-        if (!$pushes = $this->pushRepo->findBy(['status' => 'Waiting'])) {
+        if (!$releases = $this->releaseRepo->findBy(['status' => 'pending'])) {
             $io->note(self::INFO_NO_PENDING);
             return $this->success($io, self::MSG_SUCCESS);
         }
 
         $io->section('Starting pending deployments');
-        $io->text(sprintf('Found %s releases:', count($pushes)));
+        $io->text(sprintf('Found %s releases:', count($releases)));
 
-        foreach ($pushes as $push) {
-            $id = $push->id();
+        /** @var Release $release */
+        foreach ($releases as $release) {
+            $id = $release->id();
             $command = [
                 'bin/hal',
                 'runner:deploy',
@@ -165,22 +167,22 @@ class DeployCommand implements ExecutorInterface
             ];
 
             // Skip pushes without deployment target
-            if (!$push->deployment()) {
+            if (!$release->target()) {
                 $io->listing([
                     sprintf("<fg=red>Skipping</> release: <info>%s</info>\n", $id) .
-                    sprintf('   > Release <info>%s</info> has no target. Marking as failure.', $push->id())
+                    sprintf('   > Release <info>%s</info> has no target. Marking as failure.', $release->id())
                 ]);
 
-                $this->stopWeirdPush($push);
+                $this->stopWeirdRelease($release);
                 continue;
             }
 
             // Every time the worker runs we need to ensure all deployments spawned are unique.
             // This helps prevent concurrent deployments.
-            if ($this->hasConcurrentDeployment($push->deployment())) {
+            if ($this->hasConcurrentDeployment($release->target())) {
                 $io->listing([
                     sprintf("<fg=red>Skipping</> release: <info>%s</info>\n", $id) .
-                    sprintf('   > A release to target <info>%s</info> is already in progress.', $push->deployment()->id())
+                    sprintf('   > A release to target <info>%s</info> is already in progress.', $release->target()->id())
                 ]);
 
                 continue;
@@ -265,29 +267,29 @@ class DeployCommand implements ExecutorInterface
     }
 
     /**
-     * @param Push $push
+     * @param Release $release
      *
      * @return void
      */
-    private function stopWeirdPush(Push $push)
+    private function stopWeirdRelease(Release $release)
     {
-        $push->withStatus('Error');
-        $this->em->merge($push);
+        $release->withStatus('failure');
+        $this->em->merge($release);
         $this->em->flush();
     }
 
     /**
-     * @param Deployment $deployment
+     * @param Target $target
      *
      * @return boolean
      */
-    private function hasConcurrentDeployment(Deployment $deployment)
+    private function hasConcurrentDeployment(Target $target)
     {
-        if (isset($this->deploymentCache[$deployment->id()])) {
+        if (isset($this->deploymentCache[$target->id()])) {
             return true;
         }
 
-        $this->deploymentCache[$deployment->id()] = true;
+        $this->deploymentCache[$target->id()] = true;
         return false;
     }
 }

@@ -11,15 +11,15 @@ use Doctrine\ORM\EntityManager;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Hal\Agent\Testing\MemoryLogger;
 use Mockery;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Repository\PushRepository;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Release;
+use Hal\Core\Repository\ReleaseRepository;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
 class DeployCommandTest extends ExecutorTestCase
 {
-    public $pushRepo;
+    public $releaseRepo;
     public $em;
 
     public $builder;
@@ -28,9 +28,9 @@ class DeployCommandTest extends ExecutorTestCase
 
     public function setUp()
     {
-        $this->pushRepo = Mockery::mock(PushRepository::class);
+        $this->releaseRepo = Mockery::mock(ReleaseRepository::class);
         $this->em = Mockery::mock(EntityManager::class, [
-            'getRepository' => $this->pushRepo
+            'getRepository' => $this->releaseRepo
         ]);
         $this->builder = Mockery::mock(ProcessBuilder::class);
         $this->process = Mockery::mock(Process::class, ['stop' => null]);
@@ -44,7 +44,7 @@ class DeployCommandTest extends ExecutorTestCase
 
     public function testNoPushesFound()
     {
-        $this->pushRepo
+        $this->releaseRepo
             ->shouldReceive('findBy')
             ->andReturnNull();
 
@@ -68,19 +68,19 @@ class DeployCommandTest extends ExecutorTestCase
 
     public function testOutputWithMultipleBuilds()
     {
-        $push1 = (new Push('1234'))
-            ->withDeployment(
-                (new Deployment)
+        $push1 = (new Release('1234'))
+            ->withTarget(
+                (new Target())
                     ->withId('6666')
             );
 
-        $push2 = (new Push('5555'))
-            ->withDeployment(
-                (new Deployment)
+        $push2 = (new Release('5555'))
+            ->withTarget(
+                (new Target())
                     ->withId('8888')
             );
 
-        $this->pushRepo
+        $this->releaseRepo
             ->shouldReceive('findBy')
             ->andReturn([$push1, $push2]);
 
@@ -138,10 +138,10 @@ class DeployCommandTest extends ExecutorTestCase
 
     public function testOutputWithPushWithoutDeployment()
     {
-        $push1 = new Push;
+        $push1 = new Release();
         $push1->withId('1234');
 
-        $this->pushRepo
+        $this->releaseRepo
             ->shouldReceive('findBy')
             ->andReturn([$push1]);
 
@@ -174,18 +174,18 @@ class DeployCommandTest extends ExecutorTestCase
 
     public function testOutputWhenDuplicateDeploymentSkipsPush()
     {
-        $deploy1 = (new Deployment)
+        $deploy1 = (new Target())
             ->withId('6666');
 
-        $push1 = (new Push)
+        $push1 = (new Release())
             ->withId('1234')
-            ->withDeployment($deploy1);
+            ->withTarget($deploy1);
 
-        $push2 = (new Push)
+        $push2 = (new Release())
             ->withId('5555')
-            ->withDeployment($deploy1);
+            ->withTarget($deploy1);
 
-        $this->pushRepo
+        $this->releaseRepo
             ->shouldReceive('findBy')
             ->andReturn([$push1, $push2]);
 

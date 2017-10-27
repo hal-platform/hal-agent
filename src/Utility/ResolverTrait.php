@@ -73,7 +73,7 @@ trait ResolverTrait
      */
     private function generateLocalTempPath($id, $type = 'build')
     {
-        $type = ($type === 'push') ? 'push' : 'build';
+        $type = ($type === 'release') ? 'release' : 'build';
 
         return $this->getLocalTempPath() . sprintf(static::$UNIQUE_TEMP_PATH, $type, $id);
     }

@@ -13,15 +13,14 @@ use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Credential;
-use QL\Hal\Core\Entity\Credential\AWSCredential;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Server;
-use QL\Hal\Core\Repository\PushRepository;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Credential;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\Release;
+use Hal\Core\Entity\Group;
+use Hal\Core\Repository\ReleaseRepository;
 use QL\MCP\Common\Time\Clock;
 
 class ResolverTest extends MockeryTestCase
@@ -36,7 +35,7 @@ class ResolverTest extends MockeryTestCase
     public function setUp()
     {
         $this->logger = Mockery::mock(EventLogger::class);
-        $this->repo = Mockery::mock(PushRepository::class, [
+        $this->repo = Mockery::mock(ReleaseRepository::class, [
             'find' => null,
             'findBy' => []
         ]);
@@ -55,7 +54,7 @@ class ResolverTest extends MockeryTestCase
     public function testPushNotFound()
     {
         $this->expectException('Hal\Agent\Push\PushException');
-        $this->expectExceptionMessage('Push "1234" could not be found!');
+        $this->expectExceptionMessage('Release "1234" could not be found!');
 
         $action = new Resolver(
             $this->logger,
@@ -70,17 +69,17 @@ class ResolverTest extends MockeryTestCase
         $properties = $action('1234');
     }
 
-    public function testPushNotCorrectStatus()
+    public function testReleaseNotCorrectStatus()
     {
         $this->expectException('Hal\Agent\Push\PushException');
-        $this->expectExceptionMessage('Push "1234" has a status of "Poo"! It cannot be redeployed.');
+        $this->expectExceptionMessage('Release "1234" has a status of "failure"! It cannot be redeployed.');
 
-        $push = new Push;
-        $push->withStatus('Poo');
+        $release = new Release;
+        $release->withStatus('failure');
 
         $this->repo
             ->shouldReceive('find')
-            ->andReturn($push);
+            ->andReturn($release);
 
         $action = new Resolver(
             $this->logger,
@@ -95,18 +94,18 @@ class ResolverTest extends MockeryTestCase
         $properties = $action('1234');
     }
 
-    public function testPushFindsActiveDeployment()
+    public function testReleaseFindsActiveDeployment()
     {
         $this->expectException('Hal\Agent\Push\PushException');
-        $this->expectExceptionMessage('Push "1234" is trying to clobber a running push! It cannot be deployed at this time.');
+        $this->expectExceptionMessage('Release "1234" is trying to clobber a running release! It cannot be deployed at this time.');
 
-        $push = (new Push)
-            ->withStatus('Waiting')
-            ->withDeployment(new Deployment);
+        $release = (new Release)
+            ->withStatus('pending')
+            ->withTarget(new Target());
 
         $this->repo
             ->shouldReceive('find')
-            ->andReturn($push);
+            ->andReturn($release);
         $this->repo
             ->shouldReceive('findBy')
             ->andReturn(['derp']);
@@ -127,22 +126,17 @@ class ResolverTest extends MockeryTestCase
     public function testRsyncSuccess()
     {
         $app = (new Application)
-            ->withKey('repokey')
-            ->withGithubOwner('user1')
-            ->withGithubRepo('repo1');
+            ->withIdentifier('repokey')
+            ->withGithub(new Application\GitHubApplication('user1', 'repo1'));
 
-        $app->setBuildTransformCmd('bin/build-transform');
-        $app->setPrePushCmd('bin/pre');
-        $app->setPostPushCmd('bin/post');
-
-        $push = (new Push)
+        $push = (new Release())
             ->withId('1234')
-            ->withStatus('Waiting')
+            ->withStatus('pending')
             ->withApplication($app)
             ->withBuild(
                 (new Build)
                     ->withId('b2.5tnbBn8')
-                    ->withBranch('master')
+                    ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
                     ->withEnvironment(
@@ -150,11 +144,11 @@ class ResolverTest extends MockeryTestCase
                             ->withName('envname')
                     )
             )
-            ->withDeployment(
-                (new Deployment)
-                    ->withPath('/herp/derp')
-                    ->withServer(
-                        (new Server)
+            ->withTarget(
+                (new Target())
+                    ->withParameter(Target::PARAM_PATH, '/herp/derp')
+                    ->withGroup(
+                        (new Group())
                             ->withType('rsync')
                             ->withName('127.0.0.1')
                     )
@@ -182,29 +176,23 @@ class ResolverTest extends MockeryTestCase
                     'data/'
                 ],
                 'build' => [],
-                'build_transform' => [
-                    'bin/build-transform'
-                ],
-                'pre_push' => [
-                    'bin/pre'
-                ],
+                'build_transform' => [],
+                'pre_push' => [],
                 'deploy' => [],
-                'post_push' => [
-                    'bin/post'
-                ]
+                'post_push' => []
             ],
 
             'location' => [
-                'path' => 'testdir/hal9000-push-1234',
+                'path' => 'testdir/hal9000-release-1234',
                 'archive' => 'ARCHIVE_PATH/2015-02/hal9000-b2.5tnbBn8.tar.gz',
-                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234'
             ],
 
             'artifacts' => [
-                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-push-1234'
+                'testdir/hal9000-release-1234'
             ],
 
             'pushProperties' => [
@@ -220,7 +208,7 @@ class ResolverTest extends MockeryTestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getPushProperties')
+            ->shouldReceive('getReleaseProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')
@@ -255,24 +243,19 @@ class ResolverTest extends MockeryTestCase
     {
         $app = (new Application)
             ->withId('repo-id')
-            ->withKey('repokey')
-            ->withGithubOwner('user1')
-            ->withGithubRepo('repo1');
+            ->withIdentifier('repokey')
+            ->withGitHub(new Application\GitHubApplication('user1', 'repo1'));
 
-        $app->setBuildTransformCmd('bin/build-transform');
-        $app->setPrePushCmd('bin/pre');
-        $app->setPostPushCmd('bin/post');
+        $aws = new Credential\AWSStaticCredential('key', 'encrypted');
 
-        $aws = new AWSCredential('key', 'encrypted');
-
-        $push = (new Push)
+        $release = (new Release())
             ->withId('1234')
-            ->withStatus('Waiting')
+            ->withStatus('pending')
             ->withApplication($app)
             ->withBuild(
                 (new Build)
                     ->withId('b9.1234')
-                    ->withBranch('master')
+                    ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
                     ->withEnvironment(
@@ -280,19 +263,19 @@ class ResolverTest extends MockeryTestCase
                             ->withName('envname')
                     )
             )
-            ->withDeployment(
-                (new Deployment)
-                    ->withEbName('eb_name')
-                    ->withEbEnvironment('e-ididid')
-                    ->withS3Bucket('eb_bucket')
-                    ->withServer(
-                        (new Server)
+            ->withTarget(
+                (new Target())
+                    ->withParameter(Target::PARAM_APP, 'eb_name')
+                    ->withParameter(Target::PARAM_ENV, 'e-ididid')
+                    ->withParameter(Target::PARAM_BUCKET, 'eb_bucket')
+                    ->withGroup(
+                        (new Group())
                             ->withName('aws-region')
                             ->withType('eb')
                     )
                     ->withCredential(
                         (new Credential)
-                            ->withAWS($aws)
+                            ->withDetails($aws)
                     )
             );
 
@@ -317,22 +300,16 @@ class ResolverTest extends MockeryTestCase
                     'data/'
                 ],
                 'build' => [],
-                'build_transform' => [
-                    'bin/build-transform'
-                ],
-                'pre_push' => [
-                    'bin/pre'
-                ],
+                'build_transform' => [],
+                'pre_push' => [],
                 'deploy' => [],
-                'post_push' => [
-                    'bin/post'
-                ]
+                'post_push' => []
             ],
 
             'location' => [
-                'path' => 'testdir/hal9000-push-1234',
+                'path' => 'testdir/hal9000-release-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234',
             ],
 
@@ -355,11 +332,11 @@ class ResolverTest extends MockeryTestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getPushProperties')
+            ->shouldReceive('getReleaseProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')
-            ->andReturn($push);
+            ->andReturn($release);
         $this->repo
             ->shouldReceive('findBy')
             ->andReturn([]);
@@ -390,24 +367,20 @@ class ResolverTest extends MockeryTestCase
     {
         $app = (new Application)
             ->withId('repo-id')
-            ->withKey('repokey')
-            ->withGithubOwner('user1')
-            ->withGithubRepo('repo1');
+            ->withIdentifier('repokey')
+            ->withGitHub(new Application\GitHubApplication('user1', 'repo1'));
 
-        $app->setBuildTransformCmd('bin/build-transform');
-        $app->setPrePushCmd('bin/pre');
-        $app->setPostPushCmd('bin/post');
 
-        $aws = new AWSCredential('key', 'encrypted');
+        $aws = new Credential\AWSStaticCredential('key', 'encrypted');
 
-        $push = (new Push)
+        $push = (new Release())
             ->withId('1234')
             ->withStatus('Waiting')
             ->withApplication($app)
             ->withBuild(
                 (new Build)
                     ->withId('b9.1234')
-                    ->withBranch('master')
+                    ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
                     ->withEnvironment(
@@ -415,20 +388,20 @@ class ResolverTest extends MockeryTestCase
                             ->withName('envname')
                     )
             )
-            ->withDeployment(
-                (new Deployment)
-                    ->withCDName('cd_name')
-                    ->withCDGroup('cd_group')
-                    ->withCDConfiguration('cd_config')
-                    ->withS3Bucket('cd_bucket')
-                    ->withServer(
-                        (new Server)
+            ->withTarget(
+                (new Target())
+                    ->withParameter(Target::PARAM_APP, 'cd_name')
+                    ->withParameter(Target::PARAM_GROUP, 'cd_group')
+                    ->withParameter(Target::PARAM_CONFIG, 'cd_config')
+                    ->withParameter(Target::PARAM_BUCKET, 'cd_bucket')
+                    ->withGroup(
+                        (new Group())
                             ->withName('aws-region')
                             ->withType('cd')
                     )
                     ->withCredential(
                         (new Credential)
-                            ->withAWS($aws)
+                            ->withDetails($aws)
                     )
             );
 
@@ -454,27 +427,21 @@ class ResolverTest extends MockeryTestCase
                     'data/'
                 ],
                 'build' => [],
-                'build_transform' => [
-                    'bin/build-transform'
-                ],
-                'pre_push' => [
-                    'bin/pre'
-                ],
+                'build_transform' => [],
+                'pre_push' => [],
                 'deploy' => [],
-                'post_push' => [
-                    'bin/post'
-                ]
+                'post_push' => []
             ],
 
             'location' => [
-                'path' => 'testdir/hal9000-push-1234',
+                'path' => 'testdir/hal9000-release-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234',
             ],
 
             'artifacts' => [
-                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
                 'testdir/hal9000-push-1234'
             ],
@@ -492,7 +459,7 @@ class ResolverTest extends MockeryTestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getPushProperties')
+            ->shouldReceive('getReleaseProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')
@@ -528,18 +495,17 @@ class ResolverTest extends MockeryTestCase
     {
         $app = (new Application)
             ->withId('repo-id')
-            ->withKey('repokey')
-            ->withGithubOwner('user1')
-            ->withGithubRepo('repo1');
+            ->withIdentifier('repokey')
+            ->withGitHub(new Application\GitHubApplication('user1', 'repo1'));
 
-        $push = (new Push)
+        $push = (new Release())
             ->withId('1234')
             ->withStatus('Waiting')
             ->withApplication($app)
             ->withBuild(
                 (new Build)
                     ->withId('b9.1234')
-                    ->withBranch('master')
+                    ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
                     ->withEnvironment(
@@ -547,11 +513,11 @@ class ResolverTest extends MockeryTestCase
                             ->withName('envname')
                     )
             )
-            ->withDeployment(
-                (new Deployment)
-                    ->withScriptContext('testdata')
-                    ->withServer(
-                        (new Server)
+            ->withTarget(
+                (new Target())
+                    ->withParameter(Target::PARAM_CONTEXT, 'testdata')
+                    ->withGroup(
+                        (new Group())
                             ->withType('script')
                     )
             );
@@ -600,7 +566,7 @@ class ResolverTest extends MockeryTestCase
 
         $clock = new Clock('2015-03-15 12:00:00', 'UTC');
         $this->envResolver
-            ->shouldReceive('getPushProperties')
+            ->shouldReceive('getReleaseProperties')
             ->andReturn([]);
         $this->repo
             ->shouldReceive('find')

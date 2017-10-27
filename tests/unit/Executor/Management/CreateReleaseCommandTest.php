@@ -20,7 +20,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
 {
     public $em;
     public $buildRepo;
-    public $deployRepo;
+    public $releaseRepo;
     public $clock;
     public $unique;
 
@@ -28,7 +28,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
     {
         $this->em = Mockery::mock(EntityManager::class);
         $this->buildRepo = Mockery::mock(BuildRepository::class);
-        $this->deployRepo = Mockery::mock(TargetRepository::class);
+        $this->releaseRepo = Mockery::mock(TargetRepository::class);
 
         $this->em
             ->shouldReceive('getRepository')
@@ -37,7 +37,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
         $this->em
             ->shouldReceive('getRepository')
             ->with(Target::class)
-            ->andReturn($this->deployRepo);
+            ->andReturn($this->releaseRepo);
 
         $this->clock = new Clock('now', 'UTC');
     }
@@ -78,7 +78,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
             ->shouldReceive('find')
             ->andReturn($build);
 
-        $this->deployRepo
+        $this->releaseRepo
             ->shouldReceive('find')
             ->andReturnNull();
 
@@ -91,7 +91,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
         $exit = $command->execute($io);
 
         $expected = [
-            '[ERROR] Deployment target not found. '
+            '[ERROR] Release target not found. '
         ];
 
         $this->assertContainsLines($expected, $this->output());

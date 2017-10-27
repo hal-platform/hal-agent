@@ -17,12 +17,12 @@ use Hal\Agent\Push\Resolver;
 use Hal\Agent\Push\Unpacker;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Mockery;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\Entity\Repository;
-use QL\Hal\Core\Entity\Server;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\Release;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Group;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -36,6 +36,8 @@ class DeployCommandTest extends ExecutorTestCase
     public $deployer;
 
     public $filesystem;
+
+    private $builder;
 
     public function setUp()
     {
@@ -113,7 +115,7 @@ class DeployCommandTest extends ExecutorTestCase
         $this->resolver
             ->shouldReceive('__invoke')
             ->andReturn([
-                'push' => $this->generateMockPush(),
+                'release' => $this->generateMockRelease(),
                 'method' => 'rsync',
 
                 'configuration' => [
@@ -181,7 +183,7 @@ class DeployCommandTest extends ExecutorTestCase
 
         $expected = [
             '[1/6] Resolving configuration',
-            ' * Push: 1234',
+            ' * Release: 1234',
             ' * Build: 5678',
             ' * Application: test_app (ID: app123)',
             ' * Environment: test (ID: env123)',
@@ -235,7 +237,7 @@ class DeployCommandTest extends ExecutorTestCase
         $this->resolver
             ->shouldReceive('__invoke')
             ->andReturn([
-                'push' => $this->generateMockPush(),
+                'release' => $this->generateMockRelease(),
                 'method' => 'rsync',
 
                 'configuration' => [],
@@ -288,17 +290,17 @@ class DeployCommandTest extends ExecutorTestCase
         $command->emergencyCleanup();
     }
 
-    public function generateMockPush()
+    public function generateMockRelease()
     {
-        return Mockery::mock(Push::class, [
-            'status' => null,
+        return Mockery::mock(Release::class, [
+            'status' => 'pending',
 
-            'application' => Mockery::mock(Repository::class, [
+            'application' => Mockery::mock(Application::class, [
                 'id' => 'app123',
                 'name' => 'test_app'
             ]),
-            'deployment' => Mockery::mock(Deployment::class, [
-                'server' => Mockery::mock(Server::class, [
+            'target' => Mockery::mock(Target::class, [
+                    'group' => Mockery::mock(Group::class, [
                     'environment' => Mockery::mock(Environment::class, [
                         'name' => null
                     ]),

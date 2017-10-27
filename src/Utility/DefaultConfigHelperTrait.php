@@ -25,11 +25,11 @@ trait DefaultConfigHelperTrait
                 'config/database.ini',
                 'data/'
             ],
-            'build' => '',
-            'build_transform' => '',
-            'pre_push' => '',
+            'build' => [],
+            'build_transform' => [],
+            'pre_push' => [],
             'deploy' => [],
-            'post_push' => ''
+            'post_push' =>[]
         ];
     }
 

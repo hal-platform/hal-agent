@@ -134,7 +134,7 @@ class CreateReleaseCommand implements ExecutorInterface
         $io->section('Release Information');
         $io->listing([
             sprintf('ID: <info>%s</info>', $release->id()),
-            sprintf('Target: <info>%s</info>', $target->formatPretty(true)),
+            sprintf('Target: <info>%s</info>', $target->format(true)),
         ]);
 
         $this->release = $release;

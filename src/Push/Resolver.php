@@ -231,6 +231,8 @@ class Resolver
 
         if ($method === GroupEnum::TYPE_RSYNC) {
 
+            //$credential = ($target->credential()->details() instanceof PrivateKeyCredential) ? $target->credential()->details(): null;
+
             $hostname = $this->attemptHostnameValidation($group);
 
             return [
@@ -243,6 +245,8 @@ class Resolver
                     'HAL_HOSTNAME' => $hostname,
                     'HAL_PATH' => $target->parameter(Target::PARAM_PATH),
                 ]
+
+                //'credential' => $credential
             ];
 
         } elseif ($method === GroupEnum::TYPE_SCRIPT) {
@@ -361,6 +365,8 @@ class Resolver
 
         $properties[$method]['environmentVariables'] = $env;
         $properties[$system]['environmentVariables'] = $env;
+
+        return $properties;
     }
 
     /**
@@ -444,8 +450,8 @@ class Resolver
     private function hasConcurrentRelease(Release $release)
     {
         $concurrentSyncs = $this->releaseRepo->findBy([
-            'status' => 'deploying',
-            'deployment' => $release
+            'status' => 'running',
+            'target' => $release->target()
         ]);
 
         return (count($concurrentSyncs) > 0);
