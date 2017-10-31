@@ -931,15 +931,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hal-platform/hal-core.git",
-                "reference": "bce4aa2f3935e5865725464fddab7d5ee04a72d1"
+                "reference": "5542a56d7415e56b6bd6823a58856855799cb70f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hal-platform/hal-core/zipball/bce4aa2f3935e5865725464fddab7d5ee04a72d1",
-                "reference": "bce4aa2f3935e5865725464fddab7d5ee04a72d1",
+                "url": "https://api.github.com/repos/hal-platform/hal-core/zipball/5542a56d7415e56b6bd6823a58856855799cb70f",
+                "reference": "5542a56d7415e56b6bd6823a58856855799cb70f",
                 "shasum": ""
             },
             "require": {
+                "aws/aws-sdk-php": "^3.21.6",
                 "doctrine/orm": "~2.5.10",
                 "ext-pdo": "*",
                 "ext-pdo_mysql": "*",
@@ -981,7 +982,7 @@
                 }
             ],
             "description": "Core domain entities and shared resources for Hal UI and Agent.",
-            "time": "2017-10-11T16:24:27+00:00"
+            "time": "2017-10-31T14:20:03+00:00"
         },
         {
             "name": "knplabs/github-api",

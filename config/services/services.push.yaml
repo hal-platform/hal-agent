@@ -257,10 +257,18 @@ services:
     ####################################################################################################################
 
     push.aws.authenticator:
-        class: 'Hal\Agent\Push\AWSAuthenticator'
+        class: 'Hal\Core\AWS\AWSAuthenticator'
         arguments:
-            - '@logger.event'
-            - '@service_container'
+            - '@logger'
+            - '@push.aws.credential.provider'
+            - '@aws'
+
+    push.aws.credential.provider:
+        class: 'Hal\Core\AWS\CredentialProvider'
+        arguments:
+            - '@logger'
+            - '@encryption'
+            - '@doctrine.em'
             - '@aws'
 
     yaml.dumper:

@@ -12,7 +12,7 @@ services:
             - ['add', ['@command.runner.build']]
             - ['add', ['@command.runner.deploy']]
             - ['add', ['@command.worker.build']]
-#            - ['add', ['@command.worker.deploy']]
+            - ['add', ['@command.worker.deploy']]
             - ['add', ['@command.docker.refresh']]
             - ['add', ['@command.docker.status']]
             - ['setDispatcher', ['@dispatcher']]
@@ -149,18 +149,14 @@ services:
     # encryption
     ####################################################################################################################
 
-    encrypter:
-        class: 'QL\Hal\Core\Crypto\Encrypter'
-        arguments: ['%encrypter.publickey%']
-
-    decrypter:
-        class: 'QL\Hal\Core\Crypto\Decrypter'
-        factory: ['@decrypter.factory', 'getAsymmetricDecrypter']
+    encryption:
+        class: 'Hal\Core\Crypto\Encryption'
+        factory: ['@encryption.factory', 'getCrypto']
         lazy: true
 
-    decrypter.factory:
-        class: 'QL\Hal\Core\Crypto\CryptoFactory'
-        arguments: ['@encrypter.encryptedkey.squished', '%encrypter.secret.path%']
+    encryption.factory:
+        class: 'Hal\Core\Crypto\CryptoFilesystemFactory'
+        arguments: ['%encrypter.secret.path%']
 
     encrypted.resolver:
         class: 'Hal\Agent\Utility\EncryptedPropertyResolver'
@@ -168,8 +164,3 @@ services:
             - '@doctrine.em'
             - '@logger.event'
             - '@service_container'
-
-    encrypter.encryptedkey.squished:
-        class: 'stdClass'
-        factory: ['Hal\Agent\Utility\Stringify', 'squish']
-        arguments: ['%encrypter.encryptedkey%']

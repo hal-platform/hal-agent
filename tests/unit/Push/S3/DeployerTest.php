@@ -8,13 +8,13 @@
 namespace Hal\Agent\Push\S3;
 
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Push\AWSAuthenticator;
+use Hal\Core\AWS\AWSAuthenticator;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Push;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\Release;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DeployerTest extends MockeryTestCase
@@ -25,6 +25,7 @@ class DeployerTest extends MockeryTestCase
     public $preparer;
     public $uploader;
     public $pusher;
+    public $authenticator;
 
     public function setUp()
     {
@@ -39,7 +40,7 @@ class DeployerTest extends MockeryTestCase
     public function testSuccess()
     {
         $properties = [
-            'push' => $this->buildMockPush(),
+            'release' => $this->buildMockRelease(),
             's3' => [
                 'region' => 'aws-region',
                 'credential' => 'aws-cred',
@@ -167,7 +168,7 @@ class DeployerTest extends MockeryTestCase
     public function testPreparerFails()
     {
         $properties = [
-            'push' => $this->buildMockPush(),
+            'release' => $this->buildMockRelease(),
             's3' => [
                 'region' => 'aws-region',
                 'credential' => 'aws-cred',
@@ -203,7 +204,7 @@ class DeployerTest extends MockeryTestCase
     public function testUploaderFails()
     {
         $properties = [
-            'push' => $this->buildMockPush(),
+            'release' => $this->buildMockRelease(),
             's3' => [
                 'region' => 'aws-region',
                 'credential' => 'aws-cred',
@@ -247,7 +248,7 @@ class DeployerTest extends MockeryTestCase
     public function testPushCommandsAreLoggedAndSkipped()
     {
         $properties = [
-            'push' => $this->buildMockPush(),
+            'release' => $this->buildMockRelease(),
             's3' => [
                 'region' => 'aws-region',
                 'credential' => 'aws-cred',
@@ -297,9 +298,9 @@ class DeployerTest extends MockeryTestCase
         $this->assertSame(0, $actual);
     }
 
-    private function buildMockPush()
+    private function buildMockRelease()
     {
-        $push = (new Push)
+        $release = (new Release())
             ->withId('1234')
             ->withBuild(
                 (new Build)
@@ -314,7 +315,7 @@ class DeployerTest extends MockeryTestCase
                     ->withId('repo_id')
             );
 
-        return $push;
+        return $release;
     }
 
 }

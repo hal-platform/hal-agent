@@ -375,7 +375,7 @@ class ResolverTest extends MockeryTestCase
 
         $push = (new Release())
             ->withId('1234')
-            ->withStatus('Waiting')
+            ->withStatus('pending')
             ->withApplication($app)
             ->withBuild(
                 (new Build)
@@ -500,7 +500,7 @@ class ResolverTest extends MockeryTestCase
 
         $push = (new Release())
             ->withId('1234')
-            ->withStatus('Waiting')
+            ->withStatus('pending')
             ->withApplication($app)
             ->withBuild(
                 (new Build)
