@@ -13,7 +13,7 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Agent\Command\IO;
-use QL\Hal\Core\Type\EnumType\ServerEnum;
+use Hal\Core\Type\GroupEnum;
 use Symfony\Component\Console\Input\ArrayInput;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
@@ -95,7 +95,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      */
     private function sanityCheck(array $properties)
     {
-        if (!isset($properties[ServerEnum::TYPE_SCRIPT])) {
+        if (!isset($properties[GroupEnum::TYPE_SCRIPT])) {
             return false;
         }
 
