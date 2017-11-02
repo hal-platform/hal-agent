@@ -9,18 +9,18 @@ namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
+use Hal\Core\AWS\AWSAuthenticator;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Push\AWSAuthenticator;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Push\ElasticBeanstalk\HealthChecker;
 use Hal\Agent\Push\ElasticBeanstalk\Pusher;
 use Hal\Agent\Push\ElasticBeanstalk\Uploader;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Entity\Push;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\Release;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DeployerTest extends MockeryTestCase
@@ -46,10 +46,10 @@ class DeployerTest extends MockeryTestCase
 
     public function testSuccess()
     {
-        $push = $this->buildMockPush();
+        $push = $this->buildMockRelease();
 
         $properties = [
-            'push' => $push,
+            'release' => $push,
             'build' => $push->build(),
             'eb' => [
                 'region' => '',
@@ -108,11 +108,11 @@ class DeployerTest extends MockeryTestCase
 
     public function testPushCommandsAreLoggedAndSkipped()
     {
-        $push = $this->buildMockPush();
+        $release = $this->buildMockRelease();
 
         $properties = [
-            'push' => $push,
-            'build' => $push->build(),
+            'release' => $release,
+            'build' => $release->build(),
             'eb' => [
                 'region' => '',
                 'credential' => '',
@@ -328,11 +328,11 @@ class DeployerTest extends MockeryTestCase
 
     public function testUploaderFails()
     {
-        $push = $this->buildMockPush();
+        $release = $this->buildMockRelease();
 
         $properties = [
-            'push' => $push,
-            'build' => $push->build(),
+            'release' => $release,
+            'build' => $release->build(),
             'eb' => [
                 'region' => '',
                 'credential' => '',
@@ -386,11 +386,11 @@ class DeployerTest extends MockeryTestCase
 
     public function testPusherFails()
     {
-        $push = $this->buildMockPush();
+        $release = $this->buildMockRelease();
 
         $properties = [
-            'push' => $push,
-            'build' => $push->build(),
+            'release' => $release,
+            'build' => $release->build(),
             'eb' => [
                 'region' => '',
                 'credential' => '',
@@ -445,9 +445,9 @@ class DeployerTest extends MockeryTestCase
         $this->assertSame(205, $actual);
     }
 
-    private function buildMockPush()
+    private function buildMockRelease()
     {
-        $push = (new Push)
+        $push = (new Release())
             ->withId('1234')
             ->withBuild(
                 (new Build)
