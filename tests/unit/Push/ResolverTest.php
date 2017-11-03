@@ -184,7 +184,7 @@ class ResolverTest extends MockeryTestCase
 
             'location' => [
                 'path' => 'testdir/hal9000-release-1234',
-                'archive' => 'ARCHIVE_PATH/2015-02/hal9000-b2.5tnbBn8.tar.gz',
+                'archive' => 'ARCHIVE_PATH/hal9000-b2.5tnbBn8.tar.gz',
                 'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234'
             ],
@@ -314,9 +314,9 @@ class ResolverTest extends MockeryTestCase
             ],
 
             'artifacts' => [
-                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-push-1234'
+                'testdir/hal9000-release-1234'
             ],
 
             'pushProperties' => [
@@ -443,7 +443,7 @@ class ResolverTest extends MockeryTestCase
             'artifacts' => [
                 'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-push-1234'
+                'testdir/hal9000-release-1234'
             ],
 
             'pushProperties' => [
@@ -541,16 +541,16 @@ class ResolverTest extends MockeryTestCase
             ],
 
             'location' => [
-                'path' => 'testdir/hal9000-push-1234',
+                'path' => 'testdir/hal9000-release-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-push-1234.tar.gz',
+                'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234'
             ],
 
             'artifacts' => [
-                'testdir/hal9000-push-1234.tar.gz',
+                'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-push-1234'
+                'testdir/hal9000-release-1234'
             ],
 
             'pushProperties' => [

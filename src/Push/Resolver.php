@@ -16,6 +16,7 @@ use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Credential\AWSRoleCredential;
+use Hal\Core\Entity\Credential\AWSStaticCredential;
 use Hal\Core\Entity\Group;
 use Hal\Core\Entity\Release;
 use Hal\Core\Entity\Target;
@@ -408,24 +409,6 @@ class Resolver
     }
 
     /**
-     * @return void
-     */
-    private function ensureTempExistsAndIsWritable()
-    {
-        $temp = $this->getLocalTempPath();
-
-        if (!file_exists($temp)) {
-            if (!mkdir($temp, 0755, true)) {
-                throw new PushException(sprintf(self::ERR_TEMP, $temp));
-            }
-        }
-
-        if (!is_writeable($temp)) {
-            throw new PushException(sprintf(self::ERR_TEMP, $temp));
-        }
-    }
-
-    /**
      * Generate a temporary target for the archive (Used for AWS deployments)
      *
      * @param string $id
@@ -462,7 +445,7 @@ class Resolver
      *
      * @param Credential $credential
      *
-     * @return AWSStaticCredentia|AWSRoleCredential
+     * @return AWSStaticCredential|AWSRoleCredential
      */
     private function getAWSCredentials(Credential $credential)
     {

@@ -93,10 +93,6 @@ trait ResolverTrait
     {
         $filename = sprintf(static::$ARCHIVE_FILE, $id);
 
-        if ($dateOfJob = $this->parseDateFromJobId($id)) {
-            $filename = sprintf('%s/%s', $dateOfJob->format('Y-m'), $filename);
-        }
-
         return sprintf(
             '%s/%s',
             $this->archivePath,
@@ -121,41 +117,5 @@ trait ResolverTrait
         $type = ($type === 'release') ? 'release' : 'build';
 
         return $this->getLocalTempPath() . sprintf(static::$TEMP_ARCHIVE_FILE, $type, $id);
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return DateTime|null
-     */
-    private function parseDateFromJobId($id)
-    {
-        //todo fix all this
-        if (1 !== preg_match('/^(b|r)([a-zA-Z0-9]{4})/', $id, $matches)) {
-            return null;
-        }
-
-        $base58 = str_split(array_pop($matches));
-        if (count($base58) !== 4) {
-            return null;
-        }
-
-        // parse base58 to base10
-        $base10 = 0;
-        array_walk($base58, function($v, $k) use (&$base10) {
-            $base = strpos(JobGenerator::BASE58, $v);
-
-            if ($base === false) $base = 0;
-            $base10 += $k * $base;
-        });
-
-        $base10 = (string) $base10;
-        if (strlen($base10) !== 5) {
-            return null;
-        }
-
-        $parsed = sprintf('20%d %d', substr($base10, 0, 2), substr($base10, 2));
-
-        return DateTime::createFromFormat('Y z', $parsed);
     }
 }
