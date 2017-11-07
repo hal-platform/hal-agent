@@ -17,11 +17,10 @@ use Hal\Agent\Executor\JobStatsTrait;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\DelegatingDeployer;
 use Hal\Agent\Push\Mover;
-use Hal\Agent\Push\Pusher;
 use Hal\Agent\Push\PushException;
 use Hal\Agent\Push\Resolver;
 use Hal\Agent\Push\Unpacker;
-use QL\Hal\Core\Entity\Push;
+use Hal\Core\Entity\Release;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -101,9 +100,9 @@ class DeployCommand implements ExecutorInterface
     private $filesystem;
 
     /**
-     * @var Push|null
+     * @var Release|null
      */
-    private $push;
+    private $release;
 
     /**
      * @var string[]
@@ -206,7 +205,7 @@ class DeployCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        $this->logger->setStage('push.start');
+        $this->logger->setStage('release.start');
 
         if (!$properties = $this->resolve($io, $releaseID)) {
             return $this->deploymentFailure($io, self::ERR_NOT_RUNNABLE);
@@ -272,16 +271,16 @@ class DeployCommand implements ExecutorInterface
      */
     private function prepare(IOInterface $io, array $properties)
     {
-        $push = $properties['push'];
-        $build = $push->build();
+        $release = $properties['release'];
+        $build = $release->build();
 
         // Set the push to in progress
-        $this->logger->start($push);
+        $this->logger->start($release);
 
         $io->listing([
-            sprintf('Push: <info>%s</info>', $push->id()),
+            sprintf('Release: <info>%s</info>', $release->id()),
             sprintf('Build: <info>%s</info>', $build->id()),
-            sprintf('Application: <info>%s</info> (ID: %s)', $push->application()->name(), $push->application()->id()),
+            sprintf('Application: <info>%s</info> (ID: %s)', $release->application()->name(), $release->application()->id()),
             sprintf('Environment: <info>%s</info> (ID: %s)', $build->environment()->name(), $build->environment()->id())
         ]);
 

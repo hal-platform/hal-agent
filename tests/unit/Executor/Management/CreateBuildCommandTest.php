@@ -11,11 +11,10 @@ use Doctrine\ORM\EntityManager;
 use Hal\Agent\Github\ReferenceResolver;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Mockery;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\Repository\EnvironmentRepository;
-use QL\Hal\Core\Repository\ApplicationRepository;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Repository\EnvironmentRepository;
+use Hal\Core\Repository\ApplicationRepository;
 use QL\MCP\Common\Time\Clock;
 
 class CreateBuildCommandTest extends ExecutorTestCase
@@ -43,7 +42,6 @@ class CreateBuildCommandTest extends ExecutorTestCase
             ->andReturn($this->appRepo);
 
         $this->resolver = Mockery::mock(ReferenceResolver::class);
-        $this->unique = Mockery::mock(JobIdGenerator::Class);
         $this->clock = new Clock('now', 'UTC');
     }
 
@@ -62,7 +60,7 @@ class CreateBuildCommandTest extends ExecutorTestCase
             ->shouldReceive('findOneBy')
             ->andReturnNull();
 
-        $command = new CreateBuildCommand($this->em, $this->clock, $this->resolver, $this->unique);
+        $command = new CreateBuildCommand($this->em, $this->clock, $this->resolver);
 
         $io = $this->io('configureCommand', [
             'APPLICATION' => '1',
@@ -93,7 +91,7 @@ class CreateBuildCommandTest extends ExecutorTestCase
             ->shouldReceive('findOneBy')
             ->andReturnNull();
 
-        $command = new CreateBuildCommand($this->em, $this->clock, $this->resolver, $this->unique);
+        $command = new CreateBuildCommand($this->em, $this->clock, $this->resolver);
 
         $io = $this->io('configureCommand', [
             'APPLICATION' => '1',

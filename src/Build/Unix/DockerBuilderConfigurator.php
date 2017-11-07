@@ -15,7 +15,7 @@ class DockerBuilderConfigurator
     private $dockerSudo;
     private $dockerDebugMode;
 
-    public function __construct($useDockerSudo, $dockerDebugMode)
+    public function __construct(bool $useDockerSudo, bool $dockerDebugMode)
     {
         $this->dockerSudo = $useDockerSudo;
         $this->dockerDebugMode = $dockerDebugMode;

@@ -11,8 +11,8 @@ use Doctrine\ORM\EntityManager;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Hal\Agent\Testing\MemoryLogger;
 use Mockery;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Repository\BuildRepository;
+use Hal\Core\Entity\Build;
+use Hal\Core\Repository\BuildRepository;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 

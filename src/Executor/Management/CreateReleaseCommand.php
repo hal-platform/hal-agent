@@ -12,10 +12,9 @@ use Doctrine\ORM\EntityRepository;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Push;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Release;
 use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -32,7 +31,7 @@ class CreateReleaseCommand implements ExecutorInterface
 
     const ERR_NO_BUILD = 'Build not found.';
     const ERR_NOT_RUNNABLE = 'Build cannot be deployed. It is invalid or removed.';
-    const ERR_NO_TARGET = 'Deployment target not found.';
+    const ERR_NO_TARGET = 'Release target not found.';
 
     /**
      * @var EntityManagerInterface
@@ -48,35 +47,26 @@ class CreateReleaseCommand implements ExecutorInterface
      * @var EntityRepository
      */
     private $buildRepo;
-    private $deploymentRepo;
+    private $targetRepo;
 
     /**
-     * @var JobIdGenerator
-     */
-    private $unique;
-
-    /**
-     * @var Push
+     * @var Release
      */
     private $release;
 
     /**
      * @param EntityManagerInterface $em
      * @param Clock $clock
-     * @param JobIdGenerator $unique
      */
     public function __construct(
         EntityManagerInterface $em,
-        Clock $clock,
-        JobIdGenerator $unique
+        Clock $clock
     ) {
         $this->clock = $clock;
 
         $this->em = $em;
         $this->buildRepo = $em->getRepository(Build::class);
-        $this->deploymentRepo = $em->getRepository(Deployment::class);
-
-        $this->unique = $unique;
+        $this->targetRepo = $em->getRepository(Target::class);
     }
 
     /**
@@ -111,26 +101,26 @@ class CreateReleaseCommand implements ExecutorInterface
             return $this->failure($io, self::ERR_NOT_RUNNABLE);
         }
 
-        if (!$deployment = $this->deploymentRepo->find($targetID)) {
+        if (!$target = $this->targetRepo->find($targetID)) {
             return $this->failure($io, self::ERR_NO_TARGET);
         }
 
-        $push = (new Push($this->unique->generatePushId()))
-            ->withCreated($this->clock->read())
-            ->withStatus('Waiting')
+        $release = (new Release())
+            ->withStatus('Pending')
 
             ->withBuild($build)
-            ->withDeployment($deployment)
+            ->withTarget($target)
             ->withApplication($build->application());
 
-        $this->em->persist($push);
+        $this->em->persist($release);
         $this->em->flush();
 
-        $repo = sprintf('%s/%s', $push->application()->githubOwner(), $push->application()->githubRepo());
+        $repo = sprintf('%s/%s', $release->application()->gitHub()->owner(), $release->application()->gitHub()->repository());
+
 
         $io->section('Details');
         $io->listing([
-            sprintf('Application: <info>%s</info>', $push->application()->key()),
+            sprintf('Application: <info>%s</info>', $release->application()->identifier()),
             sprintf('Environment: <info>%s</info>', $build->environment()->name()),
         ]);
 
@@ -138,16 +128,16 @@ class CreateReleaseCommand implements ExecutorInterface
         $io->listing([
             sprintf('ID: <info>%s</info>', $build->id()),
             sprintf('Source: <info>%s</info>', $repo),
-            sprintf('Reference: <info>%s</info> (%s)', $build->branch(), $build->commit())
+            sprintf('Reference: <info>%s</info> (%s)', $build->reference(), $build->commit())
         ]);
 
         $io->section('Release Information');
         $io->listing([
-            sprintf('ID: <info>%s</info>', $push->id()),
-            sprintf('Target: <info>%s</info>', $deployment->formatPretty(true)),
+            sprintf('ID: <info>%s</info>', $release->id()),
+            sprintf('Target: <info>%s</info>', $target->format(true)),
         ]);
 
-        $this->release = $push;
+        $this->release = $release;
         $this->success($io, self::MSG_SUCCESS);
     }
 
@@ -156,7 +146,7 @@ class CreateReleaseCommand implements ExecutorInterface
      *
      * It's rather hacky.
      *
-     * @return Push|null
+     * @return Release|null
      */
     public function release()
     {

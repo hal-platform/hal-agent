@@ -7,7 +7,7 @@
 
 namespace Hal\Agent\Utility;
 
-use QL\Hal\Core\Entity\Application;
+use Hal\Core\Entity\Application;
 
 trait DefaultConfigHelperTrait
 {
@@ -25,12 +25,11 @@ trait DefaultConfigHelperTrait
                 'config/database.ini',
                 'data/'
             ],
-
-            'build' => $this->arrayizeCommand($application->getBuildCmd()),
-            'build_transform' => $this->arrayizeCommand($application->getBuildTransformCmd()),
-            'pre_push' => $this->arrayizeCommand($application->getPrePushCmd()),
+            'build' => [],
+            'build_transform' => [],
+            'pre_push' => [],
             'deploy' => [],
-            'post_push' => $this->arrayizeCommand($application->getPostPushCmd())
+            'post_push' =>[]
         ];
     }
 

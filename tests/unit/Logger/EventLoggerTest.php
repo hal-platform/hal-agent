@@ -8,12 +8,10 @@
 namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManager;
-use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use Hal\Agent\Logger\EventFactory;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\Entity\Push;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Release;
+use Mockery;
 use QL\MCP\Common\Time\Clock;
 
 class EventLoggerTest extends MockeryTestCase
@@ -79,20 +77,20 @@ class EventLoggerTest extends MockeryTestCase
         $logger->start($build);
     }
 
-    public function testPushIsSuccessAndLaunchesChildren()
+    public function testReleaseIsSuccessAndLaunchesChildren()
     {
-        $push = new Push;
+        $push = new Release;
 
         $this->factory
             ->shouldReceive('setStage')
-            ->with('push.success')
+            ->with('release.success')
             ->once();
         $this->handler
             ->shouldReceive('launch')
             ->once();
 
         $this->factory
-            ->shouldReceive('setPush');
+            ->shouldReceive('setRelease');
         $this->clock
             ->shouldReceive('read')
             ->twice();

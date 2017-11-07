@@ -95,7 +95,7 @@ services:
 
     logger.process.handler:
         class: 'Hal\Agent\Logger\ProcessHandler'
-        arguments: ['@doctrine.em', '@utility.id.generator']
+        arguments: ['@doctrine.em']
 
     # subscriber to symfony/console event system to prepare mcp logger
     logger.mcp.subscriber:
@@ -107,7 +107,7 @@ services:
     ####################################################################################################################
 
     doctrine.cache.redis:
-        class: 'QL\Hal\Core\Utility\DoctrinePredisCache'
+        class: 'Hal\Core\Database\DoctrineUtility\DoctrinePredisCache'
         arguments: ['@redis', '%doctrine.cache.ttl%']
 
     ####################################################################################################################
@@ -130,13 +130,6 @@ services:
     utility.forker:
         class: 'Hal\Agent\Helper\ForkHelper'
 
-    utility.id.generator:
-        class: 'QL\Hal\Core\JobIdGenerator'
-        arguments:
-            - '%application.major.version%'
-            - '%unique.alphabet%'
-            - '%unique.size%'
-
     yaml.parser:
         class: 'Symfony\Component\Yaml\Parser'
 
@@ -156,18 +149,14 @@ services:
     # encryption
     ####################################################################################################################
 
-    encrypter:
-        class: 'QL\Hal\Core\Crypto\Encrypter'
-        arguments: ['%encrypter.publickey%']
-
-    decrypter:
-        class: 'QL\Hal\Core\Crypto\Decrypter'
-        factory: ['@decrypter.factory', 'getAsymmetricDecrypter']
+    encryption:
+        class: 'Hal\Core\Crypto\Encryption'
+        factory: ['@encryption.factory', 'getCrypto']
         lazy: true
 
-    decrypter.factory:
-        class: 'QL\Hal\Core\Crypto\CryptoFactory'
-        arguments: ['@encrypter.encryptedkey.squished', '%encrypter.secret.path%']
+    encryption.factory:
+        class: 'Hal\Core\Crypto\CryptoFilesystemFactory'
+        arguments: ['%encrypter.secret.path%']
 
     encrypted.resolver:
         class: 'Hal\Agent\Utility\EncryptedPropertyResolver'
@@ -175,8 +164,3 @@ services:
             - '@doctrine.em'
             - '@logger.event'
             - '@service_container'
-
-    encrypter.encryptedkey.squished:
-        class: 'stdClass'
-        factory: ['Hal\Agent\Utility\Stringify', 'squish']
-        arguments: ['%encrypter.encryptedkey%']

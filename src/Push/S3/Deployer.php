@@ -8,12 +8,12 @@
 namespace Hal\Agent\Push\S3;
 
 use Aws\S3\S3Client;
-use Hal\Agent\Push\AWSAuthenticator;
 use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\EnumType\ServerEnum;
+use Hal\Core\AWS\AWSAuthenticator;
+use Hal\Core\Type\GroupEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -74,7 +74,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_S3]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_S3])) {
+        if (!isset($properties[GroupEnum::TYPE_S3]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_S3])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 400;
         }
@@ -150,8 +150,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Authenticating with AWS', self::SECTION);
 
         return $this->authenticator->getS3(
-            $properties[ServerEnum::TYPE_S3]['region'],
-            $properties[ServerEnum::TYPE_S3]['credential']
+            $properties[GroupEnum::TYPE_S3]['region'],
+            $properties[GroupEnum::TYPE_S3]['credential']
         );
     }
 
@@ -175,9 +175,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $preparer = $this->preparer;
         return $preparer(
             $properties['location']['path'],
-            $properties[ServerEnum::TYPE_S3]['src'],
+            $properties[GroupEnum::TYPE_S3]['src'],
             $properties['location']['tempUploadArchive'],
-            $properties[ServerEnum::TYPE_S3]['file']
+            $properties[GroupEnum::TYPE_S3]['file']
         );
     }
 
@@ -191,18 +191,18 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Uploading to S3', self::SECTION);
 
-        $push = $properties['push'];
-        $build = $properties['push']->build();
+        $release = $properties['release'];
+        $build = $properties['release']->build();
         $environment = $build->environment();
 
         $uploader = $this->uploader;
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
-            $properties[ServerEnum::TYPE_S3]['bucket'],
-            $properties[ServerEnum::TYPE_S3]['file'],
+            $properties[GroupEnum::TYPE_S3]['bucket'],
+            $properties[GroupEnum::TYPE_S3]['file'],
             $build->id(),
-            $push->id(),
+            $release->id(),
             $environment->name()
         );
     }

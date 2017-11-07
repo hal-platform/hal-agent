@@ -9,13 +9,13 @@ namespace Hal\Agent\Push\CodeDeploy;
 
 use Aws\CodeDeploy\CodeDeployClient;
 use Aws\S3\S3Client;
-use Hal\Agent\Push\AWSAuthenticator;
 use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\EnumType\ServerEnum;
+use Hal\Core\AWS\AWSAuthenticator;
+use Hal\Core\Type\GroupEnum;
 
 /**
  * @see http://docs.aws.amazon.com/codedeploy/latest/userguide/welcome.html
@@ -97,7 +97,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_CD]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_CD])) {
+        if (!isset($properties[GroupEnum::TYPE_CD]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_CD])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 500;
         }
@@ -193,15 +193,15 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Authenticating with AWS', self::SECTION);
 
         $cd = $this->authenticator->getCD(
-            $properties[ServerEnum::TYPE_CD]['region'],
-            $properties[ServerEnum::TYPE_CD]['credential']
+            $properties[GroupEnum::TYPE_CD]['region'],
+            $properties[GroupEnum::TYPE_CD]['credential']
         );
 
         if (!$cd) return null;
 
         $s3 = $this->authenticator->getS3(
-            $properties[ServerEnum::TYPE_CD]['region'],
-            $properties[ServerEnum::TYPE_CD]['credential']
+            $properties[GroupEnum::TYPE_CD]['region'],
+            $properties[GroupEnum::TYPE_CD]['credential']
         );
 
         if (!$s3) return null;
@@ -222,8 +222,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $health = $this->health;
         $health = $health(
             $cd,
-            $properties[ServerEnum::TYPE_CD]['application'],
-            $properties[ServerEnum::TYPE_CD]['group']
+            $properties[GroupEnum::TYPE_CD]['application'],
+            $properties[GroupEnum::TYPE_CD]['group']
         );
 
         if (!in_array($health['status'], ['Succeeded', 'Failed', 'Stopped', 'None'])) {
@@ -245,9 +245,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $this->packer->packZipOrTar(
             $properties['location']['path'],
-            $properties[ServerEnum::TYPE_CD]['src'],
+            $properties[GroupEnum::TYPE_CD]['src'],
             $properties['location']['tempUploadArchive'],
-            $properties[ServerEnum::TYPE_CD]['file']
+            $properties[GroupEnum::TYPE_CD]['file']
         );
     }
 
@@ -261,7 +261,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Pushing code to S3', self::SECTION);
 
-        $push = $properties['push'];
+        $release = $properties['release'];
         $build = $properties['build'];
         $environment = $build->environment();
 
@@ -269,10 +269,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
-            $properties[ServerEnum::TYPE_CD]['bucket'],
-            $properties[ServerEnum::TYPE_CD]['file'],
+            $properties[GroupEnum::TYPE_CD]['bucket'],
+            $properties[GroupEnum::TYPE_CD]['file'],
             $build->id(),
-            $push->id(),
+            $release->id(),
             $environment->name()
         );
     }
@@ -287,20 +287,20 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Deploying version to CodeDeploy', self::SECTION);
 
-        $push = $properties['push'];
+        $release = $properties['release'];
         $build = $properties['build'];
         $environment = $build->environment();
 
         $pusher = $this->pusher;
         return $pusher(
             $cd,
-            $properties[ServerEnum::TYPE_CD]['application'],
-            $properties[ServerEnum::TYPE_CD]['group'],
-            $properties[ServerEnum::TYPE_CD]['configuration'],
-            $properties[ServerEnum::TYPE_CD]['bucket'],
-            $properties[ServerEnum::TYPE_CD]['file'],
+            $properties[GroupEnum::TYPE_CD]['application'],
+            $properties[GroupEnum::TYPE_CD]['group'],
+            $properties[GroupEnum::TYPE_CD]['configuration'],
+            $properties[GroupEnum::TYPE_CD]['bucket'],
+            $properties[GroupEnum::TYPE_CD]['file'],
             $build->id(),
-            $push->id(),
+            $release->id(),
             $environment->name()
         );
     }

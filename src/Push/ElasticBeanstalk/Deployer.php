@@ -9,13 +9,13 @@ namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
-use Hal\Agent\Push\AWSAuthenticator;
 use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\EnumType\ServerEnum;
+use Hal\Core\AWS\AWSAuthenticator;
+use Hal\Core\Type\GroupEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -93,7 +93,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_EB]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_EB])) {
+        if (!isset($properties[GroupEnum::TYPE_EB]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_EB])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 200;
         }
@@ -183,15 +183,15 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Authenticating with AWS', self::SECTION);
 
         $eb = $this->authenticator->getEB(
-            $properties[ServerEnum::TYPE_EB]['region'],
-            $properties[ServerEnum::TYPE_EB]['credential']
+            $properties[GroupEnum::TYPE_EB]['region'],
+            $properties[GroupEnum::TYPE_EB]['credential']
         );
 
         if (!$eb) return null;
 
         $s3 = $this->authenticator->getS3(
-            $properties[ServerEnum::TYPE_EB]['region'],
-            $properties[ServerEnum::TYPE_EB]['credential']
+            $properties[GroupEnum::TYPE_EB]['region'],
+            $properties[GroupEnum::TYPE_EB]['credential']
         );
 
         if (!$s3) return null;
@@ -212,8 +212,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $health = $this->health;
         $health = $health(
             $eb,
-            $properties[ServerEnum::TYPE_EB]['application'],
-            $properties[ServerEnum::TYPE_EB]['environment']
+            $properties[GroupEnum::TYPE_EB]['application'],
+            $properties[GroupEnum::TYPE_EB]['environment']
         );
 
         if ($health['status'] !== 'Ready') {
@@ -235,7 +235,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $this->packer->packZip(
             $properties['location']['path'],
-            $properties[ServerEnum::TYPE_EB]['src'],
+            $properties[GroupEnum::TYPE_EB]['src'],
             $properties['location']['tempUploadArchive']
         );
     }
@@ -250,7 +250,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Pushing code to S3', self::SECTION);
 
-        $push = $properties['push'];
+        $push = $properties['release'];
         $build = $properties['build'];
         $environment = $build->environment();
 
@@ -258,8 +258,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
-            $properties[ServerEnum::TYPE_EB]['bucket'],
-            $properties[ServerEnum::TYPE_EB]['file'],
+            $properties[GroupEnum::TYPE_EB]['bucket'],
+            $properties[GroupEnum::TYPE_EB]['file'],
             $build->id(),
             $push->id(),
             $environment->name()
@@ -276,17 +276,17 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Deploying version to EB', self::SECTION);
 
-        $push = $properties['push'];
+        $push = $properties['release'];
         $build = $properties['build'];
         $environment = $build->environment();
 
         $pusher = $this->pusher;
         return $pusher(
             $eb,
-            $properties[ServerEnum::TYPE_EB]['application'],
-            $properties[ServerEnum::TYPE_EB]['environment'],
-            $properties[ServerEnum::TYPE_EB]['bucket'],
-            $properties[ServerEnum::TYPE_EB]['file'],
+            $properties[GroupEnum::TYPE_EB]['application'],
+            $properties[GroupEnum::TYPE_EB]['environment'],
+            $properties[GroupEnum::TYPE_EB]['bucket'],
+            $properties[GroupEnum::TYPE_EB]['file'],
             $build->id(),
             $push->id(),
             $environment->name()

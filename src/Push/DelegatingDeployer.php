@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DelegatingDeployer
 {
-    const ERR_INVALID_DEPLOYMENT = 'Invalid deployment method specified';
+    const ERR_INVALID_RELEASE = 'Invalid Release method specified';
     const UNKNOWN_FAILURE_CODE = 6;
 
     const ERR_UNKNOWN = 'Unknown deployment failure';
@@ -133,7 +133,7 @@ class DelegatingDeployer
     {
         $this->exitCode = self::UNKNOWN_FAILURE_CODE;
 
-        $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT, [
+        $this->logger->event('failure', self::ERR_INVALID_RELEASE, [
             'method' => $method
         ]);
 

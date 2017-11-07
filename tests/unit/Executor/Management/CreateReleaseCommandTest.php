@@ -10,18 +10,17 @@ namespace Hal\Agent\Executor\Management;
 use Doctrine\ORM\EntityManager;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Mockery;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Deployment;
-use QL\Hal\Core\JobIdGenerator;
-use QL\Hal\Core\Repository\BuildRepository;
-use QL\Hal\Core\Repository\DeploymentRepository;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Target;
+use Hal\Core\Repository\BuildRepository;
+use Hal\Core\Repository\TargetRepository;
 use QL\MCP\Common\Time\Clock;
 
 class CreateReleaseCommandTest extends ExecutorTestCase
 {
     public $em;
     public $buildRepo;
-    public $deployRepo;
+    public $releaseRepo;
     public $clock;
     public $unique;
 
@@ -29,7 +28,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
     {
         $this->em = Mockery::mock(EntityManager::class);
         $this->buildRepo = Mockery::mock(BuildRepository::class);
-        $this->deployRepo = Mockery::mock(DeploymentRepository::class);
+        $this->releaseRepo = Mockery::mock(TargetRepository::class);
 
         $this->em
             ->shouldReceive('getRepository')
@@ -37,11 +36,10 @@ class CreateReleaseCommandTest extends ExecutorTestCase
             ->andReturn($this->buildRepo);
         $this->em
             ->shouldReceive('getRepository')
-            ->with(Deployment::class)
-            ->andReturn($this->deployRepo);
+            ->with(Target::class)
+            ->andReturn($this->releaseRepo);
 
         $this->clock = new Clock('now', 'UTC');
-        $this->unique = Mockery::mock(JobIdGenerator::class);
     }
 
     public function configureCommand($c)
@@ -55,7 +53,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $command = new CreateReleaseCommand($this->em, $this->clock, $this->unique);
+        $command = new CreateReleaseCommand($this->em, $this->clock);
 
         $io = $this->io('configureCommand', [
             'BUILD_ID' => '1',
@@ -80,11 +78,11 @@ class CreateReleaseCommandTest extends ExecutorTestCase
             ->shouldReceive('find')
             ->andReturn($build);
 
-        $this->deployRepo
+        $this->releaseRepo
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $command = new CreateReleaseCommand($this->em, $this->clock, $this->unique);
+        $command = new CreateReleaseCommand($this->em, $this->clock);
 
         $io = $this->io('configureCommand', [
             'BUILD_ID' => '1',
@@ -93,7 +91,7 @@ class CreateReleaseCommandTest extends ExecutorTestCase
         $exit = $command->execute($io);
 
         $expected = [
-            '[ERROR] Deployment target not found. '
+            '[ERROR] Release target not found. '
         ];
 
         $this->assertContainsLines($expected, $this->output());

@@ -11,7 +11,7 @@ use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
-use QL\Hal\Core\Type\EnumType\ServerEnum;
+use Hal\Core\Type\GroupEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -75,7 +75,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[ServerEnum::TYPE_RSYNC]) || !$this->verifyConfiguration($properties[ServerEnum::TYPE_RSYNC])) {
+        if (!isset($properties[GroupEnum::TYPE_RSYNC]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_RSYNC])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 100;
         }
@@ -140,6 +140,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
+//        if (!array_key_exists('credential', $properties)) {
+//            return false;
+//        }
+
         return true;
     }
 
@@ -154,9 +158,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $verify = $this->verify;
         return $verify(
-            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnum::TYPE_RSYNC]['remotePath']
+            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[GroupEnum::TYPE_RSYNC]['remotePath']
         );
     }
 
@@ -171,9 +175,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $delta = $this->delta;
         return $delta(
-            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
             $properties['pushProperties']
         );
     }
@@ -194,11 +198,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $prepush = $this->serverCommand;
         return $prepush(
-            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['pre_push'],
-            $properties[ServerEnum::TYPE_RSYNC]['environmentVariables']
+            $properties[GroupEnum::TYPE_RSYNC]['environmentVariables']
         );
     }
 
@@ -215,9 +219,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $pusher(
             $properties['location']['path'],
-            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['exclude']
         );
     }
@@ -238,11 +242,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $postpush = $this->serverCommand;
         return $postpush(
-            $properties[ServerEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[ServerEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[ServerEnum::TYPE_RSYNC]['remotePath'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['post_push'],
-            $properties[ServerEnum::TYPE_RSYNC]['environmentVariables']
+            $properties[GroupEnum::TYPE_RSYNC]['environmentVariables']
         );
     }
 }

@@ -10,7 +10,7 @@ namespace Hal\Agent\Utility;
 use DateTime;
 use Hal\Agent\Build\Unix\UnixBuildHandler;
 use Hal\Agent\Build\Windows\WindowsBuildHandler;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\JobGenerator;
 
 trait ResolverTrait
 {
@@ -73,7 +73,7 @@ trait ResolverTrait
      */
     private function generateLocalTempPath($id, $type = 'build')
     {
-        $type = ($type === 'push') ? 'push' : 'build';
+        $type = ($type === 'release') ? 'release' : 'build';
 
         return $this->getLocalTempPath() . sprintf(static::$UNIQUE_TEMP_PATH, $type, $id);
     }
@@ -93,35 +93,10 @@ trait ResolverTrait
     {
         $filename = sprintf(static::$ARCHIVE_FILE, $id);
 
-        if ($dateOfJob = $this->parseDateFromJobId($id)) {
-            $filename = sprintf('%s/%s', $dateOfJob->format('Y-m'), $filename);
-        }
-
         return sprintf(
             '%s/%s',
             $this->archivePath,
             $filename
-        );
-    }
-
-    /**
-     * Generate a target for the build archive.
-     *
-     * @deprecated
-     *
-     * Example:
-     * var/archive/hal9000/build-1234.tar.gz
-     *
-     * @param string $id
-     *
-     * @return string
-     */
-    private function generateLegacyBuildArchiveFile($id)
-    {
-        return sprintf(
-            '%s/hal9000/%s',
-            $this->archivePath,
-            sprintf(static::$ARCHIVE_FILE, $id)
         );
     }
 
@@ -139,43 +114,8 @@ trait ResolverTrait
      */
     private function generateTempBuildArchiveFile($id, $type = 'build')
     {
-        $type = ($type === 'push') ? 'push' : 'build';
+        $type = ($type === 'release') ? 'release' : 'build';
 
         return $this->getLocalTempPath() . sprintf(static::$TEMP_ARCHIVE_FILE, $type, $id);
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return DateTime|null
-     */
-    private function parseDateFromJobId($id)
-    {
-        if (1 !== preg_match('/^(b|p)[\d]{1}\.([a-zA-Z0-9]{3})/', $id, $matches)) {
-            return null;
-        }
-
-        $base58 = str_split(array_pop($matches));
-        if (count($base58) !== 3) {
-            return null;
-        }
-
-        // parse base58 to base10
-        $base10 = 0;
-        array_walk($base58, function($v, $k) use (&$base10) {
-            $base = strpos(JobIdGenerator::BASE58, $v);
-
-            if ($base === false) $base = 0;
-            $base10 += ($base * pow(58, 2 - $k));
-        });
-
-        $base10 = (string) $base10;
-        if (strlen($base10) !== 5) {
-            return null;
-        }
-
-        $parsed = sprintf('20%d %d', substr($base10, 0, 2), substr($base10, 2));
-
-        return DateTime::createFromFormat('Y z', $parsed);
     }
 }

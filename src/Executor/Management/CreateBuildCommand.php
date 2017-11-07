@@ -13,10 +13,10 @@ use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Github\ReferenceResolver;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\Build;
-use QL\Hal\Core\Entity\Environment;
-use QL\Hal\Core\JobIdGenerator;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Application\GitHubApplication;
+use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Environment;
 use QL\MCP\Common\Time\Clock;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -66,11 +66,6 @@ HELP;
     private $refResolver;
 
     /**
-     * @var JobIdGenerator
-     */
-    private $unique;
-
-    /**
      * @var Build|null
      */
     private $build;
@@ -79,13 +74,11 @@ HELP;
      * @param EntityManagerInterface $em
      * @param Clock $clock
      * @param ReferenceResolver $refResolver
-     * @param JobIdGenerator $unique
      */
     public function __construct(
         EntityManagerInterface $em,
         Clock $clock,
-        ReferenceResolver $refResolver,
-        JobIdGenerator $unique
+        ReferenceResolver $refResolver
     ) {
         $this->clock = $clock;
 
@@ -94,7 +87,6 @@ HELP;
         $this->environmentRepo = $em->getRepository(Environment::class);
 
         $this->refResolver = $refResolver;
-        $this->unique = $unique;
     }
 
     /**
@@ -134,28 +126,27 @@ HELP;
             return $this->failure($io, self::ERR_NO_ENVIRONMENT);
         }
 
-        if (!$commitSha = $this->validateReference($application, $ref)) {
+        if (!$commitSha = $this->validateReference($application->gitHub(), $ref)) {
             return $this->failure($io, self::ERR_NO_REF);
         }
 
-        $build = (new Build($this->unique->generateBuildId()))
-            ->withCreated($this->clock->read())
-            ->withStatus('Waiting')
+        $build = (new Build())
+            ->withStatus('pending')
 
             ->withApplication($application)
             ->withEnvironment($environment)
 
             ->withCommit($commitSha)
-            ->withBranch($ref);
+            ->withReference($ref);
 
         $this->em->persist($build);
         $this->em->flush();
 
-        $repo = sprintf('%s/%s', $application->githubOwner(), $application->githubRepo());
+        $repo = sprintf('%s/%s', $application->gitHub()->owner(), $application->gitHub()->repository());
 
         $io->section('Details');
         $io->listing([
-            sprintf('Application: <info>%s</info>', $application->key()),
+            sprintf('Application: <info>%s</info>', $application->identifier()),
             sprintf('Environment: <info>%s</info>', $environment->name()),
         ]);
 
@@ -183,7 +174,7 @@ HELP;
     }
 
     /**
-     * Find application from ID or key.
+     * Find application from ID or identifier.
      *
      * @param string $app
      *
@@ -195,7 +186,7 @@ HELP;
             return $application;
         }
 
-        if ($application = $this->applicationRepo->findOneBy(['key' => $app])) {
+        if ($application = $this->applicationRepo->findOneBy(['identifier' => $app])) {
             return $application;
         }
 
@@ -225,16 +216,16 @@ HELP;
     /**
      * Find a commit sha from a reference.
      *
-     * @param Application $application
+     * @param GitHubApplication $application
      * @param string $ref
      *
-     * @return string|null
+     * @return null|string
      */
-    private function validateReference(Application $application, $ref)
+    private function validateReference(GitHubApplication $application, $ref)
     {
         $commitSha = $this->refResolver->resolve(
-            $application->githubOwner(),
-            $application->githubRepo(),
+            $application->owner(),
+            $application->repository(),
             $ref
         );
 

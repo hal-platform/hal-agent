@@ -14,12 +14,12 @@ use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Core\Entity\Build;
 use Psr\Log\LoggerInterface;
-use QL\Hal\Core\Entity\Build;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
-use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Cron worker that will pick up and run any "waiting" builds.
@@ -136,8 +136,9 @@ class BuildCommand implements ExecutorInterface
     {
         $io->title(self::COMMAND_TITLE);
 
-        if (!$builds = $this->buildRepo->findBy(['status' => 'Waiting'])) {
+        if (!$builds = $this->buildRepo->findBy(['status' => 'pending'])) {
             $io->note(self::INFO_NO_PENDING);
+
             return $this->success($io, self::MSG_SUCCESS);
         }
 

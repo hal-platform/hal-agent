@@ -12,10 +12,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Exception;
 use Hal\Agent\Logger\EventLogger;
-use QL\Hal\Core\Crypto\Decrypter;
-use QL\Hal\Core\Entity\Application;
-use QL\Hal\Core\Entity\EncryptedProperty;
-use QL\Hal\Core\Entity\Environment;
+use Hal\Core\Crypto\Encryption;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\EncryptedProperty;
+use Hal\Core\Entity\Environment;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -42,9 +42,9 @@ class EncryptedPropertyResolver
     private $di;
 
     /**
-     * @var Decrypter|null
+     * @var Encryption|null
      */
-    private $decrypter;
+    private $encryption;
 
     /**
      * @param EntityManagerInterface $em
@@ -75,13 +75,13 @@ class EncryptedPropertyResolver
             return $decrypteds;
         }
 
-        $decrypter = $this->decrypter();
+        $encryption = $this->encryption();
 
         $bads = [];
 
         foreach ($encrypteds as $key => $encrypted) {
             try {
-                $decrypted = $decrypter->decrypt($encrypted);
+                $decrypted = $encryption->decrypt($encrypted);
                 $decrypteds[$key] = $decrypted;
 
             } catch (Exception $ex) {
@@ -193,15 +193,15 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * Lazy load the decrypter from the symfony container so we can handle errors a bit better.
+     * Lazy load the encryption from the symfony container so we can handle errors a bit better.
      *
-     * @return Decrypter|null
+     * @return Encryption|null
      */
-    private function decrypter()
+    private function encryption()
     {
-        if (!$this->decrypter) {
+        if (!$this->encryption) {
             try {
-                $this->decrypter = $this->di->get('decrypter');
+                $this->encryption = $this->di->get('encryption');
             } catch (Exception $ex) {
                 $this->logger->event('failure', self::ERR_MISCONFIGURED_ENCRYPTION);
 
@@ -209,6 +209,6 @@ class EncryptedPropertyResolver
             }
         }
 
-        return $this->decrypter;
+        return $this->encryption;
     }
 }
