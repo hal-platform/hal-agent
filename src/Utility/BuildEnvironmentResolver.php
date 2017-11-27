@@ -85,6 +85,7 @@ class BuildEnvironmentResolver
             $method = $release->target()->group()->type();
 
             $env['HAL_PUSHID'] = $release->id();
+            $env['HAL_ENVIRONMENT'] = $release->target()->group()->environment()->name();
             $env['HAL_METHOD'] = $method;
             $env['HAL_CONTEXT'] = $release->target()->parameter(Target::PARAM_CONTEXT);
 
@@ -139,11 +140,17 @@ class BuildEnvironmentResolver
             return [];
         }
 
+        if ($environment = $build->environment()) {
+            $environmentName = $environment->name();
+        } else {
+            $environmentName = 'Global';
+        }
+
         $env = [
             'HAL_BUILDID' => $build->id(),
             'HAL_COMMIT' => $build->commit(),
             'HAL_GITREF' => $build->reference(),
-            'HAL_ENVIRONMENT' => $build->environment()->name(),
+            'HAL_ENVIRONMENT' => $environmentName,
             'HAL_APP' => $build->application()->identifier()
         ];
 
@@ -172,11 +179,17 @@ class BuildEnvironmentResolver
             return [];
         }
 
+        if ($environment = $build->environment()) {
+            $environmentName = $environment->name();
+        } else {
+            $environmentName = 'Global';
+        }
+
         $env = [
             'HAL_BUILDID' => $build->id(),
             'HAL_COMMIT' => $build->commit(),
             'HAL_GITREF' => $build->reference(),
-            'HAL_ENVIRONMENT' => $build->environment()->name(),
+            'HAL_ENVIRONMENT' => $environmentName,
             'HAL_APP' => $build->application()->identifier()
         ];
 

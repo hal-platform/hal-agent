@@ -277,11 +277,14 @@ class DeployCommand implements ExecutorInterface
         // Set the push to in progress
         $this->logger->start($release);
 
+        $application = $release->application();
+        $environment = $release->target()->group()->environment();
+
         $io->listing([
             sprintf('Release: <info>%s</info>', $release->id()),
             sprintf('Build: <info>%s</info>', $build->id()),
-            sprintf('Application: <info>%s</info> (ID: %s)', $release->application()->name(), $release->application()->id()),
-            sprintf('Environment: <info>%s</info> (ID: %s)', $build->environment()->name(), $build->environment()->id())
+            sprintf('Application: <info>%s</info> (ID: %s)', $application->name(), $application->id()),
+            sprintf('Environment: <info>%s</info> (ID: %s)', $environment->name(), $environment->id())
         ]);
 
         // The deployment has officially started running.

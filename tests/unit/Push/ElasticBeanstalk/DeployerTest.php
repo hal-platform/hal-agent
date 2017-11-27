@@ -21,6 +21,8 @@ use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Build;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\Release;
+use Hal\Core\Entity\Target;
+use Hal\Core\Entity\Group;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class DeployerTest extends MockeryTestCase
@@ -447,19 +449,25 @@ class DeployerTest extends MockeryTestCase
 
     private function buildMockRelease()
     {
+        $env = (new Environment)->withName('envname');
+
         $push = (new Release())
             ->withId('1234')
             ->withBuild(
                 (new Build)
                     ->withId('8956')
-                    ->withEnvironment(
-                        (new Environment)
-                            ->withName('envname')
-                    )
+                    ->withEnvironment($env)
             )
             ->withApplication(
                 (new Application)
                     ->withId('repo_id')
+            )
+            ->withTarget(
+                (new Target)
+                    ->withGroup(
+                        (new Group)
+                            ->withEnvironment($env)
+                    )
             );
 
         return $push;

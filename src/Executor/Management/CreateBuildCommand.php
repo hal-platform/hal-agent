@@ -122,7 +122,9 @@ HELP;
             return $this->failure($io, self::ERR_NO_APPLICATION);
         }
 
-        if (!$environment = $this->findEnvironment($environment)) {
+        if ($environment === 'global') {
+            $environment = null;
+        } elseif (!$environment = $this->findEnvironment($environment)) {
             return $this->failure($io, self::ERR_NO_ENVIRONMENT);
         }
 
@@ -147,7 +149,7 @@ HELP;
         $io->section('Details');
         $io->listing([
             sprintf('Application: <info>%s</info>', $application->identifier()),
-            sprintf('Environment: <info>%s</info>', $environment->name()),
+            sprintf('Environment: <info>%s</info>', $environment ? $environment->name() : 'Global' ),
         ]);
 
         $io->section('Build Information');

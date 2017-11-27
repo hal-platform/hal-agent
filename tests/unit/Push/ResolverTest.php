@@ -125,6 +125,8 @@ class ResolverTest extends MockeryTestCase
 
     public function testRsyncSuccess()
     {
+        $env = (new Environment)->withName('envname');
+
         $app = (new Application)
             ->withIdentifier('repokey')
             ->withGithub(new Application\GitHubApplication('user1', 'repo1'));
@@ -139,10 +141,7 @@ class ResolverTest extends MockeryTestCase
                     ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
-                    ->withEnvironment(
-                        (new Environment)
-                            ->withName('envname')
-                    )
+                    ->withEnvironment($env)
             )
             ->withTarget(
                 (new Target())
@@ -151,6 +150,7 @@ class ResolverTest extends MockeryTestCase
                         (new Group())
                             ->withType('rsync')
                             ->withName('127.0.0.1')
+                            ->withEnvironment($env)
                     )
             );
 
@@ -241,6 +241,7 @@ class ResolverTest extends MockeryTestCase
 
     public function testElasticBeanstalkSuccess()
     {
+        $env = (new Environment)->withName('envname');
         $app = (new Application)
             ->withId('repo-id')
             ->withIdentifier('repokey')
@@ -258,10 +259,7 @@ class ResolverTest extends MockeryTestCase
                     ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
-                    ->withEnvironment(
-                        (new Environment)
-                            ->withName('envname')
-                    )
+                    ->withEnvironment($env)
             )
             ->withTarget(
                 (new Target())
@@ -272,6 +270,7 @@ class ResolverTest extends MockeryTestCase
                         (new Group())
                             ->withName('aws-region')
                             ->withType('eb')
+                            ->withEnvironment($env)
                     )
                     ->withCredential(
                         (new Credential)
@@ -365,6 +364,7 @@ class ResolverTest extends MockeryTestCase
 
     public function testCodeDeploySuccess()
     {
+        $env = (new Environment)->withName('envname');
         $app = (new Application)
             ->withId('repo-id')
             ->withIdentifier('repokey')
@@ -383,10 +383,7 @@ class ResolverTest extends MockeryTestCase
                     ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
-                    ->withEnvironment(
-                        (new Environment)
-                            ->withName('envname')
-                    )
+                    ->withEnvironment($env)
             )
             ->withTarget(
                 (new Target())
@@ -398,6 +395,7 @@ class ResolverTest extends MockeryTestCase
                         (new Group())
                             ->withName('aws-region')
                             ->withType('cd')
+                            ->withEnvironment($env)
                     )
                     ->withCredential(
                         (new Credential)
@@ -493,6 +491,8 @@ class ResolverTest extends MockeryTestCase
 
     public function testScriptSuccess()
     {
+        $env = (new Environment)->withName('envname');
+
         $app = (new Application)
             ->withId('repo-id')
             ->withIdentifier('repokey')
@@ -508,10 +508,7 @@ class ResolverTest extends MockeryTestCase
                     ->withReference('master')
                     ->withCommit('5555')
                     ->withApplication($app)
-                    ->withEnvironment(
-                        (new Environment)
-                            ->withName('envname')
-                    )
+                    ->withEnvironment($env)
             )
             ->withTarget(
                 (new Target())
@@ -519,6 +516,7 @@ class ResolverTest extends MockeryTestCase
                     ->withGroup(
                         (new Group())
                             ->withType('script')
+                            ->withEnvironment($env)
                     )
             );
 

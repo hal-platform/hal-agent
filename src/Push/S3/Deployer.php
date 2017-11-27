@@ -193,7 +193,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $release = $properties['release'];
         $build = $properties['release']->build();
-        $environment = $build->environment();
+        $environment = $release->target()->group()->environment();
 
         $uploader = $this->uploader;
         return $uploader(

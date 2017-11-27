@@ -182,7 +182,7 @@ class Resolver
                     $github->owner(),
                     $github->repository()
                 ),
-                'env' => $build->environment()->name(),
+                'env' => $release->target()->group()->environment()->name(),
                 'user' => $release->user() ? $release->user()->username() : null,
                 'reference' => $build->reference(),
                 'commit' => $build->commit(),
@@ -205,7 +205,7 @@ class Resolver
         // Get encrypted properties for use in build_transform, with sources as well (for logging)
         $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
             $build->application(),
-            $build->environment()
+            $release->target()->group()->environment()
         );
         $properties = array_merge($properties, $encryptedProperties);
 

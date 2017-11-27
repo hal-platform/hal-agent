@@ -117,21 +117,25 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param Application $application
-     * @param Environment $environment
+     * @param Application      $application
+     * @param Environment|null $environment
      *
      * @return array
      */
-    public function getProperties(Application $application, Environment $environment)
+    public function getProperties(Application $application, ?Environment $environment)
     {
+        if (is_null($environment)) {
+            $environmentCriteria = Criteria::expr()->isNull('environment');
+        } else {
+            $environmentCriteria = Criteria::expr()->orX(
+                Criteria::expr()->eq('environment', $environment),
+                Criteria::expr()->isNull('environment')
+            );
+        }
+
         $criteria = (new Criteria)
             ->where(Criteria::expr()->eq('application', $application))
-            ->andWhere(
-                Criteria::expr()->orX(
-                    Criteria::expr()->eq('environment', $environment),
-                    Criteria::expr()->isNull('environment')
-                )
-            )
+            ->andWhere($environmentCriteria)
 
             // null must be first!
             ->orderBy(['environment' => 'ASC']);
@@ -153,12 +157,12 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param Application $application
-     * @param Environment $environment
+     * @param Application      $application
+     * @param Environment|null $environment
      *
      * @return array
      */
-    public function getEncryptedPropertiesWithSources(Application $application, Environment $environment)
+    public function getEncryptedPropertiesWithSources(Application $application, ?Environment $environment)
     {
         $data = [
             'encrypted' => []
@@ -179,7 +183,7 @@ class EncryptedPropertyResolver
         // format encrypted sources for logs
         array_walk($sources, function(&$v) {
 
-            $from = 'global';
+            $from = 'Global';
             if ($env = $v->environment()) {
                 $from = $env->name();
             }

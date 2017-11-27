@@ -300,9 +300,10 @@ class DeployCommandTest extends ExecutorTestCase
                 'name' => 'test_app'
             ]),
             'target' => Mockery::mock(Target::class, [
-                    'group' => Mockery::mock(Group::class, [
+                'group' => Mockery::mock(Group::class, [
                     'environment' => Mockery::mock(Environment::class, [
-                        'name' => null
+                        'id' => 'env123',
+                        'name' => 'test'
                     ]),
                     'name' => null
                 ])
@@ -311,8 +312,8 @@ class DeployCommandTest extends ExecutorTestCase
             'build' => Mockery::mock(Build::class, [
                 'id' => 5678,
                 'environment' => Mockery::mock(Environment::class, [
-                    'id' => 'env123',
-                    'name' => 'test'
+                    'id' => null,
+                    'name' => null
                 ])
             ])
         ]);

@@ -74,6 +74,10 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
                     ->withGroup(
                         (new Group())
                             ->withType('script')
+                            ->withEnvironment(
+                                (new Environment())
+                                    ->withName('envkey')
+                            )
                     )
             );
 

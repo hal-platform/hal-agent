@@ -117,11 +117,10 @@ class CreateReleaseCommand implements ExecutorInterface
 
         $repo = sprintf('%s/%s', $release->application()->gitHub()->owner(), $release->application()->gitHub()->repository());
 
-
         $io->section('Details');
         $io->listing([
             sprintf('Application: <info>%s</info>', $release->application()->identifier()),
-            sprintf('Environment: <info>%s</info>', $build->environment()->name()),
+            sprintf('Environment: <info>%s</info>', $target->group()->environment()->name()),
         ]);
 
         $io->section('Build Information');

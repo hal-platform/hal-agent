@@ -293,10 +293,18 @@ class BuildCommand implements ExecutorInterface
         // Set the build to in progress
         $this->logger->start($build);
 
+        if ($environment = $build->environment()) {
+            $environmentName = $environment->name();
+            $environmentID = $environment->id();
+        } else {
+            $environmentName = 'Global';
+            $environmentID = 'N/A';
+        }
+
         $io->listing([
             sprintf('Build: <info>%s</info>', $build->id()),
             sprintf('Application: <info>%s</info> (ID: %s)', $build->application()->name(), $build->application()->id()),
-            sprintf('Environment: <info>%s</info> (ID: %s)', $build->environment()->name(), $build->environment()->id())
+            sprintf('Environment: <info>%s</info> (ID: %s)', $environmentName, $environmentID)
         ]);
 
         // The build has officially started running.

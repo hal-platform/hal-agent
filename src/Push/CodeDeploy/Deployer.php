@@ -263,7 +263,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $release = $properties['release'];
         $build = $properties['build'];
-        $environment = $build->environment();
+        $environment = $release->target()->group()->environment();
 
         $uploader = $this->uploader;
         return $uploader(
@@ -289,7 +289,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $release = $properties['release'];
         $build = $properties['build'];
-        $environment = $build->environment();
+        $environment = $release->target()->group()->environment();
 
         $pusher = $this->pusher;
         return $pusher(

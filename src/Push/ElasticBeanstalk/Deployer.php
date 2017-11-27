@@ -250,9 +250,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Pushing code to S3', self::SECTION);
 
-        $push = $properties['release'];
+        $release = $properties['release'];
         $build = $properties['build'];
-        $environment = $build->environment();
+        $environment = $release->target()->group()->environment();
 
         $uploader = $this->uploader;
         return $uploader(
@@ -261,7 +261,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             $properties[GroupEnum::TYPE_EB]['bucket'],
             $properties[GroupEnum::TYPE_EB]['file'],
             $build->id(),
-            $push->id(),
+            $release->id(),
             $environment->name()
         );
     }
@@ -276,9 +276,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     {
         $this->status('Deploying version to EB', self::SECTION);
 
-        $push = $properties['release'];
+        $release = $properties['release'];
         $build = $properties['build'];
-        $environment = $build->environment();
+        $environment = $release->target()->group()->environment();
 
         $pusher = $this->pusher;
         return $pusher(
@@ -288,7 +288,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             $properties[GroupEnum::TYPE_EB]['bucket'],
             $properties[GroupEnum::TYPE_EB]['file'],
             $build->id(),
-            $push->id(),
+            $release->id(),
             $environment->name()
         );
     }
