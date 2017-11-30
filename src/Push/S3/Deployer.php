@@ -14,6 +14,7 @@ use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Type\GroupEnum;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -22,7 +23,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     const SECTION = 'Deploying - S3';
     const STATUS = 'Deploying push by S3';
 
+    const INVALID_DEPLOYMENT_SYSTEM_FAILURE_CODE = 400;
     const ERR_INVALID_DEPLOYMENT_SYSTEM = 'S3 deployment system is not configured';
+
+    const UNABLE_TO_DETERMINE_STRATEGY_FAILURE_CODE = 404;
+    const ERR_UNABLE_TO_DETERMINE_STRATEGY = 'Unable to determine correct S3 deployment strategy';
 
     const SKIP_PRE_PUSH = 'Skipping pre-push commands for S3 deployment';
     const SKIP_POST_PUSH = 'Skipping post-push commands for S3 deployment';
@@ -33,19 +38,21 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $logger;
 
     /**
-     * @var AWSAuthenticator
+     * @var ContainerInterface
      */
-    private $authenticator;
+    private $container;
 
     /**
-     * @var Preparer
+     ** An associative array of deployers by strategy
+     * Example:
+     *     [
+     *         artifact => 'push.s3_artifact.deployer',
+     *         sync => 'push.s3_sync.deployer'
+     *     ]
+     *
+     * @var array
      */
-    private $preparer;
-
-    /**
-     * @var Uploader
-     */
-    private $uploader;
+    private $deployers;
 
     /**
      * @param EventLogger $logger
@@ -55,15 +62,12 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      */
     public function __construct(
         EventLogger $logger,
-        AWSAuthenticator $authenticator,
-        Preparer $preparer,
-        Uploader $uploader
+        ContainerInterface $container,
+        array $deployers = []
     ) {
         $this->logger = $logger;
-
-        $this->authenticator = $authenticator;
-        $this->preparer = $preparer;
-        $this->uploader = $uploader;
+        $this->container = $container;
+        $this->deployers = $deployers;
     }
 
     /**
@@ -76,36 +80,15 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         // sanity check
         if (!isset($properties[GroupEnum::TYPE_S3]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_S3])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
-            return 400;
+            return self::INVALID_DEPLOYMENT_SYSTEM_FAILURE_CODE;
         }
 
-        // authenticate
-        if (!$s3 = $this->authenticate($properties)) {
-            return 401;
+        if (!$deployer = $this->getDeploymentStrategy($properties)) {
+            $this->logger->event('failure', self::ERR_UNABLE_TO_DETERMINE_STRATEGY);
+            return self::UNABLE_TO_DETERMINE_STRATEGY_FAILURE_CODE;
         }
 
-        // Prepare upload file - move or create archive
-        if (!$this->prepareFile($properties)) {
-            return 402;
-        }
-
-        // SKIP pre-push commands
-        if ($properties['configuration']['pre_push']) {
-            $this->logger->event('info', self::SKIP_PRE_PUSH);
-        }
-
-        // upload version to S3
-        if (!$this->upload($s3, $properties)) {
-            return 403;
-        }
-
-        // SKIP post-push commands
-        if ($properties['configuration']['post_push']) {
-            $this->logger->event('info', self::SKIP_POST_PUSH);
-        }
-
-        // success
-        return 0;
+        return $deployer($properties);
     }
 
     /**
@@ -128,7 +111,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             // s3
             'bucket',
             'file',
-            'src'
+            'src',
+            'strategy'
         ];
 
         foreach ($required as $prop) {
@@ -137,73 +121,38 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             }
         }
 
+        $this->status('Verified S3 configuration', self::SECTION);
+
         return true;
     }
 
     /**
      * @param array $properties
      *
-     * @return S3Client|null
+     * @return boo|DeployerInterface
      */
-    private function authenticate(array $properties)
+    private function getDeploymentStrategy(array $properties)
     {
-        $this->status('Authenticating with AWS', self::SECTION);
+        $s3Properties = $properties[GroupEnum::TYPE_S3];
+        if (!array_key_exists('strategy', $s3Properties)) {
+            return false;
+        }
 
-        return $this->authenticator->getS3(
-            $properties[GroupEnum::TYPE_S3]['region'],
-            $properties[GroupEnum::TYPE_S3]['credential']
-        );
+        $strategy = $s3Properties['strategy'];
+        if (!array_key_exists($strategy, $this->deployers)) {
+            return false;
+        }
+
+        $this->status('Using ' . $strategy . ' deployment strategy', self::SECTION);
+
+        $dependency = $this->deployers[$strategy];
+        $deployer = $this->container->get($dependency, ContainerInterface::NULL_ON_INVALID_REFERENCE);
+        $deployer->setOutput($this->getOutput());
+
+        if (!$deployer instanceof DeployerInterface) {
+            return false;
+        }
+
+        return $deployer;
     }
-
-    /**
-     *  Supported situations:
-     *
-     * - src_file : file(.zip|.tgz|.tar.gz)   OK (just upload)
-     * - src_file : file                      OK (just upload)
-     *
-     * - src_dir  : file(.zip|.tgz|.tar.gz)   OK (pack with zip or tar)
-     * - src_dir  : file                      OK (default to tgz)
-     *
-     * @param array $properties
-     *
-     * @return bool
-     */
-    private function prepareFile(array $properties)
-    {
-        $this->status('Packing build for S3', self::SECTION);
-
-        $preparer = $this->preparer;
-        return $preparer(
-            $properties['location']['path'],
-            $properties[GroupEnum::TYPE_S3]['src'],
-            $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_S3]['file']
-        );
-    }
-
-    /**
-     * @param S3Client $s3
-     * @param array $properties
-     *
-     * @return bool
-     */
-    private function upload(S3Client $s3, array $properties)
-    {
-        $this->status('Uploading to S3', self::SECTION);
-
-        $release = $properties['release'];
-        $build = $properties['release']->build();
-        $environment = $release->target()->group()->environment();
-
-        $uploader = $this->uploader;
-        return $uploader(
-            $s3,
-            $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_S3]['bucket'],
-            $properties[GroupEnum::TYPE_S3]['file'],
-            $build->id(),
-            $release->id(),
-            $environment->name()
-        );
-    }
-}
+ }
