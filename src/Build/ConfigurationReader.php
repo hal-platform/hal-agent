@@ -114,8 +114,6 @@ class ConfigurationReader
             }
 
             $config['dist'] = (string) trim($yaml['dist']);
-        } else {
-            $config['dist'] = '.';
         }
 
         $parsed = ['exclude', 'build', 'build_transform', 'pre_push', 'deploy', 'post_push'];
