@@ -12,11 +12,9 @@ use Hal\Core\Entity\Application;
 trait DefaultConfigHelperTrait
 {
     /**
-     * @param Application $application
-     *
      * @return array
      */
-    private function buildDefaultConfiguration(Application $application)
+    private function buildDefaultConfiguration()
     {
         return [
             'system' => 'unix',

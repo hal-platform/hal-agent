@@ -90,7 +90,7 @@ class Resolver
             'build' => $build,
 
             // default, overwritten by .hal9000.yml
-            'configuration' => ['deploy' => []],
+            'configuration' => $this->buildDefaultConfiguration(),
 
             'location' => [
                 'download' => $this->generateRepositoryDownloadFile($build->id()),

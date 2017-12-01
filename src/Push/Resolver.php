@@ -159,7 +159,7 @@ class Resolver
             'method' => $method,
 
             // default, overwritten by .hal9000.yml
-            'configuration' => $this->buildDefaultConfiguration($application),
+            'configuration' => $this->buildDefaultConfiguration(),
 
             'location' => [
                 'path' => $this->generateLocalTempPath($release->id(), 'release'),

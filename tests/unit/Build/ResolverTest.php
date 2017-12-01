@@ -85,7 +85,17 @@ class ResolverTest extends MockeryTestCase
             'build' => $build,
 
             'configuration' => [
+                'system' => 'unix',
+                'dist' => '.',
+                'exclude' => [
+                    'config/database.ini',
+                    'data/'
+                ],
+                'build' => [],
+                'build_transform' => [],
+                'pre_push' => [],
                 'deploy' => [],
+                'post_push' =>[]
             ],
 
             'location' => [
