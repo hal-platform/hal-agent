@@ -104,10 +104,6 @@ class Exporter
             return false;
         }
 
-        if (!$this->removeLocalFiles($buildPath)) {
-            return false;
-        }
-
         return true;
     }
 
@@ -158,27 +154,4 @@ class Exporter
         return $this->processFailure($dispCommand, $process);
     }
 
-    /**
-     * @param string $buildPath
-     *
-     * @return bool
-     */
-    private function removeLocalFiles($buildPath)
-    {
-        // remove local build dir
-        $command = ['rm', '-r', $buildPath];
-        $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($command)
-            ->getProcess();
-
-        $process->run();
-
-        if ($process->isSuccessful()) {
-            return true;
-        }
-
-        $dispCommand = implode("\n", $command);
-        return $this->processFailure($dispCommand, $process);
-    }
 }

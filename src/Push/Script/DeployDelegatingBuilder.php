@@ -13,4 +13,6 @@ class DeployDelegatingBuilder extends DelegatingBuilder
 {
     const PREPARING_BUILD_ENVIRONMENT = 'Prepare deployment environment';
     const ERR_INVALID_BUILDER = 'Invalid deployment system specified';
+
+    // QL\Hal\Agent\Push\Script\DeployDelegatingBuilder does not exist
 }

@@ -17,6 +17,7 @@ class ConfigurationReader
     const FOUND = 'Found .hal9000.yml configuration';
     const ERR_INVALID_YAML = '.hal9000.yml was invalid';
     const ERR_INVALID_KEY = '.hal9000.yml configuration key "%s" is invalid';
+    const ERR_INVALID_ENV = '.hal9000.yml env var for "%s" is invalid';
     const ERR_TOO_MANY_COOKS = 'Too many commands specified for "%s". Must be less than 10.';
 
     /**
@@ -116,7 +117,49 @@ class ConfigurationReader
             $config['dist'] = (string) trim($yaml['dist']);
         }
 
-        $parsed = ['exclude', 'build', 'build_transform', 'pre_push', 'deploy', 'post_push'];
+        // load env
+        if (array_key_exists('env', $yaml) && $yaml['env']) {
+            if (!is_array($yaml['env'])) {
+                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'env'), $context);
+                return null;
+            }
+
+            foreach ($yaml['env'] as $envName => $vars) {
+                if (!is_string($envName) || !is_array($vars)) {
+                    $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'env'), $context);
+                    return null;
+                }
+
+                foreach ($vars as $name => $value) {
+                    if (!is_scalar($value) || preg_match('/^[a-zA-Z_]+[a-zA-Z0-9_]*$/', $name) !== 1) {
+                        $this->logger->event('failure', sprintf(self::ERR_INVALID_ENV, $envName), $context);
+                        return null;
+                    }
+
+                    if (!isset($config['env'][$envName])) {
+                        $config['env'][$envName] = [];
+                    }
+
+                    $config['env'][$envName][$name] = trim($value);
+                }
+            }
+        }
+
+        // load lists
+        $parsed = [
+                'exclude',
+
+                'build',                // build stage, 1
+
+                'build_transform',      // deploy stage 1
+                'before_deploy',        // deploy stage 2
+
+                'pre_push',             // deploy stage 3 (rsync only)
+                'deploy',               // deploy stage 4 (script deployments only)
+                'post_push',            // deploy stage 5 (rsync, success only)
+
+                'after_deploy'          // deploy stage 6
+            ];
         foreach ($parsed as $p) {
             $config[$p] = $this->validateList($yaml, $p, $context);
 

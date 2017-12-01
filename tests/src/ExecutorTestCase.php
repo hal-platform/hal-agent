@@ -8,6 +8,7 @@
 namespace Hal\Agent\Testing;
 
 use Hal\Agent\Command\IO;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -15,6 +16,8 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class ExecutorTestCase extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     private $output;
 
     public function io($configurator, array $args = [])

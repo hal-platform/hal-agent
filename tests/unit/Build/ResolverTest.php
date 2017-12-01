@@ -88,11 +88,16 @@ class ResolverTest extends MockeryTestCase
                 'system' => 'unix',
                 'dist' => '.',
                 'exclude' => [],
+
+                'env' => [],
+
                 'build' => [],
                 'build_transform' => [],
+                'before_deploy' => [],
                 'pre_push' => [],
                 'deploy' => [],
-                'post_push' =>[]
+                'post_push' =>[],
+                'after_deploy' => []
             ],
 
             'location' => [

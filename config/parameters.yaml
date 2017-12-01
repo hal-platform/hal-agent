@@ -99,6 +99,7 @@ parameters:
     build.platforms.option.docker.default_image: 'base_debian8'
     build.platforms.option.docker.sudo: '%env(HAL_DOCKER_SUDO)%'
 
+
     ############################################################################
     # credentials / encryption
     ############################################################################
@@ -120,6 +121,11 @@ parameters:
 
     deployment.script.platforms:
         unix: 'push.script.build.unix.handler'
+
+    deployment_before.build.platforms:
+        unix: 'push.before.builder.unix_handler'
+    deployment_after.build.platforms:
+        unix: 'push.after.builder.unix_handler'
 
     deployment.platforms:
         rsync: 'push.rsync.deployer'

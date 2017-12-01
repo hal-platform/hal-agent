@@ -48,7 +48,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
 bash -l -c %s
 SHELL;
 
-    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,40}$/';
+    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,50}$/';
 
     const EVENT_VALIDATE_IMAGE_BUILT = 'Validate Docker image is built';
     const EVENT_VALIDATE_DOCKERSOURCE = 'Validate Docker image source for "%s"';

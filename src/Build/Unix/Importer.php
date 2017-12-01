@@ -90,6 +90,8 @@ class Importer
             return false;
         }
 
+        $this->removeLocalFiles($buildPath);
+
         if (!$this->unpackBuild($buildFile, $buildPath)) {
             return false;
         }
@@ -127,6 +129,26 @@ class Importer
 
         $dispCommand = implode("\n", $command);
         return $this->processFailure($dispCommand, $process);
+    }
+
+    /**
+     * @param string $buildPath
+     *
+     * @return bool
+     */
+    private function removeLocalFiles($buildPath)
+    {
+        // remove local build dir
+        $command = ['rm', '-r', $buildPath];
+        $process = $this->processBuilder
+            ->setWorkingDirectory($buildPath)
+            ->setArguments($command)
+            ->getProcess();
+
+        $process->run();
+
+        #we don't care if this fails
+        return true;
     }
 
     /**

@@ -175,7 +175,7 @@ class EventLogger
      */
     private function normalizeStage($stage)
     {
-        if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 5) === 'release.') {
+        if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 8) === 'release.') {
             return $stage;
 
         } elseif ($this->entity) {

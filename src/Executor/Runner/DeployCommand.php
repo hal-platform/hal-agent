@@ -21,6 +21,7 @@ use Hal\Agent\Push\PushException;
 use Hal\Agent\Push\Resolver;
 use Hal\Agent\Push\Unpacker;
 use Hal\Core\Entity\Release;
+use Hal\Core\Type\JobEventStageEnum;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -43,13 +44,20 @@ class DeployCommand implements ExecutorInterface
     const PARAM_RELEASE = 'RELEASE_ID';
     const HELP_RELEASE = 'The ID of the Release to deploy.';
 
+    const DEPLOY_STATUS_INPROGRESS = 'INPROGRESS';
+    const DEPLOY_STATUS_SUCCESS = 'SUCCESS';
+    const DEPLOY_STATUS_FAILURE = 'FAILURE';
+
     const STEPS = [
         1 => 'Resolving configuration',
         2 => 'Importing build artifact',
         3 => 'Unpacking build artifact',
         4 => 'Reading .hal.yml configuration',
         5 => 'Running build transform process',
-        6 => 'Running build deployment process'
+        6 => 'Running before deployment process',
+        7 => 'Running build deployment process',
+        8 => 'Running after deployment process'
+
     ];
 
     const ERR_NOT_RUNNABLE = 'Release cannot be run.';
@@ -57,7 +65,9 @@ class DeployCommand implements ExecutorInterface
     const ERR_UNPACK = 'Build artifact cannot be unpacked.';
     const ERR_CONFIG = '.hal.yml configuration is invalid and cannot be read.';
     const ERR_TRANSFORM = 'Build transform process failed.';
+    const ERR_BEFORE_DEPLOYMENT = 'Before deployment stage failed.';
     const ERR_DEPLOY = 'Deployment process failed.';
+    const ERR_AFTER_DEPLOYMENT = 'After deployment stage failed.';
 
     /**
      * @var EventLogger
@@ -88,6 +98,16 @@ class DeployCommand implements ExecutorInterface
      * @var DelegatingBuilder
      */
     private $builder;
+
+    /**
+     * @var DelegatingBuilder
+     */
+    private $beforeDeployBuilder;
+
+    /**
+     * @var DelegatingBuilder
+     */
+    private $afterDeployBuilder;
 
     /**
      * @var DelegatingDeployer
@@ -126,7 +146,9 @@ class DeployCommand implements ExecutorInterface
      * @param Unpacker $unpacker
      * @param ConfigurationReader $reader
      * @param DelegatingBuilder $builder
+     * @param DelegatingBuilder $beforeDeployBuilder
      * @param DelegatingDeployer $deployer
+     * @param DelegatingBuilder $afterDeployBuilder
      * @param Filesystem $filesystem
      */
     public function __construct(
@@ -136,7 +158,9 @@ class DeployCommand implements ExecutorInterface
         Unpacker $unpacker,
         ConfigurationReader $reader,
         DelegatingBuilder $builder,
+        DelegatingBuilder $beforeDeployBuilder,
         DelegatingDeployer $deployer,
+        DelegatingBuilder $afterDeployBuilder,
         Filesystem $filesystem
     ) {
         $this->logger = $logger;
@@ -147,7 +171,9 @@ class DeployCommand implements ExecutorInterface
         $this->unpacker = $unpacker;
 
         $this->builder = $builder;
+        $this->beforeDeployBuilder = $beforeDeployBuilder;
         $this->deployer = $deployer;
+        $this->afterDeployBuilder = $afterDeployBuilder;
 
         $this->filesystem = $filesystem;
         $this->artifacts = [];
@@ -205,7 +231,7 @@ class DeployCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        $this->logger->setStage('release.start');
+        $this->logger->setStage(JobEventStageEnum::TYPE_RELEASE_START);
 
         if (!$properties = $this->resolve($io, $releaseID)) {
             return $this->deploymentFailure($io, self::ERR_NOT_RUNNABLE);
@@ -227,12 +253,27 @@ class DeployCommand implements ExecutorInterface
             return $this->deploymentFailure($io, self::ERR_TRANSFORM);
         }
 
-        if (!$this->deploy($io, $properties)) {
+        //before deploy
+        if (!$this->beforeDeploy($io, $properties, self::DEPLOY_STATUS_INPROGRESS)) {
+            return $this->deploymentFailure($io, self::ERR_BEFORE_DEPLOYMENT);
+        }
+
+        $this->logger->setStage(JobEventStageEnum::TYPE_RELEASE_DEPLOY);
+
+        $isDeploySuccess = $this->deploy($io, $properties);
+
+        $this->logger->setStage(JobEventStageEnum::TYPE_RELEASE_END);
+
+        //after deploy
+        if (!$this->afterDeploy($io, $properties, $isDeploySuccess)) {
+            return $this->deploymentFailure($io, self::ERR_AFTER_DEPLOYMENT);
+        }
+
+        if (!$isDeploySuccess) {
             $io->note($this->deployer->getFailureMessage());
             return $this->deploymentFailure($io, self::ERR_DEPLOY);
         }
 
-        $this->logger->setStage('end');
 
         $this->outputJobStats($io);
 
@@ -432,12 +473,43 @@ class DeployCommand implements ExecutorInterface
     /**
      * @param IOInterface $io
      * @param array $properties
+     * @param string $deployStatus
+     *
+     * @return bool
+     */
+    private function beforeDeploy(IOInterface $io, array $properties, $deployStatus)
+    {
+        $io->section($this->step(6));
+
+        if (!$properties['configuration']['before_deploy']) {
+            $io->listing([
+                'Skipping before deploy commands',
+            ]);
+            return true;
+        }
+
+        # ugh :(
+        if (isset($properties['unix']['environmentVariables'])) {
+            $properties['unix']['environmentVariables']['HAL_DEPLOY_STATUS'] = $deployStatus;
+        }
+
+        return ($this->beforeDeployBuilder)(
+            $io,
+            $properties['configuration']['system'],
+            $properties['configuration']['before_deploy'],
+            $properties
+        );
+    }
+
+    /**
+     * @param IOInterface $io
+     * @param array $properties
      *
      * @return bool
      */
     private function deploy(IOInterface $io, array $properties)
     {
-        $io->section($this->step(6));
+        $io->section($this->step(7));
 
         $io->listing([
             sprintf('Method: <info>%s</info>', $properties['method'])
@@ -446,6 +518,39 @@ class DeployCommand implements ExecutorInterface
         return ($this->deployer)(
             $io,
             $properties['method'],
+            $properties
+        );
+    }
+
+    /**
+     * @param IOInterface $io
+     * @param array $properties
+     * @param string $deployStatus
+     *
+     * @return bool
+     */
+    private function afterDeploy(IOInterface $io, array $properties, $deployStatus)
+    {
+        $io->section($this->step(8));
+
+        if (!$properties['configuration']['after_deploy']) {
+            $io->listing([
+                'Skipping after deploy commands',
+            ]);
+            return true;
+        }
+
+        # ugh :(
+        if (isset($properties['unix']['environmentVariables'])) {
+            $properties['unix']['environmentVariables']['HAL_DEPLOY_STATUS'] = $deployStatus;
+        }
+
+        $builder = $this->afterDeployBuilder;
+
+        return $builder(
+            $io,
+            $properties['configuration']['system'],
+            $properties['configuration']['after_deploy'],
             $properties
         );
     }
