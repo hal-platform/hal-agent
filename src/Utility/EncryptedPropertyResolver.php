@@ -117,7 +117,7 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param Application      $application
+     * @param Application $application
      * @param Environment|null $environment
      *
      * @return array
@@ -157,7 +157,7 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param Application      $application
+     * @param Application $application
      * @param Environment|null $environment
      *
      * @return array

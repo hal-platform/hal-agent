@@ -19,7 +19,7 @@ class IO extends SymfonyStyle implements IOInterface
     private $input;
 
     /**
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
      */
     public function __construct(InputInterface $input, OutputInterface $output)

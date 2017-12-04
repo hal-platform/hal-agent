@@ -43,14 +43,14 @@ class DeploymentsApi
      *
      * @link https://developer.github.com/v3/repos/deployments/#create-a-deployment
      *
-     * @param string $owner         The user who owns the repository
-     * @param string $repository    The name of the repository
+     * @param string $owner The user who owns the repository
+     * @param string $repository The name of the repository
      * @param string $deploymentKey The deployment key
      *
-     * @param string $reference     Reference to a branch, tag or commit
-     * @param string $environment   Environment deployed to
-     * @param array  $payload       Optional, payload
-     * @param string $description   Optional, Description
+     * @param string $reference Reference to a branch, tag or commit
+     * @param string $environment Environment deployed to
+     * @param array $payload Optional, payload
+     * @param string $description Optional, Description
      *
      * @return int|null
      */
@@ -101,14 +101,14 @@ class DeploymentsApi
      *
      * @link https://developer.github.com/v3/repos/deployments/#create-a-deployment-status
      *
-     * @param string $owner         The user who owns the repository
-     * @param string $repository    The name of the repository
+     * @param string $owner The user who owns the repository
+     * @param string $repository The name of the repository
      * @param string $deploymentKey The deployment key
-     * @param string $deploymentId  The deployment ID
+     * @param string $deploymentId The deployment ID
      *
-     * @param string $state         The deployment status: "pending", "success", "error", "failure"
-     * @param string $url           Optional, The full URL where more information can be obtained
-     * @param string $description   Optional, Description
+     * @param string $state The deployment status: "pending", "success", "error", "failure"
+     * @param string $url Optional, The full URL where more information can be obtained
+     * @param string $description Optional, Description
      *
      * @return boolean
      */

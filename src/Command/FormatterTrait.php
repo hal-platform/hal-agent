@@ -21,7 +21,7 @@ trait FormatterTrait
      *
      * @param string $section The section name
      * @param string $message The message
-     * @param string $style   The style to apply to the section
+     * @param string $style The style to apply to the section
      *
      * @return string The format section
      */
@@ -34,8 +34,8 @@ trait FormatterTrait
      * Formats a message as a block of text.
      *
      * @param string|array $messages The message to write in the block
-     * @param string       $style    The style to apply to the whole block
-     * @param Boolean      $large    Whether to return a large block
+     * @param string $style The style to apply to the whole block
+     * @param Boolean $large Whether to return a large block
      *
      * @return string The formatter message
      */
@@ -72,7 +72,7 @@ trait FormatterTrait
      * Truncates a message to the given length.
      *
      * @param string $message
-     * @param int    $length
+     * @param int $length
      * @param string $suffix
      *
      * @return string
