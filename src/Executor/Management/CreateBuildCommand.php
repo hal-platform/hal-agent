@@ -149,7 +149,7 @@ HELP;
         $io->section('Details');
         $io->listing([
             sprintf('Application: <info>%s</info>', $application->identifier()),
-            sprintf('Environment: <info>%s</info>', $environment ? $environment->name() : 'Global' ),
+            sprintf('Environment: <info>%s</info>', $environment ? $environment->name() : 'Any' ),
         ]);
 
         $io->section('Build Information');

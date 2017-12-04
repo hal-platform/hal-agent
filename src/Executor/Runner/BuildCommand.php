@@ -297,7 +297,7 @@ class BuildCommand implements ExecutorInterface
             $environmentName = $environment->name();
             $environmentID = $environment->id();
         } else {
-            $environmentName = 'Global';
+            $environmentName = 'Any';
             $environmentID = 'N/A';
         }
 

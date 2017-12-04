@@ -140,11 +140,7 @@ class BuildEnvironmentResolver
             return [];
         }
 
-        if ($environment = $build->environment()) {
-            $environmentName = $environment->name();
-        } else {
-            $environmentName = 'Global';
-        }
+        $environmentName = ($environment = $build->environment()) ? $environmentName = $environment->name() : 'Any';
 
         $env = [
             'HAL_BUILDID' => $build->id(),
@@ -179,11 +175,7 @@ class BuildEnvironmentResolver
             return [];
         }
 
-        if ($environment = $build->environment()) {
-            $environmentName = $environment->name();
-        } else {
-            $environmentName = 'Global';
-        }
+        $environmentName = ($environment = $build->environment()) ? $environmentName = $environment->name() : 'Any';
 
         $env = [
             'HAL_BUILDID' => $build->id(),
