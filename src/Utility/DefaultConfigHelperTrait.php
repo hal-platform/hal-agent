@@ -19,10 +19,7 @@ trait DefaultConfigHelperTrait
         return [
             'system' => 'unix',
             'dist' => '.',
-            'exclude' => [
-                'config/database.ini',
-                'data/'
-            ],
+            'exclude' => [],
             'build' => [],
             'build_transform' => [],
             'pre_push' => [],
