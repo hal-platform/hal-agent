@@ -171,10 +171,7 @@ class ResolverTest extends MockeryTestCase
             'configuration' => [
                 'system' => 'unix',
                 'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
+                'exclude' => [],
                 'build' => [],
                 'build_transform' => [],
                 'pre_push' => [],
@@ -294,10 +291,7 @@ class ResolverTest extends MockeryTestCase
             'configuration' => [
                 'system' => 'unix',
                 'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
+                'exclude' => [],
                 'build' => [],
                 'build_transform' => [],
                 'pre_push' => [],
@@ -420,10 +414,7 @@ class ResolverTest extends MockeryTestCase
             'configuration' => [
                 'system' => 'unix',
                 'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
+                'exclude' => [],
                 'build' => [],
                 'build_transform' => [],
                 'pre_push' => [],
@@ -527,10 +518,7 @@ class ResolverTest extends MockeryTestCase
             'configuration' => [
                 'system' => 'unix',
                 'dist' => '.',
-                'exclude' => [
-                    'config/database.ini',
-                    'data/'
-                ],
+                'exclude' => [],
                 'build' => [],
                 'build_transform' => [],
                 'pre_push' => [],

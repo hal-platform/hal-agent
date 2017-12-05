@@ -122,7 +122,7 @@ HELP;
             return $this->failure($io, self::ERR_NO_APPLICATION);
         }
 
-        if ($environment === 'global') {
+        if ($environment === '!any') {
             $environment = null;
         } elseif (!$environment = $this->findEnvironment($environment)) {
             return $this->failure($io, self::ERR_NO_ENVIRONMENT);
