@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-class DI2
+class DI
 {
     const PRIMARY_CONFIGURATION_FILE = 'config/config.yaml';
     const ENV_CACHE_DISABLED = 'HAL_DI_DISABLE_CACHE_ON';
@@ -76,31 +76,11 @@ class DI2
         }
 
         $cacheDisabled = getenv(static::ENV_CACHE_DISABLED);
-
         if ($cacheDisabled) {
-
-            $container = static::buildDI($root, !static::BUILD_AND_CACHE);
-
-            if (static::BUILD_AND_CACHE) {
-                $cached = static::cacheDI($container, $options);
-
-                $content = str_replace('<?php', '', $cached);
-                eval($content);
-                $container = new $class;
-            }
-
-        } else {
-            if (!class_exists($class)) {
-                throw new RuntimeException("DI Cached Container class not found: \"${class}\"");
-            }
-
-            $container = new $class;
+            return self::buildContainer($root, $class, $options);
         }
 
-        // @todo remove
-        $container->set('root', 'derpherp');
-
-        return $container;
+        return self::getCachedContainer($class);
     }
 
     /**
@@ -128,5 +108,41 @@ class DI2
         }
 
         return $dumper->dump($config);
+    }
+
+    /**
+     * @param string $class
+     *
+     * @return ContainerInterface
+     */
+    private static function getCachedContainer($class)
+    {
+        if (!class_exists($class)) {
+            throw new RuntimeException("DI Cached Container class not found: \"${class}\"");
+        }
+
+        return new $class;
+    }
+
+    /**
+     * @param string $root
+     * @param string $class
+     * @param array $options
+     *
+     * @return ContainerInterface
+     */
+    private static function buildContainer($root, $class, $options)
+    {
+        $container = static::buildDI($root, !static::BUILD_AND_CACHE);
+
+        if (static::BUILD_AND_CACHE) {
+            $cached = static::cacheDI($container, $options);
+
+            $content = str_replace('<?php', '', $cached);
+            eval($content);
+            $container = new $class;
+        }
+
+        return $container;
     }
 }

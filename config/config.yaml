@@ -1,5 +1,5 @@
 imports:
-    - resource: '../vendor/hal/hal-core/config/config.yaml'
+    - resource: '../vendor/hal/hal-core/config/*.yaml'
     - resource: 'vendor/*.yaml'
     - resource: 'services/*.yaml'
 
