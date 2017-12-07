@@ -260,7 +260,7 @@ class DeployCommandTest extends ExecutorTestCase
                 'group' => Mockery::mock(Group::class, [
                     'name' => null,
                     'environment' => Mockery::mock(Environment::class, [
-                        'name' => null,
+                        'name' => 'test',
                         'id' => 1234
                     ])
                 ])
