@@ -683,6 +683,12 @@ SHELL;
         }
     }
 
+    /**
+     * @param $command
+     * @param $count
+     *
+     * @return string
+     */
     private function getEventMessage($command, $count)
     {
         $msg = sprintf(static::EVENT_MESSAGE_CUSTOM, $count);
@@ -698,6 +704,9 @@ SHELL;
         return $msg;
     }
 
+    /**
+     * @param string $remaining
+     */
     private function logSkippedCommands($remaining)
     {
         $msg = sprintf(static::ERR_MESSAGE_SKIPPING, $remaining);
