@@ -14,10 +14,13 @@ use Hal\Core\Entity\Build;
 use Hal\Core\Entity\Target;
 use Hal\Core\Repository\BuildRepository;
 use Hal\Core\Repository\TargetRepository;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use QL\MCP\Common\Time\Clock;
 
 class CreateReleaseCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $em;
     public $buildRepo;
     public $releaseRepo;

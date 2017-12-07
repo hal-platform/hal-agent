@@ -23,11 +23,14 @@ use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\Release;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Group;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
 class DeployCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $logger;
     public $resolver;
     public $mover;

@@ -14,11 +14,14 @@ use Mockery;
 use Hal\Core\Entity\Target;
 use Hal\Core\Entity\Release;
 use Hal\Core\Repository\ReleaseRepository;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
 class DeployCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $releaseRepo;
     public $em;
 

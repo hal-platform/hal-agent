@@ -11,11 +11,14 @@ use Hal\Agent\Remoting\FileSyncManager;
 use Hal\Agent\Github\ArchiveApi;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
 class UpdateSourcesCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $fileSync;
     public $process;
     public $archiveDownloader;

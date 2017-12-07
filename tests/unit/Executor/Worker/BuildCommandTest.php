@@ -13,11 +13,14 @@ use Hal\Agent\Testing\MemoryLogger;
 use Mockery;
 use Hal\Core\Entity\Build;
 use Hal\Core\Repository\BuildRepository;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
 class BuildCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $em;
     public $buildRepo;
 
