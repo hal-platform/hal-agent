@@ -15,4 +15,6 @@ class AfterDeployDockerBuilder extends DockerBuilder
 
     const EVENT_MESSAGE = 'Run after deploy command';
     const EVENT_MESSAGE_CUSTOM = 'Run after deploy command "%s"';
+
+    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining after deploy commands';
 }

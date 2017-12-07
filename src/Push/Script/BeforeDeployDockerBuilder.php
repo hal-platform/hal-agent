@@ -15,4 +15,6 @@ class BeforeDeployDockerBuilder extends DockerBuilder
 
     const EVENT_MESSAGE = 'Run before deploy command';
     const EVENT_MESSAGE_CUSTOM = 'Run before deploy command "%s"';
+
+    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining before deploy commands';
 }

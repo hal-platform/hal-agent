@@ -24,9 +24,11 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
     const SECTION = 'Docker';
     const SECTION_BUILD = 'Docker - Build';
 
-    const EVENT_MESSAGE = 'Run build command';
+    const EVENT_MESSAGE = 'Run build command %s';
     const EVENT_MESSAGE_CUSTOM = 'Run build command "%s"';
     const CONTAINER_WORKING_DIR = '/build';
+
+    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build commands';
 
     /**
      * Valid docker pattern:
@@ -153,6 +155,8 @@ SHELL;
 
         $imagedCommands = $this->organizeCommands($defaultImageName, $commands);
 
+        $total = count($commands);
+        $current = 0;
         foreach ($imagedCommands as $entry) {
             list($image, $commands) = $entry;
 
@@ -171,7 +175,16 @@ SHELL;
 
             // 4. Run commands
             foreach ($commands as $command) {
-                if (!$this->runCommand($containerName, $command)) {
+                $current++;
+                $remaining = $total - $current;
+
+                $result = $this->runCommand($containerName, $command, "[${current}/${total}]");
+
+                if (!$result) {
+                    if ($remaining > 0) {
+                        $this->logSkippedCommands($remaining);
+                    }
+
                     return $this->bombout(false);
                 }
             }
@@ -231,7 +244,7 @@ SHELL;
      * @param string $imageName
      * @param array $env
      *
-     * @return array|null Returns either null, or the container name and cleanup closure on success
+     * @return string|null Returns either null, or the container name and cleanup closure on success
      */
     private function buildContainer($imageName, array $env)
     {
@@ -503,7 +516,7 @@ SHELL;
      *
      * @return boolean
      */
-    private function runCommand($containerName, $command)
+    private function runCommand($containerName, $command, $count)
     {
         $prefix = [
             $this->docker('exec'),
@@ -513,17 +526,11 @@ SHELL;
 
         $actual = $this->dockerEscaped($command);
 
-        $this->status(sprintf('Running build command [ %s ] in Docker container', $command), static::SECTION_BUILD);
+        $msg = $this->getEventMessage($command, $count);
 
         $context = $this->buildRemoter
             ->createCommand($this->remoteUser, $this->remoteServer, [$prefix, $actual])
             ->withSanitized($command);
-
-        // Add build command to log message if short enough
-        $msg = static::EVENT_MESSAGE;
-        if (1 === preg_match(self::SHORT_COMMAND_VALIDATION, $command)) {
-            $msg = sprintf(static::EVENT_MESSAGE_CUSTOM, $command);
-        }
 
         if (!$response = $this->runBuildRemote($context, $msg)) {
             return false;
@@ -674,5 +681,30 @@ SHELL;
         if ($this->enableShutdownHandler) {
             register_shutdown_function([$this, 'cleanup']);
         }
+    }
+
+    private function getEventMessage($command, $count)
+    {
+        $msg = sprintf(static::EVENT_MESSAGE_CUSTOM, $count);
+        $msgCLI = "${count} Command";
+
+        if (1 === preg_match(self::SHORT_COMMAND_VALIDATION, $command)) {
+            $clean = str_replace(["\n", "\t"], " ", $command);
+            $msg = sprintf(static::EVENT_MESSAGE_CUSTOM, $count, $command);
+            $msgCLI = "${count} ${clean}";
+        }
+
+        $this->status(sprintf('Running build command [ %s ] in Docker container', $msgCLI), static::SECTION_BUILD);
+        return $msg;
+    }
+
+    private function logSkippedCommands($remaining)
+    {
+        $msg = sprintf(static::ERR_MESSAGE_SKIPPING, $remaining);
+
+        $this->logger->event('info', $msg);
+
+        $this->status('<error>Build command failed</error>', static::SECTION_BUILD);
+        $this->status($msg, static::SECTION_BUILD);
     }
 }
