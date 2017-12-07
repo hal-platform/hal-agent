@@ -11,5 +11,8 @@ use Hal\Agent\Build\Unix\DockerBuilder;
 
 class BeforeDeployDockerBuilder extends DockerBuilder
 {
+    const SECTION_BUILD = 'Docker - Before Deploy';
 
+    const EVENT_MESSAGE = 'Run before deploy command';
+    const EVENT_MESSAGE_CUSTOM = 'Run before deploy command "%s"';
 }

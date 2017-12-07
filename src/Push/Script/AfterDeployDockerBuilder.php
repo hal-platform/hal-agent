@@ -11,5 +11,8 @@ use Hal\Agent\Build\Unix\DockerBuilder;
 
 class AfterDeployDockerBuilder extends DockerBuilder
 {
+    const SECTION_BUILD = 'Docker - After Deploy';
 
+    const EVENT_MESSAGE = 'Run after deploy command';
+    const EVENT_MESSAGE_CUSTOM = 'Run after deploy command "%s"';
 }
