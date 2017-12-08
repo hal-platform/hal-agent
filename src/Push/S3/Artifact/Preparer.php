@@ -5,18 +5,20 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\S3;
+namespace Hal\Agent\Push\S3\Artifact;
 
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\Mover;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Utility\ProcessRunnerTrait;
+use Hal\Agent\Utility\SourcePathBuilderTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\ProcessBuilder;
 
 class Preparer
 {
     use ProcessRunnerTrait;
+    use SourcePathBuilderTrait;
 
     const ERR_DIST_NOT_VALID = 'Cannot find dist directory';
 
@@ -87,7 +89,7 @@ class Preparer
      */
     public function __invoke($buildPath, $distPath, $tempArchive, $destFile)
     {
-        $wholeSourcePath = rtrim($buildPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . trim($distPath, DIRECTORY_SEPARATOR);
+        $wholeSourcePath = $this->getWholeSourcePath($buildPath, $distPath);
 
         // check if exists
         if (!$this->filesystem->exists($wholeSourcePath)) {
@@ -95,18 +97,12 @@ class Preparer
             return false;
         }
 
-        // check if dir
-        $isDirCommand = ['test', '-d', $wholeSourcePath];
-        $process = $this->processBuilder
-            ->setArguments($isDirCommand)
-            ->setTimeout($this->commandTimeout)
-            ->getProcess();
-
-        if (!$this->runProcess($process, $this->commandTimeout)) {
+        // check if directory
+        try {
+            $isDir = $this->isDirectory($wholeSourcePath);
+        } catch (PushException $e) {
             return false;
         }
-
-        $isDir = $process->isSuccessful();
 
         if ($isDir) {
             return $this->packer->packZipOrTar($buildPath, $distPath, $tempArchive, $destFile);
@@ -115,5 +111,29 @@ class Preparer
             $mover = $this->mover;
             return $mover($wholeSourcePath, $tempArchive);
         }
+    }
+
+    /**
+     * @param string $sourcePath
+     *
+     * @throws PushException
+     *
+     * @return bool
+     */
+    private function isDirectory($sourcePath)
+    {
+        // check if dir
+        $isDirCommand = ['test', '-d', $sourcePath];
+        $process = $this->processBuilder
+            ->setArguments($isDirCommand)
+            ->setTimeout($this->commandTimeout)
+            ->getProcess();
+
+        if (!$this->runProcess($process, $this->commandTimeout)) {
+            $this->logger->event('failure', self::ERR_TIMEOUT, []);
+            throw new PushException(self::ERR_TIMEOUT);
+        }
+
+        return $process->isSuccessful();
     }
 }

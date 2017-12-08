@@ -52,13 +52,14 @@
         "symfony/dotenv":                "~3.3",
         "symfony/event-dispatcher":      "~3.3",
         "symfony/filesystem":            "~3.3",
+        "symfony/finder":                "~3.3",
         "symfony/process":               "~3.3",
         "symfony/proxy-manager-bridge":  "~3.3",
         "symfony/yaml":                  "~3.3"
     },
     "require-dev": {
         "overtrue/phplint":          "~0.2",
-        "mockery/mockery":           "~0.9",
+        "mockery/mockery":           "~1.0",
         "phpunit/phpunit":           "~6.2",
         "squizlabs/php_codesniffer": "~3.0",
         "symfony/var-dumper":        "~3.3"

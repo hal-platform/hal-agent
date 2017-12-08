@@ -42,6 +42,7 @@ class DelegatingDeployer
         401 => 'Failed to authenticate with AWS.',
         402 => 'Build could not be packed for S3.',
         403 => 'Upload to S3 failed.',
+        404 => 'S3 deployment strategy could not be determined',
 
         500 => 'Required properties for CodeDeploy are missing.',
         501 => 'Failed to authenticate with AWS.',

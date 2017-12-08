@@ -133,3 +133,7 @@ parameters:
         s3: 'push.s3.deployer'
         cd: 'push.cd.deployer'
         script: 'push.script.deployer'
+
+    push.s3.strategies:
+        artifact: 'push.s3_artifact.deployer'
+        sync: 'push.s3_sync.deployer'

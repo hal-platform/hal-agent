@@ -206,12 +206,36 @@ services:
         class: 'Hal\Agent\Push\S3\Deployer'
         arguments:
             - '@logger.event'
-            - '@push.aws.authenticator'
-            - '@push.s3.preparer'
-            - '@push.s3.uploader'
+            - '@service_container'
+            - '%push.s3.strategies%'
 
-    push.s3.preparer:
-        class: 'Hal\Agent\Push\S3\Preparer'
+
+    push.s3_sync.deployer:
+        class: 'Hal\Agent\Push\S3\Sync\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@push.aws.authenticator'
+            - '@push.s3_sync.preparer'
+            - '@push.s3_sync.uploader'
+
+    push.s3_artifact.deployer:
+        class: 'Hal\Agent\Push\S3\Artifact\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@push.aws.authenticator'
+            - '@push.s3_artifact.preparer'
+            - '@push.s3_artifact.uploader'
+
+    push.s3_sync.preparer:
+        class: 'Hal\Agent\Push\S3\Sync\Preparer'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
+
+    push.s3_artifact.preparer:
+        class: 'Hal\Agent\Push\S3\Artifact\Preparer'
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
@@ -220,9 +244,28 @@ services:
             - '@push.packer'
             - '%timeout.filepacking%'
 
-    push.s3.uploader:
-        class: 'Hal\Agent\Push\S3\Uploader'
+    push.s3_sync.uploader:
+        class: 'Hal\Agent\Push\S3\Sync\Uploader'
+        arguments:
+            - '@logger.event'
+            - '@push.s3_sync.manager.sync'
+
+    push.s3_artifact.uploader:
+        class: 'Hal\Agent\Push\S3\Artifact\Uploader'
         arguments: ['@logger.event']
+
+    push.s3_sync.manager.sync:
+        class: 'Hal\Agent\Push\S3\Sync\SyncManager'
+        arguments:
+            - '@push.s3_sync.manager.transfer'
+            - '@push.s3_sync.manager.delete'
+            - '@utility.finder'
+
+    push.s3_sync.manager.transfer:
+        class: 'Hal\Agent\Push\S3\Sync\TransferManager'
+
+    push.s3_sync.manager.delete:
+        class: 'Hal\Agent\Push\S3\Sync\BatchDeleteManager'
 
     ####################################################################################################################
     # codedeploy

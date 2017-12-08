@@ -114,6 +114,8 @@ services:
     # utility / shared
     ####################################################################################################################
 
+    utility.finder:
+        class: 'Symfony\Component\Finder\Finder'
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
     utility.process.builder:

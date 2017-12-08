@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\S3;
+namespace Hal\Agent\Push\S3\Artifact;
 
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
@@ -45,7 +45,6 @@ class Uploader
 
     /**
      * @param EventLogger $logger
-     * @param S3Client $s3
      * @param callable $fileStreamer
      */
     public function __construct(EventLogger $logger, callable $fileStreamer = null)
@@ -67,12 +66,12 @@ class Uploader
      * @param string $bucket
      * @param string $file
      * @param string $buildID
-     * @param string $pushID
+     * @param string $releaseID
      * @param string $environmentName
      *
      * @return boolean
      */
-    public function __invoke(S3Client $s3, $tempArchive, $bucket, $file, $buildID, $pushID, $environmentName)
+    public function __invoke(S3Client $s3, $tempArchive, $bucket, $file, $buildID, $releaseID, $environmentName)
     {
         $fileHandle = call_user_func($this->fileStreamer, $tempArchive, 'r+');
 
@@ -104,7 +103,7 @@ class Uploader
                     'params' => [
                         'Metadata' => [
                             'Build' => $buildID,
-                            'Push' => $pushID,
+                            'Push' => $releaseID,
                             'Environment' => $environmentName
                         ]
                     ]

@@ -145,7 +145,7 @@ class ResolverTest extends MockeryTestCase
             )
             ->withTarget(
                 (new Target())
-                    ->withParameter(Target::PARAM_PATH, '/herp/derp')
+                    ->withParameter(Target::PARAM_REMOTE_PATH, '/herp/derp')
                     ->withGroup(
                         (new Group())
                             ->withType('rsync')

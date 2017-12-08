@@ -7,7 +7,7 @@
 
 namespace Hal\Agent\Push\CodeDeploy;
 
-use Hal\Agent\Push\S3\Uploader as S3Uploader;
+use Hal\Agent\Push\S3\Artifact\Uploader as S3Uploader;
 
 class Uploader extends S3Uploader
 {

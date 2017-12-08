@@ -35,6 +35,7 @@ class Resolver
     use ResolverTrait;
 
     const SRC_DEST_DELIMITER = ':';
+    const SYNC_TRANSFER_PREFIX = 'sync=';
     const ARCHIVE_FILE = 'hal9000-aws-%s';
 
     /**
@@ -239,12 +240,12 @@ class Resolver
             return [
                 'remoteUser' => $this->sshUser,
                 'remoteServer' => $hostname,
-                'remotePath' => $target->parameter(Target::PARAM_PATH),
-                'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $target->parameter(Target::PARAM_PATH)),
+                'remotePath' => $target->parameter(Target::PARAM_REMOTE_PATH),
+                'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $target->parameter(Target::PARAM_REMOTE_PATH)),
 
                 'environmentVariables' => [
                     'HAL_HOSTNAME' => $hostname,
-                    'HAL_PATH' => $target->parameter(Target::PARAM_PATH),
+                    'HAL_PATH' => $target->parameter(Target::PARAM_REMOTE_PATH),
                 ]
 
                 //'credential' => $credential
@@ -257,7 +258,7 @@ class Resolver
         } elseif ($method === GroupEnum::TYPE_EB) {
 
             $replacements = $this->buildTokenReplacements($release);
-            $template = $target->parameter(Target::PARAM_PATH) ?: self::DEFAULT_EB_FILENAME;
+            $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_EB_FILENAME;
 
             return [
                 'region' => $group->name(),
@@ -268,27 +269,28 @@ class Resolver
 
                 'bucket' => $target->parameter(Target::PARAM_BUCKET),
                 'file' => $this->buildS3Filename($replacements, $template),
-                'src' => $this->buildS3SourcePath($template)
+                'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
         } elseif ($method === GroupEnum::TYPE_S3) {
 
             $replacements = $this->buildTokenReplacements($release);
-            $template = $target->parameter(Target::PARAM_PATH) ?: self::DEFAULT_S3_FILENAME;
+            $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_S3_FILENAME;
 
             return [
                 'region' => $group->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
                 'bucket' => $target->parameter(Target::PARAM_BUCKET),
+                'strategy' => $target->parameter(Target::PARAM_S3_METHOD),
                 'file' => $this->buildS3Filename($replacements, $template),
-                'src' => $this->buildS3SourcePath($template)
+                'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
         } elseif ($method === GroupEnum::TYPE_CD) {
 
             $replacements = $this->buildTokenReplacements($release);
-            $template = $target->parameter(Target::PARAM_PATH) ?: self::DEFAULT_CD_FILENAME;
+            $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_CD_FILENAME;
 
             return [
                 'region' => $group->name(),
@@ -300,7 +302,7 @@ class Resolver
 
                 'bucket' => $target->parameter(Target::PARAM_BUCKET),
                 'file' => $this->buildS3Filename($replacements, $template),
-                'src' => $this->buildS3SourcePath($template)
+                'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
         }
@@ -378,34 +380,12 @@ class Resolver
      */
     private function buildS3Filename(array $replacements, $template)
     {
-        $delimited = explode(self::SRC_DEST_DELIMITER, $template);
-        $file = array_pop($delimited);
-
-        $file = $template;
-
         foreach ($replacements as $name => $val) {
             $name = '$' . $name;
-            $file = str_replace($name, $val, $file);
+            $template = str_replace($name, $val, $template);
         }
 
-        return $file;
-    }
-
-    /**
-     * @param string $template
-     *
-     * @return string
-     */
-    private function buildS3SourcePath($template)
-    {
-        $delimited = explode(self::SRC_DEST_DELIMITER, $template);
-        $parts = count($delimited);
-        if ($parts === 2) {
-            return array_shift($delimited);
-        } else {
-            // Should be an error, but oh well.
-            return self::DEFAULT_AWS_SRC;
-        }
+        return $template;
     }
 
     /**
