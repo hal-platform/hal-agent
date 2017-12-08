@@ -216,6 +216,8 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
             $env = $this->decrypter->mergePropertiesIntoEnv($env, $decrypted);
         }
 
+        $env = $this->mergeUserProvidedEnv($env, $properties['configuration']['env']);
+
         $builder = $this->builder;
 
         if ($builder instanceof OutputAwareInterface && $this->getOutput()) {
@@ -246,7 +248,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     }
 
     /**
-     * @param system $system
+     * @param string $system
      *
      * @return string
      */
@@ -268,5 +270,31 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         }
 
         return $system;
+    }
+
+    /**
+     * - env overrides global
+     * - global overrides encrypted or hal-specified config
+     *
+     * @param array $env
+     * @param array $configurationEnv
+     *
+     * @return array
+     */
+    private function mergeUserProvidedEnv(array $env, array $configurationEnv)
+    {
+        $localEnv = [];
+        if (isset($configurationEnv['global'])) {
+            foreach ($configurationEnv['global'] as $name => $value) {
+                $localEnv[$name] = $value;
+            }
+        }
+        $targetEnv = isset($env['HAL_ENVIRONMENT']) ? $env['HAL_ENVIRONMENT'] : '';
+        if (isset($configurationEnv[$targetEnv])) {
+            foreach ($configurationEnv[$targetEnv] as $name => $value) {
+                $localEnv[$name] = $value;
+            }
+        }
+        return $env + $localEnv;
     }
 }

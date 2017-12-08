@@ -18,6 +18,7 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Agent\Testing\ExecutorTestCase;
 use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use QL\Hal\Core\Entity\Application;
 use QL\Hal\Core\Entity\Build;
 use QL\Hal\Core\Entity\Environment;
@@ -26,6 +27,8 @@ use Symfony\Component\FileSystem\Filesystem;
 
 class BuildCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $logger;
     public $resolver;
     public $downloader;

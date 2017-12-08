@@ -50,6 +50,7 @@ class UnixBuildHandlerTest extends MockeryTestCase
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
+                'env' => []
             ],
             'location' => [
                 'path' => '',
@@ -109,7 +110,8 @@ OUTPUT;
                 'build' => ['cmd1'],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
-                'remoteFile' => '/var/builds/remote.tar.gz'
+                'remoteFile' => '/var/builds/remote.tar.gz',
+                'env' => []
             ],
             'location' => [
                 'path' => '',
@@ -150,6 +152,7 @@ OUTPUT;
             'configuration' => [
                 'system' => 'docker:custom-docker-image',
                 'build' => ['cmd1'],
+                'env' => []
             ],
             'location' => [
                 'path' => '',
@@ -208,6 +211,7 @@ OUTPUT;
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
+                'env' => []
             ],
             'location' => [
                 'path' => '',
@@ -276,6 +280,7 @@ OUTPUT;
             'configuration' => [
                 'system' => 'unix',
                 'build' => ['cmd1'],
+                'env' => []
             ],
             'location' => [
                 'path' => '',
@@ -343,6 +348,86 @@ OUTPUT;
         );
         $handler->disableShutdownHandler();
 
+        $actual = $handler($properties['configuration']['build'], $properties);
+        $this->assertSame(0, $actual);
+    }
+
+    public function testUserEnvMergedIntoEnv()
+    {
+        $properties = [
+            'unix' => [
+                'environmentVariables' => [
+                    'derp' => 'herp',
+                    'HAL_ENVIRONMENT' => 'test'
+                ],
+                'buildUser' => 'testuser',
+                'buildServer' => 'buildserver',
+                'remoteFile' => ''
+            ],
+            'configuration' => [
+                'system' => 'unix',
+                'build' => ['cmd1'],
+                'env' => [
+                    'global' => [
+                        'GLOBAL_DERP' => '1234',
+                        'OVERRIDDEN' => '5678',
+                    ],
+                    'test' => [
+                        'TEST_DERP' => '8765',
+                        'OVERRIDDEN' => '4321',
+                    ]
+                ],
+            ],
+            'location' => [
+                'path' => '',
+                'tempArchive' => ''
+            ],
+            'encrypted' => [
+                'VAL1' => 'encrypted1',
+                'VAL2' => 'encrypted2'
+            ]
+        ];
+        $this->decrypter
+            ->shouldReceive('decryptProperties')
+            ->andReturn(['derp', 'derp2']);
+        $this->decrypter
+            ->shouldReceive('mergePropertiesIntoEnv')
+            ->andReturn([
+                'derp' => 'herp',
+                'HAL_ENVIRONMENT' => 'test',
+                'VAL1' => 'unencrypted1',
+                'VAL2' => 'unencrypted2'
+            ]);
+        $expectedEnv = [
+            'derp' => 'herp',
+            'HAL_ENVIRONMENT' => 'test',
+            'VAL1' => 'unencrypted1',
+            'VAL2' => 'unencrypted2',
+            'GLOBAL_DERP' => '1234',
+            'TEST_DERP' => '8765',
+            'OVERRIDDEN' => '4321',
+        ];
+        $this->exporter
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->builder
+            ->shouldReceive('__invoke')
+            ->with(Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), $expectedEnv)
+            ->andReturn(true)
+            ->once();
+        $this->importer
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $handler = new UnixBuildHandler(
+            $this->logger,
+            $this->exporter,
+            $this->builder,
+            $this->importer,
+            $this->cleaner,
+            $this->decrypter,
+            'default-image'
+        );
+        $handler->disableShutdownHandler();
         $actual = $handler($properties['configuration']['build'], $properties);
         $this->assertSame(0, $actual);
     }

@@ -57,6 +57,50 @@ services:
             - '%deployment.platforms%'
 
     ####################################################################################################################
+    # before/after deploy builders
+    ####################################################################################################################
+
+    push.before.builder:
+        class: 'Hal\Agent\Push\Script\DeployDelegatingBuilder'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%deployment_before.build.platforms%'
+    push.before.builder.unix_handler:
+        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.exporter'
+            - '@push.after.builder.docker_builder'
+            - '@build.unix.importer'
+            - '@build.unix.cleaner'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.docker.default_image%'
+    push.before.builder.docker_builder:
+        parent: 'build.unix.builder'
+        class: 'Hal\Agent\Push\Script\BeforeDeployDockerBuilder'
+
+    push.after.builder:
+        class: 'Hal\Agent\Push\Script\DeployDelegatingBuilder'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%deployment_after.build.platforms%'
+    push.after.builder.unix_handler:
+        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.exporter'
+            - '@push.after.builder.docker_builder'
+            - '@build.unix.importer'
+            - '@build.unix.cleaner'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.docker.default_image%'
+    push.after.builder.docker_builder:
+        parent: 'build.unix.builder'
+        class: 'Hal\Agent\Push\Script\AfterDeployDockerBuilder'
+
+    ####################################################################################################################
     # eb
     ####################################################################################################################
 

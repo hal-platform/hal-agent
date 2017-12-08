@@ -125,7 +125,9 @@ services:
             - '@push.unpacker'
             - '@push.configuration.reader'
             - '@push.builder'
+            - '@push.before.builder'
             - '@push.deployer'
+            - '@push.after.builder'
             - '@utility.filesystem'
 
     # workers - cron

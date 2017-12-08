@@ -23,11 +23,14 @@ use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\Release;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Group;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
 class DeployCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $logger;
     public $resolver;
     public $mover;
@@ -38,6 +41,8 @@ class DeployCommandTest extends ExecutorTestCase
     public $filesystem;
 
     private $builder;
+    private $beforeDeployer;
+    private $afterDeployer;
 
     public function setUp()
     {
@@ -46,7 +51,9 @@ class DeployCommandTest extends ExecutorTestCase
         $this->mover = Mockery::mock(Mover::class);
         $this->unpacker = Mockery::mock(Unpacker::class);
         $this->reader = Mockery::mock(ConfigurationReader::class);
+        $this->beforeDeployer = Mockery::mock(DelegatingBuilder::class);
         $this->builder = Mockery::mock(DelegatingBuilder::class);
+        $this->afterDeployer = Mockery::mock(DelegatingBuilder::class);
         $this->deployer = Mockery::mock(DelegatingDeployer::class);
 
         $this->filesystem = Mockery::mock(Filesystem::class);
@@ -77,7 +84,9 @@ class DeployCommandTest extends ExecutorTestCase
             $this->unpacker,
             $this->reader,
             $this->builder,
+            $this->beforeDeployer,
             $this->deployer,
+            $this->afterDeployer,
             $this->filesystem
         );
 
@@ -90,7 +99,7 @@ class DeployCommandTest extends ExecutorTestCase
 
         $expected = [
             'Runner - Deploy release',
-            '[1/6] Resolving configuration',
+            '[1/8] Resolving configuration',
             '[ERROR] Release cannot be run.'
         ];
 
@@ -110,7 +119,7 @@ class DeployCommandTest extends ExecutorTestCase
             ->once();
         $this->logger
             ->shouldReceive('setStage')
-            ->twice();
+            ->times(3);
 
         $this->resolver
             ->shouldReceive('__invoke')
@@ -122,7 +131,10 @@ class DeployCommandTest extends ExecutorTestCase
                     'system' => 'unix',
                     'build_transform' => [
                         'cmd'
-                    ]
+                    ],
+                    'before_deploy' => [],
+                    'after_deploy' => [],
+                    'env' => [],
                 ],
 
                 'location' => [
@@ -150,11 +162,19 @@ class DeployCommandTest extends ExecutorTestCase
                 'system' => 'ok',
                 'build_transform' => [],
                 'deploy' => ['command1 --flag', 'path/to/command2 arg1'],
+                'before_deploy' => [],
+                'after_deploy' => []
             ]);
         $this->builder
             ->shouldReceive('__invoke')
             ->andReturn(true);
+        $this->beforeDeployer
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
         $this->deployer
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->afterDeployer
             ->shouldReceive('__invoke')
             ->andReturn(true);
 
@@ -170,7 +190,9 @@ class DeployCommandTest extends ExecutorTestCase
             $this->unpacker,
             $this->reader,
             $this->builder,
+            $this->beforeDeployer,
             $this->deployer,
+            $this->afterDeployer,
             $this->filesystem
         );
 
@@ -182,28 +204,34 @@ class DeployCommandTest extends ExecutorTestCase
         $exit = $command->execute($io);
 
         $expected = [
-            '[1/6] Resolving configuration',
+            '[1/8] Resolving configuration',
             ' * Release: 1234',
             ' * Build: 5678',
             ' * Application: test_app (ID: app123)',
             ' * Environment: test (ID: env123)',
 
-            '[2/6] Importing build artifact',
+            '[2/8] Importing build artifact',
             ' * Artifact file: path/file',
             ' * Target: path/file2',
 
-            '[3/6] Unpacking build artifact',
+            '[3/8] Unpacking build artifact',
             ' * Source file: path/file2',
             ' * Release directory: path/dir',
 
-            '[4/6] Reading .hal.yml configuration',
+            '[4/8] Reading .hal.yml configuration',
             ' * Application configuration:',
 
-            '[5/6] Running build transform process',
+            '[5/8] Running build transform process',
             'No build transform commands found. Skipping transform process.',
 
-            '[6/6] Running build deployment process',
+            '[6/8] Running before deployment process',
+            'Skipping before deploy commands',
+
+            '[7/8] Running build deployment process',
             ' * Method: rsync',
+
+           '[8/8] Running after deployment process',
+            'Skipping after deploy commands',
 
             'Deployment clean-up',
             'Deployment artifacts to remove:',
@@ -212,6 +240,167 @@ class DeployCommandTest extends ExecutorTestCase
 
             '[OK] Release was deployed successfully.'
         ];
+
+        $this->assertContainsLines($expected, $this->output());
+    }
+
+    public function testDeployFailsButAfterDeployKeepsGoing()
+    {
+        $release = Mockery::mock(Release::class, [
+            'withStart' => null,
+            'withEnd' => null,
+            'withCreated' => null,
+            'withStatus' => null,
+
+            'build' => Mockery::mock(Build::class, [
+                'id' => 5678,
+                'environment' => Mockery::mock(Environment::class, [
+                    'name' => 'test',
+                    'id' => 1234,
+                ])
+            ]),
+            'target' => Mockery::mock(Target::class, [
+                'group' => Mockery::mock(Group::class, [
+                    'name' => null,
+                    'environment' => Mockery::mock(Environment::class, [
+                        'name' => 'test',
+                        'id' => 1234
+                    ])
+                ])
+            ]),
+            'application' => Mockery::mock(Application::class, [
+                'name' => 'test_app',
+                'id' => 1234
+            ]),
+            'id' => 1234,
+        ]);
+
+        $this->logger
+            ->shouldReceive('start')
+            ->once();
+        $this->logger
+            ->shouldReceive('success')
+            ->never();
+        $this->logger
+            ->shouldReceive('failure')
+            ->times(1);
+        $this->logger
+            ->shouldReceive('event')
+            ->once();
+        $this->logger
+            ->shouldReceive('setStage')
+            ->times(3);
+        $this->resolver
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'release' => $release,
+                'method' => 'rsync',
+                'configuration' => [
+                    'system' => 'unix',
+                    'build_transform' => [],
+                    'before_deploy' => ['cmd1'],
+                    'deploy' => ['cmd2'],
+                    'after_deploy' => ['cmd3'],
+                ],
+                'location' => [
+                    'path' => 'path/dir',
+                    'archive' => 'path/file',
+                    'legacy_archive' => 'oldpath/file',
+                    'tempArchive' => 'path/file2',
+                ],
+                'pushProperties' => [],
+                'artifacts' => [
+                    'path/dir',
+                    'path/file2'
+                ]
+            ]);
+        $this->mover
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->unpacker
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->reader
+            ->shouldReceive('__invoke')
+            ->andReturn([
+                'system' => 'unix',
+                'build_transform' => [],
+                'before_deploy' => ['cmd1'],
+                'deploy' => ['cmd2'],
+                'after_deploy' => ['cmd3'],
+            ]);
+        $this->builder
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->beforeDeployer
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->afterDeployer
+            ->shouldReceive('__invoke')
+            ->andReturn(true);
+        $this->deployer
+            ->shouldReceive('__invoke')
+            ->andReturn(false);
+        $this->deployer
+            ->shouldReceive('getFailureMessage')
+            ->andReturn(DelegatingDeployer::ERR_UNKNOWN);
+        // cleanup
+        $this->filesystem
+            ->shouldReceive('remove')
+            ->twice();
+        $command = new DeployCommand(
+            $this->logger,
+            $this->resolver,
+            $this->mover,
+            $this->unpacker,
+            $this->reader,
+            $this->builder,
+            $this->beforeDeployer,
+            $this->deployer,
+            $this->afterDeployer,
+            $this->filesystem
+        );
+        $command->disableShutdownHandler();
+        $expected = [
+            '[1/8] Resolving configuration',
+            ' * Release: 1234',
+            ' * Build: 5678',
+            ' * Application: test_app (ID: 1234)',
+            ' * Environment: test (ID: 1234)',
+
+            '[2/8] Importing build artifact',
+            ' * Artifact file: path/file',
+            ' * Target: path/file2',
+
+            '[3/8] Unpacking build artifact',
+            ' * Source file: path/file2',
+            ' * Release directory: path/dir',
+
+            '[4/8] Reading .hal.yml configuration',
+            ' * Application configuration:',
+
+            '[5/8] Running build transform process',
+            'No build transform commands found. Skipping transform process.',
+
+            '[6/8] Running before deployment process',
+
+            '[7/8] Running build deployment process',
+            ' * Method: rsync',
+
+            '[8/8] Running after deployment process',
+
+            'Deployment clean-up',
+            'Deployment artifacts to remove:',
+            ' * path/dir',
+            ' * path/file2',
+
+            '[ERROR] Deployment process failed.',
+        ];
+
+        $io = $this->io('configureCommand', [
+            'RELEASE_ID' => '1'
+        ]);
+        $exit = $command->execute($io);
 
         $this->assertContainsLines($expected, $this->output());
     }
@@ -269,7 +458,9 @@ class DeployCommandTest extends ExecutorTestCase
             $this->unpacker,
             $this->reader,
             $this->builder,
+            $this->beforeDeployer,
             $this->deployer,
+            $this->afterDeployer,
             $this->filesystem
         );
 

@@ -15,10 +15,13 @@ use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Repository\EnvironmentRepository;
 use Hal\Core\Repository\ApplicationRepository;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use QL\MCP\Common\Time\Clock;
 
 class CreateBuildCommandTest extends ExecutorTestCase
 {
+    use MockeryPHPUnitIntegration;
+
     public $em;
     public $envRepo;
     public $repoRepo;
