@@ -105,7 +105,10 @@ class Pusher
                 'deploymentConfigName' => $cdConfiguration,
 
                 'description' => sprintf('[%s]%s/pushes/%s', $environmentName, $this->halBaseURL, $pushId),
+
                 'ignoreApplicationStopFailures' => false,
+                'fileExistsBehavior' => 'OVERWRITE',
+
                 'revision' => [
                     'revisionType' => 'S3',
                     's3Location' => [

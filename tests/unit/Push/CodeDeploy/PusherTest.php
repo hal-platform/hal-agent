@@ -51,6 +51,8 @@ TEXT;
 
                 'description' => $expectedDescription,
                 'ignoreApplicationStopFailures' => false,
+                'fileExistsBehavior' => 'OVERWRITE',
+
                 'revision' => [
                     'revisionType' => 'S3',
                     's3Location' => [
