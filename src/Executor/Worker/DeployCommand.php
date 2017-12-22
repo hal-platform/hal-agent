@@ -220,7 +220,6 @@ class DeployCommand implements ExecutorInterface
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
-
             $name = sprintf('Release %s', $id);
 
             if ($process->isRunning()) {

@@ -157,12 +157,12 @@ class SSHProcess
         $parameters = explode(' ', $command);
 
         // remove empty parameters
-        $parameters = array_filter($parameters, function($v) {
+        $parameters = array_filter($parameters, function ($v) {
             return (trim($v) !== '');
         });
 
         // manually escape user supplied command
-        $parameters = array_map(function($v) {
+        $parameters = array_map(function ($v) {
             return ProcessUtils::escapeArgument($v);
         }, $parameters);
 

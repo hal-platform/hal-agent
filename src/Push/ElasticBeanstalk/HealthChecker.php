@@ -117,7 +117,7 @@ class HealthChecker
             $result->search('Environments[0].Status'),
             $result->search('Environments[0].Health'),
             $result->search('Environments[0].HealthStatus')
-    );
+        );
     }
 
     /**
@@ -163,7 +163,7 @@ class HealthChecker
         $config = [30, 10, 30, 30, 20];
         $header = [
             ['Time', 'Severity', 'Application', 'Environment', 'Message'],
-            array_map(function($size) {
+            array_map(function ($size) {
                 return str_repeat('-', $size);
             }, $config)
         ];

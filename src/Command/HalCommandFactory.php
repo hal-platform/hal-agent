@@ -62,7 +62,7 @@ class HalCommandFactory
      */
     private function buildExecutor($service)
     {
-        return function(InputInterface $input, OutputInterface $output) use ($service) {
+        return function (InputInterface $input, OutputInterface $output) use ($service) {
             $io = new IO($input, $output);
             $executor = $this->di->get($service);
 

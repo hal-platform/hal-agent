@@ -85,12 +85,12 @@ class UpdateSourcesCommand implements ExecutorInterface
         FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
         ArchiveApi $archiveApi,
-
+        //
         $localTemp,
         $unixBuildUser,
         $unixBuildServer,
         $unixDockerSourcePath,
-
+        //
         $defaultRepository,
         $defaultReference
     ) {

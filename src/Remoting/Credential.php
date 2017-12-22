@@ -186,7 +186,7 @@ class Credential
      */
     private function getDefaultKeyFetcher()
     {
-        return function($keyPath) {
+        return function ($keyPath) {
 
             if (!is_readable($keyPath) || !is_file($keyPath)) {
                 return null;

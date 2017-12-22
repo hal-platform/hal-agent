@@ -308,7 +308,9 @@ SHELL;
         }
 
         $owner = trim($this->remoter->getLastOutput());
-        if (!$owner) $owner = 'root';
+        if (!$owner) {
+            $owner = 'root';
+        }
 
         // Copy in files
         if (!$this->runTransferRemote($copyInto, self::EVENT_DOCKER_COPY_IN)) {
@@ -378,7 +380,6 @@ SHELL;
     private function parseCommand($defaultImage, $command)
     {
         if (preg_match(self::$dockerPatternRegex, $command, $matches)) {
-
             $image = array_shift($matches);
 
             // Remove docker prefix from command
@@ -644,7 +645,7 @@ SHELL;
      */
     private function enableDockerCleanup($containerName)
     {
-        $cleanup = function() use ($containerName) {
+        $cleanup = function () use ($containerName) {
             $this->cleanupContainer($containerName);
         };
 

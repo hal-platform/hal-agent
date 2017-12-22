@@ -125,7 +125,7 @@ class Sync implements PromisorInterface
         $paginatedResults = $this->getS3ObjectLists();
 
         $objects = [];
-        foreach($paginatedResults as $result) {
+        foreach ($paginatedResults as $result) {
             $objects = array_merge($objects, $result->search('Contents') ?: []);
         }
 
@@ -167,7 +167,7 @@ class Sync implements PromisorInterface
         $async = $this->transfer($uploads);
 
         if ($this->shouldRemoveFiles() && $removals) {
-            $async = $async->then(function() use ($removals) {
+            $async = $async->then(function () use ($removals) {
                 return $this->delete($removals);
             });
         }
@@ -199,7 +199,7 @@ class Sync implements PromisorInterface
             }
         }
 
-        $uploads = array_map(function($fileInfo) {
+        $uploads = array_map(function ($fileInfo) {
             return $fileInfo->getPathname();
         }, $localFiles);
 

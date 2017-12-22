@@ -83,7 +83,6 @@ class Pusher
         ];
 
         try {
-
             // Error out if version already exists
             if ($this->doesVersionAlreadyExist($eb, $awsApplication, $pushId)) {
                 $this->logger->event('failure', self::ERR_ALREADY_EXISTS, $context);
@@ -199,7 +198,7 @@ class Pusher
     private function buildWaiter(ElasticBeanstalkClient $eb, $awsApplication, $awsEnvironment)
     {
         $iteration = 0;
-        return function() use ($eb, $awsApplication, $awsEnvironment, &$iteration) {
+        return function () use ($eb, $awsApplication, $awsEnvironment, &$iteration) {
             try {
                 $health = call_user_func($this->health, $eb, $awsApplication, $awsEnvironment);
 
@@ -231,9 +230,9 @@ class Pusher
      * @return bool
      */
     private function pauseWait()
-     {
+    {
         $iteration = 0;
-        $waiter = function() use (&$iteration) {
+        $waiter = function () use (&$iteration) {
             if ($iteration > 4) {
                 return true;
             }

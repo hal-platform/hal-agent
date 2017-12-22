@@ -176,12 +176,12 @@ class EncryptedPropertyResolver
         $sources = $properties;
 
         // format encrypted for use by build step
-        array_walk($encrypted, function(&$v) {
+        array_walk($encrypted, function (&$v) {
             $v = $v->data();
         });
 
         // format encrypted sources for logs
-        array_walk($sources, function(&$v) {
+        array_walk($sources, function (&$v) {
 
             $from = 'Global';
             if ($env = $v->environment()) {

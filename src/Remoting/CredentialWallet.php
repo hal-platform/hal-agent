@@ -112,7 +112,7 @@ class CredentialWallet
      */
     private function filterUserCredentials($matchingUser)
     {
-        return function(Credential $credential) use ($matchingUser) {
+        return function (Credential $credential) use ($matchingUser) {
             return ($credential->username() == $matchingUser);
         };
     }
@@ -124,7 +124,7 @@ class CredentialWallet
      */
     private function filterServerCredentials($matchingServer)
     {
-        return function(Credential $credential) use ($matchingServer) {
+        return function (Credential $credential) use ($matchingServer) {
             if ($credential->server() === '*') {
                 return true;
             }

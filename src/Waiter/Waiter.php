@@ -46,7 +46,6 @@ class Waiter
     {
         $attempts = 0;
         do {
-
             $attempts++;
             if ($attempts > $this->maxAttempts) {
                 throw new TimeoutException(sprintf(self::ERR_MAX_ATTEMPTS, $this->interval * $this->maxAttempts));

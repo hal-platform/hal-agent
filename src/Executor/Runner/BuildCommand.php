@@ -502,7 +502,7 @@ class BuildCommand implements ExecutorInterface
      */
     private function prepareCleanup(IOInterface $io)
     {
-        $this->cleanup = function() use ($io) {
+        $this->cleanup = function () use ($io) {
 
             if ($this->artifacts) {
                 $io->section('Build clean-up');
@@ -516,7 +516,9 @@ class BuildCommand implements ExecutorInterface
             foreach ($this->artifacts as $artifact) {
                 try {
                     $this->filesystem->remove($artifact);
-                } catch (IOException $e) {}
+
+                } catch (IOException $e) {
+                }
             }
 
             // Clear artifacts

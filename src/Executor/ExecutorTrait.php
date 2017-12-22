@@ -65,7 +65,7 @@ trait ExecutorTrait
     {
         $messages = is_array($message) ? array_values($message) : array($message);
 
-        return array_map(function($m) use ($type) {
+        return array_map(function ($m) use ($type) {
             return sprintf('<%s>%s</%s>', $type, $m, $type);
         }, $messages);
     }

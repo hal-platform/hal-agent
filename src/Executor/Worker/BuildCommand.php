@@ -186,7 +186,6 @@ class BuildCommand implements ExecutorInterface
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
-
             $name = sprintf('Build %s', $id);
 
             if ($process->isRunning()) {

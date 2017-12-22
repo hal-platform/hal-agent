@@ -23,11 +23,10 @@ trait ProcessRunnerTrait
     {
         try {
             $process->run();
-        } catch (ProcessTimedOutException $ex) {
 
+        } catch (ProcessTimedOutException $ex) {
             // Only log if logger present on parent
             if ($this->logger instanceof EventLogger) {
-
                 if (defined('static::ERR_TIMEOUT')) {
                     $err = static::ERR_TIMEOUT;
                 } else {

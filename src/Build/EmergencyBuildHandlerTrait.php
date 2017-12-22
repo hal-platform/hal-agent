@@ -99,7 +99,7 @@ trait EmergencyBuildHandlerTrait
      */
     private function enableEmergencyHandler(callable $cleaner, $message, $user, $server, $path)
     {
-        $this->cleanup(function() use ($cleaner, $user, $server, $path) {
+        $this->cleanup(function () use ($cleaner, $user, $server, $path) {
             $cleaner($user, $server, $path);
         }, $message);
 

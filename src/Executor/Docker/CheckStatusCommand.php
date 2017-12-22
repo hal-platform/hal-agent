@@ -82,11 +82,11 @@ class CheckStatusCommand implements ExecutorInterface
         SSHSessionManager $sshManager,
         Predis $predis,
         Clock $clock,
-
+        //
         string $unixBuildUser,
         string $unixBuildServer,
         bool $useSudoForDocker,
-
+        //
         string $localTemp,
         string $buildTemp
     ) {

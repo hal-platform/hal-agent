@@ -153,5 +153,4 @@ class Exporter
         $dispCommand = implode("\n", $command);
         return $this->processFailure($dispCommand, $process);
     }
-
 }

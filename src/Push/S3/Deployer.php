@@ -155,4 +155,4 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $deployer;
     }
- }
+}

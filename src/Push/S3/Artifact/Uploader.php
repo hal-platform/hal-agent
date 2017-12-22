@@ -177,7 +177,7 @@ class Uploader
             $this->logger->event('failure', self::ERR_WAITING, $context);
             return false;
 
-        } catch(RuntimeException $e) {
+        } catch (RuntimeException $e) {
             $this->logger->event('failure', self::ERR_UNEXPECTED, [
                 'Bucket' => $bucket,
                 'Key' => $file,
