@@ -58,7 +58,7 @@ jobs:
                         exit 0
                     fi
 
-                    git_repo="hal/hal-3"
+                    git_repo="hal/hal-agent-3"
                     web_prefix="://git"
                     api_prefix="://git/api/v3/repos"
                     api_pr_url="${CIRCLE_PULL_REQUEST/${web_prefix}/${api_prefix}}"
