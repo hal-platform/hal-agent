@@ -1,9 +1,4 @@
 <?php
-/**
- * @copyright (c) 2017 Quicken Loans Inc.
- *
- * For full license information, please view the LICENSE distributed with this source code.
- */
 
 namespace Hal\Agent\Symfony;
 
@@ -20,10 +15,25 @@ class ContainerIntegrationTest extends MockeryTestCase
 
     public function setUp()
     {
-        $this->rootPath = realpath(__DIR__ . '/../../..');
-        $this->envFile = "{$this->rootPath}/config/.env.ci.dist";
+        $this->rootPath = realpath(__DIR__ . '/../..');
+        $this->envFile = "{$this->rootPath}/config/.env.dev.dist";
 
         putenv("HAL_ROOT={$this->rootPath}");
+        putenv("HAL_DB_USER=postgres");
+        putenv("HAL_DB_PASSWORD=");
+        putenv("HAL_BASEURL=http://hal.example.com");
+        putenv("HAL_GITHUB_ENTERPRISE_TOKEN=123");
+        putenv("HAL_GITHUB_ENTERPRISE_URL=http://github.example.com");
+    }
+
+    public function tearDown()
+    {
+        putenv("HAL_ROOT=");
+        putenv("HAL_DB_USER=postgres");
+        putenv("HAL_DB_PASSWORD=");
+        putenv("HAL_BASEURL=");
+        putenv("HAL_GITHUB_ENTERPRISE_TOKEN=");
+        putenv("HAL_GITHUB_ENTERPRISE_URL=");
     }
 
     /**
