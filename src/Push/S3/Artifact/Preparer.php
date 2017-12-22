@@ -9,6 +9,7 @@ namespace Hal\Agent\Push\S3\Artifact;
 
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\Mover;
+use Hal\Agent\Push\PushException;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Utility\ProcessRunnerTrait;
 use Hal\Agent\Utility\SourcePathBuilderTrait;
@@ -20,8 +21,9 @@ class Preparer
     use ProcessRunnerTrait;
     use SourcePathBuilderTrait;
 
-    const ERR_DIST_NOT_VALID = 'Cannot find dist directory';
+    const EVENT_MESSAGE = 'Prepare artifact for S3';
 
+    const ERR_DIST_NOT_VALID = 'Cannot find dist directory';
     const ERR_TIMEOUT = 'Validating files to upload took too long';
 
     /**

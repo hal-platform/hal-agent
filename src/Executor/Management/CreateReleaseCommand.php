@@ -23,6 +23,8 @@ class CreateReleaseCommand implements ExecutorInterface
 {
     use ExecutorTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Create release';
     const MSG_SUCCESS = 'Release created.';
 

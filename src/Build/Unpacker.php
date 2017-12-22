@@ -32,6 +32,11 @@ class Unpacker
     private $processBuilder;
 
     /**
+     * @var string
+     */
+    private $commandTimeout;
+
+    /**
      * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
      * @param string $commandTimeout

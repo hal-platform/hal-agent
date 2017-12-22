@@ -31,6 +31,8 @@ class BuildCommand implements ExecutorInterface
     use JobStatsTrait;
     use WorkerTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Worker - Run pending builds';
     const MSG_SUCCESS = 'All pending builds were completed.';
 

@@ -25,6 +25,8 @@ class CreateBuildCommand implements ExecutorInterface
 {
     use ExecutorTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Create build';
     const MSG_SUCCESS = 'Build created.';
 

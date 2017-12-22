@@ -8,6 +8,7 @@
 namespace Hal\Agent\Push\S3\Sync;
 
 use Aws\Exception\AwsException;
+use Aws\Exception\CredentialsException;
 use Aws\S3\S3Client;
 use Aws\S3\Transfer;
 use Aws\S3\BatchDelete;
@@ -93,10 +94,12 @@ class Uploader
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);
             return false;
+
         } catch (InvalidArgumentException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);
             return false;
+
         } catch (CredentialsException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);

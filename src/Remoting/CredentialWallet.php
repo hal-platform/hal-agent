@@ -10,12 +10,12 @@ namespace Hal\Agent\Remoting;
 class CredentialWallet
 {
     /**
-     * @var Credentials[]
+     * @var Credential[]
      */
     private $credentials;
 
     /**
-     * @param Credentials[] $credentials
+     * @param Credential[] $credentials
      */
     public function __construct(array $credentials = [])
     {
@@ -32,7 +32,7 @@ class CredentialWallet
     }
 
     /**
-     * @param Credentials $credential
+     * @param Credential $credential
      *
      * @return void
      */

@@ -23,7 +23,7 @@ class CommandContext
     /**
      * @var string
      */
-    private $sanitizedCommand;
+    private $sanitized;
 
     /**
      * @param string $username

@@ -406,8 +406,8 @@ class HealthChecker
     }
 
     /**
-     * @param Timepoint|null $start
-     * @param Timepoint|null $end
+     * @param TimePoint|null $start
+     * @param TimePoint|null $end
      *
      * @return string
      */

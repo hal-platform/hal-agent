@@ -26,6 +26,8 @@ class UpdateSourcesCommand implements ExecutorInterface
     use ExecutorTrait;
     use FormatterTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Docker - Update Dockerfile Sources';
     const MSG_SUCCESS = 'Dockerfiles refreshed!';
 

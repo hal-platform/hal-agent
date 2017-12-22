@@ -28,6 +28,8 @@ class CheckStatusCommand implements ExecutorInterface
     use ExecutorTrait;
     use FormatterTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Docker - Check Status';
 
     const REDIS_KEY = 'agent-status:docker';

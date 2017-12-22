@@ -57,7 +57,6 @@ class DeployCommand implements ExecutorInterface
         6 => 'Running before deployment process',
         7 => 'Running build deployment process',
         8 => 'Running after deployment process'
-
     ];
 
     const ERR_NOT_RUNNABLE = 'Release cannot be run.';

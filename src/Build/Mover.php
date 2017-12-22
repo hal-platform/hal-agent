@@ -16,6 +16,16 @@ class Mover
     const EVENT_MESSAGE = 'Copy archive to permanent storage';
 
     /**
+     * @var EventLogger
+     */
+    private $logger;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      */

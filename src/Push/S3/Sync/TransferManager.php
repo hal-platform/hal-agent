@@ -10,6 +10,8 @@ namespace Hal\Agent\Push\S3\Sync;
 use Aws\S3\S3ClientInterface;
 use Aws\S3\Transfer;
 
+use Iterator;
+
 /**
  * Wraps AWS Transfer
  *
