@@ -117,7 +117,7 @@ class Unpacker
         try {
             $this->filesystem->dumpFile($file, $yml);
 
-        } catch(IOException $exception) {
+        } catch (IOException $exception) {
             $this->logger->event('failure', self::ERR_PROPERTIES, [
                 'error' => $exception->getMessage()
             ]);

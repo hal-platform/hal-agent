@@ -25,6 +25,8 @@ class RemoveBuildCommand implements ExecutorInterface
     use FormatterTrait;
     use ResolverTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Remove build';
     const MSG_SUCCESS = 'Build removed successfully.';
 

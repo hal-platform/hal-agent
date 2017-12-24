@@ -136,7 +136,6 @@ class SSHSessionManager
 
         // Login failure
         if (!$isLoggedIn) {
-
             $this->runCommandWithSilencedErrors([$ssh, 'disconnect']);
 
             if ($errors = $this->getErrors()) {
@@ -253,7 +252,8 @@ class SSHSessionManager
      */
     private function runCommandWithSilencedErrors(callable $command, array $args = [])
     {
-        $errorHandler = function() {};
+        $errorHandler = function () {
+        };
 
         // Set custom handler
         set_error_handler($errorHandler, \E_ALL);

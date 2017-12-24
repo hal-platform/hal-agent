@@ -76,14 +76,14 @@ class Pusher
      */
     public function __invoke(
         CodeDeployClient $cd,
-
+        //
         $cdApplication,
         $cdGroup,
         $cdConfiguration,
-
+        //
         $s3bucket,
         $s3version,
-
+        //
         $buildId,
         $pushId,
         $environmentName
@@ -98,7 +98,6 @@ class Pusher
         ];
 
         try {
-
             $result = $cd->createDeployment([
                 'applicationName' => $cdApplication,
                 'deploymentGroupName' => $cdGroup,
@@ -131,7 +130,6 @@ class Pusher
 
         // Wait for deployment to finish
         if (!$this->wait($cd, $deployID)) {
-
             // Get final health to report
             $health = $this->health->getDeploymentInstancesHealth($cd, $deployID);
             $context = array_merge($context, $health);
@@ -189,7 +187,7 @@ class Pusher
     private function buildWaiter(CodeDeployClient $cd, $deployID)
     {
         $iteration = 0;
-        return function() use ($cd, $deployID, &$iteration) {
+        return function () use ($cd, $deployID, &$iteration) {
             try {
                 $health = $this->health->getDeploymentInstancesHealth($cd, $deployID);
 

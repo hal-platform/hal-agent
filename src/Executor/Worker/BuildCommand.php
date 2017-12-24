@@ -31,6 +31,8 @@ class BuildCommand implements ExecutorInterface
     use JobStatsTrait;
     use WorkerTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Worker - Run pending builds';
     const MSG_SUCCESS = 'All pending builds were completed.';
 
@@ -186,7 +188,6 @@ class BuildCommand implements ExecutorInterface
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
-
             $name = sprintf('Build %s', $id);
 
             if ($process->isRunning()) {

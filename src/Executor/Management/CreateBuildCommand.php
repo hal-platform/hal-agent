@@ -25,6 +25,8 @@ class CreateBuildCommand implements ExecutorInterface
 {
     use ExecutorTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Create build';
     const MSG_SUCCESS = 'Build created.';
 
@@ -149,7 +151,7 @@ HELP;
         $io->section('Details');
         $io->listing([
             sprintf('Application: <info>%s</info>', $application->identifier()),
-            sprintf('Environment: <info>%s</info>', $environment ? $environment->name() : 'Any' ),
+            sprintf('Environment: <info>%s</info>', $environment ? $environment->name() : 'Any'),
         ]);
 
         $io->section('Build Information');

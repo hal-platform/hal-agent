@@ -27,6 +27,7 @@
         "ext-pdo":            "*",
         "ext-pdo_mysql":      "*",
         "ext-pdo_sqlite":     "*",
+        "ext-sodium":         "~2.0",
 
         "aws/aws-sdk-php": "~3.20",
         "doctrine/orm":    "~2.5",
@@ -58,15 +59,14 @@
         "symfony/yaml":                  "~3.3"
     },
     "require-dev": {
-        "overtrue/phplint":          "~0.2",
-        "mockery/mockery":           "~1.0",
-        "phpunit/phpunit":           "~6.2",
-        "squizlabs/php_codesniffer": "~3.0",
-        "symfony/var-dumper":        "~3.3"
-    },
+        "symfony/var-dumper":        "~3.3",
 
-    "suggests": {
-        "ext-libsodium": "~1.0",
-        "ext-sodium":    "~2.0"
+        "overtrue/phplint":          "~1.0",
+        "phpstan/phpstan":           "~0.9",
+        "squizlabs/php_codesniffer": "~3.0",
+
+        "mockery/mockery":           "~1.0",
+        "phpunit/phpunit":           "~6.2"
+
     }
 }

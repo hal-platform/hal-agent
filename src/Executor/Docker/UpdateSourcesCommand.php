@@ -26,6 +26,8 @@ class UpdateSourcesCommand implements ExecutorInterface
     use ExecutorTrait;
     use FormatterTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Docker - Update Dockerfile Sources';
     const MSG_SUCCESS = 'Dockerfiles refreshed!';
 
@@ -85,12 +87,12 @@ class UpdateSourcesCommand implements ExecutorInterface
         FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
         ArchiveApi $archiveApi,
-
+        //
         $localTemp,
         $unixBuildUser,
         $unixBuildServer,
         $unixDockerSourcePath,
-
+        //
         $defaultRepository,
         $defaultReference
     ) {

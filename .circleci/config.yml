@@ -4,86 +4,152 @@ version: 2
 
 defaults: &defaults
     working_directory: '~/project'
-    docker: [ { image: 'halplatform/php:latest' } ]
+    docker:
+        - image: 'halplatform/php:latest'
+
+attach_workspace: &attach_workspace
+    attach_workspace:
+        at: '.'
+
+persist_workspace: &persist_workspace
+    persist_to_workspace:
+        root: '.'
+        paths: [ '.' ]
+
+enterprise_setup: &enterprise_setup
+    run:
+        name: 'Prepare Enterprise Setup'
+        command: 'curl -sLk "https://git/pages/circleci/prepare-environment/prepare.sh" | bash -'
 
 workflows:
 
-  version: 2
+    version: 2
 
-  pipeline:
-    jobs:
-      - fetch_code
-      - install:
-          requires: [ fetch_code ]
+    pipeline:
+        jobs:
+            - fetch_code
+            - verify_is_rebased
+            - install_php_dependencies:
+                requires: [ fetch_code ]
 
-      - run_linting:
-          requires: [ install ]
-
-      - run_tests:
-          requires: [ install ]
+            - unit_tests:
+                requires: [ install_php_dependencies ]
+            - static_analysis:
+                requires: [ install_php_dependencies ]
+            - linting:
+                requires: [ install_php_dependencies ]
 
 jobs:
     fetch_code:
         <<: *defaults
-
         steps:
             - checkout
-            - persist_to_workspace: { root: '.', paths: [ '.' ] }
+            - *persist_workspace
 
-    install:
+    verify_is_rebased:
         <<: *defaults
-
         steps:
-            - attach_workspace: { at: '.' }
-
+            - *enterprise_setup
             - run:
-                name: 'Prepare Enterprise Setup'
-                command: 'curl -sLk https://git/pages/circleci/prepare-environment/prepare.sh | bash -'
+                name: 'Verify pull request is up to date'
+                command: |
+                    if [ -z "${CIRCLE_PULL_REQUEST}" ] ; then
+                        echo "Not a pull request. Skipping git history comparison check."
+                        exit 0
+                    fi
+
+                    git_repo="hal/hal-agent-3"
+                    web_prefix="://git"
+                    api_prefix="://git/api/v3/repos"
+                    api_pr_url="${CIRCLE_PULL_REQUEST/${web_prefix}/${api_prefix}}"
+                    api_pr_url="${api_pr_url/pull\//pulls/}"
+
+                    # install jq
+                    curl -sSL \
+                        -o "/usr/bin/jq" \
+                        "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" \
+                        && chmod +x "/usr/bin/jq"
+
+                    # get pr info from github
+                    curl -sSL \
+                        -o "github_pr.json" \
+                        "${api_pr_url}"
+
+                    base_commit=$(jq -r ".base.sha" "github_pr.json")
+                    head_commit="${CIRCLE_SHA1}"
+
+                    # get comparison status from github
+                    api_compare_url="https://git/api/v3/repos/${git_repo}/compare/${base_commit}...${head_commit}"
+                    curl -sSL \
+                        -o "github_compare.json" \
+                        "${api_compare_url}"
+
+                    comparison_status=$(jq -r ".status" "github_compare.json")
+
+                    echo "Comparison URL: ${api_compare_url}"
+                    echo "Status: ${comparison_status}"
+                    echo "Ahead By: $(jq -r ".ahead_by" "github_compare.json")"
+                    echo "Behind By: $(jq -r ".behind_by" "github_compare.json")"
+                    echo "Total Commits: $(jq -r ".total_commits" "github_compare.json")"
+
+                    if [ "${comparison_status}" != "ahead" ] ; then
+                        echo
+                        echo "Pull request must be rebased. It is behind BASE."
+                        exit 1
+                    fi
+
+                    echo "Pull request is up to date."
+
+    install_php_dependencies:
+        <<: *defaults
+        steps:
+            - *enterprise_setup
+            - *attach_workspace
 
             - restore_cache:
-                keys: [ 'v1-backend-deps-{{ checksum "composer.lock" }}', 'v1-backend-deps-' ]
+                keys: [ 'v1-php-deps-{{ checksum "composer.lock" }}', 'v1-php-deps' ]
 
             - run:
-                name: 'Update Composer'
-                command: 'composer self-update'
-
-            - run:
-                name: 'Install packages'
-                command: 'composer --no-interaction --no-progress install'
-
-            - run:
-                name: 'List installed packages'
-                command: 'composer show'
+                name: 'Install PHP dependencies'
+                command: |
+                    composer --no-interaction --no-progress install
+                    composer show
 
             - save_cache:
-                key: 'v1-backend-deps-{{ checksum "composer.lock" }}'
-                paths: [ './vendor' ]
+                key: 'v1-php-deps-{{ checksum "composer.lock" }}'
+                paths: [ 'vendor' ]
 
-            - persist_to_workspace: { root: '.', paths: [ '.' ] }
+            - *persist_workspace
 
-    run_linting:
+    unit_tests:
         <<: *defaults
-
         steps:
-            - attach_workspace: { at: '.' }
+            - *attach_workspace
+            - run:
+                name: 'Run unit tests'
+                command: |
+                    vendor/bin/phpunit
+            - store_test_results:
+                path: '.phpunit/report'
+
+    static_analysis:
+        <<: *defaults
+        steps:
+            - *attach_workspace
+            - run:
+                name: 'Run static analysis'
+                command: |
+                    vendor/bin/phpstan analyse src
+
+    linting:
+        <<: *defaults
+        steps:
+            - *attach_workspace
 
             - run:
                 name: 'Run syntax check'
                 command: 'vendor/bin/phplint --no-cache --ansi src'
 
             - run:
-                name: 'Run static analysis'
-                command: 'vendor/bin/phpcs -n --colors --standard=PSR2 src || true'
-
-    run_tests:
-        <<: *defaults
-
-        steps:
-            - attach_workspace: { at: '.' }
-
-            - run:
-                name: 'Run tests'
-                command: './vendor/bin/phpunit'
-
-            - store_test_results:
-                path: '.phpunit/report'
+                name: 'Run code formatting check'
+                command: 'vendor/bin/phpcs -n --colors src'

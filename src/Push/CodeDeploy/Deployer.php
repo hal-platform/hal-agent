@@ -178,7 +178,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             if (!array_key_exists($prop, $properties)) {
                 return false;
             }
-         }
+        }
 
         return true;
     }
@@ -197,14 +197,18 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             $properties[GroupEnum::TYPE_CD]['credential']
         );
 
-        if (!$cd) return null;
+        if (!$cd) {
+            return null;
+        }
 
         $s3 = $this->authenticator->getS3(
             $properties[GroupEnum::TYPE_CD]['region'],
             $properties[GroupEnum::TYPE_CD]['credential']
         );
 
-        if (!$s3) return null;
+        if (!$s3) {
+            return null;
+        }
 
         return [$cd, $s3];
     }

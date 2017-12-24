@@ -33,6 +33,8 @@ class DeployCommand implements ExecutorInterface
     use JobStatsTrait;
     use WorkerTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Worker - Run pending deployments';
     const MSG_SUCCESS = 'All pending deployments were completed.';
 
@@ -56,7 +58,7 @@ class DeployCommand implements ExecutorInterface
     /**
      * @var EntityManagerInterface
      */
-    private $entityManager;
+    private $em;
 
     /**
      * @var ProcessBuilder
@@ -220,7 +222,6 @@ class DeployCommand implements ExecutorInterface
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
-
             $name = sprintf('Release %s', $id);
 
             if ($process->isRunning()) {
@@ -232,7 +233,6 @@ class DeployCommand implements ExecutorInterface
 
                 } catch (ProcessTimedOutException $e) {
                     $output = $this->outputJob($name, $process, true);
-                    $this->write($output);
 
                     $io->section(sprintf('Release <info>%s</info> timed out', $id));
                     $io->text($output);

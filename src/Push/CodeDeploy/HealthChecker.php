@@ -168,7 +168,7 @@ class HealthChecker
         $config = [20, 20, 15, 30, 30, 20, 20];
         $rows = [
             ['Instance ID', 'Type', 'Status', 'Start Time', 'End Time', 'Duration', 'Most Recent Event'],
-            array_map(function($size) {
+            array_map(function ($size) {
                 return str_repeat('-', $size);
             }, $config)
         ];
@@ -280,7 +280,7 @@ class HealthChecker
         $config = [20, 20, 30, 30, 20];
         $output = [
             ['Event Name', 'Status', 'Start', 'End', 'Duration'],
-            array_map(function($size) {
+            array_map(function ($size) {
                 return str_repeat('-', $size);
             }, $config)
         ];
@@ -406,8 +406,8 @@ class HealthChecker
     }
 
     /**
-     * @param Timepoint|null $start
-     * @param Timepoint|null $end
+     * @param TimePoint|null $start
+     * @param TimePoint|null $end
      *
      * @return string
      */

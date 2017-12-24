@@ -129,7 +129,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     /**
      * @param array $properties
      *
-     * @return boo|DeployerInterface
+     * @return bool|DeployerInterface
      */
     private function getDeploymentStrategy(array $properties)
     {
@@ -155,4 +155,4 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $deployer;
     }
- }
+}

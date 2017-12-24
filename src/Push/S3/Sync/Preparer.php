@@ -20,8 +20,9 @@ class Preparer
     use ProcessRunnerTrait;
     use SourcePathBuilderTrait;
 
-    const ERR_DIST_NOT_VALID = 'Cannot find dist directory';
+    const EVENT_MESSAGE = 'Prepare artifact for S3';
 
+    const ERR_DIST_NOT_VALID = 'Cannot find dist directory';
     const ERR_TIMEOUT = 'Validating files to upload took too long';
 
     /**

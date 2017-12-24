@@ -28,6 +28,8 @@ class CheckStatusCommand implements ExecutorInterface
     use ExecutorTrait;
     use FormatterTrait;
 
+    const STEPS = [];
+
     const COMMAND_TITLE = 'Docker - Check Status';
 
     const REDIS_KEY = 'agent-status:docker';
@@ -82,11 +84,11 @@ class CheckStatusCommand implements ExecutorInterface
         SSHSessionManager $sshManager,
         Predis $predis,
         Clock $clock,
-
+        //
         string $unixBuildUser,
         string $unixBuildServer,
         bool $useSudoForDocker,
-
+        //
         string $localTemp,
         string $buildTemp
     ) {

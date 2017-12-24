@@ -232,7 +232,6 @@ class Resolver
         $group = $target->group();
 
         if ($method === GroupEnum::TYPE_RSYNC) {
-
             //$credential = ($target->credential()->details() instanceof PrivateKeyCredential) ? $target->credential()->details(): null;
 
             $hostname = $this->attemptHostnameValidation($group);
@@ -252,11 +251,9 @@ class Resolver
             ];
 
         } elseif ($method === GroupEnum::TYPE_SCRIPT) {
-
             return [];
 
         } elseif ($method === GroupEnum::TYPE_EB) {
-
             $replacements = $this->buildTokenReplacements($release);
             $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_EB_FILENAME;
 
@@ -273,7 +270,6 @@ class Resolver
             ];
 
         } elseif ($method === GroupEnum::TYPE_S3) {
-
             $replacements = $this->buildTokenReplacements($release);
             $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_S3_FILENAME;
 
@@ -288,7 +284,6 @@ class Resolver
             ];
 
         } elseif ($method === GroupEnum::TYPE_CD) {
-
             $replacements = $this->buildTokenReplacements($release);
             $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_CD_FILENAME;
 

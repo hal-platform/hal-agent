@@ -9,7 +9,8 @@ namespace Hal\Agent\Utility;
 
 use Hal\Agent\Push\PushException;
 
-trait SourcePathBuilderTrait {
+trait SourcePathBuilderTrait
+{
     /**
      * @param string $buildPath
      * @param string $distPath
