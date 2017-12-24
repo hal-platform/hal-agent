@@ -191,7 +191,7 @@ class CheckStatusCommand implements ExecutorInterface
     }
 
     /**
-     * @param Net_SSH2 $ssh
+     * @param SSH2 $ssh
      *
      * @return string
      */

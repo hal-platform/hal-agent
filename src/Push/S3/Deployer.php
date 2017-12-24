@@ -56,9 +56,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
     /**
      * @param EventLogger $logger
-     * @param AWSAuthenticator $authenticator
-     * @param Preparer $preparer
-     * @param Uploader $uploader
+     * @param ContainerInterface $container
+     * @param array $deployers
      */
     public function __construct(
         EventLogger $logger,
@@ -143,14 +142,17 @@ class Deployer implements DeployerInterface, OutputAwareInterface
             return false;
         }
 
-        $this->status('Using ' . $strategy . ' deployment strategy', self::SECTION);
+        $this->status("Using ${strategy} deployment strategy", self::SECTION);
 
         $dependency = $this->deployers[$strategy];
         $deployer = $this->container->get($dependency, ContainerInterface::NULL_ON_INVALID_REFERENCE);
-        $deployer->setOutput($this->getOutput());
 
         if (!$deployer instanceof DeployerInterface) {
             return false;
+        }
+
+        if ($deployer instanceof OutputAwareInterface) {
+            $deployer->setOutput($this->getOutput());
         }
 
         return $deployer;

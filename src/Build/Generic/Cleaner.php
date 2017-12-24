@@ -24,7 +24,6 @@ class Cleaner
     private $doHorribleThing;
 
     /**
-     * @param EventLogger $logger
      * @param SSHProcess $remoter
      */
     public function __construct(SSHProcess $remoter)

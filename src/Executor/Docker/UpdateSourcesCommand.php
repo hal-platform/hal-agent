@@ -70,7 +70,6 @@ class UpdateSourcesCommand implements ExecutorInterface
     private $defaultReference;
 
     /**
-     * @param string $name
      * @param FileSyncManager $fileSyncManager
      * @param ProcessBuilder $processBuilder
      * @param ArchiveApi $archiveApi
@@ -212,15 +211,15 @@ class UpdateSourcesCommand implements ExecutorInterface
      *
      * @return boolean
      */
-    private function unpackArchive($tempDir, $archive)
+    private function unpackArchive($buildPath, $archive)
     {
-        $makeCommand = ['mkdir', $tempDir];
+        $makeCommand = ['mkdir', $buildPath];
         $unpackCommand = [
             'tar',
             '-vxz',
             '--strip-components=1',
             sprintf('--file=%s', $archive),
-            sprintf('--directory=%s', $tempDir)
+            sprintf('--directory=%s', $buildPath)
         ];
 
         $makeProcess = $this->processBuilder

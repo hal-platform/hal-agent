@@ -26,10 +26,10 @@ class TransferManager
     private $transfer;
 
     /**
-     * @param S3ClientInterface $client  Client used for transfers.
-     * @param string|Iterator   $source  Where the files are transferred from.
-     * @param string            $dest    Where the files are transferred to.
-     * @param array             $options Hash of options.
+     * @param S3ClientInterface $s3Client
+     * @param string|Iterator $source
+     * @param string $dest
+     * @param array $options
      *
      * @return Transfer
      */

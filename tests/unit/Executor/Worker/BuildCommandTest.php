@@ -129,8 +129,8 @@ class BuildCommandTest extends ExecutorTestCase
 
             'Build 1234 finished: success',
 
-            '// Checking build status: 5555',
-            '// Waiting 1 seconds...',
+            '[NOTE] Checking build status: <info>5555</info>',
+            '[NOTE] Waiting 1 seconds...',
             'Build 5555 finished: error'
         ];
 

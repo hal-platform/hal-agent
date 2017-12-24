@@ -24,8 +24,8 @@ class Waiter
     private $maxAttempts;
 
     /**
-     * @param bool $interval
-     * @param bool $attempts
+     * @param int $interval
+     * @param int $maxAttempts
      */
     public function __construct($interval = 10, $maxAttempts = 60)
     {

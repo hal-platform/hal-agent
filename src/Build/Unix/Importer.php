@@ -59,7 +59,6 @@ class Importer
      * @param FileSyncManager $fileSyncManager
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
-     * @param string $remoteUser
      */
     public function __construct(
         EventLogger $logger,
@@ -100,10 +99,10 @@ class Importer
     }
 
     /**
-     * @param string $buildPath
+     * @param string $buildFile
      * @param string $remoteUser
      * @param string $remoteServer
-     * @param string $remotePath
+     * @param string $remoteFile
      *
      * @return bool
      */

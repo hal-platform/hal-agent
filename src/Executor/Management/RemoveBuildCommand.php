@@ -85,7 +85,8 @@ class RemoveBuildCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        if (!$build = $this->buildRepo->find($buildID)) {
+        $build = $this->buildRepo->find($buildID);
+        if (!$build instanceof Build) {
             return $this->failure($io, self::ERR_INVALID_BUILD);
         }
 

@@ -67,7 +67,6 @@ class Exporter
      * @param SSHProcess $remoter
      * @param ProcessBuilder $processBuilder
      * @param int $commandTimeout
-     * @param string $remoteUser
      */
     public function __construct(
         EventLogger $logger,

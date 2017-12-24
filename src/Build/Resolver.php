@@ -78,7 +78,8 @@ class Resolver
      */
     public function __invoke($buildId)
     {
-        if (!$build = $this->buildRepo->find($buildId)) {
+        $build = $this->buildRepo->find($buildId);
+        if (!$build instanceof Build) {
             throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildId));
         }
 
@@ -100,8 +101,8 @@ class Resolver
             ],
 
             'github' => [
-                'user' => $build->application()->github()->owner(),
-                'repo' => $build->application()->github()->repository(),
+                'user' => $build->application()->gitHub()->owner(),
+                'repo' => $build->application()->gitHub()->repository(),
                 'reference' => $build->commit()
             ]
         ];

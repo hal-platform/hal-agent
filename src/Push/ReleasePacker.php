@@ -96,7 +96,7 @@ class ReleasePacker
     }
 
     /**
-     * @param string $workingDir
+     * @param string $buildPath
      * @param string $distPath
      * @param string $targetFile
      *

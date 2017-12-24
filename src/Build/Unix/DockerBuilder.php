@@ -586,7 +586,6 @@ SHELL;
      *
      * @param string|string[] $command
      * @param string $customMessage
-     * @param string[] $env
      *
      * @return bool
      */
@@ -656,7 +655,7 @@ SHELL;
     }
 
     /**
-     * @param string $containerName
+     * @param callable $cleanup
      *
      * @return callable
      */
@@ -685,8 +684,8 @@ SHELL;
     }
 
     /**
-     * @param $command
-     * @param $count
+     * @param string $command
+     * @param int $count
      *
      * @return string
      */

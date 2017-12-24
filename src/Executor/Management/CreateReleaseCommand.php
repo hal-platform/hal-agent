@@ -95,7 +95,8 @@ class CreateReleaseCommand implements ExecutorInterface
         $buildID = $io->getArgument('BUILD_ID');
         $targetID = $io->getArgument('TARGET_ID');
 
-        if (!$build = $this->buildRepo->find($buildID)) {
+        $build = $this->buildRepo->find($buildID);
+        if (!$build instanceof Build) {
             return $this->failure($io, self::ERR_NO_BUILD);
         }
 
@@ -103,11 +104,12 @@ class CreateReleaseCommand implements ExecutorInterface
             return $this->failure($io, self::ERR_NOT_RUNNABLE);
         }
 
-        if (!$target = $this->targetRepo->find($targetID)) {
+        $target = $this->targetRepo->find($targetID);
+        if (!$target instanceof Target) {
             return $this->failure($io, self::ERR_NO_TARGET);
         }
 
-        $release = (new Release())
+        $release = (new Release)
             ->withStatus('Pending')
 
             ->withBuild($build)

@@ -111,9 +111,6 @@ class EventLogger
     }
 
     /**
-     * @param string $message
-     * @param array $context
-     *
      * @return null
      */
     public function failure()
@@ -132,10 +129,7 @@ class EventLogger
     }
 
     /**
-     * @param string $message
-     * @param array $context
-     *
-     * @return null
+     * @return void
      */
     public function success()
     {

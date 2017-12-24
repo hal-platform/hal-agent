@@ -68,7 +68,7 @@ class ArchiveApi
         ];
 
         try {
-            $response = $this->guzzle->get($endpoint, $options);
+            $response = $this->guzzle->request('GET', $endpoint, $options);
         } catch (Exception $e) {
             throw new GitHubException($e->getMessage(), $e->getCode(), $e);
         }

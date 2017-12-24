@@ -84,9 +84,9 @@ class DelegatingBuilder
 
     /**
      * @param StyleInterface $io
-     * @param string $method
-     * @param array $properties
+     * @param string $system
      * @param array $commands
+     * @param array $properties
      *
      * @return bool
      */
@@ -152,8 +152,6 @@ class DelegatingBuilder
      * Set whether to start the "building" stage.
      *
      * Do not enable this if building during push.
-     *
-     * @param EventLogger $logger
      *
      * @return void
      */

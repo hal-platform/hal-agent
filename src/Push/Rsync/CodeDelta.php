@@ -68,7 +68,6 @@ class CodeDelta
      * @param SSHProcess $remoter
      * @param Parser $parser
      * @param CommitApi $commitApi
-     * @param string $sshUser
      */
     public function __construct(
         EventLogger $logger,

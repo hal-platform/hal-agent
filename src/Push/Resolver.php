@@ -132,8 +132,8 @@ class Resolver
      */
     public function __invoke($releaseID)
     {
-        /** @var Release $release */
-        if (!$release = $this->releaseRepo->find($releaseID)) {
+        $release = $this->releaseRepo->find($releaseID);
+        if (!$release instanceof Release) {
             throw new PushException(sprintf(self::ERR_NOT_FOUND, $releaseID));
         }
 
@@ -152,7 +152,6 @@ class Resolver
         $github = $application->gitHub();
 
         $method = $group->type();
-
 
         $properties = [
             'build' => $build,

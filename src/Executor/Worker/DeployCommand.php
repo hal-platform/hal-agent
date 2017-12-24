@@ -21,6 +21,7 @@ use Hal\Core\Entity\Release;
 use Hal\Core\Repository\ReleaseRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
 /**
@@ -222,48 +223,63 @@ class DeployCommand implements ExecutorInterface
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
-            $name = sprintf('Release %s', $id);
-
-            if ($process->isRunning()) {
-                try {
-                    $io->comment(sprintf('Checking release status: <info>%s</info>', $id));
-
-                    $process->checkTimeout();
-                    $allDone = false;
-
-                } catch (ProcessTimedOutException $e) {
-                    $output = $this->outputJob($name, $process, true);
-
-                    $io->section(sprintf('Release <info>%s</info> timed out', $id));
-                    $io->text($output);
-
-                    $this->logger->warn(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
-
-                    unset($this->processes[$id]);
-                }
-
-            } else {
-                $output = $this->outputJob($name, $process, false);
-
-                $io->section(sprintf('Release <info>%s</info> finished', $id));
-                $io->text($output);
-
-                if ($exit = $process->getExitCode()) {
-                    $this->logger->info(sprintf(self::ERR_JOB, $id), ['exceptionData' => $output, 'exitCode' => $exit]);
-                } else {
-                    $this->logger->info(sprintf(self::SUCCESS_JOB, $id), ['exceptionData' => $output]);
-                }
-
+            $isDone = $this->waitOnProcess($io, $process, $id);
+            if ($isDone) {
                 unset($this->processes[$id]);
+            } else {
+                $allDone = false;
             }
         }
 
         if (!$allDone) {
-            $io->comment(sprintf('Waiting %d seconds...', $this->sleepTime));
+            $io->note(sprintf('Waiting %d seconds...', $this->sleepTime));
 
             sleep($this->sleepTime);
             $this->wait($io);
         }
+    }
+
+    /**
+     * @param IOInterface $io
+     * @param Process $process
+     * @param string $id
+     *
+     * @return bool
+     */
+    private function waitOnProcess(IOInterface $io, Process $process, $id)
+    {
+        $name = sprintf('Release %s', $id);
+
+        if ($process->isRunning()) {
+            $io->note(sprintf('Checking release status: <info>%s</info>', $id));
+
+            try {
+                $process->checkTimeout();
+
+            } catch (ProcessTimedOutException $e) {
+                $output = $this->outputJob($name, $process, true);
+
+                $io->section(sprintf('Release <info>%s</info> timed out', $id));
+                $io->text($output);
+
+                $this->logger->warning(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
+                return true;
+            }
+
+            return false;
+        }
+
+        $output = $this->outputJob($name, $process, false);
+
+        $io->section(sprintf('Release <info>%s</info> finished', $id));
+        $io->text($output);
+
+        $exit = $process->getExitCode();
+        $context = ['exceptionData' => $output, 'exitCode' => $exit];
+        $msg = ($exit) ? self::ERR_JOB : self::SUCCESS_JOB;
+
+        $this->logger->info(sprintf($msg, $id), $context);
+        return true;
     }
 
     /**

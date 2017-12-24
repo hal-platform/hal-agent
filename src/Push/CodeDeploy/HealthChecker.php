@@ -96,7 +96,7 @@ class HealthChecker
 
     /**
      * @param CodeDeployClient $cd
-     * @param string $deploymentID
+     * @param string $id
      *
      * @return array
      */

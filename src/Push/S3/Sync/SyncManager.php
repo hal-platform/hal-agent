@@ -35,15 +35,15 @@ class SyncManager
     private $finder;
 
     /**
-     * @param TransferManager    $transferMaanger    The Transfer Manager
-     * @param BatchDeleteManager $batchDeleteManager The BatchDelete Maanger
-     * @param Finder             $finder             A Symfony Finder instance
+     * @param TransferManager $transferManager
+     * @param BatchDeleteManager $batchDeleteManager
+     * @param Finder $finder
      */
     public function __construct(TransferManager $transferManager, BatchDeleteManager $batchDeleteManager, Finder $finder)
     {
-        $this->finder = $finder;
         $this->transferManager = $transferManager;
         $this->batchDeleteManager = $batchDeleteManager;
+        $this->finder = $finder;
     }
 
     /**
@@ -68,7 +68,7 @@ class SyncManager
             $flags
         );
 
-        return $sync->sync();
+        $sync->sync();
     }
 
     /**

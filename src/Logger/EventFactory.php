@@ -91,7 +91,6 @@ class EventFactory
 
     /**
      * @param EntityManagerInterface $em
-     * @param callable $random
      */
     public function __construct(EntityManagerInterface $em)
     {

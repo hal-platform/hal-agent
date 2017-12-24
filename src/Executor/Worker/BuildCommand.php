@@ -192,7 +192,7 @@ class BuildCommand implements ExecutorInterface
 
             if ($process->isRunning()) {
                 try {
-                    $io->comment(sprintf('Checking build status: <info>%s</info>', $id));
+                    $io->note(sprintf('Checking build status: <info>%s</info>', $id));
 
                     $process->checkTimeout();
                     $allDone = false;
@@ -203,7 +203,7 @@ class BuildCommand implements ExecutorInterface
                     $io->section(sprintf('Build <info>%s</info> timed out', $id));
                     $io->text($output);
 
-                    $this->logger->warn(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
+                    $this->logger->warning(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
 
                     unset($this->processes[$id]);
                 }
@@ -225,7 +225,7 @@ class BuildCommand implements ExecutorInterface
         }
 
         if (!$allDone) {
-            $io->comment(sprintf('Waiting %d seconds...', $this->sleepTime));
+            $io->note(sprintf('Waiting %d seconds...', $this->sleepTime));
 
             sleep($this->sleepTime);
             $this->wait($io);
