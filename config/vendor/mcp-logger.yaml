@@ -101,7 +101,7 @@ services:
             - '%mcp.logger.service.guzzle.options%'
 
     mcp.logger.service.errorlog:
-        class: 'Hal\UI\VendorAdapters\EnvErrorLogService'
+        class: 'Hal\Agent\VendorAdapters\EnvErrorLogService'
         arguments:
             - '@mcp.logger.serializer'
             - '%mcp.logger.service.errorlog.options%'
