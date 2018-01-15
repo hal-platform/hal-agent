@@ -41,7 +41,7 @@
         "predis/predis":                "~1.0",
         "psr/log":                      "*",
 
-        "hal/hal-core":                 "dev-master",
+        "hal/hal-core":                 "dev-db-refactor",
 
         "ql/mcp-common":                "~1.1",
         "ql/mcp-logger":                "~3.0.0",

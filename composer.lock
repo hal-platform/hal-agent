@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "5060265e83cb4f06f58ca2d6eb91eb78",
+    "content-hash": "d061d2a941b315efd9eeb902e1b522aa",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -927,16 +927,16 @@
         },
         {
             "name": "hal/hal-core",
-            "version": "dev-master",
+            "version": "dev-db-refactor",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hal-platform/hal-core.git",
-                "reference": "fd9b5c7d19ec797837a982e86f5d836b10277617"
+                "reference": "99780099391c6646feafd3d94d0da13663040a56"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hal-platform/hal-core/zipball/fd9b5c7d19ec797837a982e86f5d836b10277617",
-                "reference": "fd9b5c7d19ec797837a982e86f5d836b10277617",
+                "url": "https://api.github.com/repos/hal-platform/hal-core/zipball/99780099391c6646feafd3d94d0da13663040a56",
+                "reference": "99780099391c6646feafd3d94d0da13663040a56",
                 "shasum": ""
             },
             "require": {
@@ -952,17 +952,19 @@
                 "ql/mcp-common": "~1.1"
             },
             "require-dev": {
-                "mockery/mockery": "~0.9",
-                "overtrue/phplint": "~0.2",
+                "codedungeon/phpunit-result-printer": "~0.5",
+                "mockery/mockery": "~1.0",
+                "overtrue/phplint": "~1.0",
+                "phpstan/phpstan": "~0.9",
                 "phpunit/phpunit": "~6.2",
-                "robmorgan/phinx": "~0.8",
+                "predis/predis": "~1.0",
                 "squizlabs/php_codesniffer": "~3.0",
                 "symfony/config": "~3.3.0",
                 "symfony/dependency-injection": "~3.3.0",
+                "symfony/proxy-manager-bridge": "~3.3.0",
                 "symfony/yaml": "~3.3.0"
             },
             "bin": [
-                "bin/hal-build-id",
                 "bin/hal-random-id"
             ],
             "type": "library",
@@ -982,7 +984,7 @@
                 }
             ],
             "description": "Core domain entities and shared resources for Hal UI and Agent.",
-            "time": "2017-12-18 19:47:54"
+            "time": "2018-01-15 00:28:36"
         },
         {
             "name": "knplabs/github-api",
