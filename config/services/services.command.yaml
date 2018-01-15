@@ -49,17 +49,6 @@ services:
         arguments: ['worker:deploy', 'executor.worker.deploy']
         configurator: ['Hal\Agent\Executor\Worker\DeployCommand', 'configure']
 
-    # docker
-
-    command.docker.refresh:
-        parent: 'command.template'
-        arguments: ['docker:refresh', 'executor.docker.refresh']
-        configurator: ['Hal\Agent\Executor\Docker\UpdateSourcesCommand', 'configure']
-    command.docker.status:
-        parent: 'command.template'
-        arguments: ['docker:status', 'executor.docker.status']
-        configurator: ['Hal\Agent\Executor\Docker\CheckStatusCommand', 'configure']
-
     # shared
 
     command.template:

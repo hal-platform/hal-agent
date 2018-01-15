@@ -13,8 +13,6 @@ services:
             - ['add', ['@command.runner.deploy']]
             - ['add', ['@command.worker.build']]
             - ['add', ['@command.worker.deploy']]
-            - ['add', ['@command.docker.refresh']]
-            - ['add', ['@command.docker.status']]
             - ['setDispatcher', ['@dispatcher']]
     dispatcher:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'
