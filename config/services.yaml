@@ -4,15 +4,14 @@ services:
         class: 'Symfony\Component\Console\Application'
         arguments: ['%application.title%', '%application.version%']
         calls:
-            - ['add', ['@command.management.build.create']]
-            - ['add', ['@command.management.build.start']]
             - ['add', ['@command.management.build.remove']]
             - ['add', ['@command.management.release.create']]
-            - ['add', ['@command.management.release.start']]
+            - ['add', ['@command.job.start_build']]
+            - ['add', ['@command.job.start_deploy']]
             - ['add', ['@command.runner.build']]
             - ['add', ['@command.runner.deploy']]
-            - ['add', ['@command.worker.build']]
-            - ['add', ['@command.worker.deploy']]
+            # - ['add', ['@command.worker.build']]
+            # - ['add', ['@command.worker.deploy']]
             - ['setDispatcher', ['@dispatcher']]
     dispatcher:
         class: 'Symfony\Component\EventDispatcher\EventDispatcher'

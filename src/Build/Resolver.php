@@ -13,7 +13,9 @@ use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
-use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Application;
+use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\JobType\Build;
 
 /**
  * Resolve build properties from user and environment input

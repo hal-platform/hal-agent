@@ -19,6 +19,7 @@ parameters:
     ############################################################################
     root: '%env(HAL_ROOT)%'
     hal.baseurl: '%env(HAL_BASEURL)%'
+    hal.api_token: '%env(HAL_API_TOKEN)%'
 
     unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
     unique.size: 4

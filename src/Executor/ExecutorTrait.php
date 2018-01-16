@@ -7,6 +7,12 @@
 
 namespace Hal\Agent\Executor;
 
+use Hal\Agent\Command\IO;
+use Hal\Agent\Command\IOInterface;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Style\StyleInterface;
 
 trait ExecutorTrait
@@ -18,7 +24,7 @@ trait ExecutorTrait
      *
      * @return int
      */
-    private function failure(StyleInterface $io, $message = '', $exitCode = 1)
+    private function failure(StyleInterface $io, $message = '', $exitCode = 1): int
     {
         if ($message) {
             $io->error($message);
@@ -33,7 +39,7 @@ trait ExecutorTrait
      *
      * @return int
      */
-    private function success(StyleInterface $io, $message = '')
+    private function success(StyleInterface $io, $message = ''): int
     {
         if ($message) {
             $io->success($message);
@@ -47,7 +53,7 @@ trait ExecutorTrait
      *
      * @return string
      */
-    private function step($step)
+    private function step($step): string
     {
         $max = count(self::STEPS);
         $msg = self::STEPS[$step] ?? 'Unknown';
@@ -68,5 +74,25 @@ trait ExecutorTrait
         return array_map(function ($m) use ($type) {
             return sprintf('<%s>%s</%s>', $type, $m, $type);
         }, $messages);
+    }
+
+    /**
+     * @param array $parameters
+     *
+     * @return IOInterface
+     */
+    private function buildIO(array $parameters = []): IOInterface
+    {
+        $def = null;
+        if ($parameters) {
+            $def = new InputDefinition(array_map(function($v) {
+                return new InputArgument($v);
+            }, array_keys($parameters)));
+        }
+
+        return new IO(
+            new ArrayInput($parameters, $def),
+            new ConsoleOutput
+        );
     }
 }

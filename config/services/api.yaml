@@ -1,0 +1,18 @@
+services:
+
+    hal.api:
+        class: 'Hal\Agent\Application\HalClient'
+        arguments:
+            - '@hal.api.http_client'
+            -
+                endpoint: '%hal.baseurl%/api'
+                auth: '%hal.api_token%'
+
+
+    hal.api.http_client:
+        class: 'GuzzleHttp\Client'
+        arguments:
+            -
+                timeout: '10.0'
+                http_errors: false
+                verify: false

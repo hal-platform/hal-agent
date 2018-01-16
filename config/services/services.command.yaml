@@ -6,22 +6,19 @@ services:
 
     # management
 
-    command.management.build.create:
+    command.job.start_build:
         parent: 'command.template'
-        arguments: ['management:build:create', 'executor.build.create']
-        configurator: ['Hal\Agent\Executor\Management\CreateBuildCommand', 'configure']
-    command.management.build.start:
-        parent: 'command.template'
-        arguments: ['management:build:start', 'executor.build.start']
+        arguments: ['job:build', 'executor.build.start']
         configurator: ['Hal\Agent\Executor\Management\StartBuildCommand', 'configure']
+    command.job.start_deploy:
+        parent: 'command.template'
+        arguments: ['job:release', 'executor.release.start']
+        configurator: ['Hal\Agent\Executor\Management\StartReleaseCommand', 'configure']
+
     command.management.release.create:
         parent: 'command.template'
         arguments: ['management:release:create', 'executor.release.create']
         configurator: ['Hal\Agent\Executor\Management\CreateReleaseCommand', 'configure']
-    command.management.release.start:
-        parent: 'command.template'
-        arguments: ['management:release:start', 'executor.release.start']
-        configurator: ['Hal\Agent\Executor\Management\StartReleaseCommand', 'configure']
     command.management.build.remove:
         parent: 'command.template'
         arguments: ['management:build:remove', 'executor.build.remove']
@@ -40,14 +37,14 @@ services:
 
     # workers - cron
 
-    command.worker.build:
-        parent: 'command.template'
-        arguments: ['worker:build', 'executor.worker.build']
-        configurator: ['Hal\Agent\Executor\Worker\BuildCommand', 'configure']
-    command.worker.deploy:
-        parent: 'command.template'
-        arguments: ['worker:deploy', 'executor.worker.deploy']
-        configurator: ['Hal\Agent\Executor\Worker\DeployCommand', 'configure']
+    # command.worker.build:
+    #     parent: 'command.template'
+    #     arguments: ['worker:build', 'executor.worker.build']
+    #     configurator: ['Hal\Agent\Executor\Worker\BuildCommand', 'configure']
+    # command.worker.deploy:
+    #     parent: 'command.template'
+    #     arguments: ['worker:deploy', 'executor.worker.deploy']
+    #     configurator: ['Hal\Agent\Executor\Worker\DeployCommand', 'configure']
 
     # shared
 
@@ -65,15 +62,13 @@ services:
 
     # management
 
-    executor.build.create:
-        class: 'Hal\Agent\Executor\Management\CreateBuildCommand'
-        arguments:
-            - '@doctrine.em'
-            - '@clock'
-            - '@utility.referenceResolver'
     executor.build.start:
         class: 'Hal\Agent\Executor\Management\StartBuildCommand'
-        arguments: ['@executor.build.create', '@executor.runner.build']
+        arguments:
+            - '@doctrine.em'
+            - '@executor.runner.build'
+            - '@hal.api'
+
     executor.build.remove:
         class: 'Hal\Agent\Executor\Management\RemoveBuildCommand'
         arguments:
@@ -121,17 +116,17 @@ services:
 
     # workers - cron
 
-    executor.worker.build:
-        class: 'Hal\Agent\Executor\Worker\BuildCommand'
-        arguments:
-            - '@doctrine.em'
-            - '@utility.process.builder'
-            - '@mcp.logger'
-            - '%root%'
-    executor.worker.deploy:
-        class: 'Hal\Agent\Executor\Worker\DeployCommand'
-        arguments:
-            - '@doctrine.em'
-            - '@utility.process.builder'
-            - '@mcp.logger'
-            - '%root%'
+    # executor.worker.build:
+    #     class: 'Hal\Agent\Executor\Worker\BuildCommand'
+    #     arguments:
+    #         - '@doctrine.em'
+    #         - '@utility.process.builder'
+    #         - '@mcp.logger'
+    #         - '%root%'
+    # executor.worker.deploy:
+    #     class: 'Hal\Agent\Executor\Worker\DeployCommand'
+    #     arguments:
+    #         - '@doctrine.em'
+    #         - '@utility.process.builder'
+    #         - '@mcp.logger'
+    #         - '%root%'

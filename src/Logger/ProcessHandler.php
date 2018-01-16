@@ -9,28 +9,22 @@ namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\ScheduledAction;
 use Hal\Core\Entity\Target;
-use Hal\Core\Entity\JobProcess;
-use Hal\Core\Entity\Release;
-use Hal\Core\Type\JobProcessStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
+use Hal\Core\Type\ScheduledActionStatusEnum;
 
 /**
- * This can launch or abort Processes for the following scenarios:
- *
- * Build
- *     -> Child Push
- *
- * Push
- *     -> Child Push
- *
+ * This can launch or abort scheduled actions
  */
 class ProcessHandler
 {
-    const ERR_NO_DEPLOYMENT = 'No target specified';
-    const ERR_INVALID_DEPLOYMENT = 'Invalid target specified';
-    const ERR_IN_PROGRESS = 'Release %s to target already in progress';
+    private const ERR_NO_TARGET = 'No target specified';
+    private const ERR_INVALID_TARGET = 'Invalid target specified';
+    private const ERR_IN_PROGRESS = 'Release %s to target already in progress';
 
     /**
      * @var EntityManagerInterface
@@ -40,7 +34,7 @@ class ProcessHandler
     /**
      * @var EntityRepository
      */
-    private $processRepo;
+    private $scheduledRepo;
     private $targetRepo;
 
     /**
@@ -50,59 +44,47 @@ class ProcessHandler
     {
         $this->em = $em;
 
-        $this->processRepo = $em->getRepository(JobProcess::class);
+        $this->scheduledRepo = $em->getRepository(ScheduledAction::class);
         $this->targetRepo = $em->getRepository(Target::class);
     }
 
     /**
-     * @param Build|Release $job
+     * @param Job $job
      *
      * @return void
      */
-    public function abort($job)
+    public function abort(Job $job)
     {
-        // Silently fail for non-jobs
-        if (!$job instanceof Build && !$job instanceof Release) {
+        $scheduled = $this->scheduledRepo->findBy(['triggerJob' => $job]);
+        if (!$scheduled) {
             return;
         }
 
-        $children = $this->processRepo->findBy(['parentID' => $job->id()]);
-
-        if (!$children) {
-            return;
-        }
-
-        foreach ($children as $process) {
-            $process->withStatus(JobProcessStatusEnum::TYPE_ABORTED);
-            $this->em->merge($process);
+        foreach ($scheduled as $action) {
+            $action->withStatus(ScheduledActionStatusEnum::TYPE_ABORTED);
+            $this->em->merge($action);
         }
     }
 
     /**
-     * @param Build|Release $job
+     * @param Job $job
      *
      * @return void
      */
-    public function launch($job)
+    public function launch(Job $job)
     {
-        // Silently fail for non-jobs
-        if (!$job instanceof Build && !$job instanceof Release) {
+        $scheduled = $this->scheduledRepo->findBy(['triggerJob' => $job]);
+        if (!$scheduled) {
             return;
         }
 
-        $children = $this->processRepo->findBy(['parentID' => $job->id()]);
+        foreach ($scheduled as $action) {
+            $status = ScheduledActionStatusEnum::TYPE_ABORTED;
 
-        if (!$children) {
-            return;
-        }
-
-        foreach ($children as $process) {
-            $status = JobProcessStatusEnum::TYPE_ABORTED;
-
-            if ($process->childType() === 'Release') {
-                if ($release = $this->launchRelease($job, $process)) {
-                    $status = JobProcessStatusEnum::TYPE_LAUNCHED;
-                    $process->withChild($release);
+            if ($action->triggerJob() instanceof Build && $action->parameter('entity') === 'Release') {
+                if ($release = $this->launchRelease($action, $action->triggerJob())) {
+                    $status = ScheduledActionStatusEnum::TYPE_LAUNCHED;
+                    $action->withScheduledJob($release);
                 }
             }
 
@@ -112,53 +94,47 @@ class ProcessHandler
     }
 
     /**
-     * From parent:
-     *   - User
-     *   - Application
-     *   - Build
-     *
-     * From context:
-     *   - Deployment (must match parent application)
-     *
-     * @param Build|Release $parent
-     * @param JobProcess $process
+     * @param ScheduledAction $action
+     * @param Build $build
      *
      * @return Release|null
      */
-    private function launchRelease($parent, JobProcess $process)
+    private function launchRelease(ScheduledAction $action, Build $build)
     {
-        $build = ($parent instanceof Build) ? $parent : $parent->build();
-        $application = $parent->application();
-        $context = $process->parameters();
+        $application = $build->application();
+        $user = $build->user();
 
-        // Invalid context
-        if (!isset($context['deployment'])) {
-            $process->withMessage(self::ERR_NO_DEPLOYMENT);
+        // Invalid parameters
+        if ($targetID = $action->parameter('target_id')) {
+            $process->withMessage(self::ERR_NO_TARGET);
             return;
         }
 
         // Err: no valid deployment
-        $target = $this->targetRepo->findOneBy(['id' => $context['deployment'], 'application' => $application]);
+        $target = $this->targetRepo->find(['id' => $targetID, 'application' => $application]);
         if (!$target) {
-            $process->withMessage(self::ERR_INVALID_DEPLOYMENT);
+            $process->withMessage(self::ERR_INVALID_TARGET);
             return;
         }
 
         // Err: active push already underway
-        $activeRelease = $target->release();
-        if ($activeRelease && in_array($activeRelease->status(), [JobStatusEnum::TYPE_RUNNING, JobStatusEnum::TYPE_PENDING, JobStatusEnum::TYPE_DEPLOYING])) {
-            $process->withMessage(sprintf(self::ERR_IN_PROGRESS, $activeRelease->id()));
+        $lastJob = $target->lastJob();
+        if ($lastJob && $lastJob->inProgress()) {
+            $process->withMessage(sprintf(self::ERR_IN_PROGRESS, $lastJob->id()));
             return;
         }
 
-        $release = (new Release())
+        $release = (new Release)
+            ->withStatus(JobStatusEnum::TYPE_PENDING)
             ->withBuild($build)
-            ->withUser($parent->user())
-            ->withApplication($application)
-            ->withTarget($target);
+            ->withTarget($target)
 
-        // Record active push on deployment
-        $target->withRelease($release);
+            ->withUser($user)
+            ->withApplication($application)
+            ->withEnvironment($target->environment());
+
+        // Record active release on target
+        $target->withJob($release);
 
         $this->em->merge($target);
         $this->em->persist($release);
