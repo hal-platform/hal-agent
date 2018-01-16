@@ -53,4 +53,20 @@ class HalClient
         $response = $this->request('post', "/applications/${applicationID}/build", $parameters, [200, 201]);
         return $response;
     }
+
+    /**
+     * @param string $buildID
+     * @param string $targetID
+     *
+     * @return array|null
+     */
+    public function createRelease(string $buildID, string $targetID): ?array
+    {
+        $parameters = [
+            'targets' => [$targetID]
+        ];
+
+        $response = $this->request('post', "/builds/${buildID}/deploy", $parameters, [200, 201]);
+        return $response;
+    }
 }

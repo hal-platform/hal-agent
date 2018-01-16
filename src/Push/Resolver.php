@@ -17,10 +17,10 @@ use Hal\Agent\Utility\ResolverTrait;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Credential\AWSRoleCredential;
 use Hal\Core\Entity\Credential\AWSStaticCredential;
-use Hal\Core\Entity\Group;
-use Hal\Core\Entity\Release;
+// use Hal\Core\Entity\Group;
+use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
-use Hal\Core\Repository\ReleaseRepository;
+use Hal\Core\Repository\JobType\ReleaseRepository;
 use Hal\Core\Type\CredentialEnum;
 use Hal\Core\Type\GroupEnum;
 use QL\MCP\Common\Time\Clock;
@@ -115,7 +115,7 @@ class Resolver
         $githubBaseUrl
     ) {
         $this->logger = $logger;
-        $this->releaseRepo = $em->getRepository(Release::CLASS);
+        $this->releaseRepo = $em->getRepository(Release::class);
         $this->clock = $clock;
         $this->buildEnvironmentResolver = $buildEnvironmentResolver;
         $this->encryptedResolver = $encryptedResolver;

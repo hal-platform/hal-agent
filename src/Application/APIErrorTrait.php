@@ -29,7 +29,7 @@ trait APIErrorTrait
     /**
      * @return array
      */
-    public function combinedErrors(): array
+    public function apiErrors(): array
     {
         if ($this->errors === null) {
             $this->resetErrors();

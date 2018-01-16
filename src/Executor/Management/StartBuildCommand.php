@@ -23,15 +23,15 @@ class StartBuildCommand implements ExecutorInterface
 {
     use ExecutorTrait;
 
-    const STEPS = [];
+    private const STEPS = [];
 
-    const COMMAND_TITLE = 'Create and run a build';
-    const MSG_SUCCESS = 'Build created.';
+    private const COMMAND_TITLE = 'Create and run a build';
+    private const MSG_SUCCESS = 'Build created.';
 
-    const ERR_NO_APPLICATION = 'Application not found.';
-    const ERR_API_ERROR = 'An error was returned from the API.';
+    private const ERR_NO_APPLICATION = 'Application not found.';
+    private const ERR_API_ERROR = 'An error was returned from the API.';
 
-    const STATIC_HELP = <<<'HELP'
+    private const STATIC_HELP = <<<'HELP'
 <fg=cyan>Supported git reference types:</fg=cyan>
 <info>Branch</info> {BRANCH_NAME}
 <info>Commit</info> {40_CHARACTER_SHA}
@@ -39,14 +39,9 @@ class StartBuildCommand implements ExecutorInterface
 <info>Pull Request</info> pull/{PULL_REQUEST_NUMBER}
 HELP;
 
-    const HELP_APPLICATION = 'The ID or name of the application.';
-    const HELP_ENVIRONMENT = 'The ID or name of the environment.';
-    const HELP_REF = 'The VCS reference to build.';
-
-    /**
-     * @var EntityManagerInterface
-     */
-    private $em;
+    private const HELP_APPLICATION = 'The ID or name of the application.';
+    private const HELP_ENVIRONMENT = 'The ID or name of the environment.';
+    private const HELP_REF = 'The VCS reference to build.';
 
     /**
      * @var EntityRepository
@@ -70,7 +65,6 @@ HELP;
      */
     public function __construct(EntityManagerInterface $em, BuildCommand $runner, HalClient $hal)
     {
-        $this->em = $em;
         $this->applicationRepo = $em->getRepository(Application::class);
 
         $this->runner = $runner;
@@ -113,6 +107,8 @@ HELP;
     }
 
     /**
+     * Return the API response or exit code on failure.
+     *
      * @param IOInterface $io
      *
      * @return array|int
@@ -132,7 +128,7 @@ HELP;
 
         $build = $this->hal->createBuild($application->id(), $environment, $ref);
         if (!$build) {
-            $io->error($this->hal->combinedErrors());
+            $io->error($this->hal->apiErrors());
             return $this->failure($io, self::ERR_API_ERROR);
         }
 
@@ -165,25 +161,26 @@ HELP;
         ]);
 
         $this->success($io, self::MSG_SUCCESS);
+        return $build;
     }
 
     /**
-     * Find application from ID or identifier.
+     * Find application from ID or name.
      *
      * @param string $name
      *
      * @return Application|null
      */
-    private function findApplication($app)
+    private function findApplication($name)
     {
         // todo - need a better way to auto fail if not guidy
-        $isGUID = GUID::createFromHex($app);
+        $isGUID = GUID::createFromHex($name);
 
-        if ($isGUID && $application = $this->applicationRepo->find($app)) {
+        if ($isGUID && $application = $this->applicationRepo->find($name)) {
             return $application;
         }
 
-        if ($application = $this->applicationRepo->findOneBy(['name' => $app])) {
+        if ($application = $this->applicationRepo->findOneBy(['name' => $name])) {
             return $application;
         }
 

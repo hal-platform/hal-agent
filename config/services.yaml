@@ -5,7 +5,6 @@ services:
         arguments: ['%application.title%', '%application.version%']
         calls:
             - ['add', ['@command.management.build.remove']]
-            - ['add', ['@command.management.release.create']]
             - ['add', ['@command.job.start_build']]
             - ['add', ['@command.job.start_deploy']]
             - ['add', ['@command.runner.build']]

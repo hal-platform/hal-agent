@@ -15,10 +15,6 @@ services:
         arguments: ['job:release', 'executor.release.start']
         configurator: ['Hal\Agent\Executor\Management\StartReleaseCommand', 'configure']
 
-    command.management.release.create:
-        parent: 'command.template'
-        arguments: ['management:release:create', 'executor.release.create']
-        configurator: ['Hal\Agent\Executor\Management\CreateReleaseCommand', 'configure']
     command.management.build.remove:
         parent: 'command.template'
         arguments: ['management:build:remove', 'executor.build.remove']
@@ -62,13 +58,6 @@ services:
 
     # management
 
-    executor.build.start:
-        class: 'Hal\Agent\Executor\Management\StartBuildCommand'
-        arguments:
-            - '@doctrine.em'
-            - '@executor.runner.build'
-            - '@hal.api'
-
     executor.build.remove:
         class: 'Hal\Agent\Executor\Management\RemoveBuildCommand'
         arguments:
@@ -76,14 +65,22 @@ services:
             - '@utility.filesystem'
         calls:
             - ['setArchivePath', ['%path.archive%']]
-    executor.release.create:
-        class: 'Hal\Agent\Executor\Management\CreateReleaseCommand'
+
+    # jobs
+
+    executor.build.start:
+        class: 'Hal\Agent\Executor\Management\StartBuildCommand'
         arguments:
             - '@doctrine.em'
-            - '@clock'
+            - '@executor.runner.build'
+            - '@hal.api'
+
     executor.release.start:
         class: 'Hal\Agent\Executor\Management\StartReleaseCommand'
-        arguments: ['@executor.release.create', '@executor.runner.deploy']
+        arguments:
+            - '@doctrine.em'
+            - '@executor.runner.deploy'
+            - '@hal.api'
 
     # job runners
 
