@@ -112,8 +112,7 @@ parameters:
     # windows docker
     ############################################################################
     build.platforms.option.windows.docker_private_registry: '%env(HAL_WIN_DOCKER_PRIVATE_REG)%'
-    #todo::??
-    build.platforms.option.windows.docker_easy_repo: 'quickenloans-internal'
+    build.platforms.option.windows.docker_easy_repo: '%env(HAL_DOCKER_EASY_REPO)%'
     build.platforms.option.windows.docker_default_image: '%build.platforms.option.windows.docker_private_registry%/hal-build-environments:vs2015'
 
     # "latest" also allows no tag
