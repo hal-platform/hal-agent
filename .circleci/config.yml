@@ -141,6 +141,7 @@ jobs:
                 command: |
                     vendor/bin/phpstan analyse \
                     -l 2 \
+                    --memory-limit=1G \
                     src
 
     linting:
