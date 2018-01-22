@@ -43,7 +43,7 @@ class UploaderTest extends MockeryTestCase
                     'params' => [
                         'Metadata' => [
                             'Build' => 'b.1234',
-                            'Push' => 'p.abcd',
+                            'Release' => 'p.abcd',
                             'Environment' => 'test'
                         ]
                     ]
@@ -64,9 +64,11 @@ class UploaderTest extends MockeryTestCase
             'push.tar.gz',
             'bucket-name',
             's3-object.tar.gz',
-            'b.1234',
-            'p.abcd',
-            'test'
+            [
+                'Build' => 'b.1234',
+                'Release' => 'p.abcd',
+                'Environment' => 'test'
+            ]
         );
 
         $this->assertSame(true, $actual);
@@ -88,9 +90,11 @@ class UploaderTest extends MockeryTestCase
             'push.tar.gz',
             'bucket-name',
             's3-object.tar.gz',
-            'b.1234',
-            'p.abcd',
-            'test'
+            [
+                'Build' => 'b.1234',
+                'Release' => 'p.abcd',
+                'Environment' => 'test'
+            ]
         );
 
         $this->assertSame(false, $actual);
@@ -116,9 +120,11 @@ class UploaderTest extends MockeryTestCase
             'push.tar.gz',
             'bucket-name',
             's3-object.tar.gz',
-            'b.1234',
-            'p.abcd',
-            'test'
+            [
+                'Build' => 'b.1234',
+                'Release' => 'p.abcd',
+                'Environment' => 'test'
+            ]
         );
 
         $this->assertSame(false, $actual);
@@ -153,9 +159,11 @@ class UploaderTest extends MockeryTestCase
             'push.tar.gz',
             'bucket-name',
             's3-object.tar.gz',
-            'b.1234',
-            'p.abcd',
-            'test'
+            [
+                'Build' => 'b.1234',
+                'Release' => 'p.abcd',
+                'Environment' => 'test'
+            ]
         );
 
         $this->assertSame(false, $actual);

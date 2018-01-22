@@ -8,8 +8,8 @@
 namespace Hal\Agent\Push\S3\Artifact;
 
 use Aws\S3\S3Client;
-use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Core\AWS\AWSAuthenticator;
@@ -135,6 +135,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Packing build for S3', self::SECTION);
 
         $preparer = $this->preparer;
+
         return $preparer(
             $properties['location']['path'],
             $properties[GroupEnum::TYPE_S3]['src'],
@@ -157,15 +158,19 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $build = $properties['release']->build();
         $environment = $release->target()->group()->environment();
 
+        $metadata = [
+            'Build' => $build->id(),
+            'Release' => $release->id(),
+            'Environment' => $environment->name()
+        ];
+
         $uploader = $this->uploader;
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
             $properties[GroupEnum::TYPE_S3]['bucket'],
             $properties[GroupEnum::TYPE_S3]['file'],
-            $build->id(),
-            $release->id(),
-            $environment->name()
+            $metadata
         );
     }
 }

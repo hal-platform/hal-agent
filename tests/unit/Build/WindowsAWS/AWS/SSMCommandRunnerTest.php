@@ -66,8 +66,6 @@ class SSMCommandRunnerTest extends MockeryTestCase
             ]))
             ->twice();
 
-        $this->logger->shouldReceive('event')->with('success', SSMCommandRunner::EVENT_MESSAGE, Mockery::any())->once();
-
         $runner = new SSMCommandRunner($this->logger, $this->waiter);
         $runner->setMandatoryWaitPeriod(false);
 

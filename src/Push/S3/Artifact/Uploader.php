@@ -9,12 +9,15 @@ namespace Hal\Agent\Push\S3\Artifact;
 
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
+use Hal\Agent\Build\InternalDebugLoggingTrait;
 use InvalidArgumentException;
 use Hal\Agent\Logger\EventLogger;
 use RuntimeException;
 
 class Uploader
 {
+    use InternalDebugLoggingTrait;
+
     /**
      * @var string
      */
@@ -65,13 +68,11 @@ class Uploader
      * @param string $tempArchive
      * @param string $bucket
      * @param string $file
-     * @param string $buildID
-     * @param string $releaseID
-     * @param string $environmentName
+     * @param array $metadata
      *
      * @return boolean
      */
-    public function __invoke(S3Client $s3, $tempArchive, $bucket, $file, $buildID, $releaseID, $environmentName)
+    public function __invoke(S3Client $s3, string $tempArchive, string $bucket, string $file, array $metadata = []): bool
     {
         $fileHandle = call_user_func($this->fileStreamer, $tempArchive, 'r+');
 
@@ -94,20 +95,14 @@ class Uploader
                 }
             }
 
+            $params = $metadata ? ['params' => ['Metadata' => $metadata]] : [];
+
             $object = $s3->upload(
                 $bucket,
                 $file,
                 $fileHandle,
                 'bucket-owner-full-control', # 'private|public-read|public-read-write|authenticated-read|aws-exec-read|bucket-owner-read|bucket-owner-full-control'
-                [
-                    'params' => [
-                        'Metadata' => [
-                            'Build' => $buildID,
-                            'Push' => $releaseID,
-                            'Environment' => $environmentName
-                        ]
-                    ]
-                ]
+                $params
             );
 
         } catch (AwsException $e) {
@@ -126,7 +121,9 @@ class Uploader
             return false;
         }
 
-        $this->logger->event('success', self::EVENT_MESSAGE, $context);
+        if ($this->isDebugLoggingEnabled()) {
+            $this->logger->event('success', static::EVENT_MESSAGE, $context);
+        }
         return true;
     }
 

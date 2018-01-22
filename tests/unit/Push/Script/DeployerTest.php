@@ -32,7 +32,8 @@ class DeployerTest extends MockeryTestCase
         $properties = [
             'script' => [],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default',
                 'pre_push' => [],
                 'deploy' => ['cmd1', 'cmd2'],
                 'post_push' => [],
@@ -41,7 +42,7 @@ class DeployerTest extends MockeryTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::type(IO::class), 'unix', ['cmd1', 'cmd2'], $properties)
+            ->with(Mockery::type(IO::class), 'linux', 'default', ['cmd1', 'cmd2'], $properties)
             ->once()
             ->andReturn(true);
 
@@ -57,7 +58,8 @@ class DeployerTest extends MockeryTestCase
         $properties = [
             'script' => [],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default',
                 'pre_push' => ['push1'],
                 'deploy' => ['cmd1', 'cmd2'],
                 'post_push' => ['push2'],
@@ -76,7 +78,7 @@ class DeployerTest extends MockeryTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::type(IO::class), 'unix', ['cmd1', 'cmd2'], $properties)
+            ->with(Mockery::type(IO::class), 'linux','default', ['cmd1', 'cmd2'], $properties)
             ->once()
             ->andReturn(true);
 
@@ -147,7 +149,8 @@ class DeployerTest extends MockeryTestCase
         $properties = [
             'script' => [],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default',
                 'pre_push' => ['push1'],
                 'deploy' => ['cmd1', 'cmd2'],
                 'post_push' => ['push2'],
@@ -161,7 +164,7 @@ class DeployerTest extends MockeryTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::type(IO::class), 'unix', ['cmd1', 'cmd2'], $properties)
+            ->with(Mockery::type(IO::class), 'linux', 'default', ['cmd1', 'cmd2'], $properties)
             ->once()
             ->andReturn(false);
 

@@ -8,6 +8,7 @@
 namespace Hal\Agent\Build\Unix;
 
 use Hal\Agent\Build\EmergencyBuildHandlerTrait;
+use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\CommandContext;
 use Hal\Agent\Remoting\SSHProcess;
@@ -17,6 +18,7 @@ class DockerBuilder implements BuilderInterface, OutputAwareInterface
 {
     // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
+    use InternalDebugLoggingTrait;
 
     /**
      * @var string
@@ -89,12 +91,6 @@ SHELL;
     private $remoteUser;
     private $remoteServer;
 
-    /**
-     * @var bool
-     */
-    private $logDockerCommands;
-    private $useSudoForDocker;
-
     private static $dockerPatternRegex;
 
     /**
@@ -118,30 +114,11 @@ SHELL;
 
         $this->dockerSourcesPath = $dockerSourcesPath;
 
-        $this->logDockerCommands = false;
-        $this->useSudoForDocker = false;
-
         self::$dockerPatternRegex = sprintf(
             '/^%1$s%2$s(\/%2$s)?(\:%2$s)? /',
             self::DOCKER_PREFIX,
             self::DOCKER_IMAGE_REGEX
         );
-    }
-
-    /**
-     * @return void
-     */
-    public function enableDockerCommandLogging()
-    {
-        $this->logDockerCommands = true;
-    }
-
-    /**
-     * @return void
-     */
-    public function enableDockerSudo()
-    {
-        $this->useSudoForDocker = true;
     }
 
     /**
@@ -577,7 +554,7 @@ SHELL;
     private function runRemote($command, $customMessage = '', $env = [])
     {
         $command = $this->remoter->createCommand($this->remoteUser, $this->remoteServer, $command);
-        return $this->remoter->runWithLoggingOnFailure($command, $env, [$this->logDockerCommands, $customMessage]);
+        return $this->remoter->runWithLoggingOnFailure($command, $env, [$this->isDebugLoggingEnabled(), $customMessage]);
     }
 
     /**
@@ -609,7 +586,7 @@ SHELL;
     private function runTransferRemote($command, $customMessage = '')
     {
         $command = $this->remoter->createCommand($this->remoteUser, $this->remoteServer, $command);
-        return $this->remoter->runWithLoggingOnFailure($command, [], [$this->logDockerCommands, $customMessage]);
+        return $this->remoter->runWithLoggingOnFailure($command, [], [$this->isDebugLoggingEnabled(), $customMessage]);
     }
 
     /**
@@ -619,10 +596,6 @@ SHELL;
      */
     private function docker($command)
     {
-        if ($this->useSudoForDocker) {
-            return 'sudo -E docker ' . $command;
-        }
-
         return 'docker ' . $command;
     }
 

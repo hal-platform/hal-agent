@@ -36,7 +36,7 @@ class DockerinatorTest extends MockeryTestCase
             ->with($this->ssm, 'i-1234', 'AWS-RunPowerShellScript', Mockery::on(function($v) use (&$params) {
                 $params = $v;
                 return true;
-            }), ['Create Docker container'])
+            }), [false, 'Create Docker container'])
             ->andReturn(true);
 
         $dockerinator = new Dockerinator(
@@ -66,7 +66,7 @@ POWERSHELL;
             ->with($this->ssm, 'i-1234', 'AWS-RunPowerShellScript', Mockery::on(function($v) use (&$params) {
                 $params = $v;
                 return true;
-            }), ['Copy source into container'])
+            }), [false, 'Copy source into container'])
             ->andReturn(true);
 
         $dockerinator = new Dockerinator($this->logger, $this->runner, $this->powershell);
@@ -94,7 +94,7 @@ POWERSHELL;
             ->with($this->ssm, 'i-1234', 'AWS-RunPowerShellScript', Mockery::on(function($v) use (&$params) {
                 $params = $v;
                 return true;
-            }), ['Copy build from container'])
+            }), [false, 'Copy build from container'])
             ->andReturn(true);
 
         $dockerinator = new Dockerinator($this->logger, $this->runner, $this->powershell);
@@ -124,6 +124,7 @@ POWERSHELL;
                 $params = $v;
                 return true;
             }), [
+                true,
                 'custom message',
                 [
                     'command' => 'ls -hal',
@@ -151,4 +152,5 @@ POWERSHELL;
         $this->assertSame($expectedCommand, $params['commands'][0]);
         $this->assertSame('1800', $params['executionTimeout'][0]);
     }
+
 }

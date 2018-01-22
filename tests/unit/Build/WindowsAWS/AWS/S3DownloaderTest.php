@@ -44,6 +44,7 @@ class S3DownloaderTest extends MockeryTestCase
         $this->logger->shouldReceive('event')->with('success', Mockery::any(), Mockery::any())->once();
 
         $downloader = new S3Downloader($this->logger);
+        $downloader->setBuilderDebugLogging(true);
         $result = $downloader($this->s3, 'bucket-name', 'object1', 'filename.tgz');
         $this->assertSame(true, $result);
     }

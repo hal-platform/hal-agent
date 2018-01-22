@@ -9,15 +9,11 @@ namespace Hal\Agent\Build;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use Hal\Agent\Build\Unix\UnixBuildHandler;
-use Hal\Agent\Build\Windows\WindowsBuildHandler;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
-use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
+use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
-use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Build;
-use Hal\Core\Entity\Environment;
 
 /**
  * Resolve build properties from user and environment input
@@ -31,6 +27,7 @@ class Resolver
      * @var string
      */
     const DOWNLOAD_FILE = 'hal9000-download-%s.tar.gz';
+    const TRANSFER_FILE = 'hal9000-aws-%s-%s.tar.gz';
 
     /**
      * @var string
@@ -97,7 +94,10 @@ class Resolver
                 'download' => $this->generateRepositoryDownloadFile($build->id()),
                 'path' => $this->generateLocalTempPath($build->id(), 'build'),
                 'archive' => $this->generateBuildArchiveFile($build->id()),
-                'tempArchive' => $this->generateTempBuildArchiveFile($build->id(), 'build')
+                'tempArchive' => $this->generateTempBuildArchiveFile($build->id(), 'build'),
+
+                'windowsInputArchive' => $this->generateTempTransferFile($build->id(), 'windows-input'),
+                'windowsOutputArchive' => $this->generateTempTransferFile($build->id(), 'windows-input')
             ],
 
             'github' => [
@@ -129,6 +129,7 @@ class Resolver
      * Find the build artifacts that must be cleaned up after build.
      *
      * @param array $properties
+     *
      * @return array
      */
     private function findBuildArtifacts(array $properties)
@@ -144,6 +145,7 @@ class Resolver
 
     /**
      * @return void
+     * @throws BuildException
      */
     private function ensureTempExistsAndIsWritable()
     {
@@ -164,10 +166,22 @@ class Resolver
      * Generate a target for the build archive.
      *
      * @param string $id
+     *
      * @return string
      */
     private function generateRepositoryDownloadFile($id)
     {
         return $this->getLocalTempPath() . sprintf(static::DOWNLOAD_FILE, $id);
+    }
+
+    /**
+     * @param string $id
+     * @param string $type
+     *
+     * @return string
+     */
+    private function generateTempTransferFile($id, $type)
+    {
+        return $this->getLocalTempPath() . sprintf(static::TRANSFER_FILE, $id, $type);
     }
 }
