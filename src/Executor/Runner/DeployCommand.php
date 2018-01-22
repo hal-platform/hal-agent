@@ -449,13 +449,17 @@ class DeployCommand implements ExecutorInterface
     {
         $io->section($this->step(5));
 
+        $platform = $properties['configuration']['image'] ? $properties['configuration']['platform'] : 'default';
+        $image = $properties['configuration']['image'] ? $properties['configuration']['image'] : 'default';
+
         if (!$properties['configuration']['build_transform']) {
             $io->text('No build transform commands found. Skipping transform process.');
             return true;
         }
 
         $io->listing([
-            sprintf('System: <info>%s</info>', $properties['configuration']['system'])
+            sprintf('Platform: <info>%s</info>', $platform),
+            sprintf('Platform Image: <info>%s</info>', $image)
         ]);
 
         $io->text('Commands:');
@@ -463,7 +467,8 @@ class DeployCommand implements ExecutorInterface
 
         return ($this->builder)(
             $io,
-            $properties['configuration']['system'],
+            $properties['configuration']['platform'],
+            $properties['configuration']['image'],
             $properties['configuration']['build_transform'],
             $properties
         );
@@ -494,7 +499,8 @@ class DeployCommand implements ExecutorInterface
 
         return ($this->beforeDeployBuilder)(
             $io,
-            $properties['configuration']['system'],
+            $properties['configuration']['platform'],
+            $properties['configuration']['image'],
             $properties['configuration']['before_deploy'],
             $properties
         );
@@ -548,7 +554,8 @@ class DeployCommand implements ExecutorInterface
 
         return $builder(
             $io,
-            $properties['configuration']['system'],
+            $properties['configuration']['platform'],
+            $properties['configuration']['image'],
             $properties['configuration']['after_deploy'],
             $properties
         );

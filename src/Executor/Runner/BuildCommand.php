@@ -394,7 +394,7 @@ class BuildCommand implements ExecutorInterface
      * @param IOInterface $io
      * @param array $properties
      *
-     * @return bool
+     * @return bool|array
      */
     private function read(IOInterface $io, array &$properties)
     {
@@ -431,13 +431,17 @@ class BuildCommand implements ExecutorInterface
     {
         $io->section($this->step(5));
 
+        $platform = $properties['configuration']['image'] ? $properties['configuration']['platform'] : 'default';
+        $image = $properties['configuration']['image'] ? $properties['configuration']['image'] : 'default';
+
         if (!$properties['configuration']['build']) {
             $io->text('No build commands found. Skipping build process.');
             return true;
         }
 
         $io->listing([
-            sprintf('System: <info>%s</info>', $properties['configuration']['system'])
+            sprintf('Platform: <info>%s</info>', $platform),
+            sprintf('Platform Image: <info>%s</info>', $image)
         ]);
 
         $io->text('Commands:');
@@ -445,7 +449,8 @@ class BuildCommand implements ExecutorInterface
 
         return ($this->builder)(
             $io,
-            $properties['configuration']['system'],
+            $properties['configuration']['platform'],
+            $properties['configuration']['image'],
             $properties['configuration']['build'],
             $properties
         );

@@ -7,6 +7,10 @@
 
 namespace Hal\Agent\Build;
 
+use Hal\Agent\Build\Unix\DockerBuilder as LinuxDockerBuilder;
+use Hal\Agent\Build\Unix\UnixBuildHandler;
+use Hal\Agent\Build\WindowsAWS\DockerBuilder as WindowsDockerBuilder;
+use Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler;
 use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -97,24 +101,31 @@ class ConfigurationReader
             return null;
         }
 
-        // load system
-        if (array_key_exists('system', $yaml) && $yaml['system']) {
-            if (!is_scalar($yaml['system'])) {
-                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'system'), $context);
-                return null;
-            }
+        // load platform/image, preferred
+        if (false === ($value = $this->validateKey($yaml, 'platform', $context))) {
+            return null;
+        } elseif ($value) {
+            $config['platform'] = $value;
+        }
 
-            $config['system'] = (string) trim($yaml['system']);
+        if (false === ($value = $this->validateKey($yaml, 'image', $context))) {
+            return null;
+        } elseif ($value) {
+            $config['image'] = $value;
         }
 
         // load dist
-        if (array_key_exists('dist', $yaml) && $yaml['dist']) {
-            if (!is_scalar($yaml['dist'])) {
-                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'dist'), $context);
-                return null;
-            }
+        if (false === ($value = $this->validateKey($yaml, 'dist', $context))) {
+            return null;
+        } elseif ($value) {
+            $config['dist'] = $value;
+        }
 
-            $config['dist'] = (string) trim($yaml['dist']);
+        // load transform_dist
+        if (false === ($value = $this->validateKey($yaml, 'transform_dist', $context))) {
+            return null;
+        } elseif ($value) {
+            $config['transform_dist'] = $value;
         }
 
         // load env
@@ -178,6 +189,30 @@ class ConfigurationReader
     /**
      * @param array $yaml
      * @param string $key
+     *
+     * @return string|null|false
+     *
+     * - string (good!)
+     * - false (bad! validation failed)
+     * - null (value not found, skip)
+     */
+    private function validateKey(array $yaml, $key, array $context)
+    {
+        if (array_key_exists($key, $yaml) && $yaml[$key]) {
+            if (!is_scalar($yaml[$key])) {
+                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, $key), $context);
+                return false;
+            }
+
+            return (string) trim($yaml[$key]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array $yaml
+     * @param string $key
      * @param array $context
      *
      * @return array|null
@@ -217,6 +252,9 @@ class ConfigurationReader
         return $sanitized;
     }
 
+    /**
+     * @return string
+     */
     private function getDefaultFileLoader()
     {
         return 'file_get_contents';

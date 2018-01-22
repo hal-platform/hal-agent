@@ -84,34 +84,30 @@ class DelegatingBuilder
 
     /**
      * @param StyleInterface $io
-     * @param string $system
+     * @param string $platform
+     * @param string $image
      * @param array $commands
      * @param array $properties
      *
      * @return bool
      */
-    public function __invoke(StyleInterface $io, $system, array $commands, array $properties)
+    public function __invoke(StyleInterface $io, $platform, $image, array $commands, array $properties)
     {
         // reset exit code
         $this->exitCode = 0;
 
-        // Convert "docker:" system to unix
-        if (substr($system, 0, 7) === self::DOCKER_PREFIX) {
-            $system = 'unix';
+        if (!$platform || !isset($this->builders[$platform])) {
+            return $this->explode($platform);
         }
 
-        if (!$system || !isset($this->builders[$system])) {
-            return $this->explode($system);
-        }
-
-        $serviceId = $this->builders[$system];
+        $serviceId = $this->builders[$platform];
 
         // Get the builder
         $builder = $this->container->get($serviceId, ContainerInterface::NULL_ON_INVALID_REFERENCE);
 
         // Builder must be invokeable
-        if (!$builder instanceof BuildHandlerInterface) {
-            return $this->explode($system);
+        if (!$builder instanceof PlatformInterface) {
+            return $this->explode($platform);
         }
 
         if ($this->enableStaging) {
@@ -119,8 +115,8 @@ class DelegatingBuilder
         }
 
         // Record build environment properties
-        if (isset($properties[$system])) {
-            $this->logger->event('success', static::PREPARING_BUILD_ENVIRONMENT, $properties[$system]);
+        if (isset($properties[$platform])) {
+            $this->logger->event('success', static::PREPARING_BUILD_ENVIRONMENT, $properties[$platform]);
         }
 
         // this sucks!
@@ -133,16 +129,16 @@ class DelegatingBuilder
     }
 
     /**
-     * @param string $system
+     * @param string $platform
      *
      * @return bool
      */
-    private function explode($system)
+    private function explode($platform)
     {
         $this->exitCode = static::UNKNOWN_FAILURE_CODE;
 
         $this->logger->event('failure', self::ERR_INVALID_BUILDER, [
-            'system' => $system
+            'platform' => $platform
         ]);
 
         return false;
