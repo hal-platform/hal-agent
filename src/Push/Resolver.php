@@ -37,6 +37,7 @@ class Resolver
     const SRC_DEST_DELIMITER = ':';
     const SYNC_TRANSFER_PREFIX = 'sync=';
     const ARCHIVE_FILE = 'hal9000-aws-%s';
+    const TRANSFER_FILE = 'hal9000-aws-%s-%s.tar.gz';
 
     /**
      * @var string
@@ -171,6 +172,10 @@ class Resolver
                 // elastic beanstalk
                 // s3
                 'tempUploadArchive' => $this->generateTempArchiveFile($release->id()),
+
+                // windows builder
+                'windowsInputArchive' => $this->generateTempTransferFile($release->id(), 'windows-input'),
+                'windowsOutputArchive' => $this->generateTempTransferFile($release->id(), 'windows-output'),
             ],
 
 
@@ -213,7 +218,9 @@ class Resolver
         $properties['artifacts'] = [
             $properties['location']['tempArchive'],
             $properties['location']['tempUploadArchive'],
-            $properties['location']['path']
+            $properties['location']['path'],
+            $properties['location']['windowsInputArchive'],
+            $properties['location']['windowsOutputArchive']
         ];
 
         return $properties;
@@ -351,17 +358,17 @@ class Resolver
      */
     private function mergeRsyncBuildAndPushEnvironment(array $properties)
     {
-        $system = UnixBuildHandler::SERVER_TYPE;
+        $platform = UnixBuildHandler::PLATFORM_TYPE;
         $method = GroupEnum::TYPE_RSYNC;
 
-        if (!isset($properties[$method]['environmentVariables']) || !isset($properties[$system]['environmentVariables'])) {
+        if (!isset($properties[$method]['environmentVariables']) || !isset($properties[$platform]['environmentVariables'])) {
             return $properties;
         }
 
-        $env = array_merge($properties[$method]['environmentVariables'], $properties[$system]['environmentVariables']);
+        $env = array_merge($properties[$method]['environmentVariables'], $properties[$platform]['environmentVariables']);
 
         $properties[$method]['environmentVariables'] = $env;
-        $properties[$system]['environmentVariables'] = $env;
+        $properties[$platform]['environmentVariables'] = $env;
 
         return $properties;
     }
@@ -392,6 +399,19 @@ class Resolver
     private function generateTempArchiveFile($id)
     {
         return $this->getLocalTempPath() . sprintf(static::ARCHIVE_FILE, $id);
+    }
+
+    /**
+     * Generate a temporary target for the build (Used for windows aws builds)
+     *
+     * @param string $id
+     * @param string $type
+     *
+     * @return string
+     */
+    private function generateTempTransferFile($id, $type)
+    {
+        return $this->getLocalTempPath() . sprintf(static::TRANSFER_FILE, $id, $type);
     }
 
     /**

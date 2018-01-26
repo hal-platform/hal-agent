@@ -90,17 +90,14 @@ trait EmergencyBuildHandlerTrait
     /**
      * @param callable $cleaner
      * @param string $message
-     *
-     * @param string $user
-     * @param string $server
-     * @param string $path
+     * @param array $args
      *
      * @return null
      */
-    private function enableEmergencyHandler(callable $cleaner, $message, $user, $server, $path)
+    private function enableEmergencyHandler(callable $cleaner, $message, array $args = [])
     {
-        $this->cleanup(function () use ($cleaner, $user, $server, $path) {
-            $cleaner($user, $server, $path);
+        $this->cleanup(function () use ($cleaner, $args) {
+            $cleaner(...$args);
         }, $message);
 
         // Set emergency handler in case of super fatal

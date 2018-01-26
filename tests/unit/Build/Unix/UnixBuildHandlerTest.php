@@ -41,14 +41,15 @@ class UnixBuildHandlerTest extends MockeryTestCase
     public function testSuccess()
     {
         $properties = [
-            'unix' => [
+            'linux' => [
                 'environmentVariables' => [],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
                 'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default',
                 'build' => ['cmd1'],
                 'env' => []
             ],
@@ -143,14 +144,15 @@ OUTPUT;
     public function testFailOnBuild()
     {
         $properties = [
-            'unix' => [
+            'linux' => [
                 'environmentVariables' => [],
                 'buildUser' => 'testuser',
                 'buildServer' => 'buildserver',
                 'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'configuration' => [
-                'system' => 'docker:custom-docker-image',
+                'plaform' => 'linux',
+                'image' => 'custom-docker-image',
                 'build' => ['cmd1'],
                 'env' => []
             ],
@@ -200,7 +202,7 @@ OUTPUT;
     public function testBadDecryptHaltsBuild()
     {
         $properties = [
-            'unix' => [
+            'linux' => [
                 'environmentVariables' => [
                     'derp' => 'herp'
                 ],
@@ -209,7 +211,8 @@ OUTPUT;
                 'remoteFile' => '/var/builds/remote.tar.gz'
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default',
                 'build' => ['cmd1'],
                 'env' => []
             ],
@@ -269,7 +272,7 @@ OUTPUT;
     public function testEncryptedPropertiesMergedIntoEnv()
     {
         $properties = [
-            'unix' => [
+            'linux' => [
                 'environmentVariables' => [
                     'derp' => 'herp'
                 ],
@@ -278,7 +281,8 @@ OUTPUT;
                 'remoteFile' => '/var/builds/remote2.tar.gz'
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default-image',
                 'build' => ['cmd1'],
                 'env' => []
             ],
@@ -355,7 +359,7 @@ OUTPUT;
     public function testUserEnvMergedIntoEnv()
     {
         $properties = [
-            'unix' => [
+            'linux' => [
                 'environmentVariables' => [
                     'derp' => 'herp',
                     'HAL_ENVIRONMENT' => 'test'
@@ -365,7 +369,8 @@ OUTPUT;
                 'remoteFile' => ''
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => '',
                 'build' => ['cmd1'],
                 'env' => [
                     'global' => [

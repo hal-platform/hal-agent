@@ -12,12 +12,15 @@ use Aws\Exception\CredentialsException;
 use Aws\S3\S3Client;
 use Aws\S3\Transfer;
 use Aws\S3\BatchDelete;
+use Hal\Agent\Build\InternalDebugLoggingTrait;
 use InvalidArgumentException;
 use Hal\Agent\Logger\EventLogger;
 use RuntimeException;
 
 class Uploader
 {
+    use InternalDebugLoggingTrait;
+
     /**
      * @var string
      */
@@ -104,6 +107,10 @@ class Uploader
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', self::EVENT_MESSAGE, $context);
             return false;
+        }
+
+        if ($this->isDebugLoggingEnabled()) {
+            $this->logger->event('success', self::EVENT_MESSAGE, $context);
         }
 
         return true;

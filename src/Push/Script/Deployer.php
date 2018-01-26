@@ -119,7 +119,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $builder(
             new IO(new ArrayInput([]), $this->getOutput()), // this sucks. fix later when we refactor how
-            $properties['configuration']['system'],         // builder/deployer sends output to shell
+            $properties['configuration']['platform'],         // builder/deployer sends output to shell
+            $properties['configuration']['image'],         // builder/deployer sends output to shell
             $properties['configuration']['deploy'],
             $properties
         );

@@ -7,11 +7,11 @@
 
 namespace Hal\Agent\Build;
 
+use Hal\Agent\Testing\PlatformHandlerStub;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Command\IO;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Testing\BuildHandlerStub;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -32,25 +32,25 @@ class DelegatingBuilderTest extends MockeryTestCase
         $this->container = Mockery::mock(ContainerInterface::class);
     }
 
-    public function testNoDeployerFoundFails()
+    public function testNoBuildPlatformFoundFails()
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Mockery::any(), ['system' => 'buildsystem'])
+            ->with('failure', Mockery::any(), ['platform' => 'buildsystem'])
             ->once();
 
-        $deployer = new DelegatingBuilder($this->logger, $this->container, []);
+        $builder = new DelegatingBuilder($this->logger, $this->container, []);
 
         $properties = [];
-        $actual = $deployer($this->io, 'buildsystem', [], $properties);
+        $actual = $builder($this->io, 'buildsystem', 'default', [], $properties);
         $this->assertSame(false, $actual);
     }
 
-    public function testDeployerServiceNotFoundFails()
+    public function testBuilderServiceNotFoundFails()
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Mockery::any(), ['system' => 'buildsystem'])
+            ->with('failure', Mockery::any(), ['platform' => 'buildsystem'])
             ->once();
 
         $this->container
@@ -58,20 +58,20 @@ class DelegatingBuilderTest extends MockeryTestCase
             ->with('service.builder', Mockery::any())
             ->andReturnNull();
 
-        $deployer = new DelegatingBuilder($this->logger, $this->container, [
+        $builder = new DelegatingBuilder($this->logger, $this->container, [
             'buildsystem' => 'service.builder'
         ]);
 
         $properties = [];
-        $actual = $deployer($this->io, 'buildsystem', [], $properties);
+        $actual = $builder($this->io, 'buildsystem', 'default', [], $properties);
         $this->assertSame(false, $actual);
     }
 
-    public function testDeployerServiceIsNotCallableFails()
+    public function testBuilderServiceIsNotCallableFails()
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Mockery::any(), ['system' => 'buildsystem'])
+            ->with('failure', Mockery::any(), ['platform' => 'buildsystem'])
             ->once();
 
         $this->container
@@ -79,18 +79,18 @@ class DelegatingBuilderTest extends MockeryTestCase
             ->with('service.builder', Mockery::any())
             ->andReturn('hai');
 
-        $deployer = new DelegatingBuilder($this->logger, $this->container, [
+        $builder = new DelegatingBuilder($this->logger, $this->container, [
             'buildsystem' => 'service.builder'
         ]);
 
         $properties = [];
-        $actual = $deployer($this->io, 'buildsystem', [], $properties);
+        $actual = $builder($this->io, 'buildsystem', 'default', [], $properties);
         $this->assertSame(false, $actual);
     }
 
-    public function testDeployerSaysFail()
+    public function testBuilderSaysFail()
     {
-        $stub = new BuildHandlerStub;
+        $stub = new PlatformHandlerStub;
         $stub->response = 999;
 
         $this->container
@@ -98,19 +98,19 @@ class DelegatingBuilderTest extends MockeryTestCase
             ->with('service.build.a', Mockery::any())
             ->andReturn($stub);
 
-        $deployer = new DelegatingBuilder($this->logger, $this->container, [
+        $builder = new DelegatingBuilder($this->logger, $this->container, [
             'buildsystem.a' => 'service.build.a'
         ]);
 
         $properties = [];
-        $actual = $deployer($this->io, 'buildsystem.a', [], $properties);
+        $actual = $builder($this->io, 'buildsystem.a', 'image', [], $properties);
         $this->assertSame(false, $actual);
-        $this->assertSame('Unknown build failure', $deployer->getFailureMessage());
+        $this->assertSame('Unknown build failure', $builder->getFailureMessage());
     }
 
     public function testSuccess()
     {
-        $stub = new BuildHandlerStub;
+        $stub = new PlatformHandlerStub;
         $stub->response = 0;
 
         $this->container
@@ -118,12 +118,12 @@ class DelegatingBuilderTest extends MockeryTestCase
             ->with('service.build.b', Mockery::any())
             ->andReturn($stub);
 
-        $deployer = new DelegatingBuilder($this->logger, $this->container, [
+        $builder = new DelegatingBuilder($this->logger, $this->container, [
             'buildsystem.b' => 'service.build.b'
         ]);
 
         $properties = [];
-        $actual = $deployer($this->io, 'buildsystem.b', [], $properties);
+        $actual = $builder($this->io, 'buildsystem.b', 'default', [], $properties);
         $this->assertSame(true, $actual);
     }
 }

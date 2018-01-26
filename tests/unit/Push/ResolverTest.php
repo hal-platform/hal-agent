@@ -169,11 +169,13 @@ class ResolverTest extends MockeryTestCase
                 ]
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => '',
                 'dist' => '.',
-                'exclude' => [],
+                'transform_dist' => '.',
 
                 'env' => [],
+                'exclude' => [],
 
                 'build' => [],
                 'build_transform' => [],
@@ -188,13 +190,19 @@ class ResolverTest extends MockeryTestCase
                 'path' => 'testdir/hal9000-release-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b2.5tnbBn8.tar.gz',
                 'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
-                'tempUploadArchive' => 'testdir/hal9000-aws-1234'
+                'tempUploadArchive' => 'testdir/hal9000-aws-1234',
+
+                'windowsInputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'windowsOutputArchive' => 'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-release-1234'
+                'testdir/hal9000-release-1234',
+
+                'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'pushProperties' => [
@@ -294,11 +302,13 @@ class ResolverTest extends MockeryTestCase
                 'src' => '.'
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => '',
                 'dist' => '.',
-                'exclude' => [],
+                'transform_dist' => '.',
 
                 'env' => [],
+                'exclude' => [],
 
                 'build' => [],
                 'build_transform' => [],
@@ -314,12 +324,16 @@ class ResolverTest extends MockeryTestCase
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234',
+                'windowsInputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'windowsOutputArchive' => 'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-release-1234'
+                'testdir/hal9000-release-1234',
+                'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'pushProperties' => [
@@ -422,11 +436,13 @@ class ResolverTest extends MockeryTestCase
                 'src' => '.'
             ],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => '',
                 'dist' => '.',
-                'exclude' => [],
+                'transform_dist' => '.',
 
                 'env' => [],
+                'exclude' => [],
 
                 'build' => [],
                 'build_transform' => [],
@@ -442,12 +458,16 @@ class ResolverTest extends MockeryTestCase
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
                 'tempUploadArchive' => 'testdir/hal9000-aws-1234',
+                'windowsInputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'windowsOutputArchive' => 'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-release-1234'
+                'testdir/hal9000-release-1234',
+                'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'pushProperties' => [
@@ -531,11 +551,13 @@ class ResolverTest extends MockeryTestCase
 
             'script' => [],
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => '',
                 'dist' => '.',
-                'exclude' => [],
+                'transform_dist' => '.',
 
                 'env' => [],
+                'exclude' => [],
 
                 'build' => [],
                 'build_transform' => [],
@@ -550,13 +572,17 @@ class ResolverTest extends MockeryTestCase
                 'path' => 'testdir/hal9000-release-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-b9.1234.tar.gz',
                 'tempArchive' => 'testdir/hal9000-release-1234.tar.gz',
-                'tempUploadArchive' => 'testdir/hal9000-aws-1234'
+                'tempUploadArchive' => 'testdir/hal9000-aws-1234',
+                'windowsInputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'windowsOutputArchive' => 'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'artifacts' => [
                 'testdir/hal9000-release-1234.tar.gz',
                 'testdir/hal9000-aws-1234',
-                'testdir/hal9000-release-1234'
+                'testdir/hal9000-release-1234',
+                'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'testdir/hal9000-aws-1234-windows-output.tar.gz'
             ],
 
             'pushProperties' => [

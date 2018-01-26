@@ -62,7 +62,8 @@ class DeployerTest extends MockeryTestCase
             ],
             'pushProperties' => [],
             'configuration' => [
-                'system' => '',
+                'platform' => '',
+                'image' => '',
                 'build_transform' => ['cmd1'],
                 'pre_push' => [],
                 'post_push' => [],
@@ -152,7 +153,7 @@ class DeployerTest extends MockeryTestCase
             ->andReturn(true);
         $this->uploader
             ->shouldReceive('__invoke')
-            ->with($s3, '/local/build.tar.gz', 'cd_bucket', 'cd_file', '8956', '1234', 'envname')
+            ->with($s3, '/local/build.tar.gz', 'cd_bucket', 'cd_file', ['Build' => '8956', 'Release' => '1234', 'Environment' => 'envname'])
             ->andReturn(true);
         $this->pusher
             ->shouldReceive('__invoke')

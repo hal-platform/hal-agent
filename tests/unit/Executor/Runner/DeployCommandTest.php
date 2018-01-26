@@ -128,7 +128,8 @@ class DeployCommandTest extends ExecutorTestCase
                 'method' => 'rsync',
 
                 'configuration' => [
-                    'system' => 'unix',
+                    'platform' => 'linux',
+                    'image' => 'default',
                     'build_transform' => [
                         'cmd'
                     ],
@@ -159,8 +160,11 @@ class DeployCommandTest extends ExecutorTestCase
         $this->reader
             ->shouldReceive('__invoke')
             ->andReturn([
-                'system' => 'ok',
-                'build_transform' => [],
+                'platform' => '',
+                'image' => '',
+                'build_transform' => [
+                    'cmd'
+                ],
                 'deploy' => ['command1 --flag', 'path/to/command2 arg1'],
                 'before_deploy' => [],
                 'after_deploy' => []
@@ -222,7 +226,7 @@ class DeployCommandTest extends ExecutorTestCase
             ' * Application configuration:',
 
             '[5/8] Running build transform process',
-            'No build transform commands found. Skipping transform process.',
+            ' * cmd',
 
             '[6/8] Running before deployment process',
             'Skipping before deploy commands',
@@ -296,7 +300,8 @@ class DeployCommandTest extends ExecutorTestCase
                 'release' => $release,
                 'method' => 'rsync',
                 'configuration' => [
-                    'system' => 'unix',
+                    'platform' => 'linux',
+                    'image' => 'default',
                     'build_transform' => [],
                     'before_deploy' => ['cmd1'],
                     'deploy' => ['cmd2'],
@@ -323,7 +328,8 @@ class DeployCommandTest extends ExecutorTestCase
         $this->reader
             ->shouldReceive('__invoke')
             ->andReturn([
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => 'default',
                 'build_transform' => [],
                 'before_deploy' => ['cmd1'],
                 'deploy' => ['cmd2'],

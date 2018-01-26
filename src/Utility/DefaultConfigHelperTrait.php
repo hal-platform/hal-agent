@@ -15,13 +15,17 @@ trait DefaultConfigHelperTrait
     private function buildDefaultConfiguration()
     {
         return [
-            'system' => 'unix',
+            'platform' => 'linux',
+            'image' => '',
+
             'dist' => '.',
-            'exclude' => [],
+            'transform_dist' => '.',
 
             'env' => [],
+            'exclude' => [],
 
             'build' => [],
+
             'build_transform' => [],
             'before_deploy' => [],
             'pre_push' => [],

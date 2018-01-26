@@ -77,6 +77,11 @@ parameters:
     push.eb.waiter.interval: 20
     push.eb.waiter.max: 60
 
+    build.ssm.waiter.interval: 30
+    build.ssm.waiter.max: 60
+
+    timeout.windows_builder_internal: 120
+
     ############################################################################
     # github
     ############################################################################
@@ -91,14 +96,45 @@ parameters:
     redis.prefix: '%env(HAL_REDIS_PREFIX)%'
 
     ############################################################################
+    # windows platform
+    ############################################################################
+
+    build.windows_aws.build_path: '%env(HAL_WIN_AWS_BUILD_PATH)%'
+    build.windows_aws.build_script_path: '%env(HAL_WIN_AWS_BUILD_SCRIPT_PATH)%'
+    build.windows_aws.build_tools_path: '%env(HAL_WIN_AWS_BUILD_TOOLS_PATH)%'
+
+    build.windows_aws.region: '%env(HAL_WIN_AWS_REGION)%'
+    build.windows_aws.credential_name: '%env(HAL_WIN_AWS_CREDENTIAL)%'
+    build.windows_aws.bucket: '%env(HAL_WIN_AWS_BUCKET)%'
+    build.windows_aws.builder_filter: '%env(HAL_WIN_AWS_BUILDER_FILTER)%'
+
+    ############################################################################
+    # windows docker
+    ############################################################################
+    build.platforms.option.windows.docker_private_registry: '%env(HAL_WIN_DOCKER_PRIVATE_REG)%'
+    build.platforms.option.windows.docker_easy_repo: '%env(HAL_DOCKER_EASY_REPO)%'
+    build.platforms.option.windows.docker_default_image: '%build.platforms.option.windows.docker_private_registry%/hal-build-environments:vs2015'
+
+    # "latest" also allows no tag
+    build.platforms.option.windows.allowed_images:
+        'microsoft/nanoserver':
+            - 'latest'
+            - '10.0.14393.1480'
+            - '10.0.14393.1593'
+        'microsoft/windowsservercore':
+            - '10.0.14393.1480'
+        '%build.platforms.option.windows.docker_private_registry%/hal-build-environments':
+            - '*'
+
+    build.platforms.option.manual_dns: '%env(MANUAL_DNS_OPTIONS)%'
+
+    ############################################################################
     # docker
     ############################################################################
     build.platforms.option.docker.source.repository: 'skluck/docker-images'
     build.platforms.option.docker.source.reference: 'master'
 
     build.platforms.option.docker.default_image: 'base_debian8'
-    build.platforms.option.docker.sudo: '%env(HAL_DOCKER_SUDO)%'
-
 
     ############################################################################
     # credentials / encryption
@@ -116,16 +152,18 @@ parameters:
     ############################################################################
 
     build.platforms:
-        unix: 'build.unix.handler'
-        #windows: 'build.windows.handler'
+        linux: 'build.unix.handler'
+        windows: 'build.windows_aws_docker.handler'
 
     deployment.script.platforms:
         unix: 'push.script.build.unix.handler'
 
     deployment_before.build.platforms:
         unix: 'push.before.builder.unix_handler'
+        windows: 'push.before.builder.windows_aws_docker.handler'
     deployment_after.build.platforms:
         unix: 'push.after.builder.unix_handler'
+        windows: 'push.after.builder.windows_aws_docker.handler'
 
     deployment.platforms:
         rsync: 'push.rsync.deployer'
@@ -133,6 +171,10 @@ parameters:
         s3: 'push.s3.deployer'
         cd: 'push.cd.deployer'
         script: 'push.script.deployer'
+
+    deployment.script.platforms:
+        linux: 'push.script.build.unix.handler'
+        windows: 'push.script.build.windows_aws_docker.handler'
 
     push.s3.strategies:
         artifact: 'push.s3_artifact.deployer'

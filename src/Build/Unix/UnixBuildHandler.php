@@ -7,22 +7,25 @@
 
 namespace Hal\Agent\Build\Unix;
 
-use Hal\Agent\Build\BuildHandlerInterface;
 use Hal\Agent\Build\EmergencyBuildHandlerTrait;
+use Hal\Agent\Build\PlatformInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 
-class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
+class UnixBuildHandler implements PlatformInterface
 {
     // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
 
     const SECTION = 'Building - Unix';
     const STATUS = 'Building on unix';
-    const SERVER_TYPE = 'unix';
+
+    const PLATFORM_TYPE = 'linux';
+
     const ERR_INVALID_BUILD_SYSTEM = 'Unix build system is not configured';
     const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted properties';
+
     const DOCKER_PREFIX = 'docker:';
 
     /**
@@ -96,7 +99,7 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!$this->sanityCheck($properties)) {
+        if (!isset($properties[self::PLATFORM_TYPE]) || !$this->sanityCheck($properties)) {
             $this->logger->event('failure', self::ERR_INVALID_BUILD_SYSTEM);
             return 100;
         }
@@ -134,11 +137,11 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     {
         $this->status('Validating unix configuration', self::SECTION);
 
-        if (!isset($properties[self::SERVER_TYPE])) {
+        if (!isset($properties[self::PLATFORM_TYPE])) {
             return false;
         }
 
-        if (!$properties[self::SERVER_TYPE]['buildUser'] || !$properties[self::SERVER_TYPE]['buildServer']) {
+        if (!$properties[self::PLATFORM_TYPE]['buildUser'] || !$properties[self::PLATFORM_TYPE]['buildServer']) {
             return false;
         }
 
@@ -159,16 +162,16 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         // We override the local tempArchive used for the build/source download since its already been used.
         $localFile = $properties['location']['tempArchive'];
 
-        $user = $properties[self::SERVER_TYPE]['buildUser'];
-        $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $file = $properties[self::SERVER_TYPE]['remoteFile'];
+        $user = $properties[self::PLATFORM_TYPE]['buildUser'];
+        $server = $properties[self::PLATFORM_TYPE]['buildServer'];
+        $file = $properties[self::PLATFORM_TYPE]['remoteFile'];
 
         $exporter = $this->exporter;
         $response = $exporter($localPath, $localFile, $user, $server, $file);
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote unix build server', $user, $server, $file);
+            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote unix build server', [$user, $server, $file]);
         }
 
         return $response;
@@ -204,12 +207,12 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     {
         $this->status('Running build command', self::SECTION);
 
-        $dockerImage = $this->determineImage($properties['configuration']['system']);
+        $dockerImage = $properties['configuration']['image'] ? $properties['configuration']['image'] : $this->defaultDockerImage;
 
-        $env = $properties[self::SERVER_TYPE]['environmentVariables'];
-        $user = $properties[self::SERVER_TYPE]['buildUser'];
-        $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $file = $properties[self::SERVER_TYPE]['remoteFile'];
+        $env = $properties[self::PLATFORM_TYPE]['environmentVariables'];
+        $user = $properties[self::PLATFORM_TYPE]['buildUser'];
+        $server = $properties[self::PLATFORM_TYPE]['buildServer'];
+        $file = $properties[self::PLATFORM_TYPE]['remoteFile'];
 
         // decrypt and add encrypted properties to env if possible
         if ($decrypted) {
@@ -239,37 +242,12 @@ class UnixBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $localPath = $properties['location']['path'];
         $localFile = $properties['location']['tempArchive'];
 
-        $user = $properties[self::SERVER_TYPE]['buildUser'];
-        $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $file = $properties[self::SERVER_TYPE]['remoteFile'];
+        $user = $properties[self::PLATFORM_TYPE]['buildUser'];
+        $server = $properties[self::PLATFORM_TYPE]['buildServer'];
+        $file = $properties[self::PLATFORM_TYPE]['remoteFile'];
 
         $importer = $this->importer;
         return $importer($localPath, $localFile, $user, $server, $file);
-    }
-
-    /**
-     * @param string $system
-     *
-     * @return string
-     */
-    private function determineImage($system)
-    {
-        // "unix" = default
-        if ($system === self::SERVER_TYPE) {
-            return $this->defaultDockerImage;
-        }
-
-        // remove "docker:" prefix
-        if (substr($system, 0, 7) === self::DOCKER_PREFIX) {
-            $system = substr($system, 7);
-        }
-
-        // malformed = default
-        if (!$system) {
-            return $this->defaultDockerImage;
-        }
-
-        return $system;
     }
 
     /**

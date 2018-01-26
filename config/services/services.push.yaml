@@ -100,6 +100,44 @@ services:
         parent: 'build.unix.builder'
         class: 'Hal\Agent\Push\Script\AfterDeployDockerBuilder'
 
+    # windows
+    push.before.builder.windows_aws_docker.handler:
+        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.builder_finder'
+            - '@build.windows_aws.preparer'
+            - '@build.windows_aws.exporter'
+            - '@push.before.builder.windows_aws.docker_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '@push.aws.authenticator'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    push.before.builder.windows_aws.docker_builder:
+        parent: 'build.windows_aws.docker_builder'
+        class: 'Hal\Agent\Push\Script\WindowsAWS\BeforeDeployDockerBuilder'
+
+    push.after.builder.windows_aws_docker.handler:
+        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.builder_finder'
+            - '@build.windows_aws.preparer'
+            - '@build.windows_aws.exporter'
+            - '@push.after.builder.windows_aws.docker_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '@push.aws.authenticator'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    push.after.builder.windows_aws.docker_builder:
+        parent: 'build.windows_aws.docker_builder'
+        class: 'Hal\Agent\Push\Script\WindowsAWS\AfterDeployDockerBuilder'
+
+
     ####################################################################################################################
     # eb
     ####################################################################################################################
@@ -249,10 +287,14 @@ services:
         arguments:
             - '@logger.event'
             - '@push.s3_sync.manager.sync'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
 
     push.s3_artifact.uploader:
         class: 'Hal\Agent\Push\S3\Artifact\Uploader'
         arguments: ['@logger.event']
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
 
     push.s3_sync.manager.sync:
         class: 'Hal\Agent\Push\S3\Sync\SyncManager'
@@ -338,6 +380,25 @@ services:
     push.script.build.unix.builder:
         parent: 'build.unix.builder'
         class: 'Hal\Agent\Push\Script\DeployDockerBuilder'
+
+    # windows
+    push.script.build.windows_aws_docker.handler:
+        class: 'QL\Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.builder_finder'
+            - '@build.windows_aws.preparer'
+            - '@build.windows_aws.exporter'
+            - '@push.script.build.windows_aws.docker_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '@push.aws.authenticator'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    push.script.build.windows_aws.docker_builder:
+        parent: 'build.windows_aws.docker_builder'
+        class: 'QL\Hal\Agent\Push\Script\WindowsAWS\DeployDockerBuilder'
 
     ####################################################################################################################
     # private services used only by push actions

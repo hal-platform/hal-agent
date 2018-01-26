@@ -7,6 +7,7 @@
 
 namespace Hal\Agent\Utility;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Core\Entity\Application;
@@ -22,9 +23,10 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
     public function testNoPropertiesReturnedIfWindowsAndUnixDataNotSet()
     {
         $build = $this->createMockBuild();
+        $em = Mockery::mock(EntityManagerInterface::class);
         $processBuilder = Mockery::mock(ProcessBuilder::class);
 
-        $resolver = new BuildEnvironmentResolver($processBuilder);
+        $resolver = new BuildEnvironmentResolver($em, $processBuilder);
 
         $expected = [];
         $actual = $resolver->getBuildProperties($build);
@@ -36,13 +38,14 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
     {
         $build = $this->createMockBuild();
 
+        $em = Mockery::mock(EntityManagerInterface::class);
         $processBuilder = Mockery::mock(ProcessBuilder::class);
 
-        $resolver = new BuildEnvironmentResolver($processBuilder);
+        $resolver = new BuildEnvironmentResolver($em, $processBuilder);
         $resolver->setUnixBuilder('builduser', 'nixserver', '/var/buildserver');
 
         $expected = [
-            'unix' => [
+            'linux' => [
                 'buildUser' => 'builduser',
                 'buildServer' => 'nixserver',
                 'remoteFile' => '/var/buildserver/hal9000-build-1234.tar.gz',
@@ -81,13 +84,14 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
                     )
             );
 
+        $em = Mockery::mock(EntityManagerInterface::class);
         $processBuilder = Mockery::mock(ProcessBuilder::class);
 
-        $resolver = new BuildEnvironmentResolver($processBuilder);
+        $resolver = new BuildEnvironmentResolver($em, $processBuilder);
         $resolver->setUnixBuilder('builduser', 'nixserver', '/var/buildserver');
 
         $expected = [
-            'unix' => [
+            'linux' => [
                 'buildUser' => 'builduser',
                 'buildServer' => 'nixserver',
                 'remoteFile' => '/var/buildserver/hal9000-release-4321.tar.gz',
@@ -107,7 +111,7 @@ class BuildEnvironmentResolverTest extends MockeryTestCase
 
         $actual = $resolver->getReleaseProperties($push);
 
-        $this->assertSame($expected, $actual);
+        $this->assertEquals($expected, $actual);
     }
 
     private function createMockBuild()

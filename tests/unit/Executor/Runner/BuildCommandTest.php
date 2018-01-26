@@ -113,7 +113,6 @@ class BuildCommandTest extends ExecutorTestCase
             ->shouldReceive('__invoke')
             ->andReturn([
                 'build'  => $this->generateMockBuild(),
-                'system' => 'unix',
                 'location' => [
                     'download' => 'path/file',
                     'path' => 'path/dir',
@@ -129,7 +128,8 @@ class BuildCommandTest extends ExecutorTestCase
                     'build' => [
                         'bin/build'
                     ],
-                    'system' => 'global',
+                    'platform' => 'global',
+                    'image' => '',
                     'dist' => '.'
                 ],
                 'environmentVariables' => [],
@@ -149,7 +149,8 @@ class BuildCommandTest extends ExecutorTestCase
         $this->reader
             ->shouldReceive('__invoke')
             ->andReturn([
-                'system' => 'ok',
+                'platform' => 'default',
+                'image' => 'default',
                 'build' => ['command1 --flag', 'path/to/command2 arg1'],
                 'dist' => '.'
             ]);
@@ -227,7 +228,8 @@ class BuildCommandTest extends ExecutorTestCase
             ' * Application configuration:',
 
             '[5/7] Running build process',
-            ' * System: ok',
+            ' * Platform: default',
+            ' * Platform Image: default',
             ' Commands:',
             ' * command1 --flag',
             ' * path/to/command2 arg1',

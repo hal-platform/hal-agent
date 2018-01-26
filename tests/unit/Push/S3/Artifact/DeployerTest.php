@@ -78,9 +78,11 @@ class DeployerTest extends MockeryTestCase
                 'file.tar.gz',
                 'eb_bucket',
                 'eb_file',
-                '8956',
-                '1234',
-                'envname'
+                [
+                    'Build' => '8956',
+                    'Release' => '1234',
+                    'Environment' => 'envname'
+                ]
             )
             ->andReturn(true);
 

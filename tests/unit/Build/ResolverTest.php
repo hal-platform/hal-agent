@@ -85,11 +85,13 @@ class ResolverTest extends MockeryTestCase
             'build' => $build,
 
             'configuration' => [
-                'system' => 'unix',
+                'platform' => 'linux',
+                'image' => '',
                 'dist' => '.',
-                'exclude' => [],
+                'transform_dist' => '.',
 
                 'env' => [],
+                'exclude' => [],
 
                 'build' => [],
                 'build_transform' => [],
@@ -104,7 +106,9 @@ class ResolverTest extends MockeryTestCase
                 'download' => 'testdir/hal9000-download-1234.tar.gz',
                 'path' => 'testdir/hal9000-build-1234',
                 'archive' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-build-1234.tar.gz'
+                'tempArchive' => 'testdir/hal9000-build-1234.tar.gz',
+                'windowsInputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz',
+                'windowsOutputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz'
             ],
             'github' => [
                 'user' => 'user1',

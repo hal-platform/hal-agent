@@ -1,0 +1,152 @@
+services:
+    build.windows_aws.handler:
+        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.builder_finder'
+            - '@build.windows_aws.preparer'
+            - '@build.windows_aws.exporter'
+            - '@build.windows_aws.native_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '@push.aws.authenticator'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    build.windows_aws_docker.handler:
+        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.builder_finder'
+            - '@build.windows_aws.preparer'
+            - '@build.windows_aws.exporter'
+            - '@build.windows_aws.docker_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '@push.aws.authenticator'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    ############################################################################
+
+    build.windows_aws.builder_finder:
+        class: 'Hal\Agent\Build\WindowsAWS\BuilderFinder'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.ec2_finder'
+
+    build.windows_aws.preparer:
+        class: 'Hal\Agent\Build\WindowsAWS\Preparer'
+        arguments:
+            - '@build.windows_aws.ssm_runner'
+            - '@build.windows_aws.powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+    build.windows_aws.exporter:
+        class: 'Hal\Agent\Build\WindowsAWS\Exporter'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.exporter.packer'
+            - '@build.windows_aws.s3_uploader'
+            - '@build.windows_aws.ssm_runner'
+            - '@build.windows_aws.powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+    build.windows_aws.exporter.packer:
+        parent: 'build.packer'
+        class: 'Hal\Agent\Build\WindowsAWS\Packer'
+
+    build.windows_aws.native_builder:
+        class: 'Hal\Agent\Build\WindowsAWS\NativeBuilder'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.ssm_runner'
+            - '@build.windows_aws.powershellinator'
+            - '%timeout.build%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.windows_aws.importer:
+        class: 'Hal\Agent\Build\WindowsAWS\Importer'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.importer.unpacker'
+            - '@build.windows_aws.s3_downloader'
+            - '@build.windows_aws.ssm_runner'
+            - '@utility.process.builder=' # = signifies a prototype service
+            - '@build.windows_aws.powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+    build.windows_aws.importer.unpacker:
+        parent: 'build.unpacker'
+        class: 'Hal\Agent\Build\WindowsAWS\Unpacker'
+
+    build.windows_aws.cleaner:
+        class: 'Hal\Agent\Build\WindowsAWS\Cleaner'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.ssm_runner'
+            - '@build.windows_aws.powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    # windows aws - aws stuff
+    build.windows_aws.ec2_finder:
+        class: 'Hal\Agent\Utility\EC2Finder'
+
+    build.windows_aws.s3_uploader:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Uploader'
+        arguments: ['@logger.event']
+
+    build.windows_aws.s3_downloader:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Downloader'
+        arguments: ['@logger.event']
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.windows_aws.ssm_runner:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner'
+        arguments: ['@logger.event', '@build.windows_aws.ssm_runner.waiter']
+    build.windows_aws.ssm_runner.waiter:
+        class: 'Hal\Agent\Waiter\Waiter'
+        arguments: ['%build.ssm.waiter.interval%', '%build.ssm.waiter.max%']
+
+    # windows aws docker
+    build.windows_aws.docker_builder:
+        class: 'Hal\Agent\Build\WindowsAWS\DockerBuilder'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.ssm_runner'
+            - '@build.windows_aws.dockerinator'
+            - '@build.windows_aws.powershellinator'
+            - '@build.windows_aws.docker_validator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+
+    build.windows_aws.dockerinator:
+        class: 'Hal\Agent\Build\WindowsAWS\Utility\Dockerinator'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.ssm_runner'
+            - '@build.windows_aws.powershellinator'
+            - '%build.platforms.option.manual_dns%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+            - ['setBuildCommandTimeout', ['%timeout.build%']]
+
+    build.windows_aws.powershellinator:
+        class: 'Hal\Agent\Build\WindowsAWS\Utility\Powershellinator'
+        arguments:
+            - '%build.windows_aws.build_path%'
+            - '%build.windows_aws.build_script_path%'
+            - '%build.windows_aws.build_tools_path%'
+
+    build.windows_aws.docker_validator:
+        class: 'Hal\Agent\Build\WindowsAWS\Docker\DockerImageValidator'
+        arguments:
+            - '@logger.event'
+            - '%build.platforms.option.windows.allowed_images%'
+            - '%build.platforms.option.windows.docker_easy_repo%'
+            - '%build.platforms.option.windows.docker_private_registry%'

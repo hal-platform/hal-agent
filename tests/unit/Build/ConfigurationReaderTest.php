@@ -7,11 +7,10 @@
 
 namespace Hal\Agent\Build;
 
-use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
+use Mockery;
 use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 
 class ConfigurationReaderTest extends MockeryTestCase
@@ -39,10 +38,10 @@ class ConfigurationReaderTest extends MockeryTestCase
         $default = [];
         $result = $reader('path', $default);
 
-        $this->assertSame([], $result);
+        $this->assertSame($default, $result);
     }
 
-    public function testParseFailureReturnsFalse()
+    public function testParseFailureReturnsNull()
     {
         $this->filesystem
             ->shouldReceive('exists')
@@ -56,7 +55,7 @@ class ConfigurationReaderTest extends MockeryTestCase
         $yamlContents = function() {
             return <<<YAML
 testing:
-    <<: *invalid_reference
+  <<: *invalid_reference
 YAML;
         };
 
@@ -68,19 +67,19 @@ YAML;
         $this->assertSame(null, $result);
     }
 
-    public function testBadSystemIsFailure()
+    public function testBadPlatformIsFailure()
     {
         $this->filesystem
             ->shouldReceive('exists')
             ->andReturn(true);
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', '.hal9000.yml configuration key "system" is invalid', Mockery::any())
+            ->with('failure', '.hal9000.yml configuration key "platform" is invalid', Mockery::any())
             ->once();
 
         $yamlContents = function() {
             return <<<YAML
-system: ['bad_array']
+platform: ['bad_array']
 YAML;
         };
 
@@ -107,6 +106,7 @@ YAML;
 dist: ['bad_array']
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
 
         $default = [];
@@ -124,7 +124,6 @@ YAML;
             ->shouldReceive('event')
             ->with('failure', '.hal9000.yml configuration key "post_push" is invalid', Mockery::any())
             ->once();
-
 
         $yamlContents = function() {
             return <<<YAML
@@ -162,7 +161,7 @@ YAML;
             return <<<YAML
 exclude:
     - 'excluded_dir'
-build: 
+build:
     - cmd1
     - cmd2
     - cmd3
@@ -176,6 +175,7 @@ build:
     - cmd11
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
 
         $default = [];
@@ -193,14 +193,18 @@ YAML;
             ->shouldReceive('event')
             ->with('failure', '.hal9000.yml configuration key "env" is invalid', Mockery::any())
             ->once();
+
         $yamlContents = function() {
             return <<<YAML
 env: 'not a list'
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
+
         $default = [];
         $result = $reader('path', $default);
+
         $this->assertSame(null, $result);
     }
 
@@ -213,15 +217,19 @@ YAML;
             ->shouldReceive('event')
             ->with('failure', '.hal9000.yml configuration key "env" is invalid', Mockery::any())
             ->once();
+
         $yamlContents = function() {
             return <<<YAML
 env:
     test: 'not a list'
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
+
         $default = [];
         $result = $reader('path', $default);
+
         $this->assertSame(null, $result);
     }
 
@@ -234,16 +242,20 @@ YAML;
             ->shouldReceive('event')
             ->with('failure', '.hal9000.yml env var for "test" is invalid', Mockery::any())
             ->once();
-        $yamlContents = function () {
+
+        $yamlContents = function() {
             return <<<YAML
 env:
     test:
         - 'not associative array'
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
+
         $default = [];
         $result = $reader('path', $default);
+
         $this->assertSame(null, $result);
     }
 
@@ -256,6 +268,7 @@ YAML;
             ->shouldReceive('event')
             ->with('failure', '.hal9000.yml env var for "test" is invalid', Mockery::any())
             ->once();
+
         $yamlContents = function() {
             return <<<YAML
 env:
@@ -264,11 +277,15 @@ env:
         'invalid-env': 5678
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
+
         $default = [];
         $result = $reader('path', $default);
+
         $this->assertSame(null, $result);
     }
+
     public function testBadEnvVarValueIsFailure()
     {
         $this->filesystem
@@ -278,6 +295,7 @@ YAML;
             ->shouldReceive('event')
             ->with('failure', '.hal9000.yml env var for "test" is invalid', Mockery::any())
             ->once();
+
         $yamlContents = function() {
             return <<<YAML
 env:
@@ -287,23 +305,30 @@ env:
         DERP2: '1234'
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
+
         $default = [];
         $result = $reader('path', $default);
+
         $this->assertSame(null, $result);
     }
+
     public function testFileIsParsedSuccessfully()
     {
         $this->filesystem
             ->shouldReceive('exists')
             ->andReturn(true);
+
         $this->logger
             ->shouldReceive('event')
             ->with('success', Mockery::any(), Mockery::any())
             ->once();
+
         $yamlContents = function() {
             return <<<YAML
-system: node8.1.4
+platform: linux
+image: node8.1.4
 dist: 'subdir'
 exclude:
     - 'excluded_dir'
@@ -319,15 +344,19 @@ env:
     prod:
         derp: '1'
         HERP_DERP1: '2'
+
 post_push:
     - 'cmd1'
     - 'cmd2'
 YAML;
         };
+
         $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, $yamlContents);
+
         $default = [];
         $config = [
-            'system' => 'node8.1.4',
+            'platform' => 'linux',
+            'image' => 'node8.1.4',
             'dist' => 'subdir',
             'env' => [
                 '__novalidate' => [
@@ -354,7 +383,9 @@ oklol'
             'post_push' => ['cmd1', 'cmd2'],
             'after_deploy' => []
         ];
+
         $result = $reader('path', $default);
-        $this->assertSame($config, $result);
+
+        $this->assertEquals($config, $result);
     }
 }

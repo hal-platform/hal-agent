@@ -7,7 +7,9 @@
 
 namespace Hal\Agent\Build;
 
-interface BuildHandlerInterface
+use Hal\Agent\Symfony\OutputAwareInterface;
+
+interface PlatformInterface extends OutputAwareInterface
 {
     /**
      * @param array $commands

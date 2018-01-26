@@ -7,20 +7,21 @@
 
 namespace Hal\Agent\Build\Windows;
 
-use Hal\Agent\Build\BuildHandlerInterface;
 use Hal\Agent\Build\EmergencyBuildHandlerTrait;
+use Hal\Agent\Build\PlatformInterface;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 
-class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
+class WindowsBuildHandler implements PlatformInterface
 {
     // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
 
     const SECTION = 'Building - Windows';
     const STATUS = 'Building on windows';
-    const SERVER_TYPE = 'windows';
+
+    const PLATFORM_TYPE = 'windows';
+
     const ERR_INVALID_BUILD_SYSTEM = 'Windows build system is not configured';
     const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted properties';
 
@@ -125,11 +126,11 @@ class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     {
         $this->status('Validating windows configuration', self::SECTION);
 
-        if (!isset($properties[self::SERVER_TYPE])) {
+        if (!isset($properties[self::PLATFORM_TYPE])) {
             return false;
         }
 
-        if (!$properties[self::SERVER_TYPE]['buildUser'] || !$properties[self::SERVER_TYPE]['buildServer']) {
+        if (!$properties[self::PLATFORM_TYPE]['buildUser'] || !$properties[self::PLATFORM_TYPE]['buildServer']) {
             return false;
         }
 
@@ -146,16 +147,16 @@ class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $this->status('Exporting files to build server', self::SECTION);
 
         $localPath = $properties['location']['path'];
-        $user = $properties[self::SERVER_TYPE]['buildUser'];
-        $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $path = $properties[self::SERVER_TYPE]['remotePath'];
+        $user = $properties[self::PLATFORM_TYPE]['buildUser'];
+        $server = $properties[self::PLATFORM_TYPE]['buildServer'];
+        $path = $properties[self::PLATFORM_TYPE]['remotePath'];
 
         $exporter = $this->exporter;
         $response = $exporter($localPath, $user, $server, $path);
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote windows build server', $user, $server, $path);
+            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote windows build server', [$user, $server, $path]);
         }
 
         return $response;
@@ -191,10 +192,10 @@ class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
     {
         $this->status('Running build command', self::SECTION);
 
-        $env = $properties[self::SERVER_TYPE]['environmentVariables'];
-        $user = $properties[self::SERVER_TYPE]['buildUser'];
-        $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $path = $properties[self::SERVER_TYPE]['remotePath'];
+        $env = $properties[self::PLATFORM_TYPE]['environmentVariables'];
+        $user = $properties[self::PLATFORM_TYPE]['buildUser'];
+        $server = $properties[self::PLATFORM_TYPE]['buildServer'];
+        $path = $properties[self::PLATFORM_TYPE]['remotePath'];
 
         // merge decrypted properties into env
         if ($decrypted) {
@@ -215,9 +216,9 @@ class WindowsBuildHandler implements BuildHandlerInterface, OutputAwareInterface
         $this->status('Importing files from build server', self::SECTION);
 
         $localPath = $properties['location']['path'];
-        $user = $properties[self::SERVER_TYPE]['buildUser'];
-        $server = $properties[self::SERVER_TYPE]['buildServer'];
-        $path = $properties[self::SERVER_TYPE]['remotePath'];
+        $user = $properties[self::PLATFORM_TYPE]['buildUser'];
+        $server = $properties[self::PLATFORM_TYPE]['buildServer'];
+        $path = $properties[self::PLATFORM_TYPE]['remotePath'];
 
         $importer = $this->importer;
         return $importer($localPath, $user, $server, $path);

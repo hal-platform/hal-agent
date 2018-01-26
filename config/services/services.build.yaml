@@ -80,13 +80,8 @@ services:
             - '@build.unix.build.remoter'
             - '@build.unix.filetransfer.remoter'
             - '%path.linux_dockerfiles%'
-        configurator: ['@build.unix.builder.configurator', 'configure']
-
-    build.unix.builder.configurator:
-        class: 'Hal\Agent\Build\Unix\DockerBuilderConfigurator'
-        arguments:
-            - '%build.platforms.option.docker.sudo%'
-            - '%error_handling.docker.debug%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
 
     build.unix.importer:
         class: 'Hal\Agent\Build\Unix\Importer'

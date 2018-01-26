@@ -269,15 +269,19 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $build = $properties['build'];
         $environment = $release->target()->group()->environment();
 
+        $metadata = [
+            'Build' => $build->id(),
+            'Release' => $release->id(),
+            'Environment' => $environment->name()
+        ];
+
         $uploader = $this->uploader;
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
             $properties[GroupEnum::TYPE_CD]['bucket'],
             $properties[GroupEnum::TYPE_CD]['file'],
-            $build->id(),
-            $release->id(),
-            $environment->name()
+            $metadata
         );
     }
 
