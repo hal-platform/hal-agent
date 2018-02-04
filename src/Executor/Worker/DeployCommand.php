@@ -160,7 +160,6 @@ class DeployCommand implements ExecutorInterface
         $io->section('Starting pending deployments');
         $io->text(sprintf('Found %s releases:', count($releases)));
 
-        /** @var Release $release */
         foreach ($releases as $release) {
             $id = $release->id();
             $command = [

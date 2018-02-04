@@ -138,7 +138,6 @@ class ProcessHandler
         }
 
         // Err: no valid deployment
-        /** @var Target $target */
         $target = $this->targetRepo->findOneBy(['id' => $context['deployment'], 'application' => $application]);
         if (!$target) {
             $process->withMessage(self::ERR_INVALID_DEPLOYMENT);

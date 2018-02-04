@@ -212,7 +212,6 @@ class BuildEnvironmentResolver
             return [];
         }
 
-        /** @var Credential $credential */
         $credential = $this->em
             ->getRepository(Credential::class)
             ->findOneBy(['isInternal' => true, 'name' => $this->windowsCredentialName]);
@@ -309,7 +308,6 @@ class BuildEnvironmentResolver
         return $env;
     }
 
-
     /**
      * @param Build $build
      *
@@ -328,7 +326,6 @@ class BuildEnvironmentResolver
 
         return $env;
     }
-
 
     /**
      * Generate a target for the unix build path.
