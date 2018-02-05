@@ -18,16 +18,11 @@ use Symfony\Component\Yaml\Parser;
 
 class ConfigurationReader
 {
-    const FOUND = 'Found .hal9000.yml configuration';
-    const ERR_INVALID_YAML = '.hal9000.yml was invalid';
-    const ERR_INVALID_KEY = '.hal9000.yml configuration key "%s" is invalid';
-    const ERR_INVALID_ENV = '.hal9000.yml env var for "%s" is invalid';
+    const FOUND = 'Loaded .hal.yaml configuration';
+    const ERR_INVALID_YAML = '.hal.yaml was invalid';
+    const ERR_INVALID_KEY = '.hal.yaml configuration key "%s" is invalid';
+    const ERR_INVALID_ENV = '.hal.yaml env var for "%s" is invalid';
     const ERR_TOO_MANY_COOKS = 'Too many commands specified for "%s". Must be less than 10.';
-
-    /**
-     * @var string
-     */
-    const FS_CONFIG_FILE = '.hal9000.yml';
 
     /**
      * @var EventLogger
@@ -50,6 +45,11 @@ class ConfigurationReader
     private $fileLoader;
 
     /**
+     * @var callable
+     */
+    private $fileLocations;
+
+    /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param Parser $parser
@@ -70,75 +70,73 @@ class ConfigurationReader
         }
 
         $this->fileLoader = $fileLoader;
+        $this->fileLocations = [
+            '.hal.yml',
+            '.hal.yaml',
+            '.hal/config.yml',
+            '.hal/config.yaml',
+            '.hal9000.yml',
+        ];
+    }
+
+    /**
+     * @param array $files
+     *
+     * @return void
+     */
+    public function setValidConfigurationLocations(array $files)
+    {
+        $this->fileLocations = $files;
     }
 
     /**
      * @param string $buildPath
-     * @param array $config
+     * @param array $defaultConfig
      *
      * @return array|null
      */
-    public function __invoke($buildPath, array $config)
+    public function __invoke(string $buildPath, array $defaultConfig)
     {
-        $configFile = rtrim($buildPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::FS_CONFIG_FILE;
+        $contents = $this->findConfiguration($buildPath);
 
-        if (!$this->filesystem->exists($configFile)) {
-            return $config;
+        if (!$contents) {
+            return $defaultConfig;
         }
 
-        $file = call_user_func($this->fileLoader, $configFile);
-        $context = ['file' => $file];
+        $context = ['file' => $contents];
 
-        try {
-            $yaml = $this->parser->parse($file);
-        } catch (ParseException $e) {
-            $this->logger->event('failure', self::ERR_INVALID_YAML);
+        $yaml = $this->loadYAML($contents);
+        if ($yaml === null) {
+            $this->logger->event('failure', self::ERR_INVALID_YAML, $context);
             return null;
         }
 
-        if (!is_array($yaml)) {
-            $this->logger->event('failure', self::ERR_INVALID_YAML);
-            return null;
-        }
+        $config = $defaultConfig;
 
-        // load platform/image, preferred
-        if (false === ($value = $this->validateKey($yaml, 'platform', $context))) {
-            return null;
-        } elseif ($value) {
-            $config['platform'] = $value;
-        }
+        $texts = [
+            'platform',
+            'image',
+            'dist',
+            'transform_dist',
+        ];
 
-        if (false === ($value = $this->validateKey($yaml, 'image', $context))) {
-            return null;
-        } elseif ($value) {
-            $config['image'] = $value;
-        }
-
-        // load dist
-        if (false === ($value = $this->validateKey($yaml, 'dist', $context))) {
-            return null;
-        } elseif ($value) {
-            $config['dist'] = $value;
-        }
-
-        // load transform_dist
-        if (false === ($value = $this->validateKey($yaml, 'transform_dist', $context))) {
-            return null;
-        } elseif ($value) {
-            $config['transform_dist'] = $value;
+        foreach ($texts as $textProperty) {
+            if (false === ($value = $this->validateKey($yaml, $textProperty, $context))) {
+                return $this->failOnKey($textProperty, $context);
+            } elseif ($value) {
+                $config[$textProperty] = $value;
+            }
         }
 
         // load env
         if (array_key_exists('env', $yaml) && $yaml['env']) {
             if (!is_array($yaml['env'])) {
-                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'env'), $context);
-                return null;
+                return $this->failOnKey('env', $context);
             }
 
             foreach ($yaml['env'] as $envName => $vars) {
                 if (!is_string($envName) || !is_array($vars)) {
-                    $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, 'env'), $context);
-                    return null;
+                    return $this->failOnKey('env', $context);
                 }
 
                 foreach ($vars as $name => $value) {
@@ -158,19 +156,21 @@ class ConfigurationReader
 
         // load lists
         $parsed = [
-                'exclude',
 
-                'build',                // build stage, 1
+                'build',                // build stage 1
 
                 'build_transform',      // deploy stage 1
                 'before_deploy',        // deploy stage 2
 
-                'pre_push',             // deploy stage 3 (rsync only)
-                'deploy',               // deploy stage 4 (script deployments only)
-                'post_push',            // deploy stage 5 (rsync, success only)
+                'deploy',               // deploy stage 3 (script deployments only)
 
-                'after_deploy'          // deploy stage 6
+                'after_deploy'          // deploy stage 4,
+
+                'exclude',
+                'pre_push',             // deploy stage 3 (rsync only)
+                'post_push',            // deploy stage 5 (rsync, success only)
             ];
+
         foreach ($parsed as $p) {
             $config[$p] = $this->validateList($yaml, $p, $context);
 
@@ -196,11 +196,10 @@ class ConfigurationReader
      * - false (bad! validation failed)
      * - null (value not found, skip)
      */
-    private function validateKey(array $yaml, $key, array $context)
+    private function validateKey(array $yaml, $key)
     {
         if (array_key_exists($key, $yaml) && $yaml[$key]) {
             if (!is_scalar($yaml[$key])) {
-                $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, $key), $context);
                 return false;
             }
 
@@ -253,10 +252,67 @@ class ConfigurationReader
     }
 
     /**
+     * @param string $buildPath
+     *
      * @return string
+     */
+    private function findConfiguration($buildPath)
+    {
+        $configFile = '';
+        foreach ($this->fileLocations as $possibleFile) {
+            $possibleFilePath = rtrim($buildPath, '/') . '/' . $possibleFile;
+
+            if ($this->filesystem->exists($possibleFilePath)) {
+                $configFile = $possibleFilePath;
+                break;
+            }
+        }
+
+        if (!$configFile) {
+            return '';
+        }
+
+        $file = call_user_func($this->fileLoader, $configFile);
+        return $file;
+    }
+
+    /**
+     * @param string $fileContents
+     *
+     * @return array|null
+     */
+    private function loadYAML($fileContents)
+    {
+        try {
+            $yaml = $this->parser->parse($fileContents);
+        } catch (ParseException $e) {
+            return null;
+        }
+
+        if (!is_array($yaml)) {
+            return null;
+        }
+
+        return $yaml;
+    }
+
+    /**
+     * @return callable
      */
     private function getDefaultFileLoader()
     {
         return 'file_get_contents';
+    }
+
+    /**
+     * @param string $key
+     * @param array $context
+     *
+     * @return null
+     */
+    private function failOnKey($key, array $context)
+    {
+        $this->logger->event('failure', sprintf(self::ERR_INVALID_KEY, $key), $context);
+        return null;
     }
 }

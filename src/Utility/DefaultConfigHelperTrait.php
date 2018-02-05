@@ -22,16 +22,20 @@ trait DefaultConfigHelperTrait
             'transform_dist' => '.',
 
             'env' => [],
-            'exclude' => [],
 
+            // Build stages
             'build' => [],
 
+            // Release stages
             'build_transform' => [],
             'before_deploy' => [],
-            'pre_push' => [],
             'deploy' => [],
+            'after_deploy' => [],
+
+            // rsync only
+            'exclude' => [],
+            'pre_push' => [],
             'post_push' =>[],
-            'after_deploy' => []
         ];
     }
 }

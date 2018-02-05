@@ -1,25 +1,25 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build;
+namespace Hal\Agent\Build\Generic;
 
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
-class Unpacker
+class FileCompression
 {
     use ProcessRunnerTrait;
 
     /**
      * @var string
      */
-    const EVENT_MESSAGE = 'Unpack GitHub archive';
-    const ERR_TIMEOUT = 'Unpacking GitHub archive took too long';
+    const EVENT_MESSAGE = 'Filesystem action';
+    const ERR_TIMEOUT = 'Filesystem action timed out';
 
     /**
      * @var EventLogger
@@ -32,49 +32,31 @@ class Unpacker
     private $processBuilder;
 
     /**
-     * @var string
+     * @var int
      */
     private $commandTimeout;
 
     /**
      * @param EventLogger $logger
      * @param ProcessBuilder $processBuilder
-     * @param string $commandTimeout
+     * @param int $commandTimeout
      */
-    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, $commandTimeout)
+    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, int $commandTimeout)
     {
         $this->logger = $logger;
         $this->processBuilder = $processBuilder;
+
         $this->commandTimeout = $commandTimeout;
     }
 
     /**
-     * @param string $archive
-     * @param string $buildPath
+     * @param string $workspacePath
      *
      * @return bool
      */
-    public function __invoke($archive, $buildPath): bool
+    public function createWorkspace(string $workspacePath): bool
     {
-        if (!$this->createWorkspace($buildPath)) {
-            return false;
-        }
-
-        if (!$this->unpackArchive($buildPath, $archive)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param string $buildPath
-     *
-     * @return bool
-     */
-    private function createWorkspace($buildPath)
-    {
-        $makeCommand = ['mkdir', $buildPath];
+        $makeCommand = ['mkdir', $workspacePath];
 
         $makeProcess = $this->processBuilder
             ->setWorkingDirectory(null)
@@ -93,19 +75,19 @@ class Unpacker
     }
 
     /**
-     * @param string $buildPath
-     * @param string $archive
+     * @param string $workspacePath
+     * @param string $tarFile
      *
      * @return bool
      */
-    private function unpackArchive($buildPath, $archive)
+    public function unpackTarArchive(string $workspacePath, $tarFile): bool
     {
         $unpackCommand = [
             'tar',
             '-vxz',
             '--strip-components=1',
-            sprintf('--file=%s', $archive),
-            sprintf('--directory=%s', $buildPath)
+            sprintf('--file=%s', $tarFile),
+            sprintf('--directory=%s', $workspacePath)
         ];
 
         $unpackProcess = $this->processBuilder

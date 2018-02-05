@@ -182,7 +182,6 @@ class EncryptedPropertyResolver
 
         // format encrypted sources for logs
         array_walk($sources, function (&$v) {
-
             $from = 'Global';
             if ($env = $v->environment()) {
                 $from = $env->name();

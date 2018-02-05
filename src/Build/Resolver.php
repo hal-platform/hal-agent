@@ -28,8 +28,8 @@ class Resolver
     /**
      * @var string
      */
-    const DOWNLOAD_FILE = 'hal9000-download-%s.tar.gz';
-    const TRANSFER_FILE = 'hal9000-aws-%s-%s.tar.gz';
+    const DOWNLOAD_FILE = 'hal-download-%s.tar.gz';
+    const TRANSFER_FILE = 'hal-aws-%s-%s.tar.gz';
 
     /**
      * @var string
@@ -69,58 +69,49 @@ class Resolver
     }
 
     /**
-     * @param string $buildId
+     * @param string $buildID
      *
      * @throws BuildException
      *
      * @return array
      */
-    public function __invoke($buildId)
+    public function __invoke(string $buildID)
     {
-        $build = $this->buildRepo->find($buildId);
-        if (!$build instanceof Build) {
-            throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildId));
-        }
-
-        if ($build->status() !== 'pending') {
-            throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildId, $build->status()));
-        }
+        $build = $this->getBuild($buildID);
 
         $properties = [
             'build' => $build,
 
             // default, overwritten by .hal9000.yml
-            'configuration' => $this->buildDefaultConfiguration(),
+            'default_configuration' => $this->buildDefaultConfiguration(),
 
-            'location' => [
-                'download' => $this->generateRepositoryDownloadFile($build->id()),
-                'path' => $this->generateLocalTempPath($build->id(), 'build'),
-                'archive' => $this->generateBuildArchiveFile($build->id()),
-                'tempArchive' => $this->generateTempBuildArchiveFile($build->id(), 'build'),
+            'workspace_path' => $this->generateLocalTempPath($build->id(), 'build'),
 
-                'windowsInputArchive' => $this->generateTempTransferFile($build->id(), 'windows-input'),
-                'windowsOutputArchive' => $this->generateTempTransferFile($build->id(), 'windows-input')
-            ],
+            // 'location' => [
+            //     'download' => $this->generateRepositoryDownloadFile($build->id()),
+            //     'path' => $this->generateLocalTempPath($build->id(), 'build'),
+            //     'archive' => $this->generateBuildArchiveFile($build->id()),
+            //     'tempArchive' => $this->generateTempBuildArchiveFile($build->id(), 'build')
 
-            'github' => [
-                'user' => $build->application()->gitHub()->owner(),
-                'repo' => $build->application()->gitHub()->repository(),
-                'reference' => $build->commit()
-            ]
+            //     'windowsInputArchive' => $this->generateTempTransferFile($build->id(), 'windows-input'),
+            //     'windowsOutputArchive' => $this->generateTempTransferFile($build->id(), 'windows-output')
+
+            // ]
         ];
 
         // Get encrypted properties for use in build, with sources as well (for logging)
-        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
-            $build->application(),
-            $build->environment()
-        );
+        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources($build->application(), $build->environment());
         $properties = array_merge($properties, $encryptedProperties);
 
-        $properties['artifacts'] = $this->findBuildArtifacts($properties);
+        $properties['artifacts'] = [
+            // $properties['location']['download'],
+            $properties['workspace_path'],
+            // $properties['location']['tempArchive']
+        ];
 
         // build system configuration
-        $buildSystemProperties = $this->environmentResolver->getBuildProperties($build);
-        $properties = array_merge($properties, $buildSystemProperties);
+        // $buildSystemProperties = $this->environmentResolver->getBuildProperties($build);
+        // $properties = array_merge($properties, $buildSystemProperties);
 
         $this->ensureTempExistsAndIsWritable();
 
@@ -128,21 +119,22 @@ class Resolver
     }
 
     /**
-     * Find the build artifacts that must be cleaned up after build.
+     * @param string $buildID
      *
-     * @param array $properties
-     *
-     * @return array
+     * @return Build
      */
-    private function findBuildArtifacts(array $properties)
+    private function getBuild($buildID)
     {
-        $artifacts = [
-            $properties['location']['download'],
-            $properties['location']['path'],
-            $properties['location']['tempArchive']
-        ];
+        $build = $this->buildRepo->find($buildID);
+        if (!$build instanceof Build) {
+            throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildID));
+        }
 
-        return $artifacts;
+        if ($build->status() !== 'pending') {
+            throw new BuildException(sprintf(self::ERR_NOT_WAITING, $buildID, $build->status()));
+        }
+
+        return $build;
     }
 
     /**

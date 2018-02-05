@@ -86,7 +86,7 @@ class BuildEnvironmentResolver
     {
         $uniqueId = sprintf('build-%s', $build->id());
 
-        return $this->getUnixProperties($build, $uniqueId) + $this->getWindowsAWSProperties($build, $uniqueId);
+        return $this->getLinuxProperties($build, $uniqueId) + $this->getWindowsAWSProperties($build, $uniqueId);
     }
 
     /**
@@ -100,7 +100,7 @@ class BuildEnvironmentResolver
     {
         $uniqueId = sprintf('release-%s', $release->id());
 
-        $properties = $this->getUnixProperties($release->build(), $uniqueId) + $this->getWindowsAWSProperties($release->build(), $uniqueId);
+        $properties = $this->getLinuxProperties($release->build(), $uniqueId) + $this->getWindowsAWSProperties($release->build(), $uniqueId);
         $releaseEnv = $this->getStandardReleaseEnvironment($release);
 
         $platforms = [UnixBuildHandler::PLATFORM_TYPE, WindowsAWSBuildHandler::PLATFORM_TYPE];
@@ -170,7 +170,7 @@ class BuildEnvironmentResolver
      *
      * @return array
      */
-    private function getUnixProperties(Build $build, $uniqueId)
+    private function getLinuxProperties(Build $build, $uniqueId)
     {
         // sanity check
         if (!$this->unixBuildDirectory || !$this->unixUser || !$this->unixServer) {

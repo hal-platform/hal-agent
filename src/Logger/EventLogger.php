@@ -8,28 +8,26 @@
 namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Hal\Core\Entity\Build;
-use Hal\Core\Entity\Release;
+use Hal\Core\Entity\Job;
+use Hal\Core\Entity\Job\JobEvent;
+use Hal\Core\Type\JobEventStageEnum;
 use Hal\Core\Type\JobEventStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
 use QL\MCP\Common\Time\Clock;
 
 /**
- * Handles starting and finishing jobs - e.g. Changing the status of a build or push.
+ * Handles starting and finishing jobs - e.g. Changing the status of a build or release.
  *
  * Event logs are automatically flushed and persisted when this logger saves the job.
  */
 class EventLogger
 {
+    private const MAX_DATA_SIZE_KB = 500;
+
     /**
      * @var EntityManagerInterface
      */
     private $em;
-
-    /**
-     * @var EventFactory
-     */
-    private $factory;
 
     /**
      * @var ProcessHandler
@@ -42,26 +40,38 @@ class EventLogger
     private $clock;
 
     /**
-     * @var Build|Release|null
+     * @var Job|null
      */
-    private $entity;
+    private $job;
+
+    /**
+     * @var array
+     */
+    private $logs;
+
+    /**
+     * @var string
+     */
+    private $currentStage;
 
     /**
      * @param EntityManagerInterface $em
-     * @param EventFactory $factory
      * @param ProcessHandler $processHandler
      * @param Clock $clock
      */
     public function __construct(
         EntityManagerInterface $em,
-        EventFactory $factory,
         ProcessHandler $processHandler,
         Clock $clock
     ) {
         $this->em = $em;
-        $this->factory = $factory;
         $this->processHandler = $processHandler;
         $this->clock = $clock;
+
+        $this->job = null;
+        $this->logs = [];
+
+        $this->currentStage = JobEventStageEnum::defaultOption();
     }
 
     /**
@@ -75,7 +85,11 @@ class EventLogger
             return;
         }
 
-        $this->factory->setStage($normalized);
+        if (!JobEventStageEnum::isValid($normalized)) {
+            return;
+        }
+
+        $this->currentStage = $normalized;
     }
 
     /**
@@ -85,29 +99,34 @@ class EventLogger
      *
      * @return null
      */
-    public function event($status, $message = '', array $context = [])
+    public function event($status, $message, array $context = [])
     {
-        if (!JobEventStatusEnum::isValid($status)) {
-            // error?
+        if (!$this->job) {
             return;
         }
 
-        $this->factory->$status($message, $context);
+        if (!JobEventStatusEnum::isValid($status)) {
+            return;
+        }
+
+        $this->sendEvent($this->job, $this->currentStage, $status, $message, $context);
     }
 
     /**
-     * @param Build|Release $job
+     * @param Job $job
      *
-     * @return null
+     * @return void
      */
-    public function start($job)
+    public function start(Job $job)
     {
-        if ($job instanceof Build) {
-            $this->startBuild($job);
+        $this->job = $job;
 
-        } elseif ($job instanceof Release) {
-            $this->startRelease($job);
-        }
+        $this->job->withStatus(JobStatusEnum::TYPE_RUNNING);
+        $this->job->withStart($this->clock->read());
+
+        // immediately merge and flush, so frontend picks up changes
+        $this->em->merge($job);
+        $this->em->flush();
     }
 
     /**
@@ -115,14 +134,14 @@ class EventLogger
      */
     public function failure()
     {
-        if ($this->isInProgress()) {
-            $this->entity->withStatus(JobStatusEnum::TYPE_FAILURE);
-            $this->entity->withEnd($this->clock->read());
-            $this->em->merge($this->entity);
+        if ($this->job && $this->job->inProgress()) {
+            $this->job->withStatus(JobStatusEnum::TYPE_FAILURE);
+            $this->job->withEnd($this->clock->read());
+            $this->em->merge($this->job);
 
             $this->setStage('failure');
 
-            $this->processHandler->abort($this->entity);
+            $this->processHandler->abort($this->job);
         }
 
         $this->em->flush();
@@ -133,33 +152,17 @@ class EventLogger
      */
     public function success()
     {
-        if ($this->isInProgress()) {
-            $this->entity->withStatus(JobStatusEnum::TYPE_SUCCESS);
-            $this->entity->withEnd($this->clock->read());
-            $this->em->merge($this->entity);
+        if ($this->job && $this->job->inProgress()) {
+            $this->job->withStatus(JobStatusEnum::TYPE_SUCCESS);
+            $this->job->withEnd($this->clock->read());
+            $this->em->merge($this->job);
 
             $this->setStage('success');
 
-            $this->processHandler->launch($this->entity);
+            $this->processHandler->launch($this->job);
         }
 
         $this->em->flush();
-    }
-
-    /**
-     * @return bool
-     */
-    private function isInProgress()
-    {
-        if (!$this->entity) {
-            return false;
-        }
-
-        if ($this->entity->status() === JobStatusEnum::TYPE_RUNNING) {
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -172,8 +175,8 @@ class EventLogger
         if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 8) === 'release.') {
             return $stage;
 
-        } elseif ($this->entity) {
-            $prefix = ($this->entity instanceof Build) ? 'build' : 'release';
+        } elseif ($this->job) {
+            $prefix = (!$this->job instanceof Build) ? 'release' : 'build';
 
             return sprintf('%s.%s', $prefix, $stage);
         }
@@ -182,38 +185,113 @@ class EventLogger
     }
 
     /**
-     * @param Build $build
+     * @param Job $job
+     * @param string $stage
+     * @param string $status
+     * @param string $message
+     * @param array $context
      *
-     * @return void
+     * @return null
      */
-    private function startBuild(Build $build)
+    private function sendEvent(Job $job, $stage, $status, $message, array $context = [])
     {
-        $this->entity = $build;
-        $this->entity->withStatus(JobStatusEnum::TYPE_RUNNING);
-        $this->entity->withStart($this->clock->read());
+        $count = count($this->logs) + 1;
 
-        $this->factory->setBuild($build);
+        $log = (new JobEvent)
+            ->withStage($stage)
+            ->withStatus($status)
+            ->withOrder($count)
+            ->withMessage($message)
+            ->withJob($job);
 
-        // immediately merge and flush, so frontend picks up changes
-        $this->em->merge($build);
+        $context = $this->sanitizeContext($context);
+        if ($context) {
+            $log->withParameters($context);
+        }
+
+        // persist
+        $this->logs[] = $log;
+        $this->em->persist($log);
         $this->em->flush();
+
+        // @todo replace this with API call to fe
+        // $this->trySendingToRedis($log);
     }
 
     /**
-     * @param Release $release
+     * @param array $context
      *
-     * @return void
+     * @return array
      */
-    private function startRelease(Release $release)
+    private function sanitizeContext(array $context)
     {
-        $this->entity = $release;
-        $this->entity->withStatus(JobStatusEnum::TYPE_RUNNING);
-        $this->entity->withStart($this->clock->read());
+        $sanitized = [];
 
-        $this->factory->setRelease($release);
+        foreach ($context as $oldKey => $data) {
+            $key = $this->deCamelCase($oldKey);
+            $data = $this->sanitizeString($data);
 
-        // immediately merge and flush, so frontend picks up changes
-        $this->em->merge($release);
-        $this->em->flush();
+            if ($data) {
+                $sanitized[$key] = $data;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return string
+     */
+    private function deCamelCase($key)
+    {
+        $key = preg_replace('/([a-z])([A-Z])/', '$1 $2', $key);
+        $key = ucfirst($key);
+
+        return $key;
+    }
+
+    /**
+     * @param mixed $data
+     *
+     * @return string
+     */
+    private function sanitizeString($data)
+    {
+        if (is_object($data)) {
+            if (method_exists($data, '__toString')) {
+                $data = (string) $data;
+
+            } elseif ($data instanceof JsonSerializable) {
+                $data = $data->jsonSerialize();
+            } else {
+                $data = '';
+            }
+        } elseif (!is_array($data)) {
+            $data = (string) $data;
+        }
+
+        // must be array or string at this point
+
+        if (is_string($data) && strlen($data) === 0) {
+            return '';
+        }
+
+        if (is_array($data) && count($data) === 0) {
+            return '';
+        }
+
+        if (is_array($data)) {
+            $data = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        }
+
+        $maxBytes = self::MAX_DATA_SIZE_KB * 1000;
+        if (strlen($data) > $maxBytes) {
+            $sanitized[$key] = $data;
+            $data = substr($data, 0, $maxBytes);
+        }
+
+        return $data;
     }
 }
