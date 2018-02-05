@@ -306,7 +306,7 @@ class BuildCommand implements ExecutorInterface
         $this->artifacts = $properties['artifacts'];
 
         $this->logger->event('success', 'Resolved build configuration', [
-            'defaultConfiguration' => $properties['configuration'],
+            'defaultConfiguration' => $properties['default_configuration'],
             'encryptedConfiguration' => $properties['encryptedSources'] ?? [],
         ]);
     }

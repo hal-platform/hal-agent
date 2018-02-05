@@ -156,20 +156,19 @@ class ConfigurationReader
 
         // load lists
         $parsed = [
+            'build',                // build stage 1
 
-                'build',                // build stage 1
+            'build_transform',      // deploy stage 1
+            'before_deploy',        // deploy stage 2
 
-                'build_transform',      // deploy stage 1
-                'before_deploy',        // deploy stage 2
+            'deploy',               // deploy stage 3 (script deployments only)
 
-                'deploy',               // deploy stage 3 (script deployments only)
+            'after_deploy',         // deploy stage 4,
 
-                'after_deploy'          // deploy stage 4,
-
-                'exclude',
-                'pre_push',             // deploy stage 3 (rsync only)
-                'post_push',            // deploy stage 5 (rsync, success only)
-            ];
+            'exclude',
+            'pre_push',             // deploy stage 3 (rsync only)
+            'post_push',            // deploy stage 5 (rsync, success only)
+        ];
 
         foreach ($parsed as $p) {
             $config[$p] = $this->validateList($yaml, $p, $context);
