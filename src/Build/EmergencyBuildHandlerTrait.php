@@ -49,9 +49,9 @@ trait EmergencyBuildHandlerTrait
      * @param callable|null $cleaner
      * @param string $message
      *
-     * @return null
+     * @return void
      */
-    public function cleanup(callable $cleaner = null, $message = '')
+    public function cleanup(callable $cleaner = null, $message = ''): void
     {
         if (func_num_args() > 0) {
             $this->emergencyCleaner = $cleaner;
@@ -68,23 +68,23 @@ trait EmergencyBuildHandlerTrait
     }
 
     /**
-     * @return null
+     * @return void
      */
-    public function disableShutdownHandler()
+    public function disableShutdownHandler(): void
     {
         $this->enableShutdownHandler = false;
     }
 
     /**
-     * @param int $exitCode
+     * @param bool $isSuccess
      *
-     * @return int
+     * @return bool
      */
-    private function bombout($exitCode)
+    private function bombout(bool $isSuccess): bool
     {
         $this->cleanup();
 
-        return $exitCode;
+        return $isSuccess;
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -9,7 +9,7 @@ namespace Hal\Agent\Build\Generic;
 
 use Hal\Agent\Remoting\SSHProcess;
 
-class Cleaner
+class RemoteCleaner
 {
     const EVENT_MESSAGE = 'Clean remote build server';
 
@@ -33,20 +33,22 @@ class Cleaner
     }
 
     /**
-     * @param string $remoteUser
-     * @param string $remoteServer
+     * @param string $remoteConnection
      * @param string $remotePath
      *
      * @return bool
      */
-    public function __invoke($remoteUser, $remoteServer, $remotePath)
+    public function __invoke(string $remoteConnection, string $remotePath)
     {
         // -f is required because the target system has LIKELY aliased 'rm' to 'rm -i',
         // and the backslash doesn't seem to cancel the alias for some reason
+
         $rmdir = [
             $this->doHorribleThing ? '\rm -rf' : '\rm -r',
             sprintf('"%s"', $remotePath)
         ];
+
+        [$remoteUser, $remoteServer] = explode('@', $remoteConnection);
 
         $command = $this->remoter->createCommand($remoteUser, $remoteServer, $rmdir);
 

@@ -160,7 +160,7 @@ parameters:
 
     build.platforms:
         linux: 'build.unix.handler'
-        windows: 'build.windows_aws_docker.handler'
+        # windows: 'build.windows_aws_docker.handler'
 
     deployment.script.platforms:
         unix: 'push.script.build.unix.handler'

@@ -190,7 +190,7 @@ class EncryptedPropertyResolver
         });
 
         $data['encrypted'] = $encrypted;
-        $data['encryptedSources'] = $sources;
+        $data['encrypted_sources'] = $sources;
 
         return $data;
     }

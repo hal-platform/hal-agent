@@ -23,14 +23,12 @@ services:
             - '@utility.filesystem'
             - '@yaml.parser'
 
-    build.builder:
-        class: 'Hal\Agent\Build\DelegatingBuilder'
+    build.platform:
+        class: 'Hal\Agent\Build\BuildPlatform'
         arguments:
             - '@logger.event'
             - '@service_container'
             - '%build.platforms%'
-        calls:
-            - ['enableStaging', []]
 
     build.artifacter:
         class: 'Hal\Agent\Build\Artifacter'

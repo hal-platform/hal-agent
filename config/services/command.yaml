@@ -93,7 +93,7 @@ services:
             - '@build.resolver'
             - '@build.downloader'
             - '@build.configuration_reader'
-            - '@build.builder'
+            - '@build.platform'
             - '@build.artifacter'
     executor.runner.deploy:
         class: 'Hal\Agent\Executor\Runner\DeployCommand'

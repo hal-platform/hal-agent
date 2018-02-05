@@ -39,7 +39,6 @@ class Artifacter
      */
     private $fileLocations;
 
-
     /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem

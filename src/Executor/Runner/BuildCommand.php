@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -9,8 +9,8 @@ namespace Hal\Agent\Executor\Runner;
 
 use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\BuildException;
+use Hal\Agent\Build\BuildPlatform;
 use Hal\Agent\Build\ConfigurationReader;
-use Hal\Agent\Build\DelegatingBuilder;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
 use Hal\Agent\Build\Generic\LocalCleaner;
@@ -88,7 +88,7 @@ class BuildCommand implements ExecutorInterface
     private $reader;
 
     /**
-     * @var DelegatingBuilder
+     * @var BuildPlatform
      */
     private $builder;
 
@@ -120,7 +120,7 @@ class BuildCommand implements ExecutorInterface
      * @param Resolver $resolver
      * @param Downloader $downloader
      * @param ConfigurationReader $reader
-     * @param DelegatingBuilder $builder
+     * @param BuildPlatform $builder
      * @param Artifacter $artifacter
      */
     public function __construct(
@@ -131,7 +131,7 @@ class BuildCommand implements ExecutorInterface
         Resolver $resolver,
         Downloader $downloader,
         ConfigurationReader $reader,
-        DelegatingBuilder $builder,
+        BuildPlatform $builder,
         Artifacter $artifacter
     ) {
         $this->logger = $logger;
@@ -198,11 +198,19 @@ class BuildCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        $this->logger->setStage('build.start');
+        $this->logger->setStage('build.created');
 
         if (!$properties = $this->prepareAgentConfiguration($io, $buildID)) {
             return $this->buildFailure($io, self::ERR_NOT_RUNNABLE);
         }
+
+        // The build has officially started running.
+        // Set the build to in progress
+        $this->logger->start($properties['build']);
+        $this->logger->event('success', 'Resolved build configuration', [
+            'defaultConfiguration' => $properties['default_configuration'],
+            'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
+        ]);
 
         if (!$this->downloadSourceCode($io, $properties)) {
             return $this->buildFailure($io, self::ERR_DOWNLOAD);
@@ -213,7 +221,6 @@ class BuildCommand implements ExecutorInterface
         }
 
         if (!$this->build($io, $config, $properties)) {
-            $io->note($this->builder->getFailureMessage());
             return $this->buildFailure($io, self::ERR_BUILD);
         }
 
@@ -249,12 +256,6 @@ class BuildCommand implements ExecutorInterface
             return null;
         }
 
-        $build = $properties['build'];
-
-        // The build has officially started running.
-        // Set the build to in progress
-        $this->logger->start($build);
-
         // We must set an emergency handler in case of super fatal to ensure it is always
         // safely finished and clean-up is run.
         $this->setCleanupHandler($io);
@@ -262,12 +263,7 @@ class BuildCommand implements ExecutorInterface
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];
 
-        $this->logger->event('success', 'Resolved build configuration', [
-            'defaultConfiguration' => $properties['default_configuration'],
-            'encryptedConfiguration' => $properties['encryptedSources'] ?? [],
-        ]);
-
-        $this->outputJobInformation($io, $build);
+        $this->outputJobInformation($io, $properties['build']);
         return $properties;
     }
 
@@ -361,13 +357,11 @@ class BuildCommand implements ExecutorInterface
     {
         $io->section($this->step(4));
 
-        // debug
-        // debug
-        // debug
-        // debug
-        // debug
-        if (true) {
-        // if (!$config['build']) {
+        $platform = $config['platform'];
+        $image = $config['image'];
+        $buildCommands = $config['build'];
+
+        if (!$buildCommands) {
             $io->text('No build steps found. Skipping build system.');
             return true;
         }
@@ -378,15 +372,9 @@ class BuildCommand implements ExecutorInterface
         ]);
 
         $io->text('Commands:');
-        $io->listing($this->colorize($config['build']));
+        $io->listing($this->colorize($buildCommands));
 
-        return ($this->builder)(
-            $io,
-            $config['platform'],
-            $config['image'],
-            $config['build'],
-            $properties
-        );
+        return ($this->builder)($io, $platform, $image, $buildCommands, $properties);
     }
 
     /**

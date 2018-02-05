@@ -1,19 +1,18 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\Unix;
+namespace Hal\Agent\Build\Linux;
 
 interface BuilderInterface
 {
     /**
      * @param string $imageName
      *
-     * @param string $remoteUser
-     * @param string $remoteServer
+     * @param string $remoteConnection
      * @param string $remoteFile
      *
      * @param array $commands
@@ -21,5 +20,5 @@ interface BuilderInterface
      *
      * @return boolean
      */
-    public function __invoke($imageName, $remoteUser, $remoteServer, $remoteFile, array $commands, array $env);
+    public function __invoke(string $imageName, string $remoteConnection, string $remoteFile, array $commands, array $env);
 }

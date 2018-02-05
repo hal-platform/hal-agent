@@ -65,11 +65,7 @@ class ConfigurationReader
         $this->filesystem = $filesystem;
         $this->parser = $parser;
 
-        if ($fileLoader === null) {
-            $fileLoader = $this->getDefaultFileLoader();
-        }
-
-        $this->fileLoader = $fileLoader;
+        $this->fileLoader = $fileLoader ?: $this->getDefaultFileLoader();
         $this->fileLocations = [
             '.hal.yml',
             '.hal.yaml',

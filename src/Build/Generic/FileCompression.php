@@ -80,18 +80,25 @@ class FileCompression
     /**
      * @param string $workspacePath
      * @param string $tarFile
+     * @param int $stripDirectories
      *
      * @return bool
      */
-    public function unpackTarArchive(string $workspacePath, string $tarFile): bool
+    public function unpackTarArchive(string $workspacePath, string $tarFile, int $stripDirectories = 0): bool
     {
         $unpackCommand = [
             'tar',
-            static::UNCOMPRESS_TGZ_FLAGS,
-            '--strip-components=1',
+            static::UNCOMPRESS_TGZ_FLAGS
+        ];
+
+        if ($stripDirectories > 0) {
+            $unpackCommand[] = sprintf('--strip-components=%s', $stripDirectories);
+        }
+
+        $unpackCommand = array_merge($unpackCommand, [
             sprintf('--file=%s', $tarFile),
             sprintf('--directory=%s', $workspacePath)
-        ];
+        ]);
 
         $process = $this->processBuilder
             ->setWorkingDirectory(null)

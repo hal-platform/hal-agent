@@ -121,6 +121,8 @@ class EventLogger
     {
         $this->job = $job;
 
+        $this->setStage('start');
+
         $this->job->withStatus(JobStatusEnum::TYPE_RUNNING);
         $this->job->withStart($this->clock->read());
 

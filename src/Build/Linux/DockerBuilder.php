@@ -1,11 +1,11 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\Unix;
+namespace Hal\Agent\Build\Linux;
 
 use Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
@@ -124,11 +124,10 @@ SHELL;
     /**
      * {@inheritdoc}
      */
-    public function __invoke($defaultImageName, $remoteUser, $remoteServer, $remoteFile, array $commands, array $env)
+    public function __invoke(string $defaultImageName, string $remoteConnection, string $remoteFile, array $commands, array $env)
     {
         // Store as class properties so cleanup operation can use them
-        $this->remoteUser = $remoteUser;
-        $this->remoteServer = $remoteServer;
+        [$this->remoteUser, $this->remoteServer] = explode('@', $remoteConnection);
 
         $imagedCommands = $this->organizeCommands($defaultImageName, $commands);
 

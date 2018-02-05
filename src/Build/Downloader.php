@@ -73,7 +73,7 @@ class Downloader
                 return false;
             }
 
-            if (!$this->fileCompression->unpackTarArchive($buildPath, $sourceCodeFile)) {
+            if (!$this->fileCompression->unpackTarArchive($buildPath, $sourceCodeFile, 1)) {
                 return false;
             }
         }
