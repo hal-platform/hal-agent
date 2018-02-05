@@ -9,7 +9,7 @@ namespace Hal\Agent\Executor\Runner;
 
 use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\BuildException;
-use Hal\Agent\Build\BuildPlatform;
+use Hal\Agent\Build\Builder;
 use Hal\Agent\Build\ConfigurationReader;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
@@ -88,7 +88,7 @@ class BuildCommand implements ExecutorInterface
     private $reader;
 
     /**
-     * @var BuildPlatform
+     * @var Builder
      */
     private $builder;
 
@@ -120,7 +120,7 @@ class BuildCommand implements ExecutorInterface
      * @param Resolver $resolver
      * @param Downloader $downloader
      * @param ConfigurationReader $reader
-     * @param BuildPlatform $builder
+     * @param Builder $builder
      * @param Artifacter $artifacter
      */
     public function __construct(
@@ -131,7 +131,7 @@ class BuildCommand implements ExecutorInterface
         Resolver $resolver,
         Downloader $downloader,
         ConfigurationReader $reader,
-        BuildPlatform $builder,
+        Builder $builder,
         Artifacter $artifacter
     ) {
         $this->logger = $logger;
@@ -374,7 +374,7 @@ class BuildCommand implements ExecutorInterface
         $io->text('Commands:');
         $io->listing($this->colorize($buildCommands));
 
-        return ($this->builder)($io, $platform, $image, $buildCommands, $properties);
+        return ($this->builder)($io, $platform, $config, $properties);
     }
 
     /**

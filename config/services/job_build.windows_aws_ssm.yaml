@@ -1,5 +1,6 @@
 services:
-    build.windows_aws.handler:
+
+    build_platform.windows_aws:
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
         arguments:
             - '@logger.event'
@@ -13,7 +14,7 @@ services:
             - '@encrypted.resolver'
             - '%build.platforms.option.windows.docker_default_image%'
 
-    build.windows_aws_docker.handler:
+    build_platform.windows_aws_docker:
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
         arguments:
             - '@logger.event'
@@ -151,7 +152,7 @@ services:
             - '%build.windows_aws.build_tools_path%'
 
     build.windows_aws.docker_validator:
-        class: 'Hal\Agent\Build\WindowsAWS\Docker\DockerImageValidator'
+        class: 'Hal\Agent\Docker\DockerImageValidator'
         arguments:
             - '@logger.event'
             - '%build.platforms.option.windows.allowed_images%'

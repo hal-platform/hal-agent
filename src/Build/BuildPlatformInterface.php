@@ -7,30 +7,17 @@
 
 namespace Hal\Agent\Build;
 
-use Hal\Agent\Command\IOInterface;
+use Hal\Agent\Symfony\IOAwareInterface;
 
-interface BuildPlatformInterface
+interface BuildPlatformInterface extends IOAwareInterface
 {
     /**
-     * @param string $image
-     * @param array $commands
-     *                An array of shell commands to run
+     * @param array $config
+     *                Project configuration (from .hal.yaml)
      * @param array $properties
      *                Build/Release properties
      *
      * @return bool
      */
-    public function __invoke(string $image, array $commands, array $properties): bool;
-
-    /**
-     * @param IOInterface $io
-     *
-     * @return void
-     */
-    public function setIO(IOInterface $io);
-
-    /**
-     * @return OutputInterface|null
-     */
-    public function getIO();
+    public function __invoke(array $config, array $properties): bool;
 }

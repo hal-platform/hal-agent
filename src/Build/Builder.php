@@ -7,13 +7,11 @@
 
 namespace Hal\Agent\Build;
 
+use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Logger\EventLogger;
-// use Hal\Agent\Symfony\OutputAwareInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\StyleInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class BuildPlatform
+class Builder
 {
     const ERR_INVALID_BUILDER = 'Invalid build platform specified';
 
@@ -51,15 +49,14 @@ class BuildPlatform
     }
 
     /**
-     * @param OutputInterface $io
+     * @param IOInterface $io
      * @param string $platform
-     * @param string $image
-     * @param array $commands
+     * @param array $config
      * @param array $properties
      *
      * @return bool
      */
-    public function __invoke(OutputInterface $io, string $platform, string $image, array $commands, array $properties)
+    public function __invoke(IOInterface $io, string $platform, array $config, array $properties)
     {
         if (!$platform || !isset($this->platforms[$platform])) {
             return $this->explode($platform ?: 'Unknown');
@@ -73,7 +70,7 @@ class BuildPlatform
 
         $platform->setIO($io);
 
-        return $platform($image, $commands, $properties);
+        return $platform($config, $properties);
     }
 
     /**

@@ -31,8 +31,6 @@ parameters:
     path.archive: '%env(HAL_PATH_ARTIFACT_ARCHIVE)%'        # permanent filesystem artifact repository
     path.temp: '%env(HAL_PATH_BUILD_TEMP)%'                 # temporary scratch, local
     path.linux_builder: '%env(HAL_PATH_LINUX_BUILDER)%'     # temporary scratch, linux builder
-    path.win_builder: '%env(HAL_PATH_WIN_BUILDER)%'         # temporary scratch, windows builder
-    path.linux_dockerfiles: '%env(HAL_PATH_DOCKERFILES)%'
 
     ############################################################################
     # builders
@@ -40,10 +38,6 @@ parameters:
     build.linux.user: '%env(HAL_LINUX_BUILDER_USER)%'
     build.linux.server: '%env(HAL_LINUX_BUILDER_SERVER)%'
     build.linux.keypath: '%env(HAL_LINUX_SSH_KEYPATH)%'
-
-    build.windows.user: '%env(HAL_WIN_BUILDER_USER)%'
-    build.windows.server: '%env(HAL_WIN_BUILDER_SERVER)%'
-    build.windows.keypath: '%env(HAL_WIN_SSH_KEYPATH)%'
 
     deploy.rsync.user: '%env(HAL_RSYNC_DEPLOY_USER)%'
     deploy.rsync.keypath: '%env(HAL_RSYNC_SSH_KEYPATH)%'
@@ -81,6 +75,7 @@ parameters:
     build.ssm.waiter.interval: 30
     build.ssm.waiter.max: 60
 
+    timeout.linux_builder_internal: 120
     timeout.windows_builder_internal: 120
 
     ############################################################################
@@ -105,7 +100,6 @@ parameters:
     ############################################################################
     # windows platform
     ############################################################################
-
     build.windows_aws.build_path: '%env(HAL_WIN_AWS_BUILD_PATH)%'
     build.windows_aws.build_script_path: '%env(HAL_WIN_AWS_BUILD_SCRIPT_PATH)%'
     build.windows_aws.build_tools_path: '%env(HAL_WIN_AWS_BUILD_TOOLS_PATH)%'
@@ -136,12 +130,20 @@ parameters:
     build.platforms.option.manual_dns: '%env(HAL_DNS_INJECT_OPTIONS)%'
 
     ############################################################################
-    # docker
+    # linux platform
     ############################################################################
-    build.platforms.option.docker.source.repository: 'skluck/docker-images'
-    build.platforms.option.docker.source.reference: 'master'
+    build.platforms.option.linux.docker_private_registry: '%env(HAL_LINUX_DOCKER_PRIVATE_REG)%'
+    build.platforms.option.linux.docker_easy_repo: '%env(HAL_DOCKER_EASY_REPO)%'
+    build.platforms.option.linux.docker_default_image: 'halplatform/hal-build-environments:debian8-buildpack'
 
-    build.platforms.option.docker.default_image: 'base_debian8'
+    # "latest" also allows no tag
+    build.platforms.option.linux.allowed_images:
+        'halplatform/hal-build-environments':
+            - '*'
+        '%build.platforms.option.linux.docker_private_registry%/hal-build-environments':
+            - '*'
+        'hal9000/base_centos7':
+            - 'latest'
 
     ############################################################################
     # credentials / encryption
@@ -159,8 +161,8 @@ parameters:
     ############################################################################
 
     build.platforms:
-        linux: 'build.unix.handler'
-        # windows: 'build.windows_aws_docker.handler'
+        linux: 'build_platform.linux'
+        windows: 'build_platform.windows_aws_docker'
 
     deployment.script.platforms:
         unix: 'push.script.build.unix.handler'

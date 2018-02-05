@@ -1,20 +1,19 @@
 services:
-# unix
-    build.unix.handler:
+    build_platform.linux:
         class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
             - '@logger.event'
-            - '@build.linux_configurator'
-            - '@build.linux_exporter'
-            - '@build.linux_builder'
-            - '@build.linux_importer'
-            - '@build.linux_cleaner'
+            - '@build.linux.configurator'
+            - '@build.linux.exporter'
+            - '@build.linux.docker_builder'
+            - '@build.linux.importer'
+            - '@build.linux.cleaner'
             - '@encrypted.resolver'
-            - '%build.platforms.option.docker.default_image%'
+            - '%build.platforms.option.linux.docker_default_image%'
 
     ############################################################################
 
-    build.linux_configurator:
+    build.linux.configurator:
         class: 'Hal\Agent\Build\Linux\Steps\Configurator'
         arguments:
             - '%path.linux_builder%'
@@ -22,53 +21,60 @@ services:
             -
                 - '%build.linux.server%'
 
-    build.linux_exporter:
+    build.linux.exporter:
         class: 'Hal\Agent\Build\Linux\Steps\Exporter'
         arguments:
             - '@ssh.manager'
             - '@build.support.file_compression'
 
-    build.linux_builder:
+    build.linux.docker_builder:
         class: 'Hal\Agent\Build\Linux\DockerBuilder'
         arguments:
             - '@logger.event'
-            - '@build.support.linux_remoter'
-            - '@build.support.linux_build_remoter'
-            - '@build.support.linux_filetransfer_remoter'
-            - '%path.linux_dockerfiles%'
-        calls:
-            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+            - '@build.linux.support_dockerinator'
+            - '@build.linux.support_docker_validator'
 
-    build.linux_importer:
+    build.linux.importer:
         class: 'Hal\Agent\Build\Linux\Steps\Importer'
         arguments:
             - '@ssh.manager'
             - '@build.support.file_compression'
             - '@utility.filesystem'
 
-    build.linux_cleaner:
+    build.linux.cleaner:
         class: 'Hal\Agent\Build\Linux\Steps\Cleaner'
-        arguments: ['@build.support.linux_remoter']
+        arguments: ['@build.linux.support_remoter']
 
     ############################################################################
 
-    build.support.linux_remoter:
+    build.linux.support_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
-            - '%timeout.standard%'
+            - '%timeout.linux_builder_internal%'
 
-    build.support.linux_build_remoter:
+    build.linux.support_build_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.build%'
 
-    build.support.linux_filetransfer_remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
+    build.linux.support_dockerinator:
+        class: 'Hal\Agent\Docker\LinuxDockerinator'
         arguments:
             - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.filetransfer%'
+            - '@build.linux.support_remoter'
+            - '@build.linux.support_build_remoter'
+            - '%build.platforms.option.manual_dns%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.linux.support_docker_validator:
+        class: 'Hal\Agent\Docker\DockerImageValidator'
+        arguments:
+            - '@logger.event'
+            - '%build.platforms.option.linux.allowed_images%'
+            - '%build.platforms.option.linux.docker_easy_repo%'
+            - '%build.platforms.option.linux.docker_private_registry%'

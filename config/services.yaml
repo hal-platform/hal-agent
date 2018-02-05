@@ -125,7 +125,6 @@ services:
         arguments: ['@doctrine.em', '@utility.process.builder']
         calls:
             - ['setWindowsAWSBuilder', ['%build.windows_aws.region%', '%build.windows_aws.credential_name%', '%build.windows_aws.bucket%', '%build.windows_aws.builder_filter%']]
-            - ['setWindowsBuilder',    ['%build.windows.user%',       '%build.windows.server%',              '%path.win_builder%']]
             - ['setUnixBuilder',       ['%build.linux.user%',         '%build.linux.server%',                '%path.linux_builder%']]
 
     aws:

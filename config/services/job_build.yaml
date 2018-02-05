@@ -23,8 +23,8 @@ services:
             - '@utility.filesystem'
             - '@yaml.parser'
 
-    build.platform:
-        class: 'Hal\Agent\Build\BuildPlatform'
+    builder:
+        class: 'Hal\Agent\Build\Builder'
         arguments:
             - '@logger.event'
             - '@service_container'

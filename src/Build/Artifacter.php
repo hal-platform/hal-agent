@@ -14,7 +14,7 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class Artifacter
 {
-    const EVENT_MESSAGE = 'Store artifact in artifact repository.';
+    const EVENT_MESSAGE = 'Store artifact in artifact repository';
 
     const ERR_DIST_NOT_FOUND = 'Distribution directory not found';
     const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';

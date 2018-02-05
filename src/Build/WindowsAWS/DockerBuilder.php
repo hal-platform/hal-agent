@@ -11,9 +11,9 @@ use Aws\Ssm\SsmClient;
 use Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
-use Hal\Agent\Build\WindowsAWS\Docker\DockerImageValidator;
 use Hal\Agent\Build\WindowsAWS\Utility\Dockerinator;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
+use Hal\Agent\Docker\DockerImageValidator;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 
@@ -131,7 +131,6 @@ class DockerBuilder implements BuilderInterface
         $cleanup = $this->enableCleanup($ssm, $instanceID, $inputDir, $buildID);
 
         // 3. Build container
-
         $containerName = strtolower(str_replace('.', '', $buildID));
 
         // 4. Create container

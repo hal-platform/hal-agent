@@ -7,12 +7,8 @@
 
 namespace Hal\Agent\Build;
 
-use Hal\Agent\Symfony\OutputAwareTrait;
-
 trait EmergencyBuildHandlerTrait
 {
-    use OutputAwareTrait;
-
     /**
      * @var bool
      */
@@ -47,11 +43,11 @@ trait EmergencyBuildHandlerTrait
      * Set or execute the emergency cleanup process
      *
      * @param callable|null $cleaner
-     * @param string $message
+     * @param ?string $message
      *
      * @return void
      */
-    public function cleanup(callable $cleaner = null, $message = ''): void
+    public function cleanup(callable $cleaner = null, string $message = ''): void
     {
         if (func_num_args() > 0) {
             $this->emergencyCleaner = $cleaner;
@@ -59,7 +55,7 @@ trait EmergencyBuildHandlerTrait
 
         } elseif (is_callable($this->emergencyCleaner)) {
             if ($this->emergencyMessage) {
-                $this->status($this->emergencyMessage, 'Shutdown');
+                echo "\n\n SHUTDOWN - " . $this->emergencyMessage . "\n\n";
             }
 
             call_user_func($this->emergencyCleaner);
@@ -89,12 +85,12 @@ trait EmergencyBuildHandlerTrait
 
     /**
      * @param callable $cleaner
-     * @param string $message
+     * @param ?string $message
      * @param array $args
      *
-     * @return null
+     * @return void
      */
-    private function enableEmergencyHandler(callable $cleaner, $message, array $args = [])
+    private function enableEmergencyHandler(callable $cleaner, ?string $message, array $args = [])
     {
         $this->cleanup(function () use ($cleaner, $args) {
             $cleaner(...$args);

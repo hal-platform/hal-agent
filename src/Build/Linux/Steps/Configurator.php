@@ -49,7 +49,7 @@ class Configurator
         $buildConnection = sprintf('%s@%s', $this->linuxUser, $buildServer);
 
         return [
-            'build_connection' => $buildConnection,
+            'builder_connection' => $buildConnection,
             'remote_file' => $this->generateLinuxBuildPath($build->id()),
             'environment_variables' => $this->buildLinuxEnvironment($build)
         ];

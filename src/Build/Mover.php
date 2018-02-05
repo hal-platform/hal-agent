@@ -11,6 +11,15 @@ use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
+/**
+ *
+ * TODO REMOVE
+ * TODO REMOVE
+ * TODO REMOVE    - This was combined into FileCompression and Artifacter
+ * TODO REMOVE
+ * TODO REMOVE
+ *
+ */
 class Mover
 {
     const EVENT_MESSAGE = 'Copy archive to permanent storage';

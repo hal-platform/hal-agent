@@ -21,7 +21,7 @@ use Hal\Core\Entity\JobType\Build;
 
 class LinuxBuildPlatform implements BuildPlatformInterface
 {
-    // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, OutputAwareTrait
+    // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, IOAwareTrait
     use PlatformTrait;
 
     const SECTION = 'Linux Platform';
@@ -96,35 +96,41 @@ class LinuxBuildPlatform implements BuildPlatformInterface
         $this->importer = $importer;
         $this->cleaner = $cleaner;
         $this->decrypter = $decrypter;
+
         $this->defaultDockerImage = $defaultDockerImage;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function __invoke(string $image, array $commands, array $properties): bool
+    public function __invoke(array $config, array $properties): bool
     {
-        if (!$config = $this->configurator($properties['build'])) {
+        $job = $properties['build'];
+
+        $image = $config['image'] ?? $this->defaultDockerImage;
+        $commands = $config['build'];
+
+        if (!$platformConfig = $this->configurator($job)) {
             return $this->bombout(false);
         }
 
-        if (!$this->export($config, $properties)) {
+        if (!$this->export($platformConfig, $properties)) {
             return $this->bombout(false);
         }
 
         // decrypt
-        $decrypted = $this->decrypt($properties['decrypted'] ?? []);
-        if ($decrypted === null) {
+        $env = $this->decrypt($properties['encrypted'], $platformConfig, $config);
+        if ($env === null) {
             $this->logger->event('failure', self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
         }
 
         // run build
-        if (!$this->build($image, $config, $properties, $commands, $decrypted)) {
+        if (!$this->build($job->id(), $image, $platformConfig, $commands, $env)) {
             return $this->bombout(false);
         }
 
-        if (!$this->import($config, $properties)) {
+        if (!$this->import($platformConfig, $properties)) {
             return $this->bombout(false);
         }
 
@@ -141,34 +147,34 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     {
         $this->getIO()->section(self::SECTION . ' - Validating Linux configuration');
 
-        $config = ($this->configurator)($build);
+        $platformConfig = ($this->configurator)($build);
 
         $rows = [];
-        foreach ($config as $p => $v) {
+        foreach ($platformConfig as $p => $v) {
             $v = json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             $rows[] = [$p, $v];
         }
 
         $this->getIO()->table(['Configuration', 'Value'], $rows);
 
-        return $config;
+        return $platformConfig;
     }
 
     /**
-     * @param array $config
+     * @param array $platformConfig
      * @param array $properties
      *
      * @return bool
      */
-    private function export(array $config, array $properties)
+    private function export(array $platformConfig, array $properties)
     {
         $this->getIO()->section(self::SECTION . ' - Exporting files to build server');
 
         $buildPath = $properties['workspace_path'] . '/build';
         $localFile = $properties['workspace_path'] . '/build_export.tgz';
 
-        $connection = $config['build_connection'];
-        $remoteFile = $config['remote_file'];
+        $connection = $platformConfig['builder_connection'];
+        $remoteFile = $platformConfig['remote_file'];
 
         $this->getIO()->listing([
             sprintf('Workspace: <info>%s</info>', $buildPath),
@@ -180,78 +186,67 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote unix build server', [$connection, $remoteFile]);
+            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote build server', [$connection, $remoteFile]);
         }
 
         return $response;
     }
 
     /**
-     * @param array $decryptedConfiguration
+     * @param array $encryptedConfig
+     * @param array $platformConfig
+     * @param array $config
      *
      * @return array|null
      */
-    private function decrypt(array $decryptedConfiguration)
+    private function decrypt(array $encryptedConfig, array $platformConfig, array $config)
     {
-        $decrypted = $this->decrypter->decryptProperties($decryptedConfiguration);
-        if (count($decrypted) !== count($decryptedConfiguration)) {
+        $decrypted = $this->decrypter->decryptProperties($encryptedConfig);
+        if (count($decrypted) !== count($encryptedConfig)) {
             return null;
         }
 
-        return $decrypted;
+        $env = $this->determineEnviroment($platformConfig['environment_variables'], $decrypted, $config['env']);
+
+        return $env;
     }
 
     /**
+     * @param array $jobID
      * @param array $image
-     * @param array $config
-     * @param array $properties
+     * @param array $platformConfig
      * @param array $commands
-     * @param array $decrypted
+     * @param array $env
      *
      * @return bool
      */
-    private function build($image, array $config, array $properties, array $commands, array $decrypted)
+    private function build($jobID, $image, array $platformConfig, array $commands, array $env)
     {
-        $this->getIO()->section(self::SECTION . ' - Running build command');
+        $this->getIO()->section(self::SECTION . ' - Running build steps');
 
-        $dockerImage = $image ?: $this->defaultDockerImage;
+        $connection = $platformConfig['builder_connection'];
+        $remoteFile = $platformConfig['remote_file'];
 
-        $this->getIO()->text('Commands:');
-        $this->getIO()->listing($commands);
+        $this->builder->setIO($this->getIO());
 
-        return true;
-
-        // $env = $config['environmentVariables'];
-        // $user = $config['buildUser'];
-        // $server = $config['buildServer'];
-        // $file = $config['remoteFile'];
-
-        // $env = $this->determineEnviroment(
-        //     $config['environmentVariables'],
-        //     $decrypted,
-        //     $properties['configuration']['env']
-        // );
-
-        // $this->builder->setIO($this->getIO());
-
-        // return ($this->builder)($dockerImage, $user, $server, $file, $commands, $env);
+        return ($this->builder)($jobID, $image, $connection, $remoteFile, $commands, $env);
     }
 
     /**
-     * @param array $config
+     * @param array $platformConfig
      * @param array $properties
      *
      * @return bool
      */
-    private function import(array $config, array $properties)
+    private function import(array $platformConfig, array $properties)
     {
         $this->getIO()->section(self::SECTION . ' - Importing files from build server');
 
         $buildPath = $properties['workspace_path'] . '/build';
         $localFile = $properties['workspace_path'] . '/build_import.tgz';
 
-        $connection = $config['build_connection'];
-        $remoteFile = $config['remote_file'];
+        $connection = $platformConfig['builder_connection'];
+        $remoteFile = $platformConfig['remote_file'];
 
         $this->getIO()->listing([
             sprintf('Workspace: <info>%s</info>', $buildPath),

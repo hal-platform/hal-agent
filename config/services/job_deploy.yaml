@@ -67,17 +67,18 @@ services:
             - '@service_container'
             - '%deployment_before.build.platforms%'
     push.before.builder.unix_handler:
-        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
+        class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
             - '@logger.event'
-            - '@build.linux_exporter'
+            - '@build.linux.configurator'
+            - '@build.linux.exporter'
             - '@push.after.builder.docker_builder'
-            - '@build.linux_importer'
-            - '@build.linux_cleaner'
+            - '@build.linux.importer'
+            - '@build.linux.cleaner'
             - '@encrypted.resolver'
-            - '%build.platforms.option.docker.default_image%'
+            - '%build.platforms.option.linux.docker_default_image%'
     push.before.builder.docker_builder:
-        parent: 'build.linux_builder'
+        parent: 'build_platform.linux'
         class: 'Hal\Agent\Push\Script\BeforeDeployDockerBuilder'
 
     push.after.builder:
@@ -87,17 +88,18 @@ services:
             - '@service_container'
             - '%deployment_after.build.platforms%'
     push.after.builder.unix_handler:
-        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
+        class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
             - '@logger.event'
-            - '@build.linux_exporter'
+            - '@build.linux.configurator'
+            - '@build.linux.exporter'
             - '@push.after.builder.docker_builder'
-            - '@build.linux_importer'
-            - '@build.linux_cleaner'
+            - '@build.linux.importer'
+            - '@build.linux.cleaner'
             - '@encrypted.resolver'
-            - '%build.platforms.option.docker.default_image%'
+            - '%build.platforms.option.linux.docker_default_image%'
     push.after.builder.docker_builder:
-        parent: 'build.linux_builder'
+        parent: 'build_platform.linux'
         class: 'Hal\Agent\Push\Script\AfterDeployDockerBuilder'
 
     # windows
@@ -367,18 +369,19 @@ services:
             - '%deployment.script.platforms%'
 
     push.script.build.unix.handler:
-        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
+        class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
             - '@logger.event'
-            - '@build.linux_exporter'
+            - '@build.linux.configurator'
+            - '@build.linux.exporter'
             - '@push.script.build.unix.builder'
-            - '@build.linux_importer'
-            - '@build.linux_cleaner'
+            - '@build.linux.importer'
+            - '@build.linux.cleaner'
             - '@encrypted.resolver'
-            - '%build.platforms.option.docker.default_image%'
+            - '%build.platforms.option.linux.docker_default_image%'
 
     push.script.build.unix.builder:
-        parent: 'build.linux_builder'
+        parent: 'build_platform.linux'
         class: 'Hal\Agent\Push\Script\DeployDockerBuilder'
 
     # windows

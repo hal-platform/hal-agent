@@ -16,7 +16,7 @@ use Hal\Core\VersionControl\VCSDownloaderInterface;
 
 class Downloader
 {
-    const EVENT_MESSAGE = 'Download source code from version control provider.';
+    const EVENT_MESSAGE = 'Download source code from version control provider';
 
     /**
      * @var EventLogger

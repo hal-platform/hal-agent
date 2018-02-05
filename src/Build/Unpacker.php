@@ -11,6 +11,15 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Process\ProcessBuilder;
 
+/**
+ *
+ * TODO REMOVE
+ * TODO REMOVE
+ * TODO REMOVE    - This was combined into FileCompression and Downloader
+ * TODO REMOVE
+ * TODO REMOVE
+ *
+ */
 class Unpacker
 {
     use ProcessRunnerTrait;

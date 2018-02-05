@@ -7,10 +7,13 @@
 
 namespace Hal\Agent\Build\Linux;
 
-interface BuilderInterface
+use Hal\Agent\Symfony\IOAwareInterface;
+
+interface BuilderInterface extends IOAwareInterface
 {
     /**
-     * @param string $imageName
+     * @param string $jobID
+     * @param string $image
      *
      * @param string $remoteConnection
      * @param string $remoteFile
@@ -18,7 +21,7 @@ interface BuilderInterface
      * @param array $commands
      * @param array $env
      *
-     * @return boolean
+     * @return bool
      */
-    public function __invoke(string $imageName, string $remoteConnection, string $remoteFile, array $commands, array $env);
+    public function __invoke(string $jobID, string $image, string $remoteConnection, string $remoteFile, array $commands, array $env): bool;
 }

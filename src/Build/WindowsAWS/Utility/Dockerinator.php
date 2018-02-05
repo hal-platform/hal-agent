@@ -18,8 +18,6 @@ class Dockerinator
 {
     use InternalDebugLoggingTrait;
 
-    const SECTION = 'Docker';
-
     const CONTAINER_WORKING_DIR = 'c:\workspace';
     const CONTAINER_SCRIPTS_DIR = 'c:\build-scripts';
 

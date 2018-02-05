@@ -12,6 +12,15 @@ use Hal\Agent\Utility\ProcessRunnerTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\ProcessBuilder;
 
+/**
+ *
+ * TODO REMOVE
+ * TODO REMOVE
+ * TODO REMOVE    - This was combined into FileCompression and Artifacter
+ * TODO REMOVE
+ * TODO REMOVE
+ *
+ */
 class Packer
 {
     use ProcessRunnerTrait;
