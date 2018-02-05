@@ -133,7 +133,7 @@ parameters:
         '%build.platforms.option.windows.docker_private_registry%/hal-build-environments':
             - '*'
 
-    build.platforms.option.manual_dns: '%env(MANUAL_DNS_OPTIONS)%'
+    build.platforms.option.manual_dns: '%env(HAL_DNS_INJECT_OPTIONS)%'
 
     ############################################################################
     # docker
