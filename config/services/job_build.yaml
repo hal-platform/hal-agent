@@ -11,7 +11,16 @@ services:
 
     build.downloader:
         class: 'Hal\Agent\Build\Downloader'
-        arguments: ['@logger.event', '@github.archive']
+        arguments:
+            - '@logger.event'
+            - '@build.file_compression'
+            - '@vcs'
+    build.file_compression:
+        class: 'Hal\Agent\Build\Generic\FileCompression'
+        arguments:
+            - '@logger.event'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
     build.unpacker:
         class: 'Hal\Agent\Build\Unpacker'
         arguments:

@@ -96,6 +96,12 @@ parameters:
     redis.server: '%env(HAL_REDIS_SERVER)%'
     redis.prefix: '%env(HAL_REDIS_PREFIX)%'
 
+    cache.type.main: '%env(HAL_CACHE_MAIN)%'
+    cache.type.github: '%env(HAL_CACHE_GITHUB)%'
+
+    cache.github.default.ttl: 60
+    cache.github.short.ttl: 20
+
     ############################################################################
     # windows platform
     ############################################################################

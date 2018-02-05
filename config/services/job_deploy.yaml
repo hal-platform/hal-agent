@@ -184,7 +184,7 @@ services:
         arguments:
             - '@logger.event'
             - '@push.rsync.verify'
-            - '@push.rsync.delta'
+            # - '@push.rsync.delta'
             - '@push.rsync.serverCommand'
             - '@push.rsync.pusher'
 
@@ -195,13 +195,13 @@ services:
             - '@ssh.manager'
             - '@push.rsync.verify.remoter'
 
-    push.rsync.delta:
-        class: 'Hal\Agent\Push\Rsync\CodeDelta'
-        arguments:
-            - '@logger.event'
-            - '@push.rsync.delta.remoter'
-            - '@yaml.parser'
-            - '@github.commits'
+    # push.rsync.delta:
+    #     class: 'Hal\Agent\Push\Rsync\CodeDelta'
+    #     arguments:
+    #         - '@logger.event'
+    #         - '@push.rsync.delta.remoter'
+    #         - '@yaml.parser'
+    #         - '@github.commits'
 
     push.rsync.pusher:
         class: 'Hal\Agent\Push\Rsync\Pusher'
@@ -222,12 +222,12 @@ services:
             - '@ssh.manager'
             - '%timeout.push.serverCommand%'
 
-    push.rsync.delta.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.standard%'
+    # push.rsync.delta.remoter:
+    #     class: 'Hal\Agent\Remoting\SSHProcess'
+    #     arguments:
+    #         - '@logger.event'
+    #         - '@ssh.manager'
+    #         - '%timeout.standard%'
 
     push.rsync.verify.remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'

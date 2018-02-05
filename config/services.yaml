@@ -80,14 +80,8 @@ services:
         class: 'Hal\Agent\Logger\EventLogger'
         arguments:
             - '@doctrine.em'
-            - '@logger.event.factory'
             - '@logger.process.handler'
             - '@clock'
-    logger.event.factory:
-        class: 'Hal\Agent\Logger\EventFactory'
-        arguments: ['@doctrine.em', '@doctrine.random']
-        calls:
-            - ['setRedisHandler', ['@redis']]
 
     logger.process.handler:
         class: 'Hal\Agent\Logger\ProcessHandler'
@@ -119,12 +113,7 @@ services:
         shared: false
         calls:
             - ['inheritEnvironmentVariables', [false]]
-    utility.referenceResolver:
-        class: 'Hal\Agent\Github\ReferenceResolver'
-        arguments:
-            - '@github.references'
-            - '@github.commits'
-            - '@github.pullRequests'
+
     utility.forker:
         class: 'Hal\Agent\Helper\ForkHelper'
 
@@ -135,9 +124,9 @@ services:
         class: 'Hal\Agent\Utility\BuildEnvironmentResolver'
         arguments: ['@doctrine.em', '@utility.process.builder']
         calls:
-            - ['setWindowsAWSBuilder', [ '%build.windows_aws.region%', '%build.windows_aws.credential_name%', '%build.windows_aws.bucket%', '%build.windows_aws.builder_filter%' ]]
-            - ['setWindowsBuilder',    ['%build.windows.user%', '%build.windows.server%', '%path.win_builder%']]
-            - ['setUnixBuilder',       ['%build.linux.user%',    '%build.linux.server%',    '%path.linux_builder%']]
+            - ['setWindowsAWSBuilder', ['%build.windows_aws.region%', '%build.windows_aws.credential_name%', '%build.windows_aws.bucket%', '%build.windows_aws.builder_filter%']]
+            - ['setWindowsBuilder',    ['%build.windows.user%',       '%build.windows.server%',              '%path.win_builder%']]
+            - ['setUnixBuilder',       ['%build.linux.user%',         '%build.linux.server%',                '%path.linux_builder%']]
 
     aws:
         class: 'Aws\Sdk'

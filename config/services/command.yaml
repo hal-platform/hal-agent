@@ -90,7 +90,6 @@ services:
             - '@logger.event'
             - '@build.resolver'
             - '@build.downloader'
-            - '@build.unpacker'
             - '@build.configuration.reader'
             - '@build.builder'
             - '@build.packer'
