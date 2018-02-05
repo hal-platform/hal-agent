@@ -88,14 +88,13 @@ services:
         class: 'Hal\Agent\Executor\Runner\BuildCommand'
         arguments:
             - '@logger.event'
+            - '@build.cleaner'
+            - '@ssh.manager'
             - '@build.resolver'
             - '@build.downloader'
-            - '@build.configuration.reader'
+            - '@build.configuration_reader'
             - '@build.builder'
-            - '@build.packer'
-            - '@build.mover'
-            - '@utility.filesystem'
-            - '@ssh.manager'
+            - '@build.artifacter'
     executor.runner.deploy:
         class: 'Hal\Agent\Executor\Runner\DeployCommand'
         arguments:

@@ -1,0 +1,84 @@
+services:
+# unix
+    build.unix.handler:
+        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.exporter'
+            - '@build.unix.builder'
+            - '@build.unix.importer'
+            - '@build.unix.cleaner'
+            - '@encrypted.resolver'
+            - '%build.platforms.option.docker.default_image%'
+
+    ############################################################################
+
+    build.unix.exporter:
+        class: 'Hal\Agent\Build\Unix\Exporter'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.exporter.packer'
+            - '@ssh.filemanager'
+            - '@build.unix.standard.remoter'
+            - '@utility.process.builder'
+            - '%timeout.filetransfer%'
+    build.unix.exporter.packer:
+        class: 'Hal\Agent\Build\Unix\Packer'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
+        calls:
+            - ['disableForcedLogging', []]
+
+    build.unix.builder:
+        class: 'Hal\Agent\Build\Unix\DockerBuilder'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.standard.remoter'
+            - '@build.unix.build.remoter'
+            - '@build.unix.filetransfer.remoter'
+            - '%path.linux_dockerfiles%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.unix.importer:
+        class: 'Hal\Agent\Build\Unix\Importer'
+        arguments:
+            - '@logger.event'
+            - '@build.unix.importer.unpacker'
+            - '@ssh.filemanager'
+            - '@utility.process.builder'
+            - '%timeout.filetransfer%'
+    build.unix.importer.unpacker:
+        class: 'Hal\Agent\Build\Unix\Unpacker'
+        arguments:
+            - '@logger.event'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
+
+    build.unix.cleaner:
+        class: 'Hal\Agent\Build\Unix\Cleaner'
+        arguments: ['@build.unix.standard.remoter']
+
+    build.unix.build.remoter:
+        class: 'Hal\Agent\Remoting\SSHProcess'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.build%'
+
+    build.unix.standard.remoter:
+        class: 'Hal\Agent\Remoting\SSHProcess'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.standard%'
+
+    build.unix.filetransfer.remoter:
+        class: 'Hal\Agent\Remoting\SSHProcess'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.filetransfer%'

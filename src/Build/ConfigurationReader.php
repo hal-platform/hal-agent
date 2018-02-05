@@ -45,7 +45,7 @@ class ConfigurationReader
     private $fileLoader;
 
     /**
-     * @var callable
+     * @var array
      */
     private $fileLocations;
 
@@ -178,6 +178,10 @@ class ConfigurationReader
                 return null;
             }
         }
+
+        // fall back to default for build system
+        $config['platform'] = $config['platform'] ?: 'default';
+        $config['image'] = $config['image'] ?: 'default';
 
         $context['configuration'] = $config;
         $this->logger->event('success', self::FOUND, $context);

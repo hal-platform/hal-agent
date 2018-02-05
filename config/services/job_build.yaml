@@ -13,21 +13,10 @@ services:
         class: 'Hal\Agent\Build\Downloader'
         arguments:
             - '@logger.event'
-            - '@build.file_compression'
+            - '@build.support.file_compression'
             - '@vcs'
-    build.file_compression:
-        class: 'Hal\Agent\Build\Generic\FileCompression'
-        arguments:
-            - '@logger.event'
-            - '@utility.process.builder'
-            - '%timeout.filepacking%'
-    build.unpacker:
-        class: 'Hal\Agent\Build\Unpacker'
-        arguments:
-            - '@logger.event'
-            - '@utility.process.builder'
-            - '%timeout.filepacking%'
-    build.configuration.reader:
+
+    build.configuration_reader:
         class: 'Hal\Agent\Build\ConfigurationReader'
         arguments:
             - '@logger.event'
@@ -43,137 +32,21 @@ services:
         calls:
             - ['enableStaging', []]
 
-    build.packer:
-        class: 'Hal\Agent\Build\Packer'
+    build.artifacter:
+        class: 'Hal\Agent\Build\Artifacter'
         arguments:
             - '@logger.event'
             - '@utility.filesystem'
+            - '@build.support.file_compression'
+
+    build.cleaner:
+        class: 'Hal\Agent\Build\Generic\LocalCleaner'
+        arguments: ['@utility.filesystem']
+
+
+    build.support.file_compression:
+        class: 'Hal\Agent\Build\Generic\FileCompression'
+        arguments:
+            - '@logger.event'
             - '@utility.process.builder'
             - '%timeout.filepacking%'
-    build.mover:
-        class: 'Hal\Agent\Build\Mover'
-        arguments: ['@logger.event', '@utility.filesystem']
-
-    # unix
-    build.unix.handler:
-        class: 'Hal\Agent\Build\Unix\UnixBuildHandler'
-        arguments:
-            - '@logger.event'
-            - '@build.unix.exporter'
-            - '@build.unix.builder'
-            - '@build.unix.importer'
-            - '@build.unix.cleaner'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.docker.default_image%'
-
-    build.unix.exporter:
-        class: 'Hal\Agent\Build\Unix\Exporter'
-        arguments:
-            - '@logger.event'
-            - '@build.unix.exporter.packer'
-            - '@ssh.filemanager'
-            - '@build.unix.standard.remoter'
-            - '@utility.process.builder'
-            - '%timeout.filetransfer%'
-    build.unix.exporter.packer:
-        parent: 'build.packer'
-        class: 'Hal\Agent\Build\Unix\Packer'
-        calls:
-            - ['disableForcedLogging', []]
-
-    build.unix.builder:
-        class: 'Hal\Agent\Build\Unix\DockerBuilder'
-        arguments:
-            - '@logger.event'
-            - '@build.unix.standard.remoter'
-            - '@build.unix.build.remoter'
-            - '@build.unix.filetransfer.remoter'
-            - '%path.linux_dockerfiles%'
-        calls:
-            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-
-    build.unix.importer:
-        class: 'Hal\Agent\Build\Unix\Importer'
-        arguments:
-            - '@logger.event'
-            - '@build.unix.importer.unpacker'
-            - '@ssh.filemanager'
-            - '@utility.process.builder'
-            - '%timeout.filetransfer%'
-    build.unix.importer.unpacker:
-        parent: 'build.unpacker'
-        class: 'Hal\Agent\Build\Unix\Unpacker'
-
-    build.unix.cleaner:
-        class: 'Hal\Agent\Build\Unix\Cleaner'
-        arguments: ['@build.unix.standard.remoter']
-
-    build.unix.build.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.build%'
-
-    build.unix.standard.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.standard%'
-
-    build.unix.filetransfer.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.filetransfer%'
-
-    # windows
-    build.windows.handler:
-        class: 'Hal\Agent\Build\Windows\WindowsBuildHandler'
-        arguments:
-            - '@logger.event'
-            - '@build.windows.exporter'
-            - '@build.windows.builder'
-            - '@build.windows.importer'
-            - '@build.windows.cleaner'
-            - '@encrypted.resolver'
-
-    build.windows.exporter:
-        class: 'Hal\Agent\Build\Windows\Exporter'
-        arguments:
-            - '@logger.event'
-            - '@ssh.filemanager'
-            - '@build.windows.standard.remoter'
-            - '@utility.process.builder'
-            - '%timeout.filetransfer%'
-
-    build.windows.builder:
-        class: 'Hal\Agent\Build\Windows\Builder'
-        arguments: ['@build.windows.build.remoter']
-
-    build.windows.importer:
-        class: 'Hal\Agent\Build\Windows\Importer'
-        arguments:
-            - '@logger.event'
-            - '@ssh.filemanager'
-            - '@utility.process.builder'
-            - '%timeout.filetransfer%'
-
-    build.windows.cleaner:
-        class: 'Hal\Agent\Build\Windows\Cleaner'
-        arguments: ['@build.windows.standard.remoter']
-
-    build.windows.build.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.build%'
-    build.windows.standard.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.standard%'

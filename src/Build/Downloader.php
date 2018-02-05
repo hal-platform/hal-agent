@@ -26,7 +26,7 @@ class Downloader
     /**
      * @var FileCompression
      */
-    private $filesystem;
+    private $fileCompression;
 
     /**
      * @var VCS
@@ -35,13 +35,13 @@ class Downloader
 
     /**
      * @param EventLogger $logger
-     * @param FileCompression $filesystem
+     * @param FileCompression $fileCompression
      * @param VCS $vcs
      */
-    public function __construct(EventLogger $logger, FileCompression $filesystem, VCS $vcs)
+    public function __construct(EventLogger $logger, FileCompression $fileCompression, VCS $vcs)
     {
         $this->logger = $logger;
-        $this->filesystem = $filesystem;
+        $this->fileCompression = $fileCompression;
         $this->vcs = $vcs;
     }
 
@@ -60,11 +60,11 @@ class Downloader
             return false;
         }
 
-        if (!$this->filesystem->createWorkspace($workspace)) {
+        if (!$this->fileCompression->createWorkspace($workspace)) {
             return false;
         }
 
-        if (!$this->filesystem->createWorkspace($buildPath)) {
+        if (!$this->fileCompression->createWorkspace($buildPath)) {
             return false;
         }
 
@@ -73,7 +73,7 @@ class Downloader
                 return false;
             }
 
-            if (!$this->filesystem->unpackTarArchive($buildPath, $sourceCodeFile)) {
+            if (!$this->fileCompression->unpackTarArchive($buildPath, $sourceCodeFile)) {
                 return false;
             }
         }

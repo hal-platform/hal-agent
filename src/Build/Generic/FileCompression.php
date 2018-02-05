@@ -21,6 +21,9 @@ class FileCompression
     const EVENT_MESSAGE = 'Filesystem action';
     const ERR_TIMEOUT = 'Filesystem action timed out';
 
+    const UNCOMPRESS_TGZ_FLAGS = '-vxz';
+    const COMPRESS_TGZ_FLAGS = '-vcz';
+
     /**
      * @var EventLogger
      */
@@ -58,20 +61,20 @@ class FileCompression
     {
         $makeCommand = ['mkdir', $workspacePath];
 
-        $makeProcess = $this->processBuilder
+        $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments($makeCommand)
             ->getProcess();
 
-        if (!$this->runProcess($makeProcess, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             return false;
         }
 
-        if ($makeProcess->isSuccessful()) {
+        if ($process->isSuccessful()) {
             return true;
         }
 
-        return $this->processFailure(implode(' ', $makeCommand), $makeProcess);
+        return $this->processFailure(implode(' ', $makeCommand), $process);
     }
 
     /**
@@ -80,30 +83,63 @@ class FileCompression
      *
      * @return bool
      */
-    public function unpackTarArchive(string $workspacePath, $tarFile): bool
+    public function unpackTarArchive(string $workspacePath, string $tarFile): bool
     {
         $unpackCommand = [
             'tar',
-            '-vxz',
+            static::UNCOMPRESS_TGZ_FLAGS,
             '--strip-components=1',
             sprintf('--file=%s', $tarFile),
             sprintf('--directory=%s', $workspacePath)
         ];
 
-        $unpackProcess = $this->processBuilder
+        $process = $this->processBuilder
             ->setWorkingDirectory(null)
             ->setArguments($unpackCommand)
             ->setTimeout($this->commandTimeout)
             ->getProcess();
 
-        if (!$this->runProcess($unpackProcess, $this->commandTimeout)) {
+        if (!$this->runProcess($process, $this->commandTimeout)) {
             return false;
         }
 
-        if ($unpackProcess->isSuccessful()) {
+        if ($process->isSuccessful()) {
             return true;
         }
 
-        return $this->processFailure(implode(' ', $unpackCommand), $unpackProcess);
+        return $this->processFailure(implode(' ', $unpackCommand), $process);
+    }
+
+    /**
+     * @param string $workspacePath
+     * @param string $tarFile
+     *
+     * @return bool
+     */
+    public function packTarArchive(string $workspacePath, string $tarFile): bool
+    {
+        $packCommand = [
+            'tar',
+            static::COMPRESS_TGZ_FLAGS,
+            sprintf('--file=%s', $tarFile),
+            '.'
+        ];
+
+        $process = $this->processBuilder
+            ->setWorkingDirectory($workspacePath)
+            ->setArguments($packCommand)
+            ->setTimeout($this->commandTimeout)
+            ->getProcess();
+
+
+        if (!$this->runProcess($process, $this->commandTimeout)) {
+            return false;
+        }
+
+        if ($process->isSuccessful()) {
+            return true;
+        }
+
+        return $this->processFailure(implode(' ', $packCommand), $process);
     }
 }

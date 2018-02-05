@@ -53,8 +53,12 @@ services:
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
     build.windows_aws.exporter.packer:
-        parent: 'build.packer'
         class: 'Hal\Agent\Build\WindowsAWS\Packer'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
 
     build.windows_aws.native_builder:
         class: 'Hal\Agent\Build\WindowsAWS\NativeBuilder'
@@ -78,8 +82,11 @@ services:
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
     build.windows_aws.importer.unpacker:
-        parent: 'build.unpacker'
         class: 'Hal\Agent\Build\WindowsAWS\Unpacker'
+        arguments:
+            - '@logger.event'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
 
     build.windows_aws.cleaner:
         class: 'Hal\Agent\Build\WindowsAWS\Cleaner'

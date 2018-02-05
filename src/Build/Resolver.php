@@ -86,6 +86,7 @@ class Resolver
             'default_configuration' => $this->buildDefaultConfiguration(),
 
             'workspace_path' => $this->generateLocalTempPath($build->id(), 'build'),
+            'artifact_stored_file' => $this->generateBuildArchiveFile($build->id()),
 
             // 'location' => [
             //     'download' => $this->generateRepositoryDownloadFile($build->id()),
