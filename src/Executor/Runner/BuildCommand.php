@@ -22,6 +22,7 @@ use Hal\Agent\Executor\JobStatsTrait;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Type\JobEventStageEnum;
 use Hal\Core\Type\VCSProviderEnum;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -198,7 +199,7 @@ class BuildCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        $this->logger->setStage('build.created');
+        $this->logger->setStage(JobEventStageEnum::TYPE_CREATED);
 
         if (!$properties = $this->prepareAgentConfiguration($io, $buildID)) {
             return $this->buildFailure($io, self::ERR_NOT_RUNNABLE);
@@ -224,7 +225,7 @@ class BuildCommand implements ExecutorInterface
             return $this->buildFailure($io, self::ERR_BUILD);
         }
 
-        $this->logger->setStage('end');
+        $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
         if (!$this->storeArtifact($io, $config, $properties)) {
             return $this->buildFailure($io, self::ERR_STORE_ARTIFACT);
@@ -263,18 +264,19 @@ class BuildCommand implements ExecutorInterface
         // add artifacts for cleanup
         $this->artifacts = $properties['artifacts'];
 
-        $this->outputJobInformation($io, $properties['build']);
+        $this->outputJobInformation($io, $properties);
         return $properties;
     }
 
     /**
      * @param IOInterface $io
-     * @param Build $build
+     * @param array $properties
      *
      * @return void
      */
-    private function outputJobInformation(IOInterface $io, Build $build)
+    private function outputJobInformation(IOInterface $io, array $properties)
     {
+        $build = $properties['build'];
         $application = $build->application();
         $environment = $build->environment();
 
@@ -284,10 +286,13 @@ class BuildCommand implements ExecutorInterface
         $environmentID = $environment ? $environment->id() : 'N/A';
 
         $io->listing([
-            sprintf('Build: <info>%s</info>', $build->id()),
-            sprintf('Application: <info>%s</info> (ID: %s)', $applicationName, $applicationID),
-            sprintf('Environment: <info>%s</info> (ID: %s)', $environmentName, $environmentID)
+            sprintf('Build: %s', $this->colorize($build->id())),
+            sprintf('Application: %s (ID: %s)', $this->colorize($applicationName), $applicationID),
+            sprintf('Environment: %s (ID: %s)', $this->colorize($environmentName), $environmentID)
         ]);
+
+        $outputConfig = array_intersect_key($properties, array_fill_keys(['encrypted_sources', 'artifacts', 'artifact_stored_file'], 1));
+        $this->outputTable($io, 'Agent configuration:', $outputConfig);
     }
 
     /**
@@ -308,9 +313,9 @@ class BuildCommand implements ExecutorInterface
         $provideType = $provider ? VCSProviderEnum::format($provider->type()) : 'N/A';
 
         $io->listing([
-            sprintf('Build Workspace: <info>%s</info>', $workspace),
-            sprintf('VCS Provider: <info>%s</info> (Type: %s)', $providerName, $provideType),
-            sprintf('VCS Reference: <info>%s</info> (Commit: %s)', $build->reference(), $build->commit())
+            sprintf('Build Workspace: %s', $this->colorize($workspace)),
+            sprintf('VCS Provider: %s (Type: %s)', $this->colorize($providerName), $provideType),
+            sprintf('VCS Reference: %s (Commit: %s)', $this->colorize($build->reference()), $build->commit())
         ]);
 
         return ($this->downloader)($properties['build'], $workspace);
@@ -335,13 +340,7 @@ class BuildCommand implements ExecutorInterface
             return null;
         }
 
-        $rows = [];
-        foreach ($config as $p => $v) {
-            $rows[] = [$p, json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)];
-        }
-
-        $io->listing(['Application configuration:']);
-        $io->table(['Configuration', 'Value'], $rows);
+        $this->outputTable($io, 'Application configuration:', $config);
 
         return $config;
     }
@@ -367,11 +366,11 @@ class BuildCommand implements ExecutorInterface
         }
 
         $io->listing([
-            sprintf('Platform: <info>%s</info>', $platform),
-            sprintf('Docker Image: <info>%s</info>', $image)
+            sprintf('Platform: %s', $this->colorize($platform)),
+            sprintf('Docker Image: %s', $this->colorize($image))
         ]);
 
-        $io->text('Commands:');
+        $io->text('Build steps:');
         $io->listing($this->colorize($buildCommands));
 
         return ($this->builder)($io, $platform, $config, $properties);
@@ -394,11 +393,11 @@ class BuildCommand implements ExecutorInterface
         $storedArtifactFile = $properties['artifact_stored_file'];
 
         $io->listing([
-            sprintf('Artifact Path: <info>%s</info>', $buildPath . '/' . $config['dist']),
-            sprintf('Artifact File: <info>%s</info>', $artifactFile),
+            sprintf('Artifact Path: %s', $this->colorize($buildPath . '/' . $config['dist'])),
+            sprintf('Artifact File: %s', $this->colorize($artifactFile)),
 
-            sprintf('Artifact Repository: <info>%s</info>', 'Filesystem'),
-            sprintf('Repository Location: <info>%s</info>', $storedArtifactFile)
+            sprintf('Artifact Repository: %s', $this->colorize('Filesystem')),
+            sprintf('Repository Location: %s', $this->colorize($storedArtifactFile))
         ]);
 
         return ($this->artifacter)($buildPath, $config['dist'], $artifactFile, $storedArtifactFile);

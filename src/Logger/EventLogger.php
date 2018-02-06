@@ -81,15 +81,11 @@ class EventLogger
      */
     public function setStage($stage)
     {
-        if (!$normalized = $this->normalizeStage($stage)) {
+        if (!JobEventStageEnum::isValid($stage)) {
             return;
         }
 
-        if (!JobEventStageEnum::isValid($normalized)) {
-            return;
-        }
-
-        $this->currentStage = $normalized;
+        $this->currentStage = $stage;
     }
 
     /**
@@ -121,7 +117,7 @@ class EventLogger
     {
         $this->job = $job;
 
-        $this->setStage('start');
+        $this->setStage(JobEventStageEnum::TYPE_STARTING);
 
         $this->job->withStatus(JobStatusEnum::TYPE_RUNNING);
         $this->job->withStart($this->clock->read());
@@ -141,7 +137,7 @@ class EventLogger
             $this->job->withEnd($this->clock->read());
             $this->em->merge($this->job);
 
-            $this->setStage('failure');
+            $this->setStage(JobEventStageEnum::TYPE_FAILURE);
 
             $this->processHandler->abort($this->job);
         }
@@ -159,31 +155,12 @@ class EventLogger
             $this->job->withEnd($this->clock->read());
             $this->em->merge($this->job);
 
-            $this->setStage('success');
+            $this->setStage(JobEventStageEnum::TYPE_SUCCESS);
 
             $this->processHandler->launch($this->job);
         }
 
         $this->em->flush();
-    }
-
-    /**
-     * @param string $stage
-     *
-     * @return string|null
-     */
-    private function normalizeStage($stage)
-    {
-        if (substr($stage, 0, 6) === 'build.' || substr($stage, 0, 8) === 'release.') {
-            return $stage;
-
-        } elseif ($this->job) {
-            $prefix = (!$this->job instanceof Build) ? 'release' : 'build';
-
-            return sprintf('%s.%s', $prefix, $stage);
-        }
-
-        return null;
     }
 
     /**

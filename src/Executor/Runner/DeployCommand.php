@@ -230,7 +230,7 @@ class DeployCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        $this->logger->setStage(JobEventStageEnum::TYPE_RELEASE_START);
+        $this->logger->setStage(JobEventStageEnum::TYPE_STARTING);
 
         if (!$properties = $this->resolve($io, $releaseID)) {
             return $this->deploymentFailure($io, self::ERR_NOT_RUNNABLE);
@@ -257,11 +257,11 @@ class DeployCommand implements ExecutorInterface
             return $this->deploymentFailure($io, self::ERR_BEFORE_DEPLOYMENT);
         }
 
-        $this->logger->setStage(JobEventStageEnum::TYPE_RELEASE_DEPLOY);
+        $this->logger->setStage(JobEventStageEnum::TYPE_RUNNING);
 
         $isDeploySuccess = $this->deploy($io, $properties);
 
-        $this->logger->setStage(JobEventStageEnum::TYPE_RELEASE_END);
+        $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
         //after deploy
         if (!$this->afterDeploy($io, $properties, $isDeploySuccess)) {

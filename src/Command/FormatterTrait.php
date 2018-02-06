@@ -8,6 +8,7 @@
 namespace Hal\Agent\Command;
 
 use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Style\StyleInterface;
 
 /**
  * Because the default console helpers should be traits.
@@ -16,6 +17,24 @@ use Symfony\Component\Console\Formatter\OutputFormatter;
  */
 trait FormatterTrait
 {
+    /**
+     * Output an array of configuration or data into a table.
+     */
+    public function outputTable(StyleInterface $io, string $header, array $data)
+    {
+        if (!$data) {
+            $data['error'] = 'No data available.';
+        }
+
+        $rows = [];
+        foreach ($data as $p => $v) {
+            $rows[] = [$p, json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)];
+        }
+
+        $io->text($header);
+        $io->table(['Configuration', 'Value'], $rows);
+    }
+
     /**
      * Formats a message within a section.
      *

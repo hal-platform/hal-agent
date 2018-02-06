@@ -23,7 +23,7 @@ class DockerBuilder implements BuilderInterface
 
     const EVENT_STARTING_CONTAINER = 'Starting Docker container';
     const EVENT_START_CONTAINER_STARTED = 'Docker container "%s" started';
-    const EVENT_DOCKER_CLEANUP = 'Clean up docker container';
+    const EVENT_DOCKER_CLEANUP = 'Cleaning up container "%s"';
 
     const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Linux Docker container';
 
@@ -226,7 +226,7 @@ class DockerBuilder implements BuilderInterface
      */
     private function cleanupContainer($remoteConnection, $containerName)
     {
-        $this->getIO()->note(sprintf('Cleaning up container "%s"', $containerName));
+        $this->getIO()->note(sprintf(self::EVENT_DOCKER_CLEANUP, $containerName));
 
         $this->docker->cleanupContainer($remoteConnection, $containerName);
     }
@@ -279,7 +279,7 @@ class DockerBuilder implements BuilderInterface
         };
 
         // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($cleanup, self::EVENT_DOCKER_CLEANUP);
+        $this->enableEmergencyHandler($cleanup);
 
         return $cleanup;
     }

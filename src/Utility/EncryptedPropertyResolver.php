@@ -99,64 +99,6 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param array $env
-     * @param array $decrypteds
-     *
-     * @return array
-     */
-    public function mergePropertiesIntoEnv(array $env, array $decrypteds)
-    {
-        if ($decrypteds) {
-            foreach ($decrypteds as $property => $decrypted) {
-                $key = sprintf('ENCRYPTED_%s', strtoupper($property));
-                $env[$key] = $decrypted;
-            }
-        }
-
-        return $env;
-    }
-
-    /**
-     * @param Application $application
-     * @param Environment|null $environment
-     *
-     * @return array
-     */
-    public function getProperties(Application $application, ?Environment $environment)
-    {
-        if (is_null($environment)) {
-            $environmentCriteria = Criteria::expr()->isNull('environment');
-        } else {
-            $environmentCriteria = Criteria::expr()->orX(
-                Criteria::expr()->eq('environment', $environment),
-                Criteria::expr()->isNull('environment')
-            );
-        }
-
-        $criteria = (new Criteria)
-            ->where(Criteria::expr()->eq('application', $application))
-            ->andWhere($environmentCriteria)
-
-            // null must be first!
-            ->orderBy(['environment' => 'ASC']);
-
-        $properties = $this->encryptedRepo->matching($criteria);
-
-        if (count($properties) === 0) {
-            return [];
-        }
-
-        $encrypted = [];
-        foreach ($properties->toArray() as $property) {
-            $encrypted[$property->name()] = $property;
-        }
-
-        ksort($encrypted);
-
-        return $encrypted;
-    }
-
-    /**
      * @param Application $application
      * @param Environment|null $environment
      *
@@ -168,7 +110,7 @@ class EncryptedPropertyResolver
             'encrypted' => []
         ];
 
-        if (!$properties = $this->getProperties($application, $environment)) {
+        if (!$properties = $this->encryptedRepo->getPropertiesForEnvironment($application, $environment)) {
             return $data;
         }
 
@@ -177,7 +119,7 @@ class EncryptedPropertyResolver
 
         // format encrypted for use by build step
         array_walk($encrypted, function (&$v) {
-            $v = $v->data();
+            $v = $v->secret();
         });
 
         // format encrypted sources for logs

@@ -9,6 +9,7 @@ namespace Hal\Agent\Build;
 
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Core\Type\JobEventStageEnum;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Builder
@@ -66,7 +67,7 @@ class Builder
             return $this->explode($platform);
         }
 
-        $this->logger->setStage('running');
+        $this->logger->setStage(JobEventStageEnum::TYPE_RUNNING);
 
         $platform->setIO($io);
 

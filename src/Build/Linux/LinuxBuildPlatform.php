@@ -15,12 +15,14 @@ use Hal\Agent\Build\Linux\Steps\Packer;
 use Hal\Agent\Build\Linux\Steps\Unpacker;
 use Hal\Agent\Build\BuildPlatformInterface;
 use Hal\Agent\Build\PlatformTrait;
+use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Core\Entity\JobType\Build;
 
 class LinuxBuildPlatform implements BuildPlatformInterface
 {
+    use FormatterTrait;
     // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, IOAwareTrait
     use PlatformTrait;
 
@@ -141,7 +143,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     /**
      * @param Build $build
      *
-     * @return array
+     * @return array|null
      */
     private function configurator(Build $build)
     {
@@ -149,13 +151,11 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
         $platformConfig = ($this->configurator)($build);
 
-        $rows = [];
-        foreach ($platformConfig as $p => $v) {
-            $v = json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            $rows[] = [$p, $v];
+        if (!$platformConfig) {
+            return null;
         }
 
-        $this->getIO()->table(['Configuration', 'Value'], $rows);
+        $this->outputTable($this->getIO(), 'Platform configuration:', $platformConfig);
 
         return $platformConfig;
     }
@@ -186,7 +186,9 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
         if ($response) {
             // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler($this->cleaner, 'Cleaning up remote build server', [$connection, $remoteFile]);
+            $this->enableEmergencyHandler(function () use ($connection, $remoteFile) {
+                $this->cleanupServer($connection, $remoteFile);
+            });
         }
 
         return $response;
@@ -255,5 +257,18 @@ class LinuxBuildPlatform implements BuildPlatformInterface
         ]);
 
         return ($this->importer)($buildPath, $localFile, $connection, $remoteFile);
+    }
+
+    /**
+     * @param string $remoteConnection
+     * @param string $remoteFile
+     *
+     * @return void
+     */
+    private function cleanupServer($remoteConnection, $remoteFile)
+    {
+        $this->getIO()->note(sprintf('Cleaning up remote build server "%s"', $remoteConnection));
+
+        ($this->cleaner)($remoteConnection, $remoteFile);
     }
 }

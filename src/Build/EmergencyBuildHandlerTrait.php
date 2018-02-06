@@ -20,11 +20,6 @@ trait EmergencyBuildHandlerTrait
     private $emergencyCleaner = null;
 
     /**
-     * @var string
-     */
-    private $emergencyMessage = '';
-
-    /**
      * In case of error or critical failure, ensure that we clean up the build artifacts.
      *
      * Note that this is only called for exceptions and non-fatal errors.
@@ -38,26 +33,18 @@ trait EmergencyBuildHandlerTrait
     }
 
     /**
-     * Emergency failsafe
-     *
      * Set or execute the emergency cleanup process
      *
      * @param callable|null $cleaner
-     * @param ?string $message
      *
      * @return void
      */
-    public function cleanup(callable $cleaner = null, string $message = ''): void
+    public function cleanup(callable $cleaner = null): void
     {
         if (func_num_args() > 0) {
             $this->emergencyCleaner = $cleaner;
-            $this->emergencyMessage = $message;
 
         } elseif (is_callable($this->emergencyCleaner)) {
-            if ($this->emergencyMessage) {
-                echo "\n\n SHUTDOWN - " . $this->emergencyMessage . "\n\n";
-            }
-
             call_user_func($this->emergencyCleaner);
             $this->emergencyCleaner = null;
         }
@@ -84,17 +71,17 @@ trait EmergencyBuildHandlerTrait
     }
 
     /**
+     * Emergency failsafe
+     *
+     * Set the emergency cleanup process
+     *
      * @param callable $cleaner
-     * @param ?string $message
-     * @param array $args
      *
      * @return void
      */
-    private function enableEmergencyHandler(callable $cleaner, ?string $message, array $args = [])
+    private function enableEmergencyHandler(callable $cleaner)
     {
-        $this->cleanup(function () use ($cleaner, $args) {
-            $cleaner(...$args);
-        }, $message);
+        $this->cleanup($cleaner);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {
