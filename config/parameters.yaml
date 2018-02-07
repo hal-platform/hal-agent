@@ -79,13 +79,6 @@ parameters:
     timeout.windows_builder_internal: 120
 
     ############################################################################
-    # github
-    ############################################################################
-    github.token: '%env(HAL_GITHUB_ENTERPRISE_TOKEN)%'
-    github.baseurl.site: '%env(HAL_GITHUB_ENTERPRISE_URL)%'
-    github.baseurl.api: '%github.baseurl.site%/api/v3'
-
-    ############################################################################
     # cache
     ############################################################################
     redis.server: '%env(HAL_REDIS_SERVER)%'

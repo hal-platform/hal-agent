@@ -85,11 +85,6 @@ class Resolver
     private $sshUser;
 
     /**
-     * @var string
-     */
-    private $githubBaseUrl;
-
-    /**
      * @var string|null
      */
     private $awsKey;
@@ -103,7 +98,6 @@ class Resolver
      * @param EncryptedPropertyResolver $encryptedResolver
      *
      * @param string $sshUser
-     * @param string $githubBaseUrl
      */
     public function __construct(
         EventLogger $logger,
@@ -111,8 +105,7 @@ class Resolver
         Clock $clock,
         BuildEnvironmentResolver $buildEnvironmentResolver,
         EncryptedPropertyResolver $encryptedResolver,
-        $sshUser,
-        $githubBaseUrl
+        $sshUser
     ) {
         $this->logger = $logger;
         $this->releaseRepo = $em->getRepository(Release::class);
@@ -121,7 +114,6 @@ class Resolver
         $this->encryptedResolver = $encryptedResolver;
 
         $this->sshUser = $sshUser;
-        $this->githubBaseUrl = $githubBaseUrl;
     }
 
     /**
@@ -178,15 +170,9 @@ class Resolver
                 'windowsOutputArchive' => $this->generateTempTransferFile($release->id(), 'windows-output'),
             ],
 
-
             'pushProperties' => [
                 'id' => $build->id(),
-                'source' => sprintf(
-                    '%s/%s/%s',
-                    rtrim($this->githubBaseUrl, '/'),
-                    $github->owner(),
-                    $github->repository()
-                ),
+                'source' => 'TODO',
                 'env' => $release->target()->group()->environment()->name(),
                 'user' => $release->user() ? $release->user()->username() : null,
                 'reference' => $build->reference(),

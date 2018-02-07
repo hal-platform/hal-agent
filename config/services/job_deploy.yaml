@@ -9,7 +9,6 @@ services:
             - '@utility.environment.resolver'
             - '@encrypted.resolver'
             - '%deploy.rsync.user%'
-            - '%github.baseurl.site%'
         calls:
             - ['setLocalTempPath', ['%path.temp%']]
             - ['setArchivePath', ['%path.archive%']]
