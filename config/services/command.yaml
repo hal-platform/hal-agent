@@ -99,14 +99,14 @@ services:
         class: 'Hal\Agent\Executor\Runner\DeployCommand'
         arguments:
             - '@logger.event'
-            - '@push.resolver'
-            - '@push.mover'
-            - '@push.unpacker'
-            - '@push.configuration.reader'
-            - '@push.builder'
-            - '@push.before.builder'
-            - '@push.deployer'
-            - '@push.after.builder'
+            - '@deploy.resolver'
+            - '@deploy.mover'
+            - '@deploy.unpacker'
+            - '@deploy.configuration_reader'
+            - '@deploy.builder'
+            - '@deploy.builder'
+            - '@deployer'
+            - '@deploy.builder'
             - '@utility.filesystem'
 
     # workers - cron
