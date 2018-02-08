@@ -15,13 +15,14 @@ use Hal\Agent\Build\WindowsAWS\Utility\Dockerinator;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 use Hal\Agent\Docker\DockerImageValidator;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\IOAwareTrait;
 
 class DockerBuilder implements BuilderInterface
 {
     // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
     use InternalDebugLoggingTrait;
+    use IOAwareTrait;
 
     /**
      * @var string
@@ -110,28 +111,28 @@ class DockerBuilder implements BuilderInterface
     /**
      * @inheritdoc
      */
-    public function __invoke(SsmClient $ssm, $image, $instanceID, $buildID, array $commands, array $env)
+    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $commands, array $env): bool
     {
         $workDir = $this->powershell->getBaseBuildPath();
 
-        $inputDir = "${workDir}\\${buildID}";
-        $outputDir = "${workDir}\\${buildID}-output";
-        $commands = $this->parseCommandsToScripts($buildID, $commands);
+        $inputDir = "${workDir}\\${jobID}";
+        $outputDir = "${workDir}\\${jobID}-output";
+        $commands = $this->parseCommandsToScripts($jobID, $commands);
 
         if (!$dockerImage = $this->validator->validate($image)) {
             return $this->bombout(false);
         }
 
         // 1. Prepare instance to run build commands
-        if (!$result = $this->prepare($ssm, $instanceID, $buildID, $inputDir, $commands, $env)) {
+        if (!$result = $this->prepare($ssm, $instanceID, $jobID, $inputDir, $commands, $env)) {
             return $this->bombout(false);
         }
 
         // 2. Enable cleanup failsafe
-        $cleanup = $this->enableCleanup($ssm, $instanceID, $inputDir, $buildID);
+        $cleanup = $this->enableCleanup($ssm, $instanceID, $inputDir, $jobID);
 
         // 3. Build container
-        $containerName = strtolower(str_replace('.', '', $buildID));
+        $containerName = strtolower(str_replace('.', '', $jobID));
 
         // 4. Create container
         if (!$this->docker->createContainer($ssm, $instanceID, $dockerImage, $containerName)) {
@@ -144,7 +145,7 @@ class DockerBuilder implements BuilderInterface
         $cleanup = $this->enableDockerCleanup($ssm, $instanceID, $containerName, $cleanup);
 
         // 6. Copy into container
-        if (!$this->docker->copyIntoContainer($ssm, $instanceID, $buildID, $containerName, $inputDir)) {
+        if (!$this->docker->copyIntoContainer($ssm, $instanceID, $jobID, $containerName, $inputDir)) {
             return $this->bombout(false);
         }
 

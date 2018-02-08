@@ -289,6 +289,10 @@ Set-Alias bsdtar "${env:ProgramFiles(x86)}\GnuWin32\bin\bsdtar.exe"
 POWERSHELL;
 
         $command = <<<POWERSHELL
+if (-not (Test-Path "${buildDir}")) {
+    New-Item ${buildDir} -type directory
+}
+
 bsdtar -cz --file=${localFile} -C ${buildDir} .
 
 Remove-Item ${buildDir} -Recurse -Force

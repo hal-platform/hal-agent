@@ -1,11 +1,11 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\WindowsAWS;
+namespace Hal\Agent\Build\WindowsAWS\Steps;
 
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
@@ -55,13 +55,14 @@ class Cleaner
      * @param SsmClient $ssm
      *
      * @param string $instanceID
+     * @param string $jobID
+     *
      * @param string $bucket
      * @param array $artifacts
-     * @param string $buildID
      *
      * @return bool
      */
-    public function __invoke(S3Client $s3, SsmClient $ssm, $instanceID, $bucket, array $artifacts, $buildID)
+    public function __invoke(S3Client $s3, SsmClient $ssm, string $instanceID, string $jobID, string $bucket, array $artifacts)
     {
         # S3
         # - Remove input (if exists)
@@ -73,7 +74,7 @@ class Cleaner
         # - Remove input (if exists)
         # - Remove output (if exists)
         # - Remove user scripts (if exists)
-        $ssmStatus = $this->cleanBuilder($ssm, $instanceID, $buildID);
+        $ssmStatus = $this->cleanBuilder($ssm, $instanceID, $jobID);
 
         if ($s3Status && $ssmStatus) {
             return true;
@@ -91,24 +92,44 @@ class Cleaner
      */
     private function cleanBucket(S3Client $s3, $bucket, array $artifacts)
     {
-        $context = [
-            'bucket' => $bucket,
-            'artifacts' => $artifacts
-        ];
+        $result = true;
 
+        foreach ($artifacts as $artifact) {
+            if (!$this->cleanObject($s3, $bucket, $artifact)) {
+                $result = false;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param SsmClient $ssm
+     * @param string $bucket
+     * @param string $file
+     *
+     * @return bool
+     */
+    private function cleanObject(S3Client $s3, $bucket, $file)
+    {
         try {
-            foreach ($artifacts as $file) {
-                if ($s3->doesObjectExist($bucket, $file)) {
-                    $s3->deleteObject([
-                        'Bucket' => $bucket,
-                        'Key' => $file
-                    ]);
-                }
+
+            if (!$s3->doesObjectExist($bucket, $file)) {
+                return true;
             }
 
+            $s3->deleteObject([
+                'Bucket' => $bucket,
+                'Key' => $file
+            ]);
+
         } catch (AwsException $e) {
-            $context = array_merge($context, ['error' => $e->getMessage()]);
-            $this->logger->event('failure', self::EVENT_MESSAGE, $context);
+            $this->logger->event('failure', self::EVENT_MESSAGE, [
+                'bucket' => $bucket,
+                'object' => $file,
+                'error' => $e->getMessage()
+            ]);
+
             return false;
         }
 
@@ -118,23 +139,23 @@ class Cleaner
     /**
      * @param SsmClient $ssm
      * @param string $instanceID
-     * @param string $buildID
+     * @param string $jobID
      *
      * @return bool
      */
-    private function cleanBuilder(SsmClient $ssm, $instanceID, $buildID)
+    private function cleanBuilder(SsmClient $ssm, $instanceID, $jobID)
     {
         $workDir = $this->powershell->getBaseBuildPath();
 
-        $inputDir = "${workDir}\\${buildID}";
-        $outputDir = "${workDir}\\${buildID}-output";
+        $inputDir = "${workDir}\\${jobID}";
+        $outputDir = "${workDir}\\${jobID}-output";
 
         $runner = $this->runner;
         $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
                 $this->powershell->getScript('cleanupAfterBuildOutput', [
-                    'buildID' => $buildID,
+                    'buildID' => $jobID,
                     'inputDir' => $inputDir,
                     'outputDir' => $outputDir
                 ])

@@ -1,11 +1,11 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\WindowsAWS;
+namespace Hal\Agent\Build\WindowsAWS\AWS;
 
 use Aws\Ec2\Ec2Client;
 use Hal\Agent\Logger\EventLogger;
@@ -50,9 +50,7 @@ class BuilderFinder
      */
     public function __invoke(Ec2Client $ec2, $tagFilter)
     {
-        $finder = $this->instanceFinder;
-
-        $summary = $finder($ec2, $tagFilter);
+        $summary = ($this->instanceFinder)($ec2, $tagFilter);
 
         if ($summary['status'] !== EC2Finder::STATUS_OK) {
             $this->logger->event('failure', self::ERR_NO_INSTANCES, ['filter' => $tagFilter]);

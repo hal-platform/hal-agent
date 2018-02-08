@@ -1,20 +1,20 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\WindowsAWS;
+namespace Hal\Agent\Build\WindowsAWS\Steps;
 
 use Aws\S3\S3Client;
 use Aws\Ssm\SsmClient;
+use Hal\Agent\Build\Generic\FileCompression;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Build\WindowsAWS\AWS\S3Downloader;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Filesystem\Filesystem;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 
 class Importer
@@ -34,9 +34,14 @@ class Importer
     private $logger;
 
     /**
-     * @var Unpacker
+     * @var FileCompression
      */
-    private $unpacker;
+    private $fileCompression;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
 
     /**
      * @var S3Downloader
@@ -49,38 +54,33 @@ class Importer
     private $runner;
 
     /**
-     * @var ProcessBuilder
-     */
-    private $processBuilder;
-
-    /**
      * @var Powershellinator
      */
     private $powershell;
 
     /**
      * @param EventLogger $logger
-     * @param Unpacker $unpacker
+     * @param FileCompression $fileCompression
+     * @param Filesystem $filesystem
      * @param S3Downloader $downloader
      * @param SSMCommandRunner $runner
-     * @param ProcessBuilder $processBuilder
      * @param Powershellinator $powershell
      */
     public function __construct(
         EventLogger $logger,
-        Unpacker $unpacker,
+        FileCompression $fileCompression,
+        Filesystem $filesystem,
         S3Downloader $downloader,
         SSMCommandRunner $runner,
-        ProcessBuilder $processBuilder,
         Powershellinator $powershell
     ) {
         $this->logger = $logger;
+        $this->fileCompression = $fileCompression;
+        $this->filesystem = $filesystem;
 
-        $this->unpacker = $unpacker;
         $this->downloader = $downloader;
         $this->runner = $runner;
 
-        $this->processBuilder = $processBuilder;
         $this->powershell = $powershell;
     }
 
@@ -89,19 +89,18 @@ class Importer
      * @param SsmClient $ssm
      * @param string $instanceID
      *
+     * @param string $jobID
+     *
      * @param string $buildPath
      * @param string $buildFile
      * @param string $bucket
      * @param string $object
-     * @param string $buildID
      *
      * @return bool
      */
-    public function __invoke(S3Client $s3, SsmClient $ssm, $instanceID, $buildPath, $buildFile, $bucket, $object, $buildID)
+    public function __invoke(S3Client $s3, SsmClient $ssm, $instanceID, $jobID, $buildPath, $buildFile, $bucket, $object)
     {
-        // $instanceID
-
-        if (!$this->packAWSFile($ssm, $instanceID, $bucket, $object, $buildID)) {
+        if (!$this->packAWSFile($ssm, $instanceID, $bucket, $object, $jobID)) {
             return false;
         }
 
@@ -168,13 +167,7 @@ class Importer
      */
     private function transferFile(S3Client $s3, $bucket, $object, $localFile)
     {
-        $downloader = $this->downloader;
-        return $downloader(
-            $s3,
-            $bucket,
-            $object,
-            $localFile
-        );
+        return ($this->downloader)($s3, $bucket, $object, $localFile);
     }
 
     /**
@@ -184,16 +177,10 @@ class Importer
      */
     private function removeLocalFiles($buildPath)
     {
-        // remove local build dir
-        $command = ['rm', '-r', $buildPath];
-        $process = $this->processBuilder
-            ->setWorkingDirectory($buildPath)
-            ->setArguments($command)
-            ->getProcess();
+        if ($this->filesystem->exists($buildPath)) {
+            $this->filesystem->remove($buildPath);
+        }
 
-        $process->run();
-
-        # we don't care if this fails
         return true;
     }
 
@@ -205,8 +192,12 @@ class Importer
      */
     private function unpackBuild($buildFile, $buildPath)
     {
-        $unpacker = $this->unpacker;
+        $this->fileCompression->createWorkspace($buildPath);
 
-        return $unpacker($buildFile, $buildPath);
+        if (!$this->fileCompression->unpackTarArchive($buildPath, $buildFile)) {
+            return false;
+        }
+
+        return true;
     }
 }

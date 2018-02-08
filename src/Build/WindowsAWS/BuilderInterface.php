@@ -8,20 +8,20 @@
 namespace Hal\Agent\Build\WindowsAWS;
 
 use Aws\Ssm\SsmClient;
-use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\IOAwareInterface;
 
-interface BuilderInterface extends OutputAwareInterface
+interface BuilderInterface extends IOAwareInterface
 {
     /**
+     * @param string $jobID
      * @param SsmClient $ssm
      * @param string $image
      *
      * @param string $instanceID
-     * @param string $buildID
      * @param array $commands
      * @param array $env
      *
      * @return bool
      */
-    public function __invoke(SsmClient $ssm, $image, $instanceID, $buildID, array $commands, array $env);
+    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $commands, array $env): bool;
 }

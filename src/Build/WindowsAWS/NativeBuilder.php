@@ -13,6 +13,7 @@ use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Symfony\IOAwareTrait;
 
 class NativeBuilder implements BuilderInterface
 {
