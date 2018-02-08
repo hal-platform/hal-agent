@@ -193,9 +193,9 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
         }
 
         // run build
-        // if (!$this->build($job->id(), $image, $commands, $env, $platformConfig)) {
-        //     return $this->bombout(false);
-        // }
+        if (!$this->build($job->id(), $image, $commands, $env, $platformConfig)) {
+            return $this->bombout(false);
+        }
 
         if (!$this->import($job->id(), $properties['workspace_path'], $platformConfig)) {
             return $this->bombout(false);
@@ -305,7 +305,7 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
 
         $this->builder->setIO($this->getIO());
 
-        return ($this->builder)($ssm, $image, $instanceID, $jobID, $commands, $env);
+        return ($this->builder)($jobID, $image, $ssm, $instanceID, $commands, $env);
     }
 
     /**

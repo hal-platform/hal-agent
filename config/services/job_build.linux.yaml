@@ -1,4 +1,9 @@
 services:
+
+    ############################################################################
+    # platforms
+    ############################################################################
+
     build_platform.linux:
         class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
@@ -11,6 +16,19 @@ services:
             - '@encrypted.resolver'
             - '%build.platforms.option.linux.docker_default_image%'
 
+    ############################################################################
+    # builders
+    ############################################################################
+
+    build.linux.docker_builder:
+        class: 'Hal\Agent\Build\Linux\DockerBuilder'
+        arguments:
+            - '@logger.event'
+            - '@build.linux.support_dockerinator'
+            - '@build.linux.support_docker_validator'
+
+    ############################################################################
+    # steps
     ############################################################################
 
     build.linux.configurator:
@@ -27,13 +45,6 @@ services:
             - '@ssh.manager'
             - '@build.support.file_compression'
 
-    build.linux.docker_builder:
-        class: 'Hal\Agent\Build\Linux\DockerBuilder'
-        arguments:
-            - '@logger.event'
-            - '@build.linux.support_dockerinator'
-            - '@build.linux.support_docker_validator'
-
     build.linux.importer:
         class: 'Hal\Agent\Build\Linux\Steps\Importer'
         arguments:
@@ -45,6 +56,8 @@ services:
         class: 'Hal\Agent\Build\Linux\Steps\Cleaner'
         arguments: ['@build.linux.support_remoter']
 
+    ############################################################################
+    # support
     ############################################################################
 
     build.linux.support_remoter:
@@ -60,6 +73,10 @@ services:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.build%'
+
+    ############################################################################
+    # support - docker
+    ############################################################################
 
     build.linux.support_dockerinator:
         class: 'Hal\Agent\Docker\LinuxDockerinator'

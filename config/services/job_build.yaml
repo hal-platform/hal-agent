@@ -41,6 +41,9 @@ services:
         class: 'Hal\Agent\Build\Generic\LocalCleaner'
         arguments: ['@utility.filesystem']
 
+    ############################################################################
+    # support for build platforms
+    ############################################################################
 
     build.support.file_compression:
         class: 'Hal\Agent\Build\Generic\FileCompression'
@@ -48,3 +51,18 @@ services:
             - '@logger.event'
             - '@utility.process.builder'
             - '%timeout.filepacking%'
+
+    build.support.aws_authenticator:
+        class: 'Hal\Core\AWS\AWSAuthenticator'
+        arguments:
+            - '@logger'
+            - '@build.support.credential_provider'
+            - '@aws'
+
+    build.support.credential_provider:
+        class: 'Hal\Core\AWS\CredentialProvider'
+        arguments:
+            - '@logger'
+            - '@encryption'
+            - '@doctrine.em'
+            - '@aws'
