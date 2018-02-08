@@ -92,7 +92,7 @@ services:
             - '@ssh.manager'
             - '@build.resolver'
             - '@build.downloader'
-            - '@build.configuration_reader'
+            - '@job_configuration.reader'
             - '@builder'
             - '@build.artifacter'
     executor.runner.deploy:
@@ -102,7 +102,7 @@ services:
             - '@deploy.resolver'
             - '@deploy.mover'
             - '@deploy.unpacker'
-            - '@deploy.configuration_reader'
+            - '@job_configuration.reader'
             - '@deploy.builder'
             - '@deploy.builder'
             - '@deployer'

@@ -26,6 +26,7 @@ services:
             - '@logger.event'
             - '@build.linux.support_dockerinator'
             - '@build.linux.support_docker_validator'
+            - '@job_configuration.step_parser'
 
     ############################################################################
     # steps

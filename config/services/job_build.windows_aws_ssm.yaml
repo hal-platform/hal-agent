@@ -38,8 +38,9 @@ services:
             - '@logger.event'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_dockerinator'
-            - '@build.windows_aws.support_powershellinator'
             - '@build.windows_aws.support_docker_validator'
+            - '@build.windows_aws.support_powershellinator'
+            - '@job_configuration.step_parser'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
             - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
@@ -50,6 +51,7 @@ services:
             - '@logger.event'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
+            - '@job_configuration.step_parser'
             - '%timeout.build%'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
@@ -143,7 +145,7 @@ services:
     ############################################################################
 
     build.windows_aws.support_dockerinator:
-        class: 'Hal\Agent\Build\WindowsAWS\Utility\Dockerinator'
+        class: 'Hal\Agent\Docker\WindowsSSMDockerinator'
         arguments:
             - '@logger.event'
             - '@build.windows_aws.support_ssm_runner'

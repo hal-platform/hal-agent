@@ -16,13 +16,6 @@ services:
             - '@build.support.file_compression'
             - '@vcs'
 
-    build.configuration_reader:
-        class: 'Hal\Agent\Build\ConfigurationReader'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@yaml.parser'
-
     builder:
         class: 'Hal\Agent\Build\Builder'
         arguments:

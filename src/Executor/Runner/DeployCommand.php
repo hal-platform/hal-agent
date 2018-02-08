@@ -7,13 +7,13 @@
 
 namespace Hal\Agent\Executor\Runner;
 
-use Hal\Agent\Build\ConfigurationReader;
 use Hal\Agent\Build\DelegatingBuilder;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Push\DelegatingDeployer;
 use Hal\Agent\Push\Mover;

@@ -26,13 +26,6 @@ services:
             - '@yaml.dumper'
             - '%timeout.filepacking%'
 
-    deploy.configuration_reader:
-        class: 'Hal\Agent\Build\ConfigurationReader'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@yaml.parser'
-
     deploy.builder:
         class: 'Hal\Agent\Build\BuildPlatform'
         arguments:

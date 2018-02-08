@@ -121,7 +121,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
             return $this->bombout(false);
         }
 
-        if (!$this->export($platformConfig, $properties)) {
+        if (!$this->export($platformConfig, $properties['workspace_path'])) {
             return $this->bombout(false);
         }
 
@@ -137,7 +137,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
             return $this->bombout(false);
         }
 
-        if (!$this->import($platformConfig, $properties)) {
+        if (!$this->import($platformConfig, $properties['workspace_path'])) {
             return $this->bombout(false);
         }
 
@@ -167,16 +167,16 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
     /**
      * @param array $platformConfig
-     * @param array $properties
+     * @param string $workspacePath
      *
      * @return bool
      */
-    private function export(array $platformConfig, array $properties)
+    private function export(array $platformConfig, $workspacePath)
     {
         $this->getIO()->section(self::STEP_2_EXPORTING);
 
-        $buildPath = $properties['workspace_path'] . '/build';
-        $localFile = $properties['workspace_path'] . '/build_export.tgz';
+        $buildPath = $workspacePath . '/build';
+        $localFile = $workspacePath . '/build_export.tgz';
 
         $connection = $platformConfig['builder_connection'];
         $remoteFile = $platformConfig['remote_file'];
@@ -241,7 +241,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
     /**
      * @param array $platformConfig
-     * @param array $properties
+     * @param string $workspacePath
      *
      * @return bool
      */
@@ -249,8 +249,8 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     {
         $this->getIO()->section(self::STEP_4_IMPORTING);
 
-        $buildPath = $properties['workspace_path'] . '/build';
-        $localFile = $properties['workspace_path'] . '/build_import.tgz';
+        $buildPath = $workspacePath . '/build';
+        $localFile = $workspacePath . '/build_import.tgz';
 
         $connection = $platformConfig['builder_connection'];
         $remoteFile = $platformConfig['remote_file'];

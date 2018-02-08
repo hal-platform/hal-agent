@@ -1,16 +1,12 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build;
+namespace Hal\Agent\JobConfiguration;
 
-use Hal\Agent\Build\Unix\DockerBuilder as LinuxDockerBuilder;
-use Hal\Agent\Build\Unix\UnixBuildHandler;
-use Hal\Agent\Build\WindowsAWS\DockerBuilder as WindowsDockerBuilder;
-use Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler;
 use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Exception\ParseException;
