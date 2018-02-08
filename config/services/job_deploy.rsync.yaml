@@ -1,0 +1,62 @@
+services:
+
+    deploy_platform.rsync:
+        class: 'Hal\Agent\Push\Rsync\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@push.rsync.verify'
+            # - '@push.rsync.delta'
+            - '@push.rsync.serverCommand'
+            - '@push.rsync.pusher'
+
+    ############################################################################
+    # support
+    ############################################################################
+
+    push.rsync.verify:
+        class: 'Hal\Agent\Push\Rsync\Verify'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '@push.rsync.verify.remoter'
+
+    # push.rsync.delta:
+    #     class: 'Hal\Agent\Push\Rsync\CodeDelta'
+    #     arguments:
+    #         - '@logger.event'
+    #         - '@push.rsync.delta.remoter'
+    #         - '@yaml.parser'
+    #         - '@github.commits'
+
+    push.rsync.pusher:
+        class: 'Hal\Agent\Push\Rsync\Pusher'
+        arguments:
+            - '@logger.event'
+            - '@ssh.filemanager'
+            - '@utility.process.builder'
+            - '%timeout.push%'
+
+    push.rsync.serverCommand:
+        class: 'Hal\Agent\Push\Rsync\ServerCommand'
+        arguments: ['@push.rsync.standard.remoter']
+
+    push.rsync.standard.remoter:
+        class: 'Hal\Agent\Remoting\SSHProcess'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.push.serverCommand%'
+
+    # push.rsync.delta.remoter:
+    #     class: 'Hal\Agent\Remoting\SSHProcess'
+    #     arguments:
+    #         - '@logger.event'
+    #         - '@ssh.manager'
+    #         - '%timeout.standard%'
+
+    push.rsync.verify.remoter:
+        class: 'Hal\Agent\Remoting\SSHProcess'
+        arguments:
+            - '@logger.event'
+            - '@ssh.manager'
+            - '%timeout.standard%'

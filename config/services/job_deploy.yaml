@@ -1,6 +1,6 @@
 services:
 
-    push.resolver:
+    deploy.resolver:
         class: 'Hal\Agent\Push\Resolver'
         arguments:
             - '@logger.event'
@@ -13,11 +13,11 @@ services:
             - ['setLocalTempPath', ['%path.temp%']]
             - ['setArchivePath', ['%path.archive%']]
 
-    push.mover:
+    deploy.mover:
         class: 'Hal\Agent\Push\Mover'
         arguments: ['@logger.event', '@utility.filesystem']
 
-    push.unpacker:
+    deploy.unpacker:
         class: 'Hal\Agent\Push\Unpacker'
         arguments:
             - '@logger.event'
@@ -26,7 +26,32 @@ services:
             - '@yaml.dumper'
             - '%timeout.filepacking%'
 
-    push.packer:
+    deploy.configuration_reader:
+        class: 'Hal\Agent\Build\ConfigurationReader'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@yaml.parser'
+
+    deploy.builder:
+        class: 'Hal\Agent\Build\BuildPlatform'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%build.platforms%'
+
+    deployer:
+        class: 'Hal\Agent\Push\DelegatingDeployer'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%deployment.platforms%'
+
+    ############################################################################
+    # support for deploy platforms
+    ############################################################################
+
+    deploy.support.packer:
         class: 'Hal\Agent\Push\ReleasePacker'
         arguments:
             - '@logger.event'
@@ -34,386 +59,18 @@ services:
             - '@utility.process.builder'
             - '%timeout.filepacking%'
 
-    push.configuration.reader:
-        class: 'Hal\Agent\Build\ConfigurationReader'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@yaml.parser'
+    deploy.support.mover:
+        class: 'Hal\Agent\Push\Mover'
+        arguments: ['@logger.event', '@utility.filesystem']
 
-    push.builder:
-        class: 'Hal\Agent\Build\BuildPlatform'
-        arguments:
-            - '@logger.event'
-            - '@service_container'
-            - '%build.platforms%'
-
-    push.deployer:
-        class: 'Hal\Agent\Push\DelegatingDeployer'
-        arguments:
-            - '@logger.event'
-            - '@service_container'
-            - '%deployment.platforms%'
-
-    ####################################################################################################################
-    # before/after deploy builders
-    ####################################################################################################################
-
-    push.before.builder:
-        class: 'Hal\Agent\Push\Script\DeployDelegatingBuilder'
-        arguments:
-            - '@logger.event'
-            - '@service_container'
-            - '%deployment_before.build.platforms%'
-    push.before.builder.unix_handler:
-        class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
-        arguments:
-            - '@logger.event'
-            - '@build.linux.configurator'
-            - '@build.linux.exporter'
-            - '@push.after.builder.docker_builder'
-            - '@build.linux.importer'
-            - '@build.linux.cleaner'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.linux.docker_default_image%'
-    push.before.builder.docker_builder:
-        parent: 'build_platform.linux'
-        class: 'Hal\Agent\Push\Script\BeforeDeployDockerBuilder'
-
-    push.after.builder:
-        class: 'Hal\Agent\Push\Script\DeployDelegatingBuilder'
-        arguments:
-            - '@logger.event'
-            - '@service_container'
-            - '%deployment_after.build.platforms%'
-    push.after.builder.unix_handler:
-        class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
-        arguments:
-            - '@logger.event'
-            - '@build.linux.configurator'
-            - '@build.linux.exporter'
-            - '@push.after.builder.docker_builder'
-            - '@build.linux.importer'
-            - '@build.linux.cleaner'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.linux.docker_default_image%'
-    push.after.builder.docker_builder:
-        parent: 'build_platform.linux'
-        class: 'Hal\Agent\Push\Script\AfterDeployDockerBuilder'
-
-    # windows
-    push.before.builder.windows_aws_docker.handler:
-        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
-        arguments:
-            - '@logger.event'
-            - '@build.windows_aws.builder_finder'
-            - '@build.windows_aws.preparer'
-            - '@build.windows_aws.exporter'
-            - '@push.before.builder.windows_aws.docker_builder'
-            - '@build.windows_aws.importer'
-            - '@build.windows_aws.cleaner'
-            - '@push.aws.authenticator'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.windows.docker_default_image%'
-
-    push.before.builder.windows_aws.docker_builder:
-        parent: 'build.windows_aws.docker_builder'
-        class: 'Hal\Agent\Push\Script\WindowsAWS\BeforeDeployDockerBuilder'
-
-    push.after.builder.windows_aws_docker.handler:
-        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
-        arguments:
-            - '@logger.event'
-            - '@build.windows_aws.builder_finder'
-            - '@build.windows_aws.preparer'
-            - '@build.windows_aws.exporter'
-            - '@push.after.builder.windows_aws.docker_builder'
-            - '@build.windows_aws.importer'
-            - '@build.windows_aws.cleaner'
-            - '@push.aws.authenticator'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.windows.docker_default_image%'
-
-    push.after.builder.windows_aws.docker_builder:
-        parent: 'build.windows_aws.docker_builder'
-        class: 'Hal\Agent\Push\Script\WindowsAWS\AfterDeployDockerBuilder'
-
-
-    ####################################################################################################################
-    # eb
-    ####################################################################################################################
-
-    push.eb.deployer:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.aws.authenticator'
-            - '@push.eb.healthchecker'
-            - '@push.packer'
-            - '@push.eb.uploader'
-            - '@push.eb.pusher'
-
-    push.eb.healthchecker:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
-        arguments:
-            - '@clock'
-            - '%date.timezone%'
-
-    push.eb.uploader:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Uploader'
-        arguments: ['@logger.event']
-        calls:
-            - ['allowOverwrite', [false]]
-
-    push.eb.pusher:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Pusher'
-        arguments:
-            - '@logger.event'
-            - '@push.eb.healthchecker'
-            - '@push.eb.waiter'
-
-    push.eb.waiter:
-        class: 'Hal\Agent\Waiter\Waiter'
-        arguments: ['%push.eb.waiter.interval%', '%push.eb.waiter.max%']
-
-    ####################################################################################################################
-    # rsync
-    ####################################################################################################################
-
-    push.rsync.deployer:
-        class: 'Hal\Agent\Push\Rsync\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.rsync.verify'
-            # - '@push.rsync.delta'
-            - '@push.rsync.serverCommand'
-            - '@push.rsync.pusher'
-
-    push.rsync.verify:
-        class: 'Hal\Agent\Push\Rsync\Verify'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '@push.rsync.verify.remoter'
-
-    # push.rsync.delta:
-    #     class: 'Hal\Agent\Push\Rsync\CodeDelta'
-    #     arguments:
-    #         - '@logger.event'
-    #         - '@push.rsync.delta.remoter'
-    #         - '@yaml.parser'
-    #         - '@github.commits'
-
-    push.rsync.pusher:
-        class: 'Hal\Agent\Push\Rsync\Pusher'
-        arguments:
-            - '@logger.event'
-            - '@ssh.filemanager'
-            - '@utility.process.builder'
-            - '%timeout.push%'
-
-    push.rsync.serverCommand:
-        class: 'Hal\Agent\Push\Rsync\ServerCommand'
-        arguments: ['@push.rsync.standard.remoter']
-
-    push.rsync.standard.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.push.serverCommand%'
-
-    # push.rsync.delta.remoter:
-    #     class: 'Hal\Agent\Remoting\SSHProcess'
-    #     arguments:
-    #         - '@logger.event'
-    #         - '@ssh.manager'
-    #         - '%timeout.standard%'
-
-    push.rsync.verify.remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '%timeout.standard%'
-
-    ####################################################################################################################
-    # s3
-    ####################################################################################################################
-
-    push.s3.deployer:
-        class: 'Hal\Agent\Push\S3\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@service_container'
-            - '%push.s3.strategies%'
-
-
-    push.s3_sync.deployer:
-        class: 'Hal\Agent\Push\S3\Sync\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.aws.authenticator'
-            - '@push.s3_sync.preparer'
-            - '@push.s3_sync.uploader'
-
-    push.s3_artifact.deployer:
-        class: 'Hal\Agent\Push\S3\Artifact\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.aws.authenticator'
-            - '@push.s3_artifact.preparer'
-            - '@push.s3_artifact.uploader'
-
-    push.s3_sync.preparer:
-        class: 'Hal\Agent\Push\S3\Sync\Preparer'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '%timeout.filepacking%'
-
-    push.s3_artifact.preparer:
-        class: 'Hal\Agent\Push\S3\Artifact\Preparer'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '@push.mover'
-            - '@push.packer'
-            - '%timeout.filepacking%'
-
-    push.s3_sync.uploader:
-        class: 'Hal\Agent\Push\S3\Sync\Uploader'
-        arguments:
-            - '@logger.event'
-            - '@push.s3_sync.manager.sync'
-        calls:
-            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-
-    push.s3_artifact.uploader:
-        class: 'Hal\Agent\Push\S3\Artifact\Uploader'
-        arguments: ['@logger.event']
-        calls:
-            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-
-    push.s3_sync.manager.sync:
-        class: 'Hal\Agent\Push\S3\Sync\SyncManager'
-        arguments:
-            - '@push.s3_sync.manager.transfer'
-            - '@push.s3_sync.manager.delete'
-            - '@utility.finder'
-
-    push.s3_sync.manager.transfer:
-        class: 'Hal\Agent\Push\S3\Sync\TransferManager'
-
-    push.s3_sync.manager.delete:
-        class: 'Hal\Agent\Push\S3\Sync\BatchDeleteManager'
-
-    ####################################################################################################################
-    # codedeploy
-    ####################################################################################################################
-
-    push.cd.deployer:
-        class: 'Hal\Agent\Push\CodeDeploy\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.aws.authenticator'
-            - '@push.cd.healthchecker'
-            - '@push.packer'
-            - '@push.cd.uploader'
-            - '@push.cd.pusher'
-
-    push.cd.healthchecker:
-        class: 'Hal\Agent\Push\CodeDeploy\HealthChecker'
-        arguments:
-            - '@clock'
-            - '%date.timezone%'
-
-    push.cd.uploader:
-        class: 'Hal\Agent\Push\CodeDeploy\Uploader'
-        arguments: ['@logger.event']
-        calls:
-            - ['allowOverwrite', [false]]
-
-    push.cd.pusher:
-        class: 'Hal\Agent\Push\CodeDeploy\Pusher'
-        arguments:
-            - '@logger.event'
-            - '@push.cd.healthchecker'
-            - '@push.cd.waiter'
-            - '%hal.baseurl%'
-
-    push.cd.waiter:
-        class: 'Hal\Agent\Waiter\Waiter'
-        arguments:
-            - '%push.cd.waiter.interval%'
-            - '%push.cd.waiter.max%'
-
-    ####################################################################################################################
-    # script
-    ####################################################################################################################
-
-    push.script.deployer:
-        class: 'Hal\Agent\Push\Script\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@push.script.builder'
-
-    push.script.builder:
-        class: 'Hal\Agent\Push\Script\DeployDelegatingBuilder'
-        arguments:
-            - '@logger.event'
-            - '@service_container'
-            - '%deployment.script.platforms%'
-
-    push.script.build.unix.handler:
-        class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
-        arguments:
-            - '@logger.event'
-            - '@build.linux.configurator'
-            - '@build.linux.exporter'
-            - '@push.script.build.unix.builder'
-            - '@build.linux.importer'
-            - '@build.linux.cleaner'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.linux.docker_default_image%'
-
-    push.script.build.unix.builder:
-        parent: 'build_platform.linux'
-        class: 'Hal\Agent\Push\Script\DeployDockerBuilder'
-
-    # windows
-    push.script.build.windows_aws_docker.handler:
-        class: 'QL\Hal\Agent\Build\WindowsAWS\WindowsAWSBuildHandler'
-        arguments:
-            - '@logger.event'
-            - '@build.windows_aws.builder_finder'
-            - '@build.windows_aws.preparer'
-            - '@build.windows_aws.exporter'
-            - '@push.script.build.windows_aws.docker_builder'
-            - '@build.windows_aws.importer'
-            - '@build.windows_aws.cleaner'
-            - '@push.aws.authenticator'
-            - '@encrypted.resolver'
-            - '%build.platforms.option.windows.docker_default_image%'
-
-    push.script.build.windows_aws.docker_builder:
-        parent: 'build.windows_aws.docker_builder'
-        class: 'QL\Hal\Agent\Push\Script\WindowsAWS\DeployDockerBuilder'
-
-    ####################################################################################################################
-    # private services used only by push actions
-    ####################################################################################################################
-
-    push.aws.authenticator:
+    deploy.support.aws_authenticator:
         class: 'Hal\Core\AWS\AWSAuthenticator'
         arguments:
             - '@logger'
-            - '@push.aws.credential.provider'
+            - '@deploy.support.credential_provider'
             - '@aws'
 
-    push.aws.credential.provider:
+    deploy.support.credential_provider:
         class: 'Hal\Core\AWS\CredentialProvider'
         arguments:
             - '@logger'

@@ -1,0 +1,77 @@
+services:
+
+    deploy_platform.s3:
+        class: 'Hal\Agent\Push\S3\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%push.s3.strategies%'
+
+    ############################################################################
+    # types
+    ############################################################################
+
+    deploy_platform.s3.artifact:
+        class: 'Hal\Agent\Push\S3\Artifact\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@deploy.support.aws_authenticator'
+            - '@push.s3_artifact.preparer'
+            - '@push.s3_artifact.uploader'
+
+    deploy_platform.s3.sync:
+        class: 'Hal\Agent\Push\S3\Sync\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@deploy.support.aws_authenticator'
+            - '@push.s3_sync.preparer'
+            - '@push.s3_sync.uploader'
+
+    ############################################################################
+    # support
+    ############################################################################
+
+    push.s3_sync.preparer:
+        class: 'Hal\Agent\Push\S3\Sync\Preparer'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder'
+            - '%timeout.filepacking%'
+
+    push.s3_artifact.preparer:
+        class: 'Hal\Agent\Push\S3\Artifact\Preparer'
+        arguments:
+            - '@logger.event'
+            - '@utility.filesystem'
+            - '@utility.process.builder'
+            - '@deploy.support.mover'
+            - '@deploy.support.packer'
+            - '%timeout.filepacking%'
+
+    push.s3_sync.uploader:
+        class: 'Hal\Agent\Push\S3\Sync\Uploader'
+        arguments:
+            - '@logger.event'
+            - '@push.s3_sync.manager.sync'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    push.s3_artifact.uploader:
+        class: 'Hal\Agent\Push\S3\Artifact\Uploader'
+        arguments: ['@logger.event']
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    push.s3_sync.manager.sync:
+        class: 'Hal\Agent\Push\S3\Sync\SyncManager'
+        arguments:
+            - '@push.s3_sync.manager.transfer'
+            - '@push.s3_sync.manager.delete'
+            - '@utility.finder'
+
+    push.s3_sync.manager.transfer:
+        class: 'Hal\Agent\Push\S3\Sync\TransferManager'
+
+    push.s3_sync.manager.delete:
+        class: 'Hal\Agent\Push\S3\Sync\BatchDeleteManager'
