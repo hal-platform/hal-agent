@@ -51,7 +51,7 @@ class Configurator
         return [
             'builder_connection' => $buildConnection,
             'remote_file' => $this->generateLinuxBuildPath($build->id()),
-            'environment_variables' => $this->buildLinuxEnvironment($build)
+            'environment_variables' => $this->buildEnvironmentVariables($build)
         ];
     }
 
@@ -60,15 +60,15 @@ class Configurator
      *
      * @return array
      */
-    private function buildLinuxEnvironment(Build $build)
+    private function buildEnvironmentVariables(Build $build): ?array
     {
         $environmentName = ($environment = $build->environment()) ? $environment->name() : 'None';
         $applicationName = ($application = $build->application()) ? $application->name() : 'None';
 
         $env = [
-            'HAL_BUILDID' => $build->id(),
-            'HAL_COMMIT' => $build->commit(),
-            'HAL_GITREF' => $build->reference(),
+            'HAL_JOB_ID' => $build->id(),
+            'HAL_VCS_COMMIT' => $build->commit(),
+            'HAL_VCS_REF' => $build->reference(),
 
             'HAL_ENVIRONMENT' => $environmentName,
             'HAL_APPLICATION' => $applicationName,

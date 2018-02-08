@@ -26,8 +26,13 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, IOAwareTrait
     use PlatformTrait;
 
-    const SECTION = 'Linux Platform';
-    const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted configuration';
+    private const STEP_1_CONFIGURING = 'Linux Platform - Validating Linux configuration';
+    private const STEP_2_EXPORTING = 'Linux Platform - Exporting files to build server';
+    private const STEP_3_BUILDING = 'Linux Platform - Running build steps';
+    private const STEP_4_IMPORTING = 'Linux Platform - Importing artifacts from build server';
+    private const STEP_5_CLEANING = 'Cleaning up remote builder instance "%s"';
+
+    private const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted configuration';
 
     /**
      * @var EventLogger
@@ -71,7 +76,6 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
     /**
      * @param EventLogger $logger
-     *
      * @param Configurator $configurator
      * @param Exporter $exporter
      * @param BuilderInterface $builder
@@ -97,6 +101,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
         $this->builder = $builder;
         $this->importer = $importer;
         $this->cleaner = $cleaner;
+
         $this->decrypter = $decrypter;
 
         $this->defaultDockerImage = $defaultDockerImage;
@@ -121,7 +126,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
         }
 
         // decrypt
-        $env = $this->decrypt($properties['encrypted'], $platformConfig, $config);
+        $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $config);
         if ($env === null) {
             $this->logger->event('failure', self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
@@ -147,7 +152,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
      */
     private function configurator(Build $build)
     {
-        $this->getIO()->section(self::SECTION . ' - Validating Linux configuration');
+        $this->getIO()->section(self::STEP_1_CONFIGURING);
 
         $platformConfig = ($this->configurator)($build);
 
@@ -168,7 +173,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
      */
     private function export(array $platformConfig, array $properties)
     {
-        $this->getIO()->section(self::SECTION . ' - Exporting files to build server');
+        $this->getIO()->section(self::STEP_2_EXPORTING);
 
         $buildPath = $properties['workspace_path'] . '/build';
         $localFile = $properties['workspace_path'] . '/build_export.tgz';
@@ -196,19 +201,19 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
     /**
      * @param array $encryptedConfig
-     * @param array $platformConfig
+     * @param array $platformEnv
      * @param array $config
      *
      * @return array|null
      */
-    private function decrypt(array $encryptedConfig, array $platformConfig, array $config)
+    private function decrypt(array $encryptedConfig, array $platformEnv, array $config)
     {
         $decrypted = $this->decrypter->decryptProperties($encryptedConfig);
         if (count($decrypted) !== count($encryptedConfig)) {
             return null;
         }
 
-        $env = $this->determineEnviroment($platformConfig['environment_variables'], $decrypted, $config['env']);
+        $env = $this->determineEnviroment($platformEnv, $decrypted, $config['env']);
 
         return $env;
     }
@@ -224,7 +229,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
      */
     private function build($jobID, $image, array $platformConfig, array $commands, array $env)
     {
-        $this->getIO()->section(self::SECTION . ' - Running build steps');
+        $this->getIO()->section(self::STEP_3_BUILDING);
 
         $connection = $platformConfig['builder_connection'];
         $remoteFile = $platformConfig['remote_file'];
@@ -240,9 +245,9 @@ class LinuxBuildPlatform implements BuildPlatformInterface
      *
      * @return bool
      */
-    private function import(array $platformConfig, array $properties)
+    private function import(array $platformConfig, $workspacePath)
     {
-        $this->getIO()->section(self::SECTION . ' - Importing files from build server');
+        $this->getIO()->section(self::STEP_4_IMPORTING);
 
         $buildPath = $properties['workspace_path'] . '/build';
         $localFile = $properties['workspace_path'] . '/build_import.tgz';
@@ -267,7 +272,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
      */
     private function cleanupServer($remoteConnection, $remoteFile)
     {
-        $this->getIO()->note(sprintf('Cleaning up remote build server "%s"', $remoteConnection));
+        $this->getIO()->note(sprintf(self::STEP_5_CLEANING, $remoteConnection));
 
         ($this->cleaner)($remoteConnection, $remoteFile);
     }

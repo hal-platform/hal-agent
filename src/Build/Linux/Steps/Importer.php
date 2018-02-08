@@ -23,14 +23,14 @@ class Importer
     private $sshManager;
 
     /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
      * @var FileCompression
      */
     private $fileCompression;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
 
     /**
      * @param SSHSessionManager $sshManager

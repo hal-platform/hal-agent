@@ -70,9 +70,7 @@ class DockerBuilder implements BuilderInterface
             return $this->bombout(false);
         }
 
-        // 1. Build container
         $containerName = strtolower($jobID);
-
         $imagedCommands = $this->organizeCommands($dockerImage, $commands);
 
         $total = count($commands);
@@ -85,10 +83,6 @@ class DockerBuilder implements BuilderInterface
             if (!$this->docker->createContainer($remoteConnection, $image, $containerName, $env)) {
                 return $this->bombout(false);
             }
-
-            // if (!$containerName = $this->buildContainer($image, $env)) {
-            //     return $this->bombout(false);
-            // }
 
             $this->getIO()->note(self::EVENT_STARTING_CONTAINER);
 
