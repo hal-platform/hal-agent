@@ -19,8 +19,8 @@ class DockerBuilder implements BuilderInterface
     use EmergencyBuildHandlerTrait;
     use IOAwareTrait;
 
-    const EVENT_MESSAGE = 'Run build step %s';
-    const EVENT_MESSAGE_CUSTOM = 'Run build step %s "%s"';
+    const EVENT_MESSAGE = 'Build step %s';
+    const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
 
     const EVENT_STARTING_CONTAINER = 'Starting Docker container';
     const EVENT_START_CONTAINER_STARTED = 'Docker container "%s" started';
@@ -79,6 +79,7 @@ class DockerBuilder implements BuilderInterface
             return $this->bombout(false);
         }
 
+        // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
         $containerName = strtolower($jobID);
         $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $commands);
 
@@ -86,7 +87,7 @@ class DockerBuilder implements BuilderInterface
         $current = 0;
 
         foreach ($jobs as $job) {
-            [$image, $commands] = $job;
+            [$image, $steps] = $job;
 
             // 2. Create container
             if (!$this->docker->createContainer($remoteConnection, $image, $containerName, $env)) {
@@ -110,21 +111,21 @@ class DockerBuilder implements BuilderInterface
 
             $this->getIO()->note(sprintf(self::EVENT_START_CONTAINER_STARTED, $containerName));
 
-            // 5. Run commands
-            foreach ($commands as $command) {
+            // 6. Run commands
+            foreach ($steps as $step) {
                 $current++;
 
-                if (!$result = $this->runCommand($remoteConnection, $containerName, $command, $current, $total)) {
+                if (!$result = $this->runStep($remoteConnection, $containerName, $step, $current, $total)) {
                     return $this->bombout(false);
                 }
             }
 
-            // 6. Copy out of container
+            // 7. Copy out of container
             if (!$this->docker->copyFromContainer($remoteConnection, $containerName, $remoteFile)) {
                 return $this->bombout(false);
             }
 
-            // 7. Run and clear docker cleanup/shutdown functionality
+            // 8. Run and clear docker cleanup/shutdown functionality
             $this->runDockerCleanup($cleanup);
         }
 
@@ -134,18 +135,18 @@ class DockerBuilder implements BuilderInterface
     /**
      * @param string $remoteConnection
      * @param string $containerName
-     * @param string $command
+     * @param string $step
      * @param int $currentStep
      * @param int $totalSteps
      *
      * @return bool
      */
-    private function runCommand($remoteConnection, $containerName, $command, $currentStep, $totalSteps): bool
+    private function runStep($remoteConnection, $containerName, $step, $currentStep, $totalSteps)
     {
         $remaining = $totalSteps - $currentStep;
 
-        $msg = $this->getEventMessage($command, "[${currentStep}/${totalSteps}]");
-        if (!$result = $this->docker->runCommand($remoteConnection, $containerName, $command, $msg)) {
+        $msg = $this->getEventMessage($step, "[${currentStep}/${totalSteps}]");
+        if (!$result = $this->docker->runCommand($remoteConnection, $containerName, $step, $msg)) {
             if ($remaining > 0) {
                 $this->logSkippedCommands($remaining);
             }
@@ -153,7 +154,6 @@ class DockerBuilder implements BuilderInterface
             return false;
         }
 
-        // all good
         return true;
     }
 

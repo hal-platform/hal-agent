@@ -16,17 +16,16 @@ class LinuxDockerinator
     use InternalDebugLoggingTrait;
 
     const CONTAINER_WORKING_DIR = '/workspace';
-
-    const STEP_1_CREATE_CONTAINER = 'Create Docker container';
-    const STEP_2_DOCKER_COPY_IN = 'Copy source code into container';
-    const STEP_3_START_CONTAINER = 'Start Docker container';
-    //  STEP_4 = run build steps
-    const STEP_5_DOCKER_COPY_OUT = 'Copy artifacts from container';
-
-    const STEP_KILL_CONTAINER = 'Kill Docker container';
-    const STEP_REMOVE_CONTAINER = 'Remove Docker container';
-
     const DOCKER_SHELL = 'bash -l -c %s';
+
+    private const STEP_1_CREATE_CONTAINER = 'Create Docker container';
+    private const STEP_2_DOCKER_COPY_IN = 'Copy source code into container';
+    private const STEP_3_START_CONTAINER = 'Start Docker container';
+    //  STEP_4 = run build steps
+    private const STEP_5_DOCKER_COPY_OUT = 'Copy artifacts from container';
+
+    private const STEP_KILL_CONTAINER = 'Kill Docker container';
+    private const STEP_REMOVE_CONTAINER = 'Remove Docker container';
 
     /**
      * @var EventLogger
