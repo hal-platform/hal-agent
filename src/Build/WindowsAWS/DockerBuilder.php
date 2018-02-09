@@ -20,7 +20,6 @@ use Hal\Agent\Symfony\IOAwareTrait;
 
 class DockerBuilder implements BuilderInterface
 {
-    // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
     use InternalDebugLoggingTrait;
     use IOAwareTrait;
@@ -28,6 +27,7 @@ class DockerBuilder implements BuilderInterface
     const EVENT_MESSAGE = 'Build step %s';
     const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
 
+    const EVENT_PREPARING_INSTANCE = 'Preparing AWS instance for job';
     const EVENT_STARTING_CONTAINER = 'Starting Docker container';
     const EVENT_START_CONTAINER_STARTED = 'Docker container "%s" started';
     const EVENT_DOCKER_CLEANUP = 'Clean up docker container "%s"';
@@ -123,6 +123,8 @@ class DockerBuilder implements BuilderInterface
             return $this->bombout(false);
         }
 
+        $this->getIO()->note(self::EVENT_PREPARING_INSTANCE);
+
         // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
         $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $commands);
 
@@ -167,7 +169,7 @@ class DockerBuilder implements BuilderInterface
 
             $this->getIO()->note(sprintf(self::EVENT_START_CONTAINER_STARTED, $containerName));
 
-            // 6. Run commands
+            // 6. Run steps
             foreach ($scripts as $script) {
                 $current++;
 
@@ -188,7 +190,9 @@ class DockerBuilder implements BuilderInterface
             // This is necessary because we "shift" between the build dir and output dir.
             // If there are multiple containers used, we need to shift the output to the next job's input.
             if (count($scriptedJobs) > ($jobNum + 1)) {
-                $this->shiftBuildWorkspace($outputDir, $inputDir);
+                if (!$this->shiftBuildWorkspace($outputDir, $inputDir)) {
+                    return $this->bombout(false);
+                }
             }
         }
 
@@ -198,14 +202,14 @@ class DockerBuilder implements BuilderInterface
     /**
      * @param SsmClient $ssm
      * @param string $instanceID
-     * @param string $buildID
+     * @param string $jobID
      * @param string $inputDir
      * @param array $scriptedJobs
      * @param array $env
      *
      * @return bool
      */
-    private function prepare(SsmClient $ssm, $instanceID, $buildID, $inputDir, array $scriptedJobs, array $env)
+    private function prepare(SsmClient $ssm, $instanceID, $jobID, $inputDir, array $scriptedJobs, array $env)
     {
         // We use a custom log context, so we dont mistakenly output secrets in the logs
         $logContext = [
@@ -227,11 +231,11 @@ class DockerBuilder implements BuilderInterface
                 ]),
                 $this->powershell->getScript('loginDocker'),
                 $this->powershell->getScript('writeUserCommandsToBuildScripts', [
-                    'buildID' => $buildID,
+                    'buildID' => $jobID,
                     'commandsParsed' => $combinedScripts,
                 ]),
                 $this->powershell->getScript('writeEnvFile', [
-                    'buildID' => $buildID,
+                    'buildID' => $jobID,
                     'environment' => $env,
                 ])
             ],
@@ -303,7 +307,7 @@ class DockerBuilder implements BuilderInterface
             'executionTimeout' => [$this->internalTimeout],
         ];
 
-        $result = ($this->runner)(
+        return ($this->runner)(
             $ssm,
             $instanceID,
             SSMCommandRunner::TYPE_POWERSHELL,
@@ -335,12 +339,12 @@ class DockerBuilder implements BuilderInterface
     }
 
     /**
-     * @param string $buildID
+     * @param string $jobID
      * @param array $jobs
      *
      * @return array
      */
-    private function parseCommandsToScripts($buildID, array $jobs)
+    private function parseCommandsToScripts($jobID, array $jobs)
     {
         $scriptedJobs = [];
 
@@ -357,14 +361,14 @@ class DockerBuilder implements BuilderInterface
                         'command' => $step,
                         'envFile' => $this->powershell->getUserScriptFilePathForContainer(
                             WindowsSSMDockerinator::CONTAINER_SCRIPTS_DIR,
-                            $buildID,
+                            $jobID,
                             'env'
                         )
                     ]),
-                    'file' => $this->powershell->getUserScriptFilePath($buildID, $num),
+                    'file' => $this->powershell->getUserScriptFilePath($jobID, $num),
                     'container_file' => $this->powershell->getUserScriptFilePathForContainer(
                         WindowsSSMDockerinator::CONTAINER_SCRIPTS_DIR,
-                        $buildID,
+                        $jobID,
                         $num
                     )
                 ];
