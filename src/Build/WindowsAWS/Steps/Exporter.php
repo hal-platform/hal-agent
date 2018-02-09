@@ -125,15 +125,13 @@ class Exporter
             'executionTimeout' => [(string) self::TIMEOUT_COMMAND]
         ];
 
-        $result = ($this->runner)(
+        return ($this->runner)(
             $ssm,
             $instanceID,
             SSMCommandRunner::TYPE_POWERSHELL,
             $config,
-            [$this->isDebugLoggingEnabled()]
+            [$this->isDebugLoggingEnabled(), self::EVENT_MESSAGE]
         );
-
-        return $result;
     }
 
     /**
@@ -188,14 +186,12 @@ class Exporter
             'executionTimeout' => [(string) self::TIMEOUT_COMMAND]
         ];
 
-        $result = ($this->runner)(
+        return ($this->runner)(
             $ssm,
             $instanceID,
             SSMCommandRunner::TYPE_POWERSHELL,
             $config,
-            [$this->isDebugLoggingEnabled()]
+            [$this->isDebugLoggingEnabled(), self::EVENT_MESSAGE]
         );
-
-        return $result;
     }
 }

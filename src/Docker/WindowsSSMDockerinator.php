@@ -1,36 +1,39 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\WindowsAWS\Utility;
+namespace Hal\Agent\Docker;
 
 use Aws\Ssm\SsmClient;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
+use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Type\JobEventStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
 
-class Dockerinator
+class WindowsSSMDockerinator
 {
     use InternalDebugLoggingTrait;
 
     const CONTAINER_WORKING_DIR = 'c:\workspace';
     const CONTAINER_SCRIPTS_DIR = 'c:\build-scripts';
 
-    const EVENT_CREATE_CONTAINER = 'Create Docker container';
-    const EVENT_START_CONTAINER = 'Start Docker container';
-    const EVENT_DOCKER_PREPARE = 'Prepare Docker container';
-    const EVENT_DOCKER_COPY_IN = 'Copy source into container';
-    const EVENT_DOCKER_COPY_OUT = 'Copy build from container';
-    const EVENT_KILL_CONTAINER = 'Kill Docker container';
-    const EVENT_REMOVE_CONTAINER = 'Remove Docker container';
+    private const STEP_1_CREATE_CONTAINER = 'Create Docker container';
+    private const STEP_2_DOCKER_COPY_IN = 'Copy source into container';
+    private const STEP_3_START_CONTAINER = 'Start Docker container';
+    private const STEP_3A_PREPARE_CONTAINER = 'Prepare Docker container';
+    //  STEP_4 = run build steps
+    private const STEP_5_DOCKER_COPY_OUT = 'Copy artifacts from container';
 
-    const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
-    const DEFAULT_TIMEOUT_BUILD_COMMAND = 1800;
+    private const STEP_KILL_CONTAINER = 'Kill Docker container';
+    private const STEP_REMOVE_CONTAINER = 'Remove Docker container';
+
+    private const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
+    private const DEFAULT_TIMEOUT_BUILD_COMMAND = 1800;
 
     /**
      * @var EventLogger
@@ -142,7 +145,7 @@ class Dockerinator
         $command[] = $imageName;
         $command[] = 'powershell';
 
-        if (!$response = $this->runInternalRemote($ssm, $instanceID, $this->safetize($command), self::EVENT_CREATE_CONTAINER)) {
+        if (!$response = $this->runInternalRemote($ssm, $instanceID, $this->safetize($command), self::STEP_1_CREATE_CONTAINER)) {
             return false;
         }
 
@@ -175,7 +178,7 @@ class Dockerinator
             $exec[] = $this->safetize($command);
         }
 
-        if (!$this->runInternalRemote($ssm, $instanceID, $exec, self::EVENT_DOCKER_PREPARE)) {
+        if (!$this->runInternalRemote($ssm, $instanceID, $exec, self::STEP_3A_PREPARE_CONTAINER)) {
             return false;
         }
 
@@ -220,7 +223,7 @@ class Dockerinator
             $this->safetize($copyScriptsInto)
         ];
 
-        if (!$this->runInternalRemote($ssm, $instanceID, $commands, self::EVENT_DOCKER_COPY_IN)) {
+        if (!$this->runInternalRemote($ssm, $instanceID, $commands, self::STEP_2_DOCKER_COPY_IN)) {
             return false;
         }
 
@@ -244,7 +247,7 @@ class Dockerinator
             $containerName
         ];
 
-        if (!$this->runInternalRemote($ssm, $instanceID, $this->safetize($start), self::EVENT_START_CONTAINER)) {
+        if (!$this->runInternalRemote($ssm, $instanceID, $this->safetize($start), self::STEP_3_START_CONTAINER)) {
             return false;
         }
 
@@ -320,7 +323,7 @@ class Dockerinator
             $outputDir
         ];
 
-        if (!$this->runInternalRemote($ssm, $instanceID, $this->safetize($copyFrom), self::EVENT_DOCKER_COPY_OUT)) {
+        if (!$this->runInternalRemote($ssm, $instanceID, $this->safetize($copyFrom), self::STEP_5_DOCKER_COPY_OUT)) {
             return false;
         }
 
@@ -350,8 +353,8 @@ class Dockerinator
         ];
 
         // Do not care whether these fail
-        $this->runInternalRemote($ssm, $instanceID, $this->safetize($kill), self::EVENT_KILL_CONTAINER);
-        $this->runInternalRemote($ssm, $instanceID, $this->safetize($rm), self::EVENT_REMOVE_CONTAINER);
+        $this->runInternalRemote($ssm, $instanceID, $this->safetize($kill), self::STEP_KILL_CONTAINER);
+        $this->runInternalRemote($ssm, $instanceID, $this->safetize($rm), self::STEP_REMOVE_CONTAINER);
 
         return true;
     }

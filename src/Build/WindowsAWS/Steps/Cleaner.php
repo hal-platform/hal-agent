@@ -150,8 +150,7 @@ class Cleaner
         $inputDir = "${workDir}\\${jobID}";
         $outputDir = "${workDir}\\${jobID}-output";
 
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
+        $config = [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
                 $this->powershell->getScript('cleanupAfterBuildOutput', [
@@ -161,8 +160,14 @@ class Cleaner
                 ])
             ],
             'executionTimeout' => [(string) self::TIMEOUT_INTERNAL_COMMAND],
-        ], [$this->isDebugLoggingEnabled()]);
+        ];
 
-        return $result;
+        return ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [$this->isDebugLoggingEnabled(), self::EVENT_MESSAGE]
+        );
     }
 }

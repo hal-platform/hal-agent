@@ -24,7 +24,7 @@ class Importer
     /**
      * @var string
      */
-    const EVENT_MESSAGE = 'Import to AWS build server';
+    const EVENT_MESSAGE = 'Import from AWS build server';
 
     const TIMEOUT_COMMAND = 120;
 
@@ -136,8 +136,7 @@ class Importer
         $outputDir = "${workDir}\\${buildID}-output";
         $localFile = "${workDir}\\${buildID}.tar.gz";
 
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
+        $config = [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
                 $this->powershell->getScript('tarBuild', [
@@ -152,7 +151,15 @@ class Importer
             ],
             'workingDirectory' => [$workDir],
             'executionTimeout' => [(string) self::TIMEOUT_COMMAND],
-        ], [$this->isDebugLoggingEnabled()]);
+        ];
+
+        $result = ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [$this->isDebugLoggingEnabled(), self::EVENT_MESSAGE]
+        );
 
         return $result;
     }

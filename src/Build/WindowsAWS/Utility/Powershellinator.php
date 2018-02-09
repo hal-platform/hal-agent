@@ -115,15 +115,16 @@ class Powershellinator
     }
 
     /**
+     * @param string $scriptBasePath
      * @param string $buildID
      * @param string $scriptNum
      *
      * @return string
      */
-    public function getUserScriptFilePathForContainer($buildID, $scriptNum)
+    public function getUserScriptFilePathForContainer($scriptBasePath, $buildID, $scriptNum)
     {
         $scriptFilename = $this->getUserScriptFile($buildID, $scriptNum);
-        return Dockerinator::CONTAINER_SCRIPTS_DIR . "\\${scriptFilename}";
+        return "${scriptBasePath}\\${scriptFilename}";
     }
 
     /**
@@ -174,6 +175,10 @@ class Powershellinator
         } elseif ($name === 'transferBuildToOutput') {
             $this->verifyScriptParameters(['inputDir', 'outputDir'], $params);
             return PowershellScripts::transferBuildToOutput($params['inputDir'], $params['outputDir']);
+
+        } elseif ($name === 'shiftBuildWorkspaceFromOutput') {
+            $this->verifyScriptParameters(['inputDir', 'outputDir'], $params);
+            return PowershellScripts::shiftBuildWorkspaceFromOutput($params['outputDir'], $params['inputDir']);
 
         } elseif ($name === 'cleanupAfterBuild') {
             $this->verifyScriptParameters(['inputDir', 'buildID'], $params);
