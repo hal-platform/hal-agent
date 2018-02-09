@@ -3,7 +3,6 @@ services:
         class: 'Hal\Agent\Build\Resolver'
         arguments:
             - '@doctrine.em'
-            - '@utility.environment.resolver'
             - '@encrypted.resolver'
         calls:
             - ['setLocalTempPath', ['%path.temp%']]

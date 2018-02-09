@@ -6,7 +6,6 @@ services:
             - '@logger.event'
             - '@doctrine.em'
             - '@clock'
-            - '@utility.environment.resolver'
             - '@encrypted.resolver'
             - '%deploy.rsync.user%'
         calls:
