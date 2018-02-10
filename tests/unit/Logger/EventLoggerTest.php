@@ -27,7 +27,10 @@ class EventLoggerTest extends MockeryTestCase
             'merge' => null,
             'flush' => null
         ]);
+
         $this->handler = Mockery::mock(ProcessHandler::class);
+        $this->meta = Mockery::mock(MetadataHandler::class);
+
         $this->clock = Mockery::mock(Clock::class, [
             'read' => new TimePoint(2018, 1, 15, 12, 30, 45, 'UTC')
         ]);
@@ -35,7 +38,7 @@ class EventLoggerTest extends MockeryTestCase
 
     public function testNoEventCreatedWithNoJob()
     {
-        $logger = new EventLogger($this->em, $this->handler, $this->clock);
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
 
         $actual = $logger->event('info', 'test message', ['data' => 'test1']);
 
@@ -54,7 +57,7 @@ class EventLoggerTest extends MockeryTestCase
             ->shouldReceive('flush')
             ->once();
 
-        $logger = new EventLogger($this->em, $this->handler, $this->clock);
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
         $logger->start($build);
 
         $this->assertSame('running', $build->status());
@@ -65,7 +68,7 @@ class EventLoggerTest extends MockeryTestCase
     {
         $build = new Build;
 
-        $logger = new EventLogger($this->em, $this->handler, $this->clock);
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
         $logger->start($build);
 
         $actual = $logger->event('testing', 'test message');
@@ -82,7 +85,7 @@ class EventLoggerTest extends MockeryTestCase
             ->with($release)
             ->once();
 
-        $logger = new EventLogger($this->em, $this->handler, $this->clock);
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
 
         $logger->start($release);
         $logger->success();
@@ -99,7 +102,7 @@ class EventLoggerTest extends MockeryTestCase
             ->with($build)
             ->once();
 
-        $logger = new EventLogger($this->em, $this->handler, $this->clock);
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
 
         $logger->start($build);
         $logger->failure();

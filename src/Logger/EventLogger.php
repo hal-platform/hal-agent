@@ -35,6 +35,11 @@ class EventLogger
     private $processHandler;
 
     /**
+     * @var MetadataHandler
+     */
+    private $metaHandler;
+
+    /**
      * @var Clock
      */
     private $clock;
@@ -57,15 +62,18 @@ class EventLogger
     /**
      * @param EntityManagerInterface $em
      * @param ProcessHandler $processHandler
+     * @param MetadataHandler $metaHandler
      * @param Clock $clock
      */
     public function __construct(
         EntityManagerInterface $em,
         ProcessHandler $processHandler,
+        MetadataHandler $metaHandler,
         Clock $clock
     ) {
         $this->em = $em;
         $this->processHandler = $processHandler;
+        $this->metaHandler = $metaHandler;
         $this->clock = $clock;
 
         $this->job = null;
@@ -95,7 +103,7 @@ class EventLogger
      *
      * @return JobEvent|null
      */
-    public function event($status, $message, array $context = []): ?JobEvent
+    public function event($status, string $message, array $context = []): ?JobEvent
     {
         if (!$this->job) {
             return null;
@@ -106,6 +114,21 @@ class EventLogger
         }
 
         return $this->sendEvent($this->job, $this->currentStage, $status, $message, $context);
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $value
+     *
+     * @return null
+     */
+    public function meta(string $name, string $value): void
+    {
+        if (!$this->job) {
+            return;
+        }
+
+        // $this->metaHandler->send($this->job, $name, $value);
     }
 
     /**
