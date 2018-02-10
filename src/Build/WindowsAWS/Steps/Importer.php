@@ -9,8 +9,8 @@ namespace Hal\Agent\Build\WindowsAWS\Steps;
 
 use Aws\S3\S3Client;
 use Aws\Ssm\SsmClient;
-use Hal\Agent\Build\Generic\FileCompression;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
+use Hal\Agent\Job\FileCompression;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Build\WindowsAWS\AWS\S3Downloader;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;

@@ -7,7 +7,7 @@
 
 namespace Hal\Agent\Build\Linux\Steps;
 
-use Hal\Agent\Build\Generic\FileCompression;
+use Hal\Agent\Job\FileCompression;
 use Hal\Agent\Remoting\SSHSessionManager;
 use phpseclib\Net\SCP;
 

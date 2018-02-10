@@ -12,7 +12,7 @@ use Hal\Agent\Build\BuildException;
 use Hal\Agent\Build\Builder;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
-use Hal\Agent\Build\Generic\LocalCleaner;
+use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
@@ -27,11 +27,6 @@ use Hal\Core\Type\VCSProviderEnum;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 
-/**
- * Build an application for a particular environment.
- *
- * The amount of dependencies of this command is too damn high.
- */
 class BuildCommand implements ExecutorInterface
 {
     use ExecutorTrait;
@@ -52,11 +47,11 @@ class BuildCommand implements ExecutorInterface
         5 => 'Storing build artifact'
     ];
 
-    const ERR_NOT_RUNNABLE = 'Build cannot be run.';
-    const ERR_DOWNLOAD = 'Source code cannot be downloaded.';
-    const ERR_CONFIG = '.hal.yml configuration is invalid and cannot be read.';
-    const ERR_BUILD = 'Build process failed.';
-    const ERR_STORE_ARTIFACT = 'Build artifact cannot be stored and exported to artifact repository.';
+    private const ERR_NOT_RUNNABLE = 'Build cannot be run.';
+    private const ERR_DOWNLOAD = 'Source code cannot be downloaded.';
+    private const ERR_CONFIG = '.hal.yaml configuration is invalid and cannot be read.';
+    private const ERR_BUILD = 'Build process failed.';
+    private const ERR_STORE_ARTIFACT = 'Build artifact cannot be stored and exported to artifact repository.';
 
     /**
      * @var EventLogger
@@ -174,7 +169,7 @@ class BuildCommand implements ExecutorInterface
     public static function configure(Command $command)
     {
         $command
-            ->setDescription('Run an application build.')
+            ->setDescription('Run a build for an application.')
 
             ->addArgument(self::PARAM_BUILD, InputArgument::REQUIRED, self::HELP_BUILD);
     }
@@ -223,7 +218,6 @@ class BuildCommand implements ExecutorInterface
         }
 
         $this->outputJobStats($io);
-
         return $this->buildSuccess($io, self::MSG_SUCCESS);
     }
 

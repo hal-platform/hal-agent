@@ -11,7 +11,7 @@ use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\Builder;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
-use Hal\Agent\Build\Generic\LocalCleaner;
+use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;

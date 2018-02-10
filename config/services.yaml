@@ -80,12 +80,28 @@ services:
         class: 'Hal\Agent\Logger\EventLogger'
         arguments:
             - '@doctrine.em'
-            - '@logger.process.handler'
+            - '@logger.process_handler'
             - '@clock'
 
-    logger.process.handler:
+    logger.process_handler:
         class: 'Hal\Agent\Logger\ProcessHandler'
         arguments: ['@doctrine.em']
+
+    logger.metadata_handler:
+        class: 'Hal\Agent\Logger\MetadataHandler'
+        arguments: ['@logger.metadata_handler.http_client', '@logger']
+
+    logger.metadata_handler.http_client:
+        class: 'GuzzleHttp\Client'
+        arguments:
+            -
+                base_url: '%hal.baseurl%'
+                defaults:
+                    verify: true
+                    exceptions: false
+                    headers:
+                        'Authorization': 'token %hal.api_token%'
+
 
     # subscriber to symfony/console event system to prepare mcp logger
     logger.mcp.subscriber:

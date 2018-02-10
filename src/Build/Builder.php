@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Builder
 {
-    const ERR_INVALID_BUILDER = 'Invalid build platform specified';
+    private const ERR_INVALID_BUILDER = 'Invalid build platform specified';
 
     /**
      * @var EventLogger
@@ -57,7 +57,7 @@ class Builder
      *
      * @return bool
      */
-    public function __invoke(IOInterface $io, string $platform, array $config, array $properties)
+    public function __invoke(IOInterface $io, string $platform, array $config, array $properties): bool
     {
         if (!$platform || !isset($this->platforms[$platform])) {
             return $this->explode($platform ?: 'Unknown');

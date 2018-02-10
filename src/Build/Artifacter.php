@@ -7,17 +7,17 @@
 
 namespace Hal\Agent\Build;
 
-use Hal\Agent\Build\Generic\FileCompression;
+use Hal\Agent\Job\FileCompression;
 use Hal\Agent\Logger\EventLogger;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
 class Artifacter
 {
-    const EVENT_MESSAGE = 'Store artifact in artifact repository';
+    private const EVENT_MESSAGE = 'Store artifact in artifact repository';
 
-    const ERR_DIST_NOT_FOUND = 'Distribution directory not found';
-    const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';
+    private const ERR_DIST_NOT_FOUND = 'Distribution directory not found';
+    private const ERR_DIST_NOT_VALID = 'Invalid distribution directory specified';
 
     /**
      * @var EventLogger

@@ -101,15 +101,14 @@ services:
         class: 'Hal\Agent\Executor\Runner\DeployCommand'
         arguments:
             - '@logger.event'
+            - '@deploy.cleaner'
             - '@deploy.resolver'
-            - '@deploy.mover'
-            - '@deploy.unpacker'
+            - '@deploy.artifacter'
             - '@job_configuration.reader'
             - '@deploy.builder'
-            - '@deploy.builder'
             - '@deployer'
-            - '@deploy.builder'
-            - '@utility.filesystem'
+        calls:
+            - ['setShutdownHandler', [true]]
 
     # workers - cron
 

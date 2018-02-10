@@ -30,7 +30,7 @@ services:
             - '@build.support.file_compression'
 
     build.cleaner:
-        class: 'Hal\Agent\Build\Generic\LocalCleaner'
+        class: 'Hal\Agent\Job\LocalCleaner'
         arguments: ['@filesystem']
 
     ############################################################################
@@ -38,7 +38,7 @@ services:
     ############################################################################
 
     build.support.file_compression:
-        class: 'Hal\Agent\Build\Generic\FileCompression'
+        class: 'Hal\Agent\Job\FileCompression'
         arguments:
             - '@process_runner'
             - '%timeout.filepacking%'

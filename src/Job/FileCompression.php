@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build\Generic;
+namespace Hal\Agent\Job;
 
 use Hal\Agent\Symfony\ProcessRunner;
 

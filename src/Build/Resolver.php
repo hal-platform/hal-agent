@@ -14,9 +14,6 @@ use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
 use Hal\Core\Entity\JobType\Build;
 
-/**
- * Resolve build properties from user and environment input
- */
 class Resolver
 {
     use DefaultConfigHelperTrait;
@@ -53,7 +50,7 @@ class Resolver
      *
      * @return array
      */
-    public function __invoke(string $buildID)
+    public function __invoke(string $buildID): array
     {
         $build = $this->getBuild($buildID);
 

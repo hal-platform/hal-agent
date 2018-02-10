@@ -7,7 +7,7 @@
 
 namespace Hal\Agent\Build;
 
-use Hal\Agent\Build\Generic\FileCompression;
+use Hal\Agent\Job\FileCompression;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Entity\Application;
