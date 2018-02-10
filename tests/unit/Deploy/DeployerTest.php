@@ -5,64 +5,69 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build;
+namespace Hal\Agent\Deploy;
 
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\IOTestCase;
+use Hal\Agent\JobPlatformInterface;
+use Hal\Core\Entity\JobType\Release;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class BuilderTest extends IOTestCase
+class DeployerTest extends IOTestCase
 {
     use MockeryPHPUnitIntegration;
 
     public $logger;
     public $container;
+    public $release;
 
     public function setUp()
     {
         $this->logger = Mockery::mock(EventLogger::class);
         $this->container = Mockery::mock(ContainerInterface::class);
+
+        $this->release = Mockery::mock(Release::class);
     }
 
-    public function testNoBuildPlatformFoundFails()
+    public function testNoDeployPlatformFoundFails()
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', 'Invalid build platform specified', ['platform' => 'my-platform'])
+            ->with('failure', 'Invalid deployment platform specified', ['platform' => 'my-platform'])
             ->once();
 
-        $builder = new Builder($this->logger, $this->container, []);
+        $deployer = new Deployer($this->logger, $this->container, []);
 
         $properties = $config = [];
-        $actual = $builder($this->io(), 'my-platform', $config, $properties);
+        $actual = $deployer($this->release, $this->io(), 'my-platform', $config, $properties);
 
         $this->assertSame(false, $actual);
     }
 
-    public function testBuilderServiceNotFoundFails()
+    public function testDeployerServiceNotFoundFails()
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', 'Invalid build platform specified', ['platform' => 'my-platform'])
+            ->with('failure', 'Invalid deployment platform specified', ['platform' => 'my-platform'])
             ->once();
 
         $this->container
             ->shouldReceive('get')
-            ->with('service.builder', Mockery::any())
+            ->with('service.deployer', Mockery::any())
             ->andReturnNull();
 
-        $builder = new Builder($this->logger, $this->container, [
-            'my-platform' => 'service.builder'
+        $deployer = new Deployer($this->logger, $this->container, [
+            'my-platform' => 'service.deployer'
         ]);
 
         $properties = $config = [];
-        $actual = $builder($this->io(), 'my-platform', $config, $properties);
+        $actual = $deployer($this->release, $this->io(), 'my-platform', $config, $properties);
         $this->assertSame(false, $actual);
     }
 
-    public function testBuilderServiceIsNotCallableFails()
+    public function testDeployerServiceIsNotCallableFails()
     {
         $this->logger
             ->shouldReceive('event')
@@ -71,27 +76,27 @@ class BuilderTest extends IOTestCase
 
         $this->container
             ->shouldReceive('get')
-            ->with('service.builder', Mockery::any())
+            ->with('service.deployer', Mockery::any())
             ->andReturn('hai');
 
-        $builder = new Builder($this->logger, $this->container, [
-            'my-platform' => 'service.builder'
+        $deployer = new Deployer($this->logger, $this->container, [
+            'my-platform' => 'service.deployer'
         ]);
 
         $properties = $config = [];
-        $actual = $builder($this->io(), 'my-platform', $config, $properties);
+        $actual = $deployer($this->release, $this->io(), 'my-platform', $config, $properties);
         $this->assertSame(false, $actual);
     }
 
-    public function testBuilderSaysFail()
+    public function testDeployerSaysFail()
     {
-        $platform = Mockery::mock(BuildPlatformInterface::class, [
+        $platform = Mockery::mock(JobPlatformInterface::class, [
             'setIO' => null
         ]);
 
         $platform
             ->shouldReceive('__invoke')
-            ->with(['this_is_project_config'], ['this_is_agent_config'])
+            ->with($this->release, ['this_is_project_config'], ['this_is_agent_config'])
             ->once()
             ->andReturn(false);
 
@@ -102,31 +107,31 @@ class BuilderTest extends IOTestCase
 
         $this->container
             ->shouldReceive('get')
-            ->with('service.build.a', Mockery::any())
+            ->with('service.deploy.a', Mockery::any())
             ->once()
             ->andReturn($platform);
 
-        $builder = new Builder($this->logger, $this->container, [
-            'my-platform.a' => 'service.build.a'
+        $deployer = new Deployer($this->logger, $this->container, [
+            'my-platform.a' => 'service.deploy.a'
         ]);
 
         $properties = ['this_is_agent_config'];
         $config = ['this_is_project_config'];
 
-        $actual = $builder($this->io(), 'my-platform.a', $config, $properties);
+        $actual = $deployer($this->release, $this->io(), 'my-platform.a', $config, $properties);
 
         $this->assertSame(false, $actual);
     }
 
     public function testSuccess()
     {
-        $platform = Mockery::mock(BuildPlatformInterface::class, [
+        $platform = Mockery::mock(JobPlatformInterface::class, [
             'setIO' => null
         ]);
 
         $platform
             ->shouldReceive('__invoke')
-            ->with(['this_is_project_config'], ['this_is_agent_config'])
+            ->with($this->release, ['this_is_project_config'], ['this_is_agent_config'])
             ->once()
             ->andReturn(true);
 
@@ -138,18 +143,18 @@ class BuilderTest extends IOTestCase
 
         $this->container
             ->shouldReceive('get')
-            ->with('service.build.b', Mockery::any())
+            ->with('service.deploy.b', Mockery::any())
             ->once()
             ->andReturn($platform);
 
-        $builder = new Builder($this->logger, $this->container, [
-            'my-platform.b' => 'service.build.b'
+        $deployer = new Deployer($this->logger, $this->container, [
+            'my-platform.b' => 'service.deploy.b'
         ]);
 
         $properties = ['this_is_agent_config'];
         $config = ['this_is_project_config'];
 
-        $actual = $builder($this->io(), 'my-platform.b', $config, $properties);
+        $actual = $deployer($this->release, $this->io(), 'my-platform.b', $config, $properties);
 
         $this->assertSame(true, $actual);
     }

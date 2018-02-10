@@ -5,28 +5,29 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build;
+namespace Hal\Agent\Deploy;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
-use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
 
 class Resolver
 {
     use DefaultConfigHelperTrait;
     use ResolverTrait;
 
-    private const ERR_NOT_FOUND = 'Build "%s" could not be found!';
-    private const ERR_NOT_PENDING = 'Build "%s" has a status of "%s"! It cannot be rebuilt.';
+    private const ERR_NOT_FOUND = 'Release "%s" could not be found!';
+    private const ERR_NOT_PENDING = 'Release "%s" has a status of "%s"! It cannot be redeployed.';
+    private const ERR_CLOBBERING_TIME = 'Release "%s" is trying to clobber a running release! It cannot be deployed at this time.';
     private const ERR_TEMP = 'Temporary build space "%s" could not be prepared. Either it does not exist, or is not writeable.';
 
     /**
      * @var EntityRepository
      */
-    private $buildRepo;
+    private $releaseRepo;
 
     /**
      * @var EncryptedPropertyResolver
@@ -39,33 +40,40 @@ class Resolver
      */
     public function __construct(EntityManagerInterface $em, EncryptedPropertyResolver $encryptedResolver)
     {
-        $this->buildRepo = $em->getRepository(Build::class);
+        $this->releaseRepo = $em->getRepository(Release::class);
         $this->encryptedResolver = $encryptedResolver;
     }
 
     /**
-     * @param string $buildID
+     * @param string $releaseID
      *
-     * @throws BuildException
+     * @throws DeployException
      *
      * @return array
      */
-    public function __invoke(string $buildID): array
+    public function __invoke(string $releaseID): array
     {
-        $build = $this->getBuild($buildID);
+        $release = $this->getRelease($releaseID);
+
+        $application = $release->application();
+        $build = $release->build();
+
+        $platform = $release->target()->type();
+        $environment = $release->target()->environment();
 
         $properties = [
-            'build' => $build,
+            'job' => $release,
+            'platform' => $platform,
 
             // default, overwritten by .hal.yaml
             'default_configuration' => $this->buildDefaultConfiguration(),
 
-            'workspace_path' => $this->generateLocalTempPath($build->id(), 'build'),
+            'workspace_path' => $this->generateLocalTempPath($release->id(), 'release'),
             'artifact_stored_file' => $this->generateBuildArchiveFile($build->id()),
         ];
 
         // Get encrypted properties for use in build, with sources as well (for logging)
-        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources($build->application(), $build->environment());
+        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources($application, $environment);
         $properties = array_merge($properties, $encryptedProperties);
 
         $this->ensureTempExistsAndIsWritable();
@@ -74,22 +82,27 @@ class Resolver
     }
 
     /**
-     * @param string $buildID
+     * @param string $releaseID
      *
-     * @return Build
+     * @return Release
      */
-    private function getBuild($buildID)
+    private function getRelease($releaseID)
     {
-        $build = $this->buildRepo->find($buildID);
-        if (!$build instanceof Build) {
-            throw new BuildException(sprintf(self::ERR_NOT_FOUND, $buildID));
+        $release = $this->releaseRepo->find($releaseID);
+        if (!$release instanceof Release) {
+            throw new DeployException(sprintf(self::ERR_NOT_FOUND, $releaseID));
         }
 
-        if ($build->status() !== 'pending') {
-            throw new BuildException(sprintf(self::ERR_NOT_PENDING, $buildID, $build->status()));
+        if ($release->status() !== 'pending') {
+            throw new DeployException(sprintf(self::ERR_NOT_PENDING, $releaseID, $release->status()));
         }
 
-        return $build;
+        $lastJob = $release->target()->lastJob();
+        if ($lastJob && $lastJob->inProgress()) {
+            throw new DeployException(sprintf(self::ERR_CLOBBERING_TIME, $releaseID));
+        }
+
+        return $release;
     }
 
     /**

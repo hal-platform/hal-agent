@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build;
+namespace Hal\Agent\Deploy;
 
 use Doctrine\ORM\EntityManager;
 use Hal\Agent\Testing\MockeryTestCase;
@@ -13,20 +13,22 @@ use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Build;
-use Hal\Core\Repository\BuildRepository;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\Target;
+use Hal\Core\Repository\ReleaseRepository;
 use Mockery;
 
 class ResolverTest extends MockeryTestCase
 {
     public $em;
-    public $buildRepo;
+    public $releaseRepo;
     public $encryptedResolver;
 
     public function setUp()
     {
-        $this->buildRepo = Mockery::mock(BuildRepository::class);
+        $this->releaseRepo = Mockery::mock(ReleaseRepository::class);
         $this->em = Mockery::mock(EntityManager::class, [
-            'getRepository' => $this->buildRepo
+            'getRepository' => $this->releaseRepo
         ]);
 
         $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
@@ -41,43 +43,44 @@ class ResolverTest extends MockeryTestCase
         }
     }
 
-    public function testBuildNotFound()
+    public function testReleaseNotFound()
     {
-        $this->expectException(BuildException::class);
-        $this->expectExceptionMessage('Build "1234" could not be found!');
+        $this->expectException(DeployException::class);
+        $this->expectExceptionMessage('Release "5678" could not be found!');
 
-        $this->buildRepo
+        $this->releaseRepo
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $action = new Resolver($this->em, $this->encryptedResolver);
+        $resolver = new Resolver($this->em, $this->encryptedResolver);
 
-        $action('1234');
+        $resolver('5678');
     }
 
-    public function testBuildNotCorrectStatus()
+    public function testReleaseNotCorrectStatus()
     {
-        $this->expectException(BuildException::class);
-        $this->expectExceptionMessage('Build "1234" has a status of "removed"! It cannot be rebuilt.');
+        $this->expectException(DeployException::class);
+        $this->expectExceptionMessage('Release "5678" has a status of "failure"! It cannot be redeployed.');
 
-        $build = new Build;
-        $build->withStatus('removed');
+        $release = new Release;
+        $release->withStatus('failure');
 
-        $this->buildRepo
+        $this->releaseRepo
             ->shouldReceive('find')
-            ->andReturn($build);
+            ->andReturn($release);
 
-        $action = new Resolver($this->em, $this->encryptedResolver);
+        $resolver = new Resolver($this->em, $this->encryptedResolver);
 
-        $action('1234');
+        $resolver('5678');
     }
 
     public function testSuccess()
     {
-        $build = $this->createMockBuild();
+        $release = $this->createMockRelease();
 
         $expected = [
-            'build' => $build,
+            'job' => $release,
+            'platform' => '',
 
             'default_configuration' => [
                 'platform' => 'linux',
@@ -100,7 +103,7 @@ class ResolverTest extends MockeryTestCase
                 'post_push' =>[],
             ],
 
-            'workspace_path' => __DIR__ . '/.temp/hal-build-1234',
+            'workspace_path' => __DIR__ . '/.temp/hal-release-5678',
             'artifact_stored_file' => '/ARCHIVE_PATH/hal-1234.tar.gz',
 
             'encrypted' => [
@@ -109,9 +112,9 @@ class ResolverTest extends MockeryTestCase
             ]
         ];
 
-        $this->buildRepo
+        $this->releaseRepo
             ->shouldReceive('find')
-            ->andReturn($build);
+            ->andReturn($release);
 
         $this->encryptedResolver
             ->shouldReceive('getEncryptedPropertiesWithSources')
@@ -119,13 +122,13 @@ class ResolverTest extends MockeryTestCase
                 'encrypted' => ['encrypted_1' => '1234', 'encrypted_2' => '5678']
             ]);
 
-        $action = new Resolver($this->em, $this->encryptedResolver);
-        $action->setLocalTempPath(__DIR__ . '/.temp');
-        $action->setArchivePath('/ARCHIVE_PATH');
+        $resolver = new Resolver($this->em, $this->encryptedResolver);
+        $resolver->setLocalTempPath(__DIR__ . '/.temp');
+        $resolver->setArchivePath('/ARCHIVE_PATH');
 
-        $properties = $action('1234');
+        $properties = $resolver('1234');
 
-        $this->assertSame($expected['build'], $properties['build']);
+        $this->assertSame($expected['job'], $properties['job']);
         $this->assertSame($expected['default_configuration'], $properties['default_configuration']);
         $this->assertSame($expected['workspace_path'], $properties['workspace_path']);
         $this->assertSame($expected['artifact_stored_file'], $properties['artifact_stored_file']);
@@ -133,14 +136,17 @@ class ResolverTest extends MockeryTestCase
         $this->assertSame($expected['encrypted'], $properties['encrypted']);
     }
 
-    private function createMockBuild()
+    private function createMockRelease()
     {
-        return (new Build('1234'))
+        $build = (new Build('1234'))
             ->withStatus('pending')
             ->withReference('master')
-            ->withCommit('5555')
+            ->withCommit('5555');
 
+        return (new Release('5678'))
+            ->withBuild($build)
             ->withApplication(new Application)
+            ->withTarget(new Target)
             ->withEnvironment(
                 (new Environment)
                     ->withName('staging')
