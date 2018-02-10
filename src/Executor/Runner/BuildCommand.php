@@ -43,14 +43,14 @@ class BuildCommand implements ExecutorInterface
         1 => 'Resolving configuration',
         2 => 'Downloading source code and preparing workspace',
         3 => 'Reading .hal.yml configuration',
-        4 => 'Running build process',
+        4 => 'Running build stage',
         5 => 'Storing build artifact'
     ];
 
     private const ERR_NOT_RUNNABLE = 'Build cannot be run.';
     private const ERR_DOWNLOAD = 'Source code cannot be downloaded.';
     private const ERR_CONFIG = '.hal.yaml configuration is invalid and cannot be read.';
-    private const ERR_BUILD = 'Build process failed.';
+    private const ERR_BUILD = 'Build stage failed.';
     private const ERR_STORE_ARTIFACT = 'Build artifact cannot be stored and exported to artifact repository.';
 
     /**

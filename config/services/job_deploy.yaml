@@ -1,29 +1,17 @@
 services:
 
     deploy.resolver:
-        class: 'Hal\Agent\Push\Resolver'
+        class: 'Hal\Agent\Deploy\Resolver'
         arguments:
-            - '@logger.event'
             - '@doctrine.em'
-            - '@clock'
             - '@encrypted.resolver'
-            - '%deploy.rsync.user%'
         calls:
             - ['setLocalTempPath', ['%path.temp%']]
             - ['setArchivePath', ['%path.archive%']]
 
-    deploy.mover:
-        class: 'Hal\Agent\Push\Mover'
-        arguments: ['@logger.event', '@utility.filesystem']
-
-    deploy.unpacker:
-        class: 'Hal\Agent\Push\Unpacker'
-        arguments:
-            - '@logger.event'
-            - '@utility.process.builder'
-            - '@utility.filesystem'
-            - '@yaml.dumper'
-            - '%timeout.filepacking%'
+    deploy.artifacter:
+        class: 'Hal\Agent\Deploy\Artifacter'
+        arguments: ['@logger.event', '@filesystem']
 
     deploy.builder:
         class: 'Hal\Agent\Build\BuildPlatform'
@@ -33,27 +21,19 @@ services:
             - '%build.platforms%'
 
     deployer:
-        class: 'Hal\Agent\Push\DelegatingDeployer'
+        class: 'Hal\Agent\Deploy\Deployer'
         arguments:
             - '@logger.event'
             - '@service_container'
             - '%deployment.platforms%'
 
+    deploy.cleaner:
+        class: 'Hal\Agent\Job\LocalCleaner'
+        arguments: ['@filesystem']
+
     ############################################################################
     # support for deploy platforms
     ############################################################################
-
-    deploy.support.packer:
-        class: 'Hal\Agent\Push\ReleasePacker'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '%timeout.filepacking%'
-
-    deploy.support.mover:
-        class: 'Hal\Agent\Push\Mover'
-        arguments: ['@logger.event', '@utility.filesystem']
 
     deploy.support.aws_authenticator:
         class: 'Hal\Core\AWS\AWSAuthenticator'
@@ -69,8 +49,3 @@ services:
             - '@encryption'
             - '@doctrine.em'
             - '@aws'
-
-    yaml.dumper:
-        class: 'Symfony\Component\Yaml\Dumper'
-        calls:
-            - ['setIndentation', ['4']]

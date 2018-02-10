@@ -169,7 +169,7 @@ class BuildCommandTest extends IOTestCase
             '  image           "my-project-image:latest"',
             '  dist            "."',
 
-            '[4/5] Running build process',
+            '[4/5] Running build stage',
             ' * Platform: windows',
             ' * Docker Image: my-project-image:latest',
 
@@ -198,7 +198,7 @@ class BuildCommandTest extends IOTestCase
     {
         $this->resolver
             ->shouldReceive('__invoke')
-            ->andReturnNull();
+            ->andReturn([]);
 
         $this->logger
             ->shouldReceive('setStage')
