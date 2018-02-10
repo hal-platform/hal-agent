@@ -7,32 +7,20 @@
 
 namespace Hal\Agent\Build\Generic;
 
-use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Utility\ProcessRunnerTrait;
-use Symfony\Component\Process\ProcessBuilder;
+use Hal\Agent\Symfony\ProcessRunner;
 
 class FileCompression
 {
-    use ProcessRunnerTrait;
+    private const EVENT_MESSAGE = 'Filesystem action';
+    private const ERR_TIMEOUT = 'Filesystem action timed out';
+
+    private const UNCOMPRESS_TGZ_FLAGS = '-vxz';
+    private const COMPRESS_TGZ_FLAGS = '-vcz';
 
     /**
-     * @var string
+     * @var ProcessRunner
      */
-    const EVENT_MESSAGE = 'Filesystem action';
-    const ERR_TIMEOUT = 'Filesystem action timed out';
-
-    const UNCOMPRESS_TGZ_FLAGS = '-vxz';
-    const COMPRESS_TGZ_FLAGS = '-vcz';
-
-    /**
-     * @var EventLogger
-     */
-    private $logger;
-
-    /**
-     * @var ProcessBuilder
-     */
-    private $processBuilder;
+    private $runner;
 
     /**
      * @var int
@@ -40,14 +28,12 @@ class FileCompression
     private $commandTimeout;
 
     /**
-     * @param EventLogger $logger
-     * @param ProcessBuilder $processBuilder
+     * @param ProcessRunner $runner
      * @param int $commandTimeout
      */
-    public function __construct(EventLogger $logger, ProcessBuilder $processBuilder, int $commandTimeout)
+    public function __construct(ProcessRunner $runner, int $commandTimeout)
     {
-        $this->logger = $logger;
-        $this->processBuilder = $processBuilder;
+        $this->runner = $runner;
 
         $this->commandTimeout = $commandTimeout;
     }
@@ -61,12 +47,8 @@ class FileCompression
     {
         $makeCommand = ['mkdir', $workspacePath];
 
-        $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments($makeCommand)
-            ->getProcess();
-
-        if (!$this->runProcess($process, $this->commandTimeout)) {
+        $process = $this->runner->prepare($makeCommand, null, $this->commandTimeout);
+        if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
             return false;
         }
 
@@ -74,7 +56,7 @@ class FileCompression
             return true;
         }
 
-        return $this->processFailure(implode(' ', $makeCommand), $process);
+        return $this->runner->onFailure($process, implode(' ', $makeCommand), self::EVENT_MESSAGE);
     }
 
     /**
@@ -100,13 +82,9 @@ class FileCompression
             sprintf('--directory=%s', $workspacePath)
         ]);
 
-        $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments($unpackCommand)
-            ->setTimeout($this->commandTimeout)
-            ->getProcess();
-
-        if (!$this->runProcess($process, $this->commandTimeout)) {
+        // @todo may need to NOT escape args?
+        $process = $this->runner->prepare($unpackCommand, null, $this->commandTimeout);
+        if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
             return false;
         }
 
@@ -114,7 +92,7 @@ class FileCompression
             return true;
         }
 
-        return $this->processFailure(implode(' ', $unpackCommand), $process);
+        return $this->runner->onFailure($process, implode(' ', $unpackCommand), self::EVENT_MESSAGE);
     }
 
     /**
@@ -132,14 +110,9 @@ class FileCompression
             '.'
         ];
 
-        $process = $this->processBuilder
-            ->setWorkingDirectory($workspacePath)
-            ->setArguments($packCommand)
-            ->setTimeout($this->commandTimeout)
-            ->getProcess();
-
-
-        if (!$this->runProcess($process, $this->commandTimeout)) {
+        // @todo may need to NOT escape args?
+        $process = $this->runner->prepare($packCommand, $workspacePath, $this->commandTimeout);
+        if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
             return false;
         }
 
@@ -147,6 +120,6 @@ class FileCompression
             return true;
         }
 
-        return $this->processFailure(implode(' ', $packCommand), $process);
+        return $this->runner->onFailure($process, implode(' ', $packCommand), self::EVENT_MESSAGE);
     }
 }
