@@ -92,6 +92,9 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
     private const STEP_4_IMPORTING = 'Windows Docker Platform - Importing artifacts from AWS environment';
     private const STEP_5_CLEANING = 'Cleaning up AWS builder instance "%s"';
 
+    private const ERR_CONFIGURATOR = 'Windows Docker build platform is not configured correctly';
+    private const ERR_EXPORT = 'Failed to export build to build system';
+    private const ERR_IMPORT = 'Failed to import build artifacts from build system';
     private const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted configuration';
 
     /**
@@ -136,22 +139,26 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
 
     /**
      * @param EventLogger $logger
+     * @param EncryptedPropertyResolver $decrypter
+     *
      * @param Configurator $configurator
      * @param Exporter $exporter
      * @param BuilderInterface $builder
      * @param Importer $importer
      * @param Cleaner $cleaner
-     * @param EncryptedPropertyResolver $decrypter
+     *
      * @param string $defaultDockerImage
      */
     public function __construct(
         EventLogger $logger,
+        EncryptedPropertyResolver $decrypter,
+
         Configurator $configurator,
         Exporter $exporter,
         BuilderInterface $builder,
         Importer $importer,
         Cleaner $cleaner,
-        EncryptedPropertyResolver $decrypter,
+
         $defaultDockerImage
     ) {
         $this->logger = $logger;
@@ -175,29 +182,32 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
         $job = $properties['build'];
 
         $image = $config['image'] ?? $this->defaultDockerImage;
-        $commands = $config['build'];
+        $steps = $config['build'] ?? [];
 
         if (!$platformConfig = $this->configurator($job)) {
+            $this->sendFailureEvent(self::ERR_CONFIGURATOR);
             return $this->bombout(false);
         }
 
         if (!$this->export($job->id(), $properties['workspace_path'], $platformConfig)) {
+            $this->sendFailureEvent(self::ERR_EXPORT);
             return $this->bombout(false);
         }
 
         // decrypt
         $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $config);
         if ($env === null) {
-            $this->logger->event('failure', self::ERR_BAD_DECRYPT);
+            $this->sendFailureEvent(self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
         }
 
         // run build
-        if (!$this->build($job->id(), $image, $commands, $env, $platformConfig)) {
+        if (!$this->build($job->id(), $image, $steps, $env, $platformConfig)) {
             return $this->bombout(false);
         }
 
         if (!$this->import($job->id(), $properties['workspace_path'], $platformConfig)) {
+            $this->sendFailureEvent(self::ERR_IMPORT);
             return $this->bombout(false);
         }
 
@@ -359,5 +369,16 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
         $this->getIO()->note(sprintf(self::STEP_5_CLEANING, $instanceID));
 
         ($this->cleaner)($s3, $ssm, $instanceID, $jobID, $bucket, $s3Artifacts);
+    }
+
+    /**
+     * @param string $message
+     *
+     * @return void
+     */
+    private function sendFailureEvent($message)
+    {
+        $this->logger->event('failure', $message);
+        $this->getIO()->error($message);
     }
 }

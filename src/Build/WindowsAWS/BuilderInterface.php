@@ -18,10 +18,10 @@ interface BuilderInterface extends IOAwareInterface
      * @param string $image
      *
      * @param string $instanceID
-     * @param array $commands
+     * @param array $steps
      * @param array $env
      *
      * @return bool
      */
-    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $commands, array $env): bool;
+    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $steps, array $env): bool;
 }

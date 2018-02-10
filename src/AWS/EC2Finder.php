@@ -1,19 +1,16 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Utility;
+namespace Hal\Agent\AWS;
 
 use Aws\Ec2\Ec2Client;
 use Aws\Ec2\Exception\Ec2Exception;
 use Aws\Exception\CredentialsException;
 
-/**
- * @todo Move this out of this namespace, since its generic enough to be used elsewhere (and is - see windows builder)
- */
 class EC2Finder
 {
     const STATUS_INVALID = 'Invalid';

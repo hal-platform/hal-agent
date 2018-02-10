@@ -9,7 +9,7 @@ namespace Hal\Agent\Build\WindowsAWS\AWS;
 
 use Aws\Ec2\Ec2Client;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Utility\EC2Finder;
+use Hal\Agent\AWS\EC2Finder;
 
 class BuilderFinder
 {

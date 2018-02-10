@@ -24,23 +24,23 @@ class DockerBuilder implements BuilderInterface
     use InternalDebugLoggingTrait;
     use IOAwareTrait;
 
-    const EVENT_MESSAGE = 'Build step %s';
-    const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
+    private const EVENT_MESSAGE = 'Build step %s';
+    private const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
 
-    const EVENT_PREPARING_INSTANCE = 'Preparing AWS instance for job';
-    const EVENT_STARTING_CONTAINER = 'Starting Docker container';
-    const EVENT_START_CONTAINER_STARTED = 'Docker container "%s" started';
-    const EVENT_DOCKER_CLEANUP = 'Clean up docker container "%s"';
+    private const ACTION_PREPARING_INSTANCE = 'Preparing AWS instance for job';
+    private const ACTION_STARTING_CONTAINER = 'Starting Docker container';
+    private const ACTION_START_CONTAINER_STARTED = 'Docker container "%s" started';
+    private const ACTION_DOCKER_CLEANUP = 'Cleaning up Docker container "%s"';
 
-    const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Windows AWS Docker container';
+    private const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Windows AWS Docker container';
 
-    const ERR_PREPARE_FAILED = 'Failed to prepare builder';
-    const ERR_SHIFT_FAILED = 'Failed to shift workspace for next container';
-    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build steps';
+    private const ERR_PREPARE_FAILED = 'Failed to prepare builder';
+    private const ERR_SHIFT_FAILED = 'Failed to shift workspace for next container';
+    private const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build steps';
 
-    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,80}$/';
+    private const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,80}$/';
 
-    const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
+    private const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
 
     /**
      * @var EventLogger
@@ -117,16 +117,16 @@ class DockerBuilder implements BuilderInterface
     /**
      * @inheritdoc
      */
-    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $commands, array $env): bool
+    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $steps, array $env): bool
     {
         if (!$dockerImage = $this->validator->validate($image)) {
             return $this->bombout(false);
         }
 
-        $this->getIO()->note(self::EVENT_PREPARING_INSTANCE);
+        $this->getIO()->note(self::ACTION_PREPARING_INSTANCE);
 
         // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
-        $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $commands);
+        $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $steps);
 
         $workDir = $this->powershell->getBaseBuildPath();
         $inputDir = "${workDir}\\${jobID}";
@@ -139,7 +139,7 @@ class DockerBuilder implements BuilderInterface
             return $this->bombout(false);
         }
 
-        $total = count($commands);
+        $total = count($steps);
         $current = 0;
 
         foreach ($scriptedJobs as $jobNum => $job) {
@@ -152,7 +152,7 @@ class DockerBuilder implements BuilderInterface
                 return $this->bombout(false);
             }
 
-            $this->getIO()->note(self::EVENT_STARTING_CONTAINER);
+            $this->getIO()->note(self::ACTION_STARTING_CONTAINER);
 
             // 3. Enable cleanup failsafe
             $cleanup = $this->enableDockerCleanup($ssm, $instanceID, $containerName);
@@ -167,7 +167,7 @@ class DockerBuilder implements BuilderInterface
                 return $this->bombout(false);
             }
 
-            $this->getIO()->note(sprintf(self::EVENT_START_CONTAINER_STARTED, $containerName));
+            $this->getIO()->note(sprintf(self::ACTION_START_CONTAINER_STARTED, $containerName));
 
             // 6. Run steps
             foreach ($scripts as $script) {
@@ -190,7 +190,7 @@ class DockerBuilder implements BuilderInterface
             // This is necessary because we "shift" between the build dir and output dir.
             // If there are multiple containers used, we need to shift the output to the next job's input.
             if (count($scriptedJobs) > ($jobNum + 1)) {
-                if (!$this->shiftBuildWorkspace($outputDir, $inputDir)) {
+                if (!$this->shiftBuildWorkspace($ssm, $instanceID, $outputDir, $inputDir)) {
                     return $this->bombout(false);
                 }
             }
@@ -389,7 +389,7 @@ class DockerBuilder implements BuilderInterface
      */
     private function cleanupContainer(SsmClient $ssm, $instanceID, $containerName)
     {
-        $this->getIO()->note(sprintf(self::EVENT_DOCKER_CLEANUP, $containerName));
+        $this->getIO()->note(sprintf(self::ACTION_DOCKER_CLEANUP, $containerName));
 
         $this->docker->cleanupContainer($ssm, $instanceID, $containerName);
     }

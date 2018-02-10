@@ -19,19 +19,19 @@ class NativeBuilder implements BuilderInterface
     use InternalDebugLoggingTrait;
     use IOAwareTrait;
 
-    const EVENT_MESSAGE = 'Build step %s';
-    const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
+    private const EVENT_MESSAGE = 'Build step %s';
+    private const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
 
-    const EVENT_PREPARING_INSTANCE = 'Preparing AWS instance for job';
+    private const ACTION_PREPARING_INSTANCE = 'Preparing AWS instance for job';
 
-    const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Windows AWS';
+    private const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Windows AWS';
 
-    const ERR_PREPARE_FAILED = 'Failed to prepare builder';
-    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build steps';
+    private const ERR_PREPARE_FAILED = 'Failed to prepare builder';
+    private const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build steps';
 
-    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,80}$/';
+    private const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,80}$/';
 
-    const TIMEOUT_INTERNAL_COMMAND = 120;
+    private const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
 
     /**
      * @var EventLogger
@@ -92,7 +92,7 @@ class NativeBuilder implements BuilderInterface
     {
         // $image = throwaway
 
-        $this->getIO()->note(self::EVENT_PREPARING_INSTANCE);
+        $this->getIO()->note(self::ACTION_PREPARING_INSTANCE);
 
         $workDir = $this->powershell->getBaseBuildPath();
         $inputDir = "${workDir}\\${jobID}";
@@ -161,7 +161,7 @@ class NativeBuilder implements BuilderInterface
             'executionTimeout' => [$this->internalTimeout],
         ];
 
-        $result = $this->runner(
+        $result = ($this->runner)(
             $ssm,
             $instanceID,
             SSMCommandRunner::TYPE_POWERSHELL,
@@ -186,11 +186,11 @@ class NativeBuilder implements BuilderInterface
      *
      * @return bool
      */
-    private function runCommands(SsmClient $ssm, $instanceID, $inputDir, array $script, $currentStep, $totalSteps)
+    private function runStep(SsmClient $ssm, $instanceID, $inputDir, array $script, $currentStep, $totalSteps)
     {
         $remaining = $totalSteps - $currentStep;
 
-        $msg = $this->getEventMessage($script['command'], "[${current}/${total}]");
+        $msg = $this->getEventMessage($script['command'], "[${currentStep}/${totalSteps}]");
 
         $customContext = [
             'command' => $script['command'],
@@ -209,7 +209,7 @@ class NativeBuilder implements BuilderInterface
             'executionTimeout' => [$this->buildStepTimeout],
         ];
 
-        $result = ($this-$runner)(
+        $result = ($this->runner)(
             $ssm,
             $instanceID,
             SSMCommandRunner::TYPE_POWERSHELL,
