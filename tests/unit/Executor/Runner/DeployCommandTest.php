@@ -15,7 +15,7 @@ use Hal\Agent\Push\DelegatingDeployer;
 use Hal\Agent\Push\Mover;
 use Hal\Agent\Push\Resolver;
 use Hal\Agent\Push\Unpacker;
-use Hal\Agent\Testing\ExecutorTestCase;
+use Hal\Agent\Testing\IOTestCase;
 use Mockery;
 use Hal\Core\Entity\Build;
 use Hal\Core\Entity\Target;
@@ -27,7 +27,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
-class DeployCommandTest extends ExecutorTestCase
+class DeployCommandTest extends IOTestCase
 {
     use MockeryPHPUnitIntegration;
 
@@ -92,7 +92,7 @@ class DeployCommandTest extends ExecutorTestCase
 
         $command->disableShutdownHandler();
 
-        $io = $this->io('configureCommand', [
+        $io = $this->ioForCommand('configureCommand', [
             'RELEASE_ID' => '1'
         ]);
         $exit = $command->execute($io);
@@ -202,7 +202,7 @@ class DeployCommandTest extends ExecutorTestCase
 
         $command->disableShutdownHandler();
 
-        $io = $this->io('configureCommand', [
+        $io = $this->ioForCommand('configureCommand', [
             'RELEASE_ID' => '1'
         ]);
         $exit = $command->execute($io);
@@ -403,7 +403,7 @@ class DeployCommandTest extends ExecutorTestCase
             '[ERROR] Deployment process failed.',
         ];
 
-        $io = $this->io('configureCommand', [
+        $io = $this->ioForCommand('configureCommand', [
             'RELEASE_ID' => '1'
         ]);
         $exit = $command->execute($io);
@@ -472,7 +472,7 @@ class DeployCommandTest extends ExecutorTestCase
 
         $isAborted = false;
         try {
-            $io = $this->io('configureCommand', [
+            $io = $this->ioForCommand('configureCommand', [
                 'RELEASE_ID' => '1'
             ]);
 

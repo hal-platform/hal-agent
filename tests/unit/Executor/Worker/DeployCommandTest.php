@@ -8,7 +8,7 @@
 namespace Hal\Agent\Executor\Worker;
 
 use Doctrine\ORM\EntityManager;
-use Hal\Agent\Testing\ExecutorTestCase;
+use Hal\Agent\Testing\IOTestCase;
 use Hal\Agent\Testing\MemoryLogger;
 use Mockery;
 use Hal\Core\Entity\Target;
@@ -18,7 +18,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
 
-class DeployCommandTest extends ExecutorTestCase
+class DeployCommandTest extends IOTestCase
 {
     use MockeryPHPUnitIntegration;
 
@@ -58,7 +58,7 @@ class DeployCommandTest extends ExecutorTestCase
             'workdir'
         );
 
-        $io = $this->io('configureCommand');
+        $io = $this->ioForCommand('configureCommand');
         $exit = $command->execute($io);
 
         $expected = [
@@ -122,7 +122,7 @@ class DeployCommandTest extends ExecutorTestCase
             'workdir'
         );
 
-        $io = $this->io('configureCommand');
+        $io = $this->ioForCommand('configureCommand');
         $exit = $command->execute($io);
 
         $expected = [
@@ -163,7 +163,7 @@ class DeployCommandTest extends ExecutorTestCase
             'workdir'
         );
 
-        $io = $this->io('configureCommand');
+        $io = $this->ioForCommand('configureCommand');
         $exit = $command->execute($io);
 
         $expected = [
@@ -224,7 +224,7 @@ class DeployCommandTest extends ExecutorTestCase
             'workdir'
         );
 
-        $io = $this->io('configureCommand');
+        $io = $this->ioForCommand('configureCommand');
         $exit = $command->execute($io);
 
         $expected = [

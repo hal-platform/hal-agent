@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -27,7 +27,7 @@ class PowershellinatorTest extends TestCase
         $this->assertSame('c:\tools\execute-user-script-insecure.ps1', $this->powershell->getExecutorScriptPath());
 
         $this->assertSame('c:\build-scripts\b1234\b1234_5.ps1', $this->powershell->getUserScriptFilePath('b1234', '5'));
-        $this->assertSame('c:\build-scripts\b1234_5.ps1', $this->powershell->getUserScriptFilePathForContainer('b1234', '5'));
+        $this->assertSame('c:\container-scripts\b1234_5.ps1', $this->powershell->getUserScriptFilePathForContainer('c:\container-scripts', 'b1234', '5'));
     }
 
     public function testGetStandardHeader()
@@ -63,6 +63,10 @@ if (-not (Test-Path "${env:ProgramFiles(x86)}\GnuWin32\bin\bsdtar.exe")) {
     Throw "bsdtar is missing. Please install LibArchive for Windows."
 }
 Set-Alias bsdtar "${env:ProgramFiles(x86)}\GnuWin32\bin\bsdtar.exe"
+if (-not (Test-Path "c:\build")) {
+    New-Item c:\build -type directory
+}
+
 bsdtar -cz --file=c:\file.tar.gz -C c:\build .
 
 Remove-Item c:\build -Recurse -Force

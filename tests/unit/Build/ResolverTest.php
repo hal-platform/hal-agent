@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -8,20 +8,20 @@
 namespace Hal\Agent\Build;
 
 use Doctrine\ORM\EntityManager;
-use Mockery;
+use Hal\Agent\Build\BuildException;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Core\Entity\Application;
-use Hal\Core\Entity\Build;
 use Hal\Core\Entity\Environment;
+use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Repository\BuildRepository;
+use Mockery;
 
 class ResolverTest extends MockeryTestCase
 {
     public $em;
     public $buildRepo;
-    public $envResolver;
     public $encryptedResolver;
 
     public function setUp()
@@ -31,40 +31,37 @@ class ResolverTest extends MockeryTestCase
             'getRepository' => $this->buildRepo
         ]);
 
-        $this->envResolver = Mockery::mock(BuildEnvironmentResolver::class);
         $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
     }
 
     public function tearDown()
     {
-        $tempBuildDir = 'testdir';
+        $tempBuildDir = __DIR__ . '/.temp';
 
         if (is_dir($tempBuildDir)) {
             rmdir($tempBuildDir);
         }
     }
 
-    /**
-     * @expectedException Hal\Agent\Build\BuildException
-     * @expectedExceptionMessage Build "1234" could not be found!
-     */
     public function testBuildNotFound()
     {
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('Build "1234" could not be found!');
+
         $this->buildRepo
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $action = new Resolver($this->em, $this->envResolver, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->encryptedResolver);
 
-        $properties = $action('1234');
+        $action('1234');
     }
 
-    /**
-     * @expectedException Hal\Agent\Build\BuildException
-     * @expectedExceptionMessage Build "1234" has a status of "removed"! It cannot be rebuilt.
-     */
     public function testBuildNotCorrectStatus()
     {
+        $this->expectException(BuildException::class);
+        $this->expectExceptionMessage('Build "1234" has a status of "removed"! It cannot be rebuilt.');
+
         $build = new Build;
         $build->withStatus('removed');
 
@@ -72,9 +69,9 @@ class ResolverTest extends MockeryTestCase
             ->shouldReceive('find')
             ->andReturn($build);
 
-        $action = new Resolver($this->em, $this->envResolver, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->encryptedResolver);
 
-        $properties = $action('1234');
+        $action('1234');
     }
 
     public function testSuccess()
@@ -84,85 +81,71 @@ class ResolverTest extends MockeryTestCase
         $expected = [
             'build' => $build,
 
-            'configuration' => [
+            'default_configuration' => [
                 'platform' => 'linux',
                 'image' => '',
                 'dist' => '.',
                 'transform_dist' => '.',
 
                 'env' => [],
-                'exclude' => [],
 
                 'build' => [],
+
                 'build_transform' => [],
                 'before_deploy' => [],
-                'pre_push' => [],
                 'deploy' => [],
+
+                'after_deploy' => [],
+
+                'exclude' => [],
+                'pre_push' => [],
                 'post_push' =>[],
-                'after_deploy' => []
             ],
 
-            'location' => [
-                'download' => 'testdir/hal9000-download-1234.tar.gz',
-                'path' => 'testdir/hal9000-build-1234',
-                'archive' => 'ARCHIVE_PATH/hal9000-1234.tar.gz',
-                'tempArchive' => 'testdir/hal9000-build-1234.tar.gz',
-                'windowsInputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz',
-                'windowsOutputArchive' => 'testdir/hal9000-aws-1234-windows-input.tar.gz'
-            ],
-            'github' => [
-                'user' => 'user1',
-                'repo' => 'repo1',
-                'reference' => '5555',
-            ],
-            'artifacts' => [
-                'testdir/hal9000-download-1234.tar.gz',
-                'testdir/hal9000-build-1234',
-                'testdir/hal9000-build-1234.tar.gz'
-            ],
-            'encrypted' => []
+            'workspace_path' => __DIR__ . '/.temp/hal-build-1234',
+            'artifact_stored_file' => '/ARCHIVE_PATH/hal-1234.tar.gz',
+
+            'encrypted' => [
+                'encrypted_1' => '1234',
+                'encrypted_2' => '5678'
+            ]
         ];
 
         $this->buildRepo
             ->shouldReceive('find')
             ->andReturn($build);
 
-        $this->envResolver
-            ->shouldReceive('getBuildProperties')
-            ->andReturn([]);
         $this->encryptedResolver
             ->shouldReceive('getEncryptedPropertiesWithSources')
-            ->andReturn([]);
+            ->andReturn([
+                'encrypted' => ['encrypted_1' => '1234', 'encrypted_2' => '5678']
+            ]);
 
-        $action = new Resolver($this->em, $this->envResolver, $this->encryptedResolver);
-        $action->setLocalTempPath('testdir');
-        $action->setArchivePath('ARCHIVE_PATH');
+        $action = new Resolver($this->em, $this->encryptedResolver);
+        $action->setLocalTempPath(__DIR__ . '/.temp');
+        $action->setArchivePath('/ARCHIVE_PATH');
 
         $properties = $action('1234');
 
-        $this->assertSame($expected['configuration'], $properties['configuration']);
-        $this->assertSame($expected['location'], $properties['location']);
-        $this->assertSame($expected['artifacts'], $properties['artifacts']);
-        $this->assertSame($expected['github'], $properties['github']);
+        $this->assertSame($expected['build'], $properties['build']);
+        $this->assertSame($expected['default_configuration'], $properties['default_configuration']);
+        $this->assertSame($expected['workspace_path'], $properties['workspace_path']);
+        $this->assertSame($expected['artifact_stored_file'], $properties['artifact_stored_file']);
+
+        $this->assertSame($expected['encrypted'], $properties['encrypted']);
     }
 
     private function createMockBuild()
     {
-        $app = (new Application)
-            ->withGitHub(new Application\GitHubApplication('user1', 'repo1'))
-            ->withIdentifier('repokey');
+        return (new Build('1234'))
+            ->withStatus('pending')
+            ->withReference('master')
+            ->withCommit('5555')
 
-        $build = (new Build)
-            ->withId('1234')
-            ->withStatus('Pending')
+            ->withApplication(new Application)
             ->withEnvironment(
                 (new Environment)
-                    ->withName('envkey')
-            )
-            ->withApplication($app)
-            ->withReference('master')
-            ->withCommit('5555');
-
-        return $build;
+                    ->withName('staging')
+            );
     }
 }

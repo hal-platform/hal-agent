@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -12,10 +12,11 @@ use Doctrine\ORM\EntityRepository;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Core\Entity\Application;
-use Hal\Core\Entity\Build;
+use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\ScheduledAction;
 use Hal\Core\Entity\Target;
-use Hal\Core\Entity\JobProcess;
-use Hal\Core\Entity\Release;
 
 class ProcessHandlerTest extends MockeryTestCase
 {
@@ -26,293 +27,193 @@ class ProcessHandlerTest extends MockeryTestCase
     {
         $this->repo = Mockery::mock(EntityRepository::class);
         $this->em = Mockery::mock(EntityManager::class, [
-            'getRepository' => $this->repo
+            'getRepository' => $this->repo,
+            'merge' => null,
+            'flush' => null
         ]);
     }
 
-    public function testUnknownAbortionDoesNothing()
+    public function testNoscheduledJobsDoesNothingOnAbort()
     {
-        $this->repo
-            ->shouldReceive('findBy')
-            ->never();
-
-        $handler = new ProcessHandler($this->em);
-
-        $handler->abort(new \stdClass);
-    }
-
-    public function testUnknownLaunchDoesNothing()
-    {
-        $this->repo
-            ->shouldReceive('findBy')
-            ->never();
-
-        $handler = new ProcessHandler($this->em);
-
-        $handler->abort(new \stdClass);
-    }
-
-    public function testAbortAbortsChildrenAndPersists()
-    {
-        $parent = new Build('abcdef');
-
-        $process1 = new JobProcess('1234');
-        $process1->withParent($parent);
-
-        $process2 = new JobProcess('1234');
-        $process2->withParent($parent);
+        $job = new Job;
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parentID' => 'abcdef'])
-            ->andReturn([$process1, $process2]);
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process1)
-            ->once();
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process2)
+            ->with(['triggerJob' => $job, 'status' => 'pending'])
             ->once();
 
         $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('pending', $process1->status());
-        $this->assertSame('pending', $process2->status());
+        $actual = $handler->abort($job);
 
-        $handler->abort($parent);
-
-        $this->assertSame('aborted', $process1->status());
-        $this->assertSame('aborted', $process2->status());
+        $this->assertSame(false, $actual);
     }
 
-    public function testLaunchAbortsWeirdChildren()
+    public function testNoscheduledJobsDoesNothingOnLaunch()
     {
-        $parent = new Build('abcdef');
-
-        $process1 = new JobProcess('1234');
-        $process1->withParent($parent);
-
-        $process2 = new JobProcess('1234');
-        $process2->withParent($parent);
+        $job = new Job;
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parentID' => 'abcdef'])
-            ->andReturn([$process1, $process2]);
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process1)
-            ->once();
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process2)
+            ->with(['triggerJob' => $job, 'status' => 'pending'])
             ->once();
 
         $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('pending', $process1->status());
-        $this->assertSame('pending', $process2->status());
+        $actual = $handler->launch($job);
 
-        $handler->launch($parent);
-
-        $this->assertSame('aborted', $process1->status());
-        $this->assertSame('aborted', $process2->status());
+        $this->assertSame(false, $actual);
     }
 
-    public function testLaunchesChildPush()
+    public function testAbortStopsScheduledActiosnAndSaves()
     {
-        $target = new Target('d1234');
-        $parent = (new Build('abcdef'))
+        $job = new Build;
+
+        $scheduled1 = (new ScheduledAction)
+            ->withTriggerJob($job);
+        $scheduled2 = (new ScheduledAction)
+            ->withTriggerJob($job);
+
+        $this->repo
+            ->shouldReceive('findBy')
+            ->with(['triggerJob' => $job, 'status' => 'pending'])
+            ->andReturn([$scheduled1, $scheduled2]);
+
+        $this->em
+            ->shouldReceive('merge')
+            ->with($scheduled1)
+            ->once();
+        $this->em
+            ->shouldReceive('merge')
+            ->with($scheduled2)
+            ->once();
+
+        $handler = new ProcessHandler($this->em);
+
+        $this->assertSame('pending', $scheduled1->status());
+        $this->assertSame('pending', $scheduled2->status());
+
+        $handler->abort($job);
+
+        $this->assertSame('aborted', $scheduled1->status());
+        $this->assertSame('aborted', $scheduled2->status());
+    }
+
+    public function testLaunchAbortsUnhandledScheduledActions()
+    {
+        $job = new Build;
+
+        $scheduled1 = (new ScheduledAction)
+            ->withTriggerJob($job);
+        $scheduled2 = (new ScheduledAction)
+            ->withTriggerJob($job);
+
+        $this->repo
+            ->shouldReceive('findBy')
+            ->with(['triggerJob' => $job, 'status' => 'pending'])
+            ->andReturn([$scheduled1, $scheduled2]);
+
+        $this->em
+            ->shouldReceive('merge')
+            ->with($scheduled1)
+            ->once();
+        $this->em
+            ->shouldReceive('merge')
+            ->with($scheduled2)
+            ->once();
+
+        $handler = new ProcessHandler($this->em);
+
+        $this->assertSame('pending', $scheduled1->status());
+        $this->assertSame('pending', $scheduled2->status());
+
+        $handler->launch($job);
+
+        $this->assertSame('aborted', $scheduled1->status());
+        $this->assertSame('aborted', $scheduled2->status());
+    }
+
+    public function testLaunchesScheduledRelease()
+    {
+        $target = new Target('', 't1234');
+        $job = (new Build)
             ->withApplication(new Application);
 
-        $process1 = new JobProcess('1234');
-        $process1
-            ->withParent($parent)
-            ->withChildType('Release')
-            ->withParameters(['deployment' => 'd1234']);
-
-        $process2 = new JobProcess('1234');
-        $process2->withParent($parent);
-
-        $release = null;
+        $scheduled1 = (new ScheduledAction)
+            ->withTriggerJob($job)
+            ->withParameter('entity', 'Release');
+        $scheduled2 = (new ScheduledAction)
+            ->withTriggerJob($job)
+            ->withParameter('entity', 'Release')
+            ->withParameter('target_id', 't1234');
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parentID' => 'abcdef'])
-            ->andReturn([$process1, $process2]);
+            ->with(['triggerJob' => $job, 'status' => 'pending'])
+            ->andReturn([$scheduled1, $scheduled2]);
         $this->repo
             ->shouldReceive('findOneBy')
-            ->with(['id' => 'd1234', 'application' => $parent->application()])
+            ->with(['id' => 't1234', 'application' => $job->application()])
             ->andReturn($target);
 
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process1)
-            ->once();
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process2)
-            ->once();
-        $this->em
-            ->shouldReceive('merge')
-            ->with($target)
-            ->once();
+        [$spyWith, $releaseSpy] = $this->spy();
         $this->em
             ->shouldReceive('persist')
-            ->with(Mockery::on(function($v) use (&$release) {
-                    $release = $v;
-                    return true;
-                })
-            )
+            ->with($spyWith)
             ->once();
 
         $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('pending', $process1->status());
-        $this->assertSame('pending', $process2->status());
+        $this->assertSame('pending', $scheduled1->status());
+        $this->assertSame('pending', $scheduled2->status());
 
-        $handler->launch($parent);
+        $handler->launch($job);
 
-        $this->assertSame('launched', $process1->status());
-        $this->assertSame('aborted', $process2->status());
+        $this->assertSame('aborted', $scheduled1->status());
+        $this->assertSame('launched', $scheduled2->status());
+
+
+        $this->assertSame('No target specified', $scheduled1->message());
+        $this->assertSame('Scheduled job launched successfully', $scheduled2->message());
+
+        $release = $releaseSpy();
 
         $this->assertInstanceOf(Release::class, $release);
 
-        $this->assertSame($parent, $release->build());
-        $this->assertSame($parent->application(), $release->application());
+        $this->assertSame($job, $release->build());
+        $this->assertSame($job->application(), $release->application());
         $this->assertSame($target, $release->target());
-    }
-
-    public function testPreventMissingDeployment()
-    {
-        $target = (new Target('d1234'))
-            ->withRelease(new Release('derp123'));
-
-        $parent = (new Build('abcdef'));
-
-        $process1 = new JobProcess('1234');
-        $process1
-            ->withParent($parent)
-            ->withChildType('Release');
-
-        $this->repo
-            ->shouldReceive('findBy')
-            ->with(['parentID' => 'abcdef'])
-            ->andReturn([$process1]);
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process1)
-            ->once();
-        $this->em
-            ->shouldReceive('persist')
-            ->never();
-
-        $handler = new ProcessHandler($this->em);
-
-        $this->assertSame('pending', $process1->status());
-
-        $handler->launch($parent);
-
-        $this->assertSame('aborted', $process1->status());
-        $this->assertSame('No target specified', $process1->message());
-    }
-
-    public function testPreventInvalidDeployment()
-    {
-        $target = (new Target('d1234'))
-            ->withRelease(new Release('derp123'));
-
-        $parent = (new Build('abcdef'))
-            ->withApplication(new Application);
-
-        $process1 = new JobProcess('1234');
-        $process1
-            ->withParent($parent)
-            ->withChildType('Release')
-            ->withParameters(['deployment' => 'd1234']);
-
-        $this->repo
-            ->shouldReceive('findBy')
-            ->with(['parentID' => 'abcdef'])
-            ->andReturn([$process1]);
-        $this->repo
-            ->shouldReceive('findOneBy')
-            ->with(['id' => 'd1234', 'application' => $parent->application()])
-            ->andReturnNull();
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process1)
-            ->once();
-        $this->em
-            ->shouldReceive('persist')
-            ->never();
-
-        $handler = new ProcessHandler($this->em);
-
-        $this->assertSame('pending', $process1->status());
-
-        $handler->launch($parent);
-
-        $this->assertSame('aborted', $process1->status());
-        $this->assertSame('Invalid target specified', $process1->message());
     }
 
     public function testPreventClobbering()
     {
-        $target = (new Target('d1234'))
-            ->withRelease(new Release('derp123'));
+        $target = (new Target('', 't1234'))
+            ->withLastJob(new Release('derp123'));
 
-        $parent = (new Build('abcdef'))
+        $job = (new Build)
             ->withApplication(new Application);
 
-        $process1 = new JobProcess('1234');
-        $process1
-            ->withParent($parent)
-            ->withChildType('Release')
-            ->withParameters(['deployment' => 'd1234']);
-
-        $process2 = new JobProcess('1234');
-        $process2->withParent($parent);
-
-        $push = null;
+        $scheduled1 = (new ScheduledAction)
+            ->withTriggerJob($job)
+            ->withParameter('entity', 'Release')
+            ->withParameter('target_id', 't1234');
 
         $this->repo
             ->shouldReceive('findBy')
-            ->with(['parentID' => 'abcdef'])
-            ->andReturn([$process1, $process2]);
+            ->with(['triggerJob' => $job, 'status' => 'pending'])
+            ->andReturn([$scheduled1]);
         $this->repo
             ->shouldReceive('findOneBy')
-            ->with(['id' => 'd1234', 'application' => $parent->application()])
+            ->with(['id' => 't1234', 'application' => $job->application()])
             ->andReturn($target);
-
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process1)
-            ->once();
-        $this->em
-            ->shouldReceive('merge')
-            ->with($process2)
-            ->once();
-        $this->em
-            ->shouldReceive('persist')
-            ->never();
 
         $handler = new ProcessHandler($this->em);
 
-        $this->assertSame('pending', $process1->status());
-        $this->assertSame('pending', $process2->status());
+        $this->assertSame('pending', $scheduled1->status());
 
-        $handler->launch($parent);
+        $handler->launch($job);
 
-        $this->assertSame('aborted', $process1->status());
-        $this->assertSame('aborted', $process2->status());
-
-        $this->assertSame(null, $push);
-        $this->assertSame('Release derp123 to target already in progress', $process1->message());
+        $this->assertSame('aborted', $scheduled1->status());
+        $this->assertSame('Release derp123 to target already in progress', $scheduled1->message());
     }
 }
