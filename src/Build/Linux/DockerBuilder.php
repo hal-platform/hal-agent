@@ -24,7 +24,7 @@ class DockerBuilder implements BuilderInterface
 
     const EVENT_STARTING_CONTAINER = 'Starting Docker container';
     const EVENT_START_CONTAINER_STARTED = 'Docker container "%s" started';
-    const EVENT_DOCKER_CLEANUP = 'Cleaning up container "%s"';
+    const EVENT_DOCKER_CLEANUP = 'Cleaning up Docker container "%s"';
 
     const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Linux Docker container';
 
@@ -73,7 +73,7 @@ class DockerBuilder implements BuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(string $jobID, string $image, string $remoteConnection, string $remoteFile, array $commands, array $env): bool
+    public function __invoke(string $jobID, string $image, string $remoteConnection, string $remoteFile, array $steps, array $env): bool
     {
         if (!$dockerImage = $this->validator->validate($image)) {
             return $this->bombout(false);
@@ -81,9 +81,9 @@ class DockerBuilder implements BuilderInterface
 
         // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
         $containerName = strtolower($jobID);
-        $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $commands);
+        $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $steps);
 
-        $total = count($commands);
+        $total = count($steps);
         $current = 0;
 
         foreach ($jobs as $job) {

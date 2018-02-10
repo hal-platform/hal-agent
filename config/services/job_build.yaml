@@ -26,12 +26,12 @@ services:
         class: 'Hal\Agent\Build\Artifacter'
         arguments:
             - '@logger.event'
-            - '@utility.filesystem'
+            - '@filesystem'
             - '@build.support.file_compression'
 
     build.cleaner:
         class: 'Hal\Agent\Build\Generic\LocalCleaner'
-        arguments: ['@utility.filesystem']
+        arguments: ['@filesystem']
 
     ############################################################################
     # support for build platforms
@@ -40,8 +40,7 @@ services:
     build.support.file_compression:
         class: 'Hal\Agent\Build\Generic\FileCompression'
         arguments:
-            - '@logger.event'
-            - '@utility.process.builder'
+            - '@process_runner'
             - '%timeout.filepacking%'
 
     build.support.aws_authenticator:

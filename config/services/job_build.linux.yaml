@@ -8,12 +8,12 @@ services:
         class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
             - '@logger.event'
+            - '@encrypted.resolver'
             - '@build.linux.configurator'
             - '@build.linux.exporter'
             - '@build.linux.docker_builder'
             - '@build.linux.importer'
             - '@build.linux.cleaner'
-            - '@encrypted.resolver'
             - '%build.platforms.option.linux.docker_default_image%'
 
     ############################################################################
@@ -51,7 +51,7 @@ services:
         arguments:
             - '@ssh.manager'
             - '@build.support.file_compression'
-            - '@utility.filesystem'
+            - '@filesystem'
 
     build.linux.cleaner:
         class: 'Hal\Agent\Build\Linux\Steps\Cleaner'

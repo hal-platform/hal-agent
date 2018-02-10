@@ -71,10 +71,6 @@ class Resolver
         $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources($build->application(), $build->environment());
         $properties = array_merge($properties, $encryptedProperties);
 
-        $properties['artifacts'] = [
-            $properties['workspace_path'],
-        ];
-
         $this->ensureTempExistsAndIsWritable();
 
         return $properties;
@@ -100,8 +96,9 @@ class Resolver
     }
 
     /**
-     * @return void
      * @throws BuildException
+     *
+     * @return void
      */
     private function ensureTempExistsAndIsWritable()
     {

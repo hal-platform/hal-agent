@@ -8,24 +8,24 @@ services:
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
         arguments:
             - '@logger.event'
+            - '@encrypted.resolver'
             - '@build.windows_aws.configurator'
             - '@build.windows_aws.exporter'
             - '@build.windows_aws.native_builder'
             - '@build.windows_aws.importer'
             - '@build.windows_aws.cleaner'
-            - '@encrypted.resolver'
             - '%build.platforms.option.windows.docker_default_image%'
 
     build_platform.windows_aws_docker:
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
         arguments:
             - '@logger.event'
+            - '@encrypted.resolver'
             - '@build.windows_aws.configurator'
             - '@build.windows_aws.exporter'
             - '@build.windows_aws.docker_builder'
             - '@build.windows_aws.importer'
             - '@build.windows_aws.cleaner'
-            - '@encrypted.resolver'
             - '%build.platforms.option.windows.docker_default_image%'
 
     ############################################################################
@@ -87,7 +87,7 @@ services:
         arguments:
             - '@logger.event'
             - '@build.support.file_compression'
-            - '@utility.filesystem'
+            - '@filesystem'
             - '@build.windows_aws.s3_downloader'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
@@ -114,7 +114,7 @@ services:
             - '@build.windows_aws.support_ec2_finder'
 
     build.windows_aws.support_ec2_finder:
-        class: 'Hal\Agent\Utility\EC2Finder'
+        class: 'Hal\Agent\AWS\EC2Finder'
 
     build.windows_aws.support_s3_uploader:
         class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Uploader'

@@ -162,14 +162,13 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
         $defaultDockerImage
     ) {
         $this->logger = $logger;
+        $this->decrypter = $decrypter;
 
         $this->configurator = $configurator;
         $this->exporter = $exporter;
         $this->builder = $builder;
         $this->importer = $importer;
         $this->cleaner = $cleaner;
-
-        $this->decrypter = $decrypter;
 
         $this->defaultDockerImage = $defaultDockerImage;
     }

@@ -32,12 +32,20 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     private const STEP_4_IMPORTING = 'Linux Platform - Importing artifacts from build server';
     private const STEP_5_CLEANING = 'Cleaning up remote builder instance "%s"';
 
+    private const ERR_CONFIGURATOR = 'Linux build platform is not configured correctly';
+    private const ERR_EXPORT = 'Failed to export build to build system';
+    private const ERR_IMPORT = 'Failed to import build artifacts from build system';
     private const ERR_BAD_DECRYPT = 'An error occured while decrypting encrypted configuration';
 
     /**
      * @var EventLogger
      */
     private $logger;
+
+    /**
+     * @var EncryptedPropertyResolver
+     */
+    private $decrypter;
 
     /**
      * @var Configurator
@@ -65,33 +73,32 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     private $cleaner;
 
     /**
-     * @var EncryptedPropertyResolver
-     */
-    private $decrypter;
-
-    /**
      * @var string
      */
     private $defaultDockerImage;
 
     /**
      * @param EventLogger $logger
+     * @param EncryptedPropertyResolver $decrypter
+     *
      * @param Configurator $configurator
      * @param Exporter $exporter
      * @param BuilderInterface $builder
      * @param Importer $importer
      * @param Cleaner $cleaner
-     * @param EncryptedPropertyResolver $decrypter
+     *
      * @param string $defaultDockerImage
      */
     public function __construct(
         EventLogger $logger,
+        EncryptedPropertyResolver $decrypter,
+
         Configurator $configurator,
         Exporter $exporter,
         BuilderInterface $builder,
         Importer $importer,
         Cleaner $cleaner,
-        EncryptedPropertyResolver $decrypter,
+
         $defaultDockerImage
     ) {
         $this->logger = $logger;
@@ -115,29 +122,32 @@ class LinuxBuildPlatform implements BuildPlatformInterface
         $job = $properties['build'];
 
         $image = $config['image'] ?? $this->defaultDockerImage;
-        $commands = $config['build'];
+        $steps = $config['build'] ?? [];
 
         if (!$platformConfig = $this->configurator($job)) {
+            $this->sendFailureEvent(self::ERR_CONFIGURATOR);
             return $this->bombout(false);
         }
 
         if (!$this->export($platformConfig, $properties['workspace_path'])) {
+            $this->sendFailureEvent(self::ERR_EXPORT);
             return $this->bombout(false);
         }
 
         // decrypt
         $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $config);
         if ($env === null) {
-            $this->logger->event('failure', self::ERR_BAD_DECRYPT);
+            $this->sendFailureEvent(self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
         }
 
         // run build
-        if (!$this->build($job->id(), $image, $platformConfig, $commands, $env)) {
+        if (!$this->build($job->id(), $image, $platformConfig, $steps, $env)) {
             return $this->bombout(false);
         }
 
         if (!$this->import($platformConfig, $properties['workspace_path'])) {
+            $this->sendFailureEvent(self::ERR_IMPORT);
             return $this->bombout(false);
         }
 
@@ -222,12 +232,12 @@ class LinuxBuildPlatform implements BuildPlatformInterface
      * @param array $jobID
      * @param array $image
      * @param array $platformConfig
-     * @param array $commands
+     * @param array $steps
      * @param array $env
      *
      * @return bool
      */
-    private function build($jobID, $image, array $platformConfig, array $commands, array $env)
+    private function build($jobID, $image, array $platformConfig, array $steps, array $env)
     {
         $this->getIO()->section(self::STEP_3_BUILDING);
 
@@ -236,7 +246,7 @@ class LinuxBuildPlatform implements BuildPlatformInterface
 
         $this->builder->setIO($this->getIO());
 
-        return ($this->builder)($jobID, $image, $connection, $remoteFile, $commands, $env);
+        return ($this->builder)($jobID, $image, $connection, $remoteFile, $steps, $env);
     }
 
     /**
@@ -275,5 +285,16 @@ class LinuxBuildPlatform implements BuildPlatformInterface
         $this->getIO()->note(sprintf(self::STEP_5_CLEANING, $remoteConnection));
 
         ($this->cleaner)($remoteConnection, $remoteFile);
+    }
+
+    /**
+     * @param string $message
+     *
+     * @return void
+     */
+    private function sendFailureEvent($message)
+    {
+        $this->logger->event('failure', $message);
+        $this->getIO()->error($message);
     }
 }

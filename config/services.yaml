@@ -127,6 +127,12 @@ services:
             - ['setWindowsAWSBuilder', ['%build.windows_aws.region%', '%build.windows_aws.credential_name%', '%build.windows_aws.bucket%', '%build.windows_aws.builder_filter%']]
             - ['setUnixBuilder',       ['%build.linux.user%',         '%build.linux.server%',                '%path.linux_builder%']]
 
+    process_runner:
+        class: 'Hal\Agent\Symfony\ProcessRunner'
+        arguments: ['@logger.event']
+    filesystem:
+        class: 'Symfony\Component\Filesystem\Filesystem'
+
     aws:
         class: 'Aws\Sdk'
         arguments:

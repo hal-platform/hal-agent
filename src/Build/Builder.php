@@ -63,15 +63,15 @@ class Builder
             return $this->explode($platform ?: 'Unknown');
         }
 
-        if (!$platform = $this->getPlatform($platform)) {
+        if (!$service = $this->getPlatform($platform)) {
             return $this->explode($platform);
         }
 
         $this->logger->setStage(JobEventStageEnum::TYPE_RUNNING);
 
-        $platform->setIO($io);
+        $service->setIO($io);
 
-        return $platform($config, $properties);
+        return $service($config, $properties);
     }
 
     /**

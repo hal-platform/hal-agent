@@ -22,6 +22,8 @@ use Hal\Core\Type\ScheduledActionStatusEnum;
  */
 class ProcessHandler
 {
+    private const SUCCESS_LAUNCHED_JOB = 'Scheduled job launched successfully';
+
     private const ERR_NO_TARGET = 'No target specified';
     private const ERR_INVALID_TARGET = 'Invalid target specified';
     private const ERR_IN_PROGRESS = 'Release %s to target already in progress';
@@ -51,31 +53,33 @@ class ProcessHandler
     /**
      * @param Job $job
      *
-     * @return void
+     * @return bool
      */
-    public function abort(Job $job)
+    public function abort(Job $job): bool
     {
-        $scheduled = $this->scheduledRepo->findBy(['triggerJob' => $job]);
+        $scheduled = $this->scheduledRepo->findBy(['triggerJob' => $job, 'status' => ScheduledActionStatusEnum::TYPE_PENDING]);
         if (!$scheduled) {
-            return;
+            return false;
         }
 
         foreach ($scheduled as $action) {
             $action->withStatus(ScheduledActionStatusEnum::TYPE_ABORTED);
             $this->em->merge($action);
         }
+
+        return true;
     }
 
     /**
      * @param Job $job
      *
-     * @return void
+     * @return bool
      */
-    public function launch(Job $job)
+    public function launch(Job $job): bool
     {
-        $scheduled = $this->scheduledRepo->findBy(['triggerJob' => $job]);
+        $scheduled = $this->scheduledRepo->findBy(['triggerJob' => $job, 'status' => ScheduledActionStatusEnum::TYPE_PENDING]);
         if (!$scheduled) {
-            return;
+            return false;
         }
 
         foreach ($scheduled as $action) {
@@ -85,12 +89,15 @@ class ProcessHandler
                 if ($release = $this->launchRelease($action, $action->triggerJob())) {
                     $status = ScheduledActionStatusEnum::TYPE_LAUNCHED;
                     $action->withScheduledJob($release);
+                    $action->withMessage(self::SUCCESS_LAUNCHED_JOB);
                 }
             }
 
-            $process->withStatus($status);
-            $this->em->merge($process);
+            $action->withStatus($status);
+            $this->em->merge($action);
         }
+
+        return true;
     }
 
     /**
@@ -105,22 +112,21 @@ class ProcessHandler
         $user = $build->user();
 
         // Invalid parameters
-        if ($targetID = $action->parameter('target_id')) {
-            $process->withMessage(self::ERR_NO_TARGET);
+        if (!$targetID = $action->parameter('target_id')) {
+            $action->withMessage(self::ERR_NO_TARGET);
             return;
         }
 
         // Err: no valid deployment
-        $target = $this->targetRepo->find(['id' => $targetID, 'application' => $application]);
-        if (!$target) {
-            $process->withMessage(self::ERR_INVALID_TARGET);
+        if (!$target = $this->targetRepo->findOneBy(['id' => $targetID, 'application' => $application])) {
+            $action->withMessage(self::ERR_INVALID_TARGET);
             return;
         }
 
         // Err: active push already underway
         $lastJob = $target->lastJob();
         if ($lastJob && $lastJob->inProgress()) {
-            $process->withMessage(sprintf(self::ERR_IN_PROGRESS, $lastJob->id()));
+            $action->withMessage(sprintf(self::ERR_IN_PROGRESS, $lastJob->id()));
             return;
         }
 
@@ -134,7 +140,7 @@ class ProcessHandler
             ->withEnvironment($target->environment());
 
         // Record active release on target
-        $target->withJob($release);
+        $target->withLastJob($release);
 
         $this->em->merge($target);
         $this->em->persist($release);

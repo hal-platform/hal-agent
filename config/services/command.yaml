@@ -95,6 +95,8 @@ services:
             - '@job_configuration.reader'
             - '@builder'
             - '@build.artifacter'
+        calls:
+            - ['setShutdownHandler', [true]]
     executor.runner.deploy:
         class: 'Hal\Agent\Executor\Runner\DeployCommand'
         arguments:

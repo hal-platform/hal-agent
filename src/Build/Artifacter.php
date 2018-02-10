@@ -51,8 +51,8 @@ class Artifacter
         $this->fileCompression = $fileCompression;
 
         $this->fileLocations = [
-            '.hal.yml',
             '.hal.yaml',
+            '.hal.yml',
             '.hal/config.yml',
             '.hal/config.yaml',
             '.hal9000.yml',
@@ -149,7 +149,7 @@ class Artifacter
     private function validateDist($fqPath, $distPath)
     {
         // Do not allow dir traversal. Dist path must be within build dir
-        if (stripos($fqPath, '../') !== false) {
+        if (stripos($fqPath, '/..') !== false) {
             $this->logger->event('failure', self::ERR_DIST_NOT_VALID, ['path' => $distPath]);
             return false;
         }

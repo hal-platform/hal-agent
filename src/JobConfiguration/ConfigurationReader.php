@@ -49,19 +49,17 @@ class ConfigurationReader
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param Parser $parser
-     * @param callable $fileLoader
      */
     public function __construct(
         EventLogger $logger,
         Filesystem $filesystem,
-        Parser $parser,
-        callable $fileLoader = null
+        Parser $parser
     ) {
         $this->logger = $logger;
         $this->filesystem = $filesystem;
         $this->parser = $parser;
 
-        $this->fileLoader = $fileLoader ?: $this->getDefaultFileLoader();
+        $this->fileLoader = $this->getDefaultFileLoader();
         $this->fileLocations = [
             '.hal.yml',
             '.hal.yaml',
@@ -172,8 +170,8 @@ class ConfigurationReader
         }
 
         // fall back to default for build system
-        $config['platform'] = $config['platform'] ?: 'default';
-        $config['image'] = $config['image'] ?: 'default';
+        $config['platform'] = $config['platform'] ?? 'default';
+        $config['image'] = $config['image'] ?? 'default';
 
         $context['configuration'] = $config;
         $this->logger->event('success', self::FOUND, $context);

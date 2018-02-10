@@ -18,7 +18,7 @@ use QL\MCP\Common\Time\Clock;
 /**
  * Handles starting and finishing jobs - e.g. Changing the status of a build or release.
  *
- * Event logs are automatically flushed and persisted when this logger saves the job.
+ * Events are automatically flushed and persisted when this logger saves the job.
  */
 class EventLogger
 {
@@ -47,7 +47,7 @@ class EventLogger
     /**
      * @var array
      */
-    private $logs;
+    private $events;
 
     /**
      * @var string
@@ -69,7 +69,7 @@ class EventLogger
         $this->clock = $clock;
 
         $this->job = null;
-        $this->logs = [];
+        $this->events = [];
 
         $this->currentStage = JobEventStageEnum::defaultOption();
     }
@@ -77,9 +77,9 @@ class EventLogger
     /**
      * @param string $stage
      *
-     * @return null
+     * @return void
      */
-    public function setStage($stage)
+    public function setStage($stage): void
     {
         if (!JobEventStageEnum::isValid($stage)) {
             return;
@@ -93,19 +93,19 @@ class EventLogger
      * @param string $message
      * @param array $context
      *
-     * @return null
+     * @return JobEvent|null
      */
-    public function event($status, $message, array $context = [])
+    public function event($status, $message, array $context = []): ?JobEvent
     {
         if (!$this->job) {
-            return;
+            return null;
         }
 
         if (!JobEventStatusEnum::isValid($status)) {
-            return;
+            return null;
         }
 
-        $this->sendEvent($this->job, $this->currentStage, $status, $message, $context);
+        return $this->sendEvent($this->job, $this->currentStage, $status, $message, $context);
     }
 
     /**
@@ -113,7 +113,7 @@ class EventLogger
      *
      * @return void
      */
-    public function start(Job $job)
+    public function start(Job $job): void
     {
         $this->job = $job;
 
@@ -128,9 +128,9 @@ class EventLogger
     }
 
     /**
-     * @return null
+     * @return void
      */
-    public function failure()
+    public function failure(): void
     {
         if ($this->job && $this->job->inProgress()) {
             $this->job->withStatus(JobStatusEnum::TYPE_FAILURE);
@@ -148,7 +148,7 @@ class EventLogger
     /**
      * @return void
      */
-    public function success()
+    public function success(): void
     {
         if ($this->job && $this->job->inProgress()) {
             $this->job->withStatus(JobStatusEnum::TYPE_SUCCESS);
@@ -170,13 +170,13 @@ class EventLogger
      * @param string $message
      * @param array $context
      *
-     * @return null
+     * @return JobEvent
      */
-    private function sendEvent(Job $job, $stage, $status, $message, array $context = [])
+    private function sendEvent(Job $job, $stage, $status, $message, array $context = []): JobEvent
     {
-        $count = count($this->logs) + 1;
+        $count = count($this->events) + 1;
 
-        $log = (new JobEvent)
+        $event = (new JobEvent)
             ->withStage($stage)
             ->withStatus($status)
             ->withOrder($count)
@@ -185,16 +185,18 @@ class EventLogger
 
         $context = $this->sanitizeContext($context);
         if ($context) {
-            $log->withParameters($context);
+            $event->withParameters($context);
         }
 
         // persist
-        $this->logs[] = $log;
-        $this->em->persist($log);
+        $this->events[] = $event;
+        $this->em->persist($event);
         $this->em->flush();
 
         // @todo replace this with API call to fe
-        // $this->trySendingToRedis($log);
+        // $this->trySendingToRedis($event);
+
+        return $event;
     }
 
     /**

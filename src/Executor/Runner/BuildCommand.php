@@ -99,12 +99,7 @@ class BuildCommand implements ExecutorInterface
     private $artifacter;
 
     /**
-     * @var string[]
-     */
-    private $artifacts;
-
-    /**
-     * @var boolean
+     * @var bool
      */
     private $enableShutdownHandler;
 
@@ -145,9 +140,7 @@ class BuildCommand implements ExecutorInterface
         $this->builder = $builder;
         $this->artifacter = $artifacter;
 
-        $this->artifacts = [];
-
-        $this->enableShutdownHandler = true;
+        $this->enableShutdownHandler = false;
         $this->startTimer();
     }
 
@@ -166,13 +159,11 @@ class BuildCommand implements ExecutorInterface
     }
 
     /**
-     * Used during unit testing or other scenarios when we shouldn't attach to global state.
-     *
      * @return void
      */
-    public function disableShutdownHandler()
+    public function setShutdownHandler(bool $enabled): void
     {
-        $this->enableShutdownHandler = false;
+        $this->enableShutdownHandler = $enabled;
     }
 
     /**
@@ -213,11 +204,11 @@ class BuildCommand implements ExecutorInterface
             'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
         ]);
 
-        if (!$this->downloadSourceCode($io, $properties)) {
+        if (!$this->downloadSourceCode($io, $properties['build'], $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_DOWNLOAD);
         }
 
-        if (!$config = $this->loadConfiguration($io, $properties)) {
+        if (!$config = $this->loadConfiguration($io, $properties['default_configuration'], $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_CONFIG);
         }
 
@@ -227,7 +218,7 @@ class BuildCommand implements ExecutorInterface
 
         $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
-        if (!$this->storeArtifact($io, $config, $properties)) {
+        if (!$this->storeArtifact($io, $config, $properties['artifact_stored_file'], $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_STORE_ARTIFACT);
         }
 
@@ -259,10 +250,7 @@ class BuildCommand implements ExecutorInterface
 
         // We must set an emergency handler in case of super fatal to ensure it is always
         // safely finished and clean-up is run.
-        $this->setCleanupHandler($io);
-
-        // add artifacts for cleanup
-        $this->artifacts = $properties['artifacts'];
+        $this->setCleanupHandler($io, $properties['workspace_path']);
 
         $this->outputJobInformation($io, $properties);
         return $properties;
@@ -297,42 +285,40 @@ class BuildCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
-     * @param array $properties
+     * @param Build $build
+     * @param string $workspacePath
      *
      * @return bool
      */
-    private function downloadSourceCode(IOInterface $io, array $properties)
+    private function downloadSourceCode(IOInterface $io, Build $build, string $workspacePath)
     {
         $io->section($this->step(2));
-
-        $build = $properties['build'];
-        $workspace = $properties['workspace_path'];
 
         $provider = $build->application()->provider();
         $providerName = $provider ? $provider->name() : 'None';
         $provideType = $provider ? VCSProviderEnum::format($provider->type()) : 'N/A';
 
         $io->listing([
-            sprintf('Build Workspace: %s', $this->colorize($workspace)),
+            sprintf('Build Workspace: %s', $this->colorize($workspacePath)),
             sprintf('VCS Provider: %s (Type: %s)', $this->colorize($providerName), $provideType),
             sprintf('VCS Reference: %s (Commit: %s)', $this->colorize($build->reference()), $build->commit())
         ]);
 
-        return ($this->downloader)($properties['build'], $workspace);
+        return ($this->downloader)($build, $workspacePath);
     }
 
     /**
      * @param IOInterface $io
-     * @param array $properties
+     * @param array $defaultConfiguration
+     * @param string $workspacePath
      *
      * @return array|null
      */
-    private function loadConfiguration(IOInterface $io, array $properties)
+    private function loadConfiguration(IOInterface $io, array $defaultConfiguration, string $workspacePath): ?array
     {
         $io->section($this->step(3));
 
-        $defaultConfiguration = $properties['default_configuration'];
-        $buildPath = $properties['workspace_path'] . '/build';
+        $buildPath = $workspacePath . '/build';
 
         $config = ($this->reader)($buildPath, $defaultConfiguration);
 
@@ -379,18 +365,17 @@ class BuildCommand implements ExecutorInterface
     /**
      * @param IOInterface $io
      * @param array $config
-     * @param array $properties
+     * @param string $storedArtifactFile
+     * @param string $workspacePath
      *
      * @return bool
      */
-    private function storeArtifact(IOInterface $io, array $config, array $properties)
+    private function storeArtifact(IOInterface $io, array $config, string $storedArtifactFile, string $workspacePath)
     {
         $io->section($this->step(5));
 
-        $buildPath = $properties['workspace_path'] . '/build';
-
-        $artifactFile = $properties['workspace_path'] . '/artifact.tgz';
-        $storedArtifactFile = $properties['artifact_stored_file'];
+        $buildPath = $workspacePath . '/build';
+        $artifactFile = $workspacePath . '/artifact.tgz';
 
         $io->listing([
             sprintf('Artifact Path: %s', $this->colorize($buildPath . '/' . $config['dist'])),
@@ -405,23 +390,14 @@ class BuildCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
+     * @param string $workspacePath
      *
      * @return void
      */
-    private function setCleanupHandler(IOInterface $io)
+    private function setCleanupHandler(IOInterface $io, $workspacePath)
     {
-        $cleanup = function () use ($io) {
-            $artifacts = $this->artifacts;
-
-            // Clear artifacts
-            $this->artifacts = [];
-
-            // Disconnect any active ssh sessions
-            $this->sshManager->disconnectAll();
-
-            if (!$artifacts) {
-                return;
-            }
+        $cleanup = function () use ($io, $workspacePath) {
+            $artifacts = [$workspacePath];
 
             $io->newLine();
             $io->section('Build clean-up');
@@ -432,12 +408,17 @@ class BuildCommand implements ExecutorInterface
             $io->text('Disconnecting all open SSH connections.');
             $io->newLine();
 
+            $this->sshManager->disconnectAll();
+
             ($this->cleaner)($artifacts);
         };
 
         $this->cleanup = $cleanup;
         if ($this->enableShutdownHandler) {
-            register_shutdown_function([$this, 'emergencyCleanup']);
+            // protip: avoid [$this, 'method'] notation, it makes searching and refactoring more difficult.
+            register_shutdown_function(function() {
+                $this->emergencyCleanup();
+            });
         }
     }
 
