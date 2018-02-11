@@ -111,7 +111,7 @@ class ConfigurationReader
         ];
 
         foreach ($texts as $textProperty) {
-            if (false === ($value = $this->validateKey($yaml, $textProperty, $context))) {
+            if (false === ($value = $this->validateKey($yaml, $textProperty))) {
                 return $this->failOnKey($textProperty, $context);
             } elseif ($value) {
                 $config[$textProperty] = $value;

@@ -94,7 +94,7 @@ class BuildCommandTest extends IOTestCase
 
         $this->reader
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/build', [
+            ->with('/path/to/job-1234/job', [
                 'platform' => 'linux',
                 'image' => 'default',
                 'build' => [],
@@ -114,7 +114,7 @@ class BuildCommandTest extends IOTestCase
 
         $this->artifacter
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/build', '.', '/path/to/job-1234/artifact.tgz', '/artifacts/job-1234.tgz')
+            ->with('/path/to/job-1234/job', '.', '/path/to/job-1234/artifact.tgz', '/artifacts/job-1234.tgz')
             ->andReturn(true);
 
         $this->cleaner
@@ -185,7 +185,7 @@ class BuildCommandTest extends IOTestCase
             ' * path/to/command2 arg1',
 
             '[5/5] Storing build artifact',
-            ' * Artifact Path: /path/to/job-1234/build/.',
+            ' * Artifact Path: /path/to/job-1234/job/.',
             ' * Artifact File: /path/to/job-1234/artifact.tgz',
             ' * Artifact Repository: Filesystem',
             ' * Repository Location: /artifacts/job-1234.tgz',

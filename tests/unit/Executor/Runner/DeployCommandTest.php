@@ -94,12 +94,12 @@ class DeployCommandTest extends IOTestCase
 
         $this->artifacter
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/deploy', '/path/to/job-1234/artifact.tgz', '/artifacts/job-1234.tgz')
+            ->with('/path/to/job-1234/job', '/path/to/job-1234/artifact.tgz', '/artifacts/job-1234.tgz')
             ->andReturn(true);
 
         $this->reader
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/deploy', [
+            ->with('/path/to/job-1234/job', [
                 'platform' => 'linux',
                 'image' => 'default',
                 'build' => [],

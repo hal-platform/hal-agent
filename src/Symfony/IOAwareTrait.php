@@ -41,6 +41,6 @@ trait IOAwareTrait
         // if IO is not set, we must ensure there is always something output
         // Ideally this never happens. But you know...
 
-        return new IO(new ArrayInput, new NullOutput);
+        return new IO(new ArrayInput([]), new NullOutput);
     }
 }

@@ -107,7 +107,7 @@ class Artifacter
             return false;
         }
 
-        $this->ensureHalConfigurationIsSaved($buildPath, $fqPath, $distPath);
+        $this->ensureHalConfigurationIsSaved($buildPath, $fqPath);
 
         $workingPath = ($distPath === '.') ? $buildPath : $fqPath;
 
@@ -120,15 +120,15 @@ class Artifacter
      *
      * @return bool
      */
-    private function moveArtifactToStorage($from, $to)
+    private function moveArtifactToStorage($artifactFile, $permanentFile)
     {
-        if (!$this->filesystem->exists($from)) {
+        if (!$this->filesystem->exists($artifactFile)) {
             $this->logger->event('failure', static::EVENT_MESSAGE);
             return false;
         }
 
         try {
-            $this->filesystem->copy($from, $to, true);
+            $this->filesystem->copy($artifactFile, $permanentFile, true);
         } catch (IOException $e) {
             $this->logger->event('failure', static::EVENT_MESSAGE, [
                 'error' => $e->getMessage()
@@ -165,7 +165,7 @@ class Artifacter
 
     /**
      * @param string $buildPath
-     * @param string $distPath
+     * @param string $fqPath
      *
      * @return void
      */

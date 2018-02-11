@@ -85,15 +85,15 @@ class Artifacter
      *
      * @return bool
      */
-    private function downloadArtifactFromStorage($from, $to)
+    private function downloadArtifactFromStorage($permanentFile, $artifactFile)
     {
-        if (!$this->filesystem->exists($from)) {
+        if (!$this->filesystem->exists($permanentFile)) {
             $this->logger->event('failure', static::EVENT_MESSAGE);
             return false;
         }
 
         try {
-            $this->filesystem->copy($from, $to, true);
+            $this->filesystem->copy($permanentFile, $artifactFile, true);
         } catch (IOException $e) {
             $this->logger->event('failure', static::EVENT_MESSAGE, [
                 'error' => $e->getMessage()

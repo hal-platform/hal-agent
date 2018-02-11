@@ -10,6 +10,8 @@ namespace Hal\Agent\Logger;
 use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
 use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
 
 class MetadataHandler
 {
@@ -71,7 +73,7 @@ class MetadataHandler
     }
 
     /**
-     * @param Push $push
+     * @param Job $job
      * @param string $name
      * @param string $data
      *

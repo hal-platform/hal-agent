@@ -13,6 +13,7 @@ use Hal\Core\Entity\Job\JobEvent;
 use Hal\Core\Type\JobEventStageEnum;
 use Hal\Core\Type\JobEventStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
+use JsonSerializable;
 use QL\MCP\Common\Time\Clock;
 
 /**
@@ -118,9 +119,9 @@ class EventLogger
 
     /**
      * @param string $name
-     * @param mixed $value
+     * @param string $value
      *
-     * @return null
+     * @return void
      */
     public function meta(string $name, string $value): void
     {
@@ -292,7 +293,6 @@ class EventLogger
 
         $maxBytes = self::MAX_DATA_SIZE_KB * 1000;
         if (strlen($data) > $maxBytes) {
-            $sanitized[$key] = $data;
             $data = substr($data, 0, $maxBytes);
         }
 

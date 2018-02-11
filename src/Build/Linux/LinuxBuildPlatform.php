@@ -185,7 +185,7 @@ class LinuxBuildPlatform implements JobPlatformInterface
     {
         $this->getIO()->section(self::STEP_2_EXPORTING);
 
-        $buildPath = $workspacePath . '/build';
+        $buildPath = $workspacePath . '/job';
         $localFile = $workspacePath . '/build_export.tgz';
 
         $connection = $platformConfig['builder_connection'];
@@ -260,7 +260,7 @@ class LinuxBuildPlatform implements JobPlatformInterface
     {
         $this->getIO()->section(self::STEP_4_IMPORTING);
 
-        $buildPath = $workspacePath . '/build';
+        $buildPath = $workspacePath . '/job';
         $localFile = $workspacePath . '/build_import.tgz';
 
         $connection = $platformConfig['builder_connection'];

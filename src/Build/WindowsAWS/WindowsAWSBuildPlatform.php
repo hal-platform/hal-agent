@@ -238,7 +238,6 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
      * @param string $jobID
      * @param string $workspacePath
      * @param array $platformConfig
-     * @param array $properties
      *
      * @return bool
      */
@@ -250,7 +249,7 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
         $ssm = $platformConfig['sdk']['ssm'];
         $instanceID = $platformConfig['instance_id'];
 
-        $buildPath = $workspacePath . '/build';
+        $buildPath = $workspacePath . '/job';
         $localFile = $workspacePath . '/build_export.tgz';
 
         $bucket = $platformConfig['bucket'];
@@ -279,7 +278,7 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
     /**
      * @param array $encryptedConfig
      * @param array $platformEnv
-     * @param array $config
+     * @param array $env
      *
      * @return array|null
      */
@@ -332,7 +331,7 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
         $ssm = $platformConfig['sdk']['ssm'];
         $instanceID = $platformConfig['instance_id'];
 
-        $buildPath = $workspacePath . '/build';
+        $buildPath = $workspacePath . '/job';
         $localFile = $workspacePath . '/build_import.tgz';
 
         $bucket = $platformConfig['bucket'];

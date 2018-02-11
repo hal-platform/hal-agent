@@ -19,6 +19,7 @@ use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
 use Mockery;
 
 class ConfiguratorTest extends MockeryTestCase
@@ -48,7 +49,7 @@ class ConfiguratorTest extends MockeryTestCase
 
     public function testSuccess()
     {
-        $build = $this->createMockBuild();
+        $release = $this->createMockRelease();
         $credential = new Credential;
 
         $expectedSDK = [
@@ -65,10 +66,15 @@ class ConfiguratorTest extends MockeryTestCase
 
             'environment_variables' => [
                 'HAL_JOB_ID' => '1234',
+                'HAL_JOB_TYPE' => 'release',
+
                 'HAL_VCS_COMMIT' => '7de49f3',
                 'HAL_VCS_REF' => 'master',
+
                 'HAL_ENVIRONMENT' => 'staging',
-                'HAL_APPLICATION' => 'Demo App'
+                'HAL_APPLICATION' => 'Demo App',
+
+                'HAL_CONTEXT' => ''
             ]
         ];
 
@@ -106,7 +112,7 @@ class ConfiguratorTest extends MockeryTestCase
             'Name=hal_builder'
         );
 
-        $actual = $configurator($build);
+        $actual = $configurator($release);
 
         $actualSDK = $actual['sdk'];
         unset($actual['sdk']);
@@ -115,13 +121,9 @@ class ConfiguratorTest extends MockeryTestCase
         $this->assertSame($expectedSDK, $actualSDK);
     }
 
-    private function createMockBuild()
+    private function createMockRelease()
     {
-        return (new Build('1234'))
-            ->withStatus('pending')
-            ->withReference('master')
-            ->withCommit('7de49f3')
-
+        return (new Release('1234'))
             ->withApplication(
                 (new Application)
                     ->withName('Demo App')
@@ -129,6 +131,12 @@ class ConfiguratorTest extends MockeryTestCase
             ->withEnvironment(
                 (new Environment)
                     ->withName('staging')
+            )
+            ->withBuild(
+                (new Build('1234'))
+                    ->withStatus('pending')
+                    ->withReference('master')
+                    ->withCommit('7de49f3')
             );
     }
 }

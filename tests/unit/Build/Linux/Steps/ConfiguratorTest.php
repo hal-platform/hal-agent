@@ -23,10 +23,15 @@ class ConfiguratorTest extends TestCase
             'remote_file' => '/tmp/builds/hal-job-1234.tgz',
             'environment_variables' => [
                 'HAL_JOB_ID' => '1234',
+                'HAL_JOB_TYPE' => 'build',
+
                 'HAL_VCS_COMMIT' => '7de49f3',
                 'HAL_VCS_REF' => 'master',
+
                 'HAL_ENVIRONMENT' => 'staging',
-                'HAL_APPLICATION' => 'Demo App'
+                'HAL_APPLICATION' => 'Demo App',
+
+                'HAL_CONTEXT' => ''
             ]
         ];
 

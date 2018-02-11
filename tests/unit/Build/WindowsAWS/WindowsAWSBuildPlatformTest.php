@@ -112,7 +112,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
 
         $this->exporter
             ->shouldReceive('__invoke')
-            ->with($this->s3, $this->ssm, 'i-1234', '1234', '/path/to/workspace/build', '/path/to/workspace/build_export.tgz', 'hal-transfer-bucket', '1234_export.tgz')
+            ->with($this->s3, $this->ssm, 'i-1234', '1234', '/path/to/workspace/job', '/path/to/workspace/build_export.tgz', 'hal-transfer-bucket', '1234_export.tgz')
             ->once()
             ->andReturn(true);
 
@@ -131,7 +131,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
 
         $this->importer
             ->shouldReceive('__invoke')
-            ->with($this->s3, $this->ssm, 'i-1234', '1234', '/path/to/workspace/build', '/path/to/workspace/build_import.tgz', 'hal-transfer-bucket', '1234_import.tgz')
+            ->with($this->s3, $this->ssm, 'i-1234', '1234', '/path/to/workspace/job', '/path/to/workspace/build_import.tgz', 'hal-transfer-bucket', '1234_import.tgz')
             ->once()
             ->andReturn(true);
 
@@ -166,7 +166,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
             '  s3_output_object        "1234_import.tgz"',
 
             'Windows Docker Platform - Exporting files to AWS environment',
-            ' * Workspace: /path/to/workspace/build',
+            ' * Workspace: /path/to/workspace/job',
             ' * Local File: /path/to/workspace/build_export.tgz',
             ' * S3 Object: hal-transfer-bucket/1234_export.tgz',
             ' * S3 Build Artifact: hal-transfer-bucket/1234_import.tgz',
@@ -174,7 +174,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
             'Windows Docker Platform - Running build steps',
 
             'Windows Docker Platform - Importing artifacts from AWS environment',
-            ' * Workspace: /path/to/workspace/build',
+            ' * Workspace: /path/to/workspace/job',
             ' * Remote Object: hal-transfer-bucket/1234_import.tgz',
             ' * Local File: /path/to/workspace/build_import.tgz',
 

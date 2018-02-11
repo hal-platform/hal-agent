@@ -46,7 +46,7 @@ class JobRunner
     /**
      * @param EventLogger $logger
      * @param ContainerInterface $container
-     * @param array $builders
+     * @param array $platforms
      */
     public function __construct(EventLogger $logger, ContainerInterface $container, array $platforms = [])
     {

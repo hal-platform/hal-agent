@@ -116,7 +116,7 @@ class Configurator
             ->getRepository(Credential::class)
             ->findOneBy(['isInternal' => true, 'name' => $credentialName]);
 
-        if (!$credential) {
+        if (!$credential instanceof Credential) {
             return null;
         }
 

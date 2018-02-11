@@ -84,6 +84,8 @@ class Resolver
     /**
      * @param string $releaseID
      *
+     * @throws DeployException
+     *
      * @return Release
      */
     private function getRelease($releaseID)
@@ -106,7 +108,7 @@ class Resolver
     }
 
     /**
-     * @throws BuildException
+     * @throws DeployException
      *
      * @return void
      */
@@ -116,12 +118,12 @@ class Resolver
 
         if (!file_exists($temp)) {
             if (!mkdir($temp, 0755, true)) {
-                throw new BuildException(sprintf(self::ERR_TEMP, $temp));
+                throw new DeployException(sprintf(self::ERR_TEMP, $temp));
             }
         }
 
         if (!is_writeable($temp)) {
-            throw new BuildException(sprintf(self::ERR_TEMP, $temp));
+            throw new DeployException(sprintf(self::ERR_TEMP, $temp));
         }
     }
 }

@@ -104,7 +104,7 @@ class Cleaner
     }
 
     /**
-     * @param SsmClient $ssm
+     * @param S3Client $s3
      * @param string $bucket
      * @param string $file
      *

@@ -13,9 +13,9 @@ use Symfony\Component\Process\Process;
 
 class ProcessRunner
 {
-    private const ERR_TIMEOUT = 'System action timed out';
     private const DEFAULT_MESSAGE = 'System action completed';
     private const DEFAULT_ERR_MESSAGE = 'System action failed';
+    private const DEFAULT_ERR_TIMEOUT = 'System action timed out';
 
     private const DEFAULT_TIMEOUT_SECONDS = 60;
 
@@ -23,6 +23,11 @@ class ProcessRunner
      * @var EventLogger
      */
     private $logger;
+
+    /**
+     * @var int
+     */
+    private $defaultTimeout;
 
     /**
      * @param EventLogger $logger
@@ -95,7 +100,7 @@ class ProcessRunner
         }
 
         $this->logger->event('success', $successMessage, [
-            'command' => $cmd,
+            'command' => $args,
             'output' => $process->getOutput()
         ]);
 

@@ -101,7 +101,7 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $this->exporter
             ->shouldReceive('__invoke')
-            ->with('/path/to/workspace/build', '/path/to/workspace/build_export.tgz', 'user@builder.example.com', '/remote/build.tgz')
+            ->with('/path/to/workspace/job', '/path/to/workspace/build_export.tgz', 'user@builder.example.com', '/remote/build.tgz')
             ->once()
             ->andReturn(true);
 
@@ -120,7 +120,7 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $this->importer
             ->shouldReceive('__invoke')
-            ->with('/path/to/workspace/build', '/path/to/workspace/build_import.tgz', 'user@builder.example.com', '/remote/build.tgz')
+            ->with('/path/to/workspace/job', '/path/to/workspace/build_import.tgz', 'user@builder.example.com', '/remote/build.tgz')
             ->once()
             ->andReturn(true);
 
@@ -153,14 +153,14 @@ class LinuxBuildPlatformTest extends IOTestCase
             '  remote_file             "/remote/build.tgz"',
 
             'Linux Platform - Exporting files to build server',
-            ' * Workspace: /path/to/workspace/build',
+            ' * Workspace: /path/to/workspace/job',
             ' * Local File: /path/to/workspace/build_export.tgz',
             ' * Remote File: /remote/build.tgz',
 
             'Linux Platform - Running build steps',
 
             'Linux Platform - Importing artifacts from build server',
-            ' * Workspace: /path/to/workspace/build',
+            ' * Workspace: /path/to/workspace/job',
             ' * Remote File: /remote/build.tgz',
             ' * Local File: /path/to/workspace/build_import.tgz',
 

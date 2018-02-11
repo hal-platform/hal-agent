@@ -9,13 +9,13 @@ namespace Hal\Agent\Utility;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Exception;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Crypto\Encryption;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\EncryptedProperty;
 use Hal\Core\Entity\Environment;
+use Hal\Core\Repository\EncryptedPropertyRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -27,7 +27,7 @@ class EncryptedPropertyResolver
     const ERR_MISCONFIGURED_ENCRYPTION = 'A serious error occured while decrypting. HAL Agent may not be configured correctly.';
 
     /**
-     * @var EntityRepository
+     * @var EncryptedPropertyRepository
      */
     private $encryptedRepo;
 

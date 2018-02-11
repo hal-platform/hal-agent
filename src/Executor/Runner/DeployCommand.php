@@ -309,7 +309,7 @@ class DeployCommand implements ExecutorInterface
     {
         $io->section($this->step(2));
 
-        $deploymentPath = $workspacePath . '/deploy';
+        $deploymentPath = $workspacePath . '/job';
         $artifactFile = $workspacePath . '/artifact.tgz';
 
         $io->listing([
@@ -333,7 +333,7 @@ class DeployCommand implements ExecutorInterface
     {
         $io->section($this->step(3));
 
-        $deploymentPath = $workspacePath . '/deploy';
+        $deploymentPath = $workspacePath . '/job';
 
         $config = ($this->reader)($deploymentPath, $defaultConfiguration);
 
