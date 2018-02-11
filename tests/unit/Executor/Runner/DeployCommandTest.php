@@ -8,10 +8,9 @@
 namespace Hal\Agent\Executor\Runner;
 
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Build\Builder;
 use Hal\Agent\Deploy\Artifacter;
-use Hal\Agent\Deploy\Deployer;
 use Hal\Agent\Deploy\Resolver;
+use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Testing\IOTestCase;
@@ -48,8 +47,8 @@ class DeployCommandTest extends IOTestCase
         $this->artifacter = Mockery::mock(Artifacter::class);
         $this->reader = Mockery::mock(ConfigurationReader::class);
 
-        $this->builder = Mockery::mock(Builder::class);
-        $this->deployer = Mockery::mock(Deployer::class);
+        $this->builder = Mockery::mock(JobRunner::class);
+        $this->deployer = Mockery::mock(JobRunner::class);
     }
 
     public function configureCommand($c)
@@ -109,21 +108,21 @@ class DeployCommandTest extends IOTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), 'linux', $config, $properties)
+            ->with($release, Mockery::any(), 'linux', $config, $properties)
             ->once()
             ->andReturn(true);
 
         $config['env']['global']['HAL_DEPLOY_STATUS'] = 'pending';
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), 'linux', $config, $properties)
+            ->with($release, Mockery::any(), 'linux', $config, $properties)
             ->once()
             ->andReturn(true);
 
         $config['env']['global']['HAL_DEPLOY_STATUS'] = 'success';
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), 'linux', $config, $properties)
+            ->with($release, Mockery::any(), 'linux', $config, $properties)
             ->once()
             ->andReturn(true);
 
@@ -297,28 +296,28 @@ class DeployCommandTest extends IOTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), Mockery::any(), $config, Mockery::any())
+            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
             ->once()
             ->andReturn(true);
 
         $config['env']['global']['HAL_DEPLOY_STATUS'] = 'pending';
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), Mockery::any(), $config, Mockery::any())
+            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
             ->once()
             ->andReturn(true);
 
         $config['env']['global']['HAL_DEPLOY_STATUS'] = 'failure';
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), Mockery::any(), $config, Mockery::any())
+            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
             ->once()
             ->andReturn(true);
 
         $config['env']['global']['HAL_DEPLOY_STATUS'] = 'running';
         $this->deployer
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), Mockery::any(), Mockery::any(), $config, Mockery::any())
+            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
             ->once()
             ->andReturn(false);
 

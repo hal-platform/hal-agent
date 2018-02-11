@@ -8,9 +8,9 @@
 namespace Hal\Agent\Executor\Runner;
 
 use Hal\Agent\Build\Artifacter;
-use Hal\Agent\Build\Builder;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
+use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Logger\EventLogger;
@@ -47,7 +47,7 @@ class BuildCommandTest extends IOTestCase
         $this->resolver = Mockery::mock(Resolver::class);
         $this->downloader = Mockery::mock(Downloader::class);
         $this->reader = Mockery::mock(ConfigurationReader::class);
-        $this->builder = Mockery::mock(Builder::class);
+        $this->builder = Mockery::mock(JobRunner::class);
         $this->artifacter = Mockery::mock(Artifacter::class);
     }
 
@@ -61,7 +61,7 @@ class BuildCommandTest extends IOTestCase
         $build = $this->generateMockBuild();
 
         $properties = [
-            'build'  => $build,
+            'job'  => $build,
 
             'default_configuration' => [
                 'platform' => 'linux',
@@ -102,7 +102,7 @@ class BuildCommandTest extends IOTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with(Mockery::any(), 'windows', $config, $properties)
+            ->with($build, Mockery::any(), 'windows', $config, $properties)
             ->andReturn(true);
 
         $this->artifacter
@@ -173,7 +173,7 @@ class BuildCommandTest extends IOTestCase
             ' * Platform: windows',
             ' * Docker Image: my-project-image:latest',
 
-            'Build steps:',
+            'Running steps:',
             ' * command1 --flag',
             ' * path/to/command2 arg1',
 

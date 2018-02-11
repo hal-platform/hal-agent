@@ -45,8 +45,8 @@ services:
             - '@logger.event'
             - '@utility.filesystem'
             - '@utility.process.builder'
-            - '@deploy.support.mover'
-            - '@deploy.support.packer'
+            # - '@deploy.support.mover'
+            # - '@deploy.support.packer'
             - '%timeout.filepacking%'
 
     push.s3_sync.uploader:

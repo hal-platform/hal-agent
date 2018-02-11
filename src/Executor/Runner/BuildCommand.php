@@ -9,7 +9,6 @@ namespace Hal\Agent\Executor\Runner;
 
 use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\BuildException;
-use Hal\Agent\Build\Builder;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
 use Hal\Agent\Job\LocalCleaner;
@@ -19,6 +18,7 @@ use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
+use Hal\Agent\JobRunner;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Core\Entity\JobType\Build;
@@ -84,7 +84,7 @@ class BuildCommand implements ExecutorInterface
     private $reader;
 
     /**
-     * @var Builder
+     * @var JobRunner
      */
     private $builder;
 
@@ -111,7 +111,7 @@ class BuildCommand implements ExecutorInterface
      * @param Resolver $resolver
      * @param Downloader $downloader
      * @param ConfigurationReader $reader
-     * @param Builder $builder
+     * @param JobRunner $builder
      * @param Artifacter $artifacter
      */
     public function __construct(
@@ -122,7 +122,7 @@ class BuildCommand implements ExecutorInterface
         Resolver $resolver,
         Downloader $downloader,
         ConfigurationReader $reader,
-        Builder $builder,
+        JobRunner $builder,
         Artifacter $artifacter
     ) {
         $this->logger = $logger;
@@ -191,15 +191,17 @@ class BuildCommand implements ExecutorInterface
             return $this->buildFailure($io, self::ERR_NOT_RUNNABLE);
         }
 
+        $job = $properties['job'];
+
         // The build has officially started running.
         // Set the build to in progress
-        $this->logger->start($properties['build']);
+        $this->logger->start($job);
         $this->logger->event('success', 'Resolved build configuration', [
             'defaultConfiguration' => $properties['default_configuration'],
             'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
         ]);
 
-        if (!$this->downloadSourceCode($io, $properties['build'], $properties['workspace_path'])) {
+        if (!$this->downloadSourceCode($io, $job, $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_DOWNLOAD);
         }
 
@@ -207,7 +209,7 @@ class BuildCommand implements ExecutorInterface
             return $this->buildFailure($io, self::ERR_CONFIG);
         }
 
-        if (!$this->build($io, $config, $properties)) {
+        if (!$this->build($io, $job, $config, $properties)) {
             return $this->buildFailure($io, self::ERR_BUILD);
         }
 
@@ -246,19 +248,19 @@ class BuildCommand implements ExecutorInterface
         // safely finished and clean-up is run.
         $this->setCleanupHandler($io, $properties['workspace_path']);
 
-        $this->outputJobInformation($io, $properties);
+        $this->outputJobInformation($properties['job'], $io, $properties);
         return $properties;
     }
 
     /**
+     * @param Build $build
      * @param IOInterface $io
      * @param array $properties
      *
      * @return void
      */
-    private function outputJobInformation(IOInterface $io, array $properties)
+    private function outputJobInformation(Build $build, IOInterface $io, array $properties)
     {
-        $build = $properties['build'];
         $application = $build->application();
         $environment = $build->environment();
 
@@ -327,21 +329,22 @@ class BuildCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
+     * @param Build $build
      * @param array $config
      * @param array $properties
      *
      * @return bool
      */
-    private function build(IOInterface $io, array $config, array $properties)
+    private function build(IOInterface $io, Build $build, array $config, array $properties)
     {
         $io->section($this->step(4));
 
         $platform = $config['platform'];
         $image = $config['image'];
-        $buildCommands = $config['build'];
+        $steps = $config['build'];
 
-        if (!$buildCommands) {
-            $io->text('No build steps found. Skipping build system.');
+        if (!$steps) {
+            $io->text('No steps found. Skipping...');
             return true;
         }
 
@@ -350,10 +353,10 @@ class BuildCommand implements ExecutorInterface
             sprintf('Docker Image: %s', $this->colorize($image))
         ]);
 
-        $io->text('Build steps:');
-        $io->listing($this->colorize($buildCommands));
+        $io->text('Running steps:');
+        $io->listing($this->colorize($steps));
 
-        return ($this->builder)($io, $platform, $config, $properties);
+        return ($this->builder)($build, $io, $platform, $config, $properties);
     }
 
     /**

@@ -55,7 +55,7 @@ class Resolver
         $build = $this->getBuild($buildID);
 
         $properties = [
-            'build' => $build,
+            'job' => $build,
 
             // default, overwritten by .hal.yaml
             'default_configuration' => $this->buildDefaultConfiguration(),

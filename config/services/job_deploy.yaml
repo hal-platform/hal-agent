@@ -13,15 +13,15 @@ services:
         class: 'Hal\Agent\Deploy\Artifacter'
         arguments: ['@logger.event', '@filesystem']
 
-    deploy.builder:
-        class: 'Hal\Agent\Build\BuildPlatform'
+    deploy.build_runner:
+        class: 'Hal\Agent\JobRunner'
         arguments:
             - '@logger.event'
             - '@service_container'
             - '%build.platforms%'
 
-    deployer:
-        class: 'Hal\Agent\Deploy\Deployer'
+    deploy.release_runner:
+        class: 'Hal\Agent\JobRunner'
         arguments:
             - '@logger.event'
             - '@service_container'

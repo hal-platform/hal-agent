@@ -13,14 +13,15 @@ use Hal\Agent\Build\Linux\Steps\Exporter;
 use Hal\Agent\Build\Linux\Steps\Importer;
 use Hal\Agent\Build\Linux\Steps\Packer;
 use Hal\Agent\Build\Linux\Steps\Unpacker;
-use Hal\Agent\Build\BuildPlatformInterface;
 use Hal\Agent\Build\PlatformTrait;
 use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\JobPlatformInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Core\Entity\Job;
 use Hal\Core\Entity\JobType\Build;
 
-class LinuxBuildPlatform implements BuildPlatformInterface
+class LinuxBuildPlatform implements JobPlatformInterface
 {
     use FormatterTrait;
     // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, IOAwareTrait
@@ -117,10 +118,8 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(array $config, array $properties): bool
+    public function __invoke(Job $job, array $config, array $properties): bool
     {
-        $job = $properties['build'];
-
         $image = $config['image'] ?? $this->defaultDockerImage;
         $steps = $config['build'] ?? [];
 
@@ -156,15 +155,15 @@ class LinuxBuildPlatform implements BuildPlatformInterface
     }
 
     /**
-     * @param Build $build
+     * @param Job $job
      *
      * @return array|null
      */
-    private function configurator(Build $build)
+    private function configurator(Job $job)
     {
         $this->getIO()->section(self::STEP_1_CONFIGURING);
 
-        $platformConfig = ($this->configurator)($build);
+        $platformConfig = ($this->configurator)($job);
 
         if (!$platformConfig) {
             return null;

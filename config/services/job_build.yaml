@@ -15,8 +15,8 @@ services:
             - '@build.support.file_compression'
             - '@vcs'
 
-    builder:
-        class: 'Hal\Agent\Build\Builder'
+    build.build_runner:
+        class: 'Hal\Agent\JobRunner'
         arguments:
             - '@logger.event'
             - '@service_container'

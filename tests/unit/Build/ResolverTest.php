@@ -77,7 +77,7 @@ class ResolverTest extends MockeryTestCase
         $build = $this->createMockBuild();
 
         $expected = [
-            'build' => $build,
+            'job' => $build,
 
             'default_configuration' => [
                 'platform' => 'linux',
@@ -125,7 +125,7 @@ class ResolverTest extends MockeryTestCase
 
         $properties = $action('1234');
 
-        $this->assertSame($expected['build'], $properties['build']);
+        $this->assertSame($expected['job'], $properties['job']);
         $this->assertSame($expected['default_configuration'], $properties['default_configuration']);
         $this->assertSame($expected['workspace_path'], $properties['workspace_path']);
         $this->assertSame($expected['artifact_stored_file'], $properties['artifact_stored_file']);

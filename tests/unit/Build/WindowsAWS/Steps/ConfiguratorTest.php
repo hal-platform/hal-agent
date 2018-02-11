@@ -60,8 +60,8 @@ class ConfiguratorTest extends MockeryTestCase
             'instance_id' => 'i-1234',
 
             'bucket' => 'hal-bucket',
-            's3_input_object' => 'hal-build-1234-input.tgz',
-            's3_output_object' => 'hal-build-1234-output.tgz',
+            's3_input_object' => 'hal-job-1234-input.tgz',
+            's3_output_object' => 'hal-job-1234-output.tgz',
 
             'environment_variables' => [
                 'HAL_JOB_ID' => '1234',

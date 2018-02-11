@@ -7,6 +7,10 @@
 
 namespace Hal\Agent\Build;
 
+use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
+
 trait EnvironmentVariablesTrait
 {
     /**
@@ -56,5 +60,44 @@ trait EnvironmentVariablesTrait
         }
 
         return $env + $localEnv;
+    }
+
+    /**
+     * @param Job $job
+     *
+     * @return array
+     */
+    private function buildEnvironmentVariables(Job $job): array
+    {
+        $environmentName = 'None';
+        $applicationName = 'None';
+
+        $vcsCommit = '';
+        $vcsReference = '';
+
+        if ($job instanceof Build || $job instanceof Release) {
+            $environmentName = ($environment = $job->environment()) ? $environment->name() : 'None';
+            $applicationName = ($application = $job->application()) ? $application->name() : 'None';
+        }
+
+        if ($job instanceof Build) {
+            $vcsCommit = $job->commit();
+            $vcsReference = $job->reference();
+
+        } elseif ($job instanceof Release && $build = $job->build()) {
+            $vcsCommit = $build->commit();
+            $vcsReference = $build->reference();
+        }
+
+        $env = [
+            'HAL_JOB_ID' => $job->id(),
+            'HAL_VCS_COMMIT' => $vcsCommit,
+            'HAL_VCS_REF' => $vcsReference,
+
+            'HAL_ENVIRONMENT' => $environmentName,
+            'HAL_APPLICATION' => $applicationName,
+        ];
+
+        return $env;
     }
 }

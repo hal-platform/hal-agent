@@ -144,7 +144,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             'Linux Platform - Validating Linux configuration',
@@ -176,9 +176,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         $build = $this->generateMockBuild();
 
         $config = [];
-        $properties = [
-            'build' => $build
-        ];
+        $properties = [];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -205,7 +203,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             '[ERROR] Linux build platform is not configured correctly'
@@ -221,7 +219,6 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $config = [];
         $properties = [
-            'build' => $build,
             'workspace_path' => ''
         ];
 
@@ -257,7 +254,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             '[ERROR] Failed to export build to build system'
@@ -275,7 +272,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             'env' => []
         ];
         $properties = [
-            'build' => $build,
             'workspace_path' => '',
             'encrypted' => ['TEST_VAR' => '']
         ];
@@ -317,7 +313,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             '[ERROR] An error occured while decrypting encrypted configuration'
@@ -335,7 +331,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             'env' => []
         ];
         $properties = [
-            'build' => $build,
             'workspace_path' => '',
             'encrypted' => []
         ];
@@ -371,7 +366,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $this->assertSame(false, $actual);
     }
@@ -389,7 +384,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             ]
         ];
         $properties = [
-            'build' => $build,
             'workspace_path' => '',
             'encrypted' => [
                 'ENCRYPTED_1_VAR' => '1234',
@@ -445,7 +439,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             'PLATFORM_1_VAR' => 'WXYZ',
@@ -476,7 +470,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             ]
         ];
         $properties = [
-            'build' => $build,
             'workspace_path' => '',
             'encrypted' => [
                 'VAL1' => 'encrypted1',
@@ -534,7 +527,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             'derp' => 'herp',

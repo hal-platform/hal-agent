@@ -78,7 +78,6 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         ];
 
         $properties = [
-            'build' => $build,
             'workspace_path' => '/path/to/workspace',
             'encrypted' => [
                 'ENCRYPTED_VAR' => '1234'
@@ -156,7 +155,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             'Windows Docker Platform - Validating Windows configuration',
@@ -191,9 +190,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         $build = $this->generateMockBuild();
 
         $config = [];
-        $properties = [
-            'build' => $build
-        ];
+        $properties = [];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -220,7 +217,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             '[ERROR] Windows Docker build platform is not configured correctly'
@@ -236,7 +233,6 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
 
         $config = [];
         $properties = [
-            'build' => $build,
             'workspace_path' => ''
         ];
 
@@ -278,7 +274,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             '[ERROR] Failed to export build to build system'
@@ -294,7 +290,6 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
 
         $config = [];
         $properties = [
-            'build' => $build,
             'workspace_path' => '',
             'encrypted' => ['TEST_VAR' => '']
         ];
@@ -344,7 +339,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $expected = [
             '[ERROR] An error occured while decrypting encrypted configuration'
@@ -362,7 +357,6 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
             'env' => []
         ];
         $properties = [
-            'build' => $build,
             'workspace_path' => '',
             'encrypted' => []
         ];
@@ -404,7 +398,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($config, $properties);
+        $actual = $platform($build, $config, $properties);
 
         $this->assertSame(false, $actual);
     }

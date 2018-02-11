@@ -20,7 +20,7 @@ class ConfiguratorTest extends TestCase
 
         $expected = [
             'builder_connection' => 'build_user@builder.example.com',
-            'remote_file' => '/tmp/builds/hal-build-1234.tgz',
+            'remote_file' => '/tmp/builds/hal-job-1234.tgz',
             'environment_variables' => [
                 'HAL_JOB_ID' => '1234',
                 'HAL_VCS_COMMIT' => '7de49f3',

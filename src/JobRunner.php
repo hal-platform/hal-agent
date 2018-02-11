@@ -5,16 +5,18 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Build;
+namespace Hal\Agent;
 
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Core\Entity\Job;
 use Hal\Core\Type\JobEventStageEnum;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class Builder
+class JobRunner
 {
-    private const ERR_INVALID_BUILDER = 'Invalid build platform specified';
+    private const ERR_INVALID_BUILDER = 'Invalid job platform specified';
+    private const ERR_NONE_CONFIGURED = 'No platforms configured';
 
     /**
      * @var EventLogger
@@ -32,6 +34,7 @@ class Builder
      * Example:
      *     linux => 'service.linux.builder'
      *     windows => 'service.windows.builder'
+     *     rsync => 'service.rsync.deployer'
      *
      * @var array
      */
@@ -50,6 +53,7 @@ class Builder
     }
 
     /**
+     * @param Job $job
      * @param IOInterface $io
      * @param string $platform
      * @param array $config
@@ -57,7 +61,7 @@ class Builder
      *
      * @return bool
      */
-    public function __invoke(IOInterface $io, string $platform, array $config, array $properties): bool
+    public function __invoke(Job $job, IOInterface $io, string $platform, array $config, array $properties): bool
     {
         if (!$platform || !isset($this->platforms[$platform])) {
             return $this->explode($platform ?: 'Unknown');
@@ -71,13 +75,13 @@ class Builder
 
         $service->setIO($io);
 
-        return $service($config, $properties);
+        return $service($job, $config, $properties);
     }
 
     /**
      * @param string $platform
      *
-     * @return BuildPlatformInterface|null
+     * @return JobPlatformInterface|null
      */
     private function getPlatform($platform)
     {
@@ -87,7 +91,7 @@ class Builder
         $platform = $this->container->get($serviceID, ContainerInterface::NULL_ON_INVALID_REFERENCE);
 
         // Builder must be invokeable
-        if (!$platform instanceof BuildPlatformInterface) {
+        if (!$platform instanceof JobPlatformInterface) {
             return null;
         }
 
@@ -102,7 +106,8 @@ class Builder
     private function explode($platform)
     {
         $this->logger->event('failure', self::ERR_INVALID_BUILDER, [
-            'platform' => $platform
+            'platform' => $platform,
+            'validPlatforms' => $this->platforms ? array_keys($this->platforms) : self::ERR_NONE_CONFIGURED
         ]);
 
         return false;

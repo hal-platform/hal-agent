@@ -6,7 +6,7 @@ services:
             - '@logger.event'
             - '@deploy.support.aws_authenticator'
             - '@push.cd.healthchecker'
-            - '@deploy.support.packer'
+            # - '@deploy.support.packer'
             - '@push.cd.uploader'
             - '@push.cd.pusher'
 

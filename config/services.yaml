@@ -81,6 +81,7 @@ services:
         arguments:
             - '@doctrine.em'
             - '@logger.process_handler'
+            - '@logger.metadata_handler'
             - '@clock'
 
     logger.process_handler:

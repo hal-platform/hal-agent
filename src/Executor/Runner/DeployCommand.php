@@ -7,16 +7,15 @@
 
 namespace Hal\Agent\Executor\Runner;
 
-use Hal\Agent\Build\Builder;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Deploy\Artifacter;
-use Hal\Agent\Deploy\Deployer;
 use Hal\Agent\Deploy\DeployException;
 use Hal\Agent\Deploy\Resolver;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Logger\EventLogger;
@@ -87,12 +86,12 @@ class DeployCommand implements ExecutorInterface
     private $reader;
 
     /**
-     * @var Builder
+     * @var JobRunner
      */
     private $builder;
 
     /**
-     * @var Deployer
+     * @var JobRunner
      */
     private $deployer;
 
@@ -113,8 +112,8 @@ class DeployCommand implements ExecutorInterface
      * @param Resolver $resolver
      * @param Artifacter $artifacter
      * @param ConfigurationReader $reader
-     * @param Builder $builder
-     * @param Deployer $deployer
+     * @param JobRunner $builder
+     * @param JobRunner $deployer
      */
     public function __construct(
         EventLogger $logger,
@@ -123,8 +122,8 @@ class DeployCommand implements ExecutorInterface
         Resolver $resolver,
         Artifacter $artifacter,
         ConfigurationReader $reader,
-        Builder $builder,
-        Deployer $deployer
+        JobRunner $builder,
+        JobRunner $deployer
     ) {
         $this->logger = $logger;
         $this->cleaner = $cleaner;
@@ -193,9 +192,11 @@ class DeployCommand implements ExecutorInterface
             return $this->deploymentFailure($io, self::ERR_NOT_RUNNABLE);
         }
 
+        $job = $properties['job'];
+
         // The release has officially started running.
         // Set the release to in progress
-        $this->logger->start($properties['job']);
+        $this->logger->start($job);
         $this->logger->event('success', 'Resolved deployment configuration', [
             'defaultConfiguration' => $properties['default_configuration'],
             'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
@@ -209,24 +210,24 @@ class DeployCommand implements ExecutorInterface
             return $this->deploymentFailure($io, self::ERR_CONFIG);
         }
 
-        if (!$this->transform($io, $config, $properties)) {
+        if (!$this->transform($io, $job, $config, $properties)) {
             return $this->deploymentFailure($io, self::ERR_TRANSFORM);
         }
 
         // before deploy
         $config = $this->appendDeploymentStatus($config, self::DEPLOY_STATUS_PENDING);
-        if (!$this->beforeDeploy($io, $config, $properties)) {
+        if (!$this->beforeDeploy($io, $job, $config, $properties)) {
             return $this->deploymentFailure($io, self::ERR_BEFORE_DEPLOYMENT);
         }
 
         $config = $this->appendDeploymentStatus($config, self::DEPLOY_STATUS_RUNNING);
-        $isDeploySuccess = $this->deploy($io, $properties['job'], $properties['platform'], $config, $properties);
+        $isDeploySuccess = $this->deploy($io, $job, $properties['platform'], $config, $properties);
 
         $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
         // after deploy
         $config = $this->appendDeploymentStatus($config, $isDeploySuccess ? self::DEPLOY_STATUS_SUCCESS : self::DEPLOY_STATUS_FAILURE);
-        if (!$this->afterDeploy($io, $config, $properties)) {
+        if (!$this->afterDeploy($io, $job, $config, $properties)) {
             return $this->deploymentFailure($io, self::ERR_AFTER_DEPLOYMENT);
         }
 
@@ -346,12 +347,13 @@ class DeployCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
+     * @param Release $release
      * @param array $config
      * @param array $properties
      *
      * @return bool
      */
-    private function transform(IOInterface $io, array $config, array $properties)
+    private function transform(IOInterface $io, Release $release, array $config, array $properties)
     {
         $io->section($this->step(4));
 
@@ -372,17 +374,18 @@ class DeployCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($io, $platform, $config, $properties);
+        return ($this->builder)($release, $io, $platform, $config, $properties);
     }
 
     /**
      * @param IOInterface $io
+     * @param Release $release
      * @param array $config
      * @param array $properties
      *
      * @return bool
      */
-    private function beforeDeploy(IOInterface $io, array $config, array $properties)
+    private function beforeDeploy(IOInterface $io, Release $release, array $config, array $properties)
     {
         $io->section($this->step(5));
 
@@ -403,7 +406,7 @@ class DeployCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($io, $platform, $config, $properties);
+        return ($this->builder)($release, $io, $platform, $config, $properties);
     }
 
     /**
@@ -428,11 +431,13 @@ class DeployCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
+     * @param Release $release
+     * @param array $config
      * @param array $properties
      *
      * @return bool
      */
-    private function afterDeploy(IOInterface $io, array $config, array $properties)
+    private function afterDeploy(IOInterface $io, Release $release, array $config, array $properties)
     {
         $io->section($this->step(7));
 
@@ -453,7 +458,7 @@ class DeployCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($io, $platform, $config, $properties);
+        return ($this->builder)($release, $io, $platform, $config, $properties);
     }
 
     /**

@@ -93,7 +93,7 @@ services:
             - '@build.resolver'
             - '@build.downloader'
             - '@job_configuration.reader'
-            - '@builder'
+            - '@build.build_runner'
             - '@build.artifacter'
         calls:
             - ['setShutdownHandler', [true]]
@@ -105,8 +105,8 @@ services:
             - '@deploy.resolver'
             - '@deploy.artifacter'
             - '@job_configuration.reader'
-            - '@deploy.builder'
-            - '@deployer'
+            - '@deploy.build_runner'
+            - '@deploy.release_runner'
         calls:
             - ['setShutdownHandler', [true]]
 

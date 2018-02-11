@@ -8,13 +8,16 @@
 namespace Hal\Agent\Build\WindowsAWS\Steps;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Hal\Agent\Build\EnvironmentVariablesTrait;
 use Hal\Agent\Build\WindowsAWS\AWS\BuilderFinder;
 use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Credential;
-use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\Job;
 
 class Configurator
 {
+    use EnvironmentVariablesTrait;
+
     /**
      * @var EntityManagerInterface
      */
@@ -68,11 +71,11 @@ class Configurator
     }
 
     /**
-     * @param Build $build
+     * @param Job $job
      *
      * @return array|null
      */
-    public function __invoke(Build $build): ?array
+    public function __invoke(Job $job): ?array
     {
         if (!$clients = $this->authenticate($this->windowsRegion, $this->windowsCredentialName)) {
             return null;
@@ -94,10 +97,10 @@ class Configurator
             ],
 
             'bucket' => $this->windowsBucket,
-            's3_input_object' => $this->generateS3ObjectName($build->id(), 'input'),
-            's3_output_object' => $this->generateS3ObjectName($build->id(), 'output'),
+            's3_input_object' => $this->generateS3ObjectName($job->id(), 'input'),
+            's3_output_object' => $this->generateS3ObjectName($job->id(), 'output'),
 
-            'environment_variables' => $this->buildEnvironmentVariables($build)
+            'environment_variables' => $this->buildEnvironmentVariables($job)
         ];
     }
 
@@ -129,28 +132,6 @@ class Configurator
     }
 
     /**
-     * @param Build $build
-     *
-     * @return array
-     */
-    private function buildEnvironmentVariables(Build $build)
-    {
-        $environmentName = ($environment = $build->environment()) ? $environment->name() : 'None';
-        $applicationName = ($application = $build->application()) ? $application->name() : 'None';
-
-        $env = [
-            'HAL_JOB_ID' => $build->id(),
-            'HAL_VCS_COMMIT' => $build->commit(),
-            'HAL_VCS_REF' => $build->reference(),
-
-            'HAL_ENVIRONMENT' => $environmentName,
-            'HAL_APPLICATION' => $applicationName,
-        ];
-
-        return $env;
-    }
-
-    /**
      * @param string $uniqueID
      * @param string $type
      *
@@ -158,6 +139,6 @@ class Configurator
      */
     private function generateS3ObjectName($uniqueID, $type)
     {
-        return sprintf('hal-build-%s-%s.tgz', $uniqueID, $type);
+        return sprintf('hal-job-%s-%s.tgz', $uniqueID, $type);
     }
 }

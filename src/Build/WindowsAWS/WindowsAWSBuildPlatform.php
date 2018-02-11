@@ -14,11 +14,12 @@ use Hal\Agent\Build\WindowsAWS\Steps\Cleaner;
 use Hal\Agent\Build\WindowsAWS\Steps\Configurator;
 use Hal\Agent\Build\WindowsAWS\Steps\Exporter;
 use Hal\Agent\Build\WindowsAWS\Steps\Importer;
-use Hal\Agent\Build\BuildPlatformInterface;
 use Hal\Agent\Build\PlatformTrait;
 use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\JobPlatformInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
+use Hal\Core\Entity\Job;
 use Hal\Core\Entity\JobType\Build;
 
 /**
@@ -80,7 +81,7 @@ use Hal\Core\Entity\JobType\Build;
  * - Start-Process cmdlet
  *     https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process?view=powershell-5.1
  */
-class WindowsAWSBuildPlatform implements BuildPlatformInterface
+class WindowsAWSBuildPlatform implements JobPlatformInterface
 {
     use FormatterTrait;
     // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, IOAwareTrait
@@ -176,10 +177,8 @@ class WindowsAWSBuildPlatform implements BuildPlatformInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(array $config, array $properties): bool
+    public function __invoke(Job $job, array $config, array $properties): bool
     {
-        $job = $properties['build'];
-
         $image = $config['image'] ?? $this->defaultDockerImage;
         $steps = $config['build'] ?? [];
 
