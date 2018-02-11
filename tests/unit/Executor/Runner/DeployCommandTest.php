@@ -106,30 +106,21 @@ class DeployCommandTest extends IOTestCase
             ])
             ->andReturn($config);
 
+        $executions = [];
+        $with = Mockery::on(function($v) use (&$executions) {
+            $executions[] = $v;
+            return true;
+        });
+
         $this->builder
             ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), 'linux', $config, $properties)
-            ->once()
+            ->with($release, Mockery::any(), $with, $properties)
+            ->times(3)
             ->andReturn(true);
 
-        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'pending';
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), 'linux', $config, $properties)
-            ->once()
-            ->andReturn(true);
-
-        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'success';
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), 'linux', $config, $properties)
-            ->once()
-            ->andReturn(true);
-
-        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'running';
         $this->deployer
             ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), 'script', $config, $properties)
+            ->with($release, Mockery::any(), $with, $properties)
             ->once()
             ->andReturn(true);
 
@@ -215,6 +206,27 @@ class DeployCommandTest extends IOTestCase
             '[OK] Release was deployed successfully.'
         ];
 
+        $this->assertCount(4, $executions);
+
+        $this->assertSame($executions[0]->platform(), 'linux');
+        $this->assertSame($executions[0]->stage(), 'build_transform');
+        $this->assertSame($executions[0]->config(), $config);
+
+        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'pending';
+        $this->assertSame($executions[1]->platform(), 'linux');
+        $this->assertSame($executions[1]->stage(), 'before_deploy');
+        $this->assertSame($executions[1]->config(), $config);
+
+        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'running';
+        $this->assertSame($executions[2]->platform(), 'script');
+        $this->assertSame($executions[2]->stage(), 'deploy');
+        $this->assertSame($executions[2]->config(), $config);
+
+        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'success';
+        $this->assertSame($executions[3]->platform(), 'linux');
+        $this->assertSame($executions[3]->stage(), 'after_deploy');
+        $this->assertSame($executions[3]->config(), $config);
+
         $this->assertContainsLines($expected, $this->output());
     }
 
@@ -294,30 +306,21 @@ class DeployCommandTest extends IOTestCase
             ->shouldReceive('__invoke')
             ->andReturn($config);
 
+        $executions = [];
+        $with = Mockery::on(function($v) use (&$executions) {
+            $executions[] = $v;
+            return true;
+        });
+
         $this->builder
             ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
-            ->once()
+            ->with($release, Mockery::any(), $with, Mockery::any())
+            ->times(3)
             ->andReturn(true);
 
-        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'pending';
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
-            ->once()
-            ->andReturn(true);
-
-        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'failure';
-        $this->builder
-            ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
-            ->once()
-            ->andReturn(true);
-
-        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'running';
         $this->deployer
             ->shouldReceive('__invoke')
-            ->with($release, Mockery::any(), Mockery::any(), $config, Mockery::any())
+            ->with($release, Mockery::any(), $with, Mockery::any())
             ->once()
             ->andReturn(false);
 
@@ -371,6 +374,27 @@ class DeployCommandTest extends IOTestCase
 
             '[ERROR] Deployment stage failed.'
         ];
+
+        $this->assertCount(4, $executions);
+
+        $this->assertSame($executions[0]->platform(), 'linux');
+        $this->assertSame($executions[0]->stage(), 'build_transform');
+        $this->assertSame($executions[0]->config(), $config);
+
+        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'pending';
+        $this->assertSame($executions[1]->platform(), 'linux');
+        $this->assertSame($executions[1]->stage(), 'before_deploy');
+        $this->assertSame($executions[1]->config(), $config);
+
+        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'running';
+        $this->assertSame($executions[2]->platform(), 'script');
+        $this->assertSame($executions[2]->stage(), 'deploy');
+        $this->assertSame($executions[2]->config(), $config);
+
+        $config['env']['global']['HAL_DEPLOY_STATUS'] = 'failure';
+        $this->assertSame($executions[3]->platform(), 'linux');
+        $this->assertSame($executions[3]->stage(), 'after_deploy');
+        $this->assertSame($executions[3]->config(), $config);
 
         $this->assertContainsLines($expected, $this->output());
     }

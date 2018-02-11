@@ -16,6 +16,7 @@ use Hal\Agent\Build\WindowsAWS\Steps\Exporter;
 use Hal\Agent\Build\WindowsAWS\Steps\Importer;
 use Hal\Agent\Build\PlatformTrait;
 use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\JobExecution;
 use Hal\Agent\JobPlatformInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
@@ -177,10 +178,10 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(Job $job, array $config, array $properties): bool
+    public function __invoke(Job $job, JobExecution $execution, array $properties): bool
     {
-        $image = $config['image'] ?? $this->defaultDockerImage;
-        $steps = $config['build'] ?? [];
+        $image = $execution->parameter('image') ?? $this->defaultDockerImage;
+        $steps = $execution->steps();
 
         if (!$platformConfig = $this->configurator($job)) {
             $this->sendFailureEvent(self::ERR_CONFIGURATOR);
@@ -193,7 +194,7 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
         }
 
         // decrypt
-        $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $config);
+        $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $execution->parameter('env'));
         if ($env === null) {
             $this->sendFailureEvent(self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
@@ -214,15 +215,15 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
     }
 
     /**
-     * @param Build $build
+     * @param Job $job
      *
      * @return array|null
      */
-    private function configurator(Build $build)
+    private function configurator(Job $job)
     {
         $this->getIO()->section(self::STEP_1_CONFIGURING);
 
-        $platformConfig = ($this->configurator)($build);
+        $platformConfig = ($this->configurator)($job);
 
         if (!$platformConfig) {
             return null;
@@ -282,14 +283,14 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
      *
      * @return array|null
      */
-    private function decrypt(array $encryptedConfig, array $platformEnv, array $config)
+    private function decrypt(array $encryptedConfig, array $platformEnv, array $env)
     {
         $decrypted = $this->decrypter->decryptProperties($encryptedConfig);
         if (count($decrypted) !== count($encryptedConfig)) {
             return null;
         }
 
-        $env = $this->determineEnviroment($platformEnv, $decrypted, $config['env']);
+        $env = $this->determineEnviroment($platformEnv, $decrypted, $env);
 
         return $env;
     }
@@ -298,13 +299,13 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
      * @param string $jobID
      * @param string $image
      *
-     * @param array $commands
+     * @param array $steps
      * @param array $env
      * @param array $platformConfig
      *
      * @return bool
      */
-    private function build($jobID, $image, array $commands, array $env, array $platformConfig)
+    private function build($jobID, $image, array $steps, array $env, array $platformConfig)
     {
         $this->getIO()->section(self::STEP_3_BUILDING);
 
@@ -313,7 +314,7 @@ class WindowsAWSBuildPlatform implements JobPlatformInterface
 
         $this->builder->setIO($this->getIO());
 
-        return ($this->builder)($jobID, $image, $ssm, $instanceID, $commands, $env);
+        return ($this->builder)($jobID, $image, $ssm, $instanceID, $steps, $env);
     }
 
     /**

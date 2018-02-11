@@ -18,6 +18,7 @@ use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
+use Hal\Agent\JobExecution;
 use Hal\Agent\JobRunner;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
@@ -343,6 +344,8 @@ class BuildCommand implements ExecutorInterface
         $image = $config['image'];
         $steps = $config['build'];
 
+        $execution = new JobExecution($platform, 'build', $config);
+
         if (!$steps) {
             $io->text('No steps found. Skipping...');
             return true;
@@ -356,7 +359,7 @@ class BuildCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($build, $io, $platform, $config, $properties);
+        return ($this->builder)($build, $io, $execution, $properties);
     }
 
     /**

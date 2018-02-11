@@ -17,14 +17,11 @@ interface JobPlatformInterface extends IOAwareInterface
 {
     /**
      * @param Job $job
-     *
-     * @param array $config
-     *                Project configuration (from .hal.yaml)
-     *
+     * @param JobExecution $execution
      * @param array $properties
      *                Build/Release properties
      *
      * @return bool
      */
-    public function __invoke(Job $job, array $config, array $properties): bool;
+    public function __invoke(Job $job, JobExecution $execution, array $properties): bool;
 }

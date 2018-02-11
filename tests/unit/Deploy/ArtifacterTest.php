@@ -39,6 +39,10 @@ class ArtifacterTest extends MockeryTestCase
             ->once();
 
         $this->fileCompression
+            ->shouldReceive('createWorkspace')
+            ->with('/workspace/deploy')
+            ->andReturn(true);
+        $this->fileCompression
             ->shouldReceive('unpackTarArchive')
             ->with('/workspace/deploy', '/workspace/deploy.tgz')
             ->andReturn(true);
@@ -94,6 +98,10 @@ class ArtifacterTest extends MockeryTestCase
             ->with('/permanent/build.tgz', '/workspace/deploy.tgz', true)
             ->once();
 
+        $this->fileCompression
+            ->shouldReceive('createWorkspace')
+            ->with('/workspace/deploy')
+            ->andReturn(true);
         $this->fileCompression
             ->shouldReceive('unpackTarArchive')
             ->with('/workspace/deploy', '/workspace/deploy.tgz')

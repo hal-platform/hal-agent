@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -15,6 +15,7 @@ use Hal\Agent\Deploy\Resolver;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Agent\JobExecution;
 use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
@@ -361,6 +362,8 @@ class DeployCommand implements ExecutorInterface
         $image = $config['image'];
         $steps = $config['build_transform'];
 
+        $execution = new JobExecution($platform, 'build_transform', $config);
+
         if (!$steps) {
             $io->text('No steps found. Skipping...');
             return true;
@@ -374,7 +377,7 @@ class DeployCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($release, $io, $platform, $config, $properties);
+        return ($this->builder)($release, $io, $execution, $properties);
     }
 
     /**
@@ -393,6 +396,8 @@ class DeployCommand implements ExecutorInterface
         $image = $config['image'];
         $steps = $config['before_deploy'];
 
+        $execution = new JobExecution($platform, 'before_deploy', $config);
+
         if (!$steps) {
             $io->text('No steps found. Skipping...');
             return true;
@@ -406,7 +411,7 @@ class DeployCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($release, $io, $platform, $config, $properties);
+        return ($this->builder)($release, $io, $execution, $properties);
     }
 
     /**
@@ -422,11 +427,13 @@ class DeployCommand implements ExecutorInterface
     {
         $io->section($this->step(6));
 
+        $execution = new JobExecution($platform, 'deploy', $config);
+
         $io->listing([
             sprintf('Platform: <info>%s</info>', $this->colorize($platform))
         ]);
 
-        return ($this->deployer)($release, $io, $platform, $config, $properties);
+        return ($this->deployer)($release, $io, $execution, $properties);
     }
 
     /**
@@ -445,6 +452,8 @@ class DeployCommand implements ExecutorInterface
         $image = $config['image'];
         $steps = $config['after_deploy'];
 
+        $execution = new JobExecution($platform, 'after_deploy', $config);
+
         if (!$steps) {
             $io->text('No steps found. Skipping...');
             return true;
@@ -458,7 +467,7 @@ class DeployCommand implements ExecutorInterface
         $io->text('Running steps:');
         $io->listing($this->colorize($steps));
 
-        return ($this->builder)($release, $io, $platform, $config, $properties);
+        return ($this->builder)($release, $io, $execution, $properties);
     }
 
     /**

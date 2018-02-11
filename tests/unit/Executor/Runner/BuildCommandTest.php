@@ -10,6 +10,7 @@ namespace Hal\Agent\Executor\Runner;
 use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
+use Hal\Agent\JobExecution;
 use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
@@ -100,9 +101,15 @@ class BuildCommandTest extends IOTestCase
             ])
             ->andReturn($config);
 
+        $execution = null;
+        $with = Mockery::on(function($v) use (&$execution) {
+            $execution = $v;
+            return true;
+        });
+
         $this->builder
             ->shouldReceive('__invoke')
-            ->with($build, Mockery::any(), 'windows', $config, $properties)
+            ->with($build, Mockery::any(), $with, $properties)
             ->andReturn(true);
 
         $this->artifacter
@@ -189,6 +196,10 @@ class BuildCommandTest extends IOTestCase
 
             '[OK] Build was run successfully.'
         ];
+
+        $this->assertSame($execution->platform(), 'windows');
+        $this->assertSame($execution->stage(), 'build');
+        $this->assertSame($execution->config(), $config);
 
         $this->assertContainsLines($expected, $this->output());
         $this->assertSame(0, $exit);

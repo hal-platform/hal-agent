@@ -11,7 +11,10 @@ services:
 
     deploy.artifacter:
         class: 'Hal\Agent\Deploy\Artifacter'
-        arguments: ['@logger.event', '@filesystem']
+        arguments:
+            - '@logger.event'
+            - '@filesystem'
+            - '@build.support.file_compression'
 
     deploy.build_runner:
         class: 'Hal\Agent\JobRunner'

@@ -13,6 +13,7 @@ use Hal\Agent\Build\Linux\Steps\Exporter;
 use Hal\Agent\Build\Linux\Steps\Importer;
 use Hal\Agent\Build\Linux\Steps\Packer;
 use Hal\Agent\Build\Linux\Steps\Unpacker;
+use Hal\Agent\JobExecution;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
@@ -57,8 +58,7 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testSuccess()
     {
         $build = $this->generateMockBuild();
-
-        $config = [
+        $execution = $this->generateMockExecution([
             'image' => 'my-project-image:latest',
             'build' => [
                 'step1',
@@ -69,7 +69,7 @@ class LinuxBuildPlatformTest extends IOTestCase
                     'CONFIG_VAR' => '5678'
                 ]
             ],
-        ];
+        ]);
 
         $properties = [
             'build' => $build,
@@ -107,7 +107,7 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with('1234', 'my-project-image:latest', 'user@builder.example.com', '/remote/build.tgz', $config['build'], [
+            ->with('1234', 'my-project-image:latest', 'user@builder.example.com', '/remote/build.tgz', $execution->steps(), [
                 'PLATFORM_VAR' => 'linux',
                 'ENCRYPTED_ENCRYPTED_VAR' => '1234',
                 'CONFIG_VAR' => '5678'
@@ -144,7 +144,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             'Linux Platform - Validating Linux configuration',
@@ -174,8 +174,10 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testFailOnConfigurator()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'build' => []
+        ]);
 
-        $config = [];
         $properties = [];
 
         $this->configurator
@@ -203,7 +205,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             '[ERROR] Linux build platform is not configured correctly'
@@ -216,8 +218,10 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testFailOnExport()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'build' => []
+        ]);
 
-        $config = [];
         $properties = [
             'workspace_path' => ''
         ];
@@ -254,7 +258,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             '[ERROR] Failed to export build to build system'
@@ -267,10 +271,11 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testFailOnDecryptingConfiguration()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'env' => [],
+            'build' => []
+        ]);
 
-        $config = [
-            'env' => []
-        ];
         $properties = [
             'workspace_path' => '',
             'encrypted' => ['TEST_VAR' => '']
@@ -313,7 +318,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             '[ERROR] An error occured while decrypting encrypted configuration'
@@ -326,10 +331,11 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testFailOnBuild()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'env' => [],
+            'build' => []
+        ]);
 
-        $config = [
-            'env' => []
-        ];
         $properties = [
             'workspace_path' => '',
             'encrypted' => []
@@ -366,7 +372,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $this->assertSame(false, $actual);
     }
@@ -374,15 +380,16 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testEncryptedPropertiesMergedIntoEnv()
     {
         $build = $this->generateMockBuild();
-
-        $config = [
+        $execution = $this->generateMockExecution([
             'env' => [
                 'global' => [
                     'CONFIG_1_VAR' => 'ABCD',
                     'CONFIG_2_VAR' => 'EFGH',
                 ]
-            ]
-        ];
+            ],
+            'build' => []
+        ]);
+
         $properties = [
             'workspace_path' => '',
             'encrypted' => [
@@ -439,7 +446,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             'PLATFORM_1_VAR' => 'WXYZ',
@@ -456,8 +463,7 @@ class LinuxBuildPlatformTest extends IOTestCase
     public function testUserEnvMergedIntoEnv()
     {
         $build = $this->generateMockBuild();
-
-        $config = [
+        $execution = $this->generateMockExecution([
             'env' => [
                 'global' => [
                     'GLOBAL_DERP' => '1234',
@@ -467,8 +473,10 @@ class LinuxBuildPlatformTest extends IOTestCase
                     'TEST_DERP' => '8765',
                     'OVERRIDDEN' => '4321',
                 ]
-            ]
-        ];
+            ],
+            'build' => []
+        ]);
+
         $properties = [
             'workspace_path' => '',
             'encrypted' => [
@@ -527,7 +535,7 @@ class LinuxBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             'derp' => 'herp',
@@ -541,6 +549,11 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $this->assertSame(false, $actual);
         $this->assertSame($expected, $env);
+    }
+
+    public function generateMockExecution(array $config)
+    {
+        return new JobExecution('linux', 'build', $config);
     }
 
     public function generateMockBuild()

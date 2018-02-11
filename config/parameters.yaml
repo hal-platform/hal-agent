@@ -49,11 +49,6 @@ parameters:
     error_handling.docker.debug: '%env(HAL_LOG_DOCKER_DEBUG_ON)%'
 
     ############################################################################
-    # doctrine
-    ############################################################################
-    doctrine.user.service: 'doctrine.utility.lazy.user'
-
-    ############################################################################
     # timeouts
     ############################################################################
     timeout.build: 1800
@@ -66,14 +61,14 @@ parameters:
     timeout.filepacking: 120
     timeout.filetransfer: 120
 
-    push.cd.waiter.interval: 20
+    push.cd.waiter.interval: 10
     push.cd.waiter.max: 60
 
-    push.eb.waiter.interval: 20
+    push.eb.waiter.interval: 10
     push.eb.waiter.max: 60
 
-    build.ssm.waiter.interval: 30
-    build.ssm.waiter.max: 60
+    build.ssm.waiter.interval: 10
+    build.ssm.waiter.max: 180
 
     timeout.linux_builder_internal: 120
     timeout.windows_builder_internal: 120
@@ -161,6 +156,7 @@ parameters:
     deployment_after.build.platforms: '%build.platforms%'
 
     deployment.platforms:
+        derp: lol
         # rsync: 'deploy_platform.rsync'
         # eb: 'deploy_platform.eb'
         # s3: 'deploy_platform.s3'

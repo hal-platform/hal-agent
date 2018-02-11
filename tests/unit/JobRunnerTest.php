@@ -37,10 +37,11 @@ class JobRunnerTest extends IOTestCase
             ->with('failure', 'Invalid job platform specified', ['platform' => 'my-platform', 'validPlatforms' => 'No platforms configured'])
             ->once();
 
+        $execution = new JobExecution('my-platform', 'build', []);
+
         $builder = new JobRunner($this->logger, $this->container, []);
 
-        $properties = $config = [];
-        $actual = $builder($this->build, $this->io(), 'my-platform', $config, $properties);
+        $actual = $builder($this->build, $this->io(), $execution, []);
 
         $this->assertSame(false, $actual);
     }
@@ -49,7 +50,7 @@ class JobRunnerTest extends IOTestCase
     {
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', 'Invalid job platform specified', ['platform' => 'my-platform', 'validPlatforms' => ['my-platform']])
+            ->with('failure', 'Invalid job platform specified', ['platform' => 'my-platform', 'validPlatforms' => ['my-platform', 'this_platform']])
             ->once();
 
         $this->container
@@ -57,12 +58,14 @@ class JobRunnerTest extends IOTestCase
             ->with('service.builder', Mockery::any())
             ->andReturnNull();
 
+        $execution = new JobExecution('my-platform', 'build', []);
+
         $builder = new JobRunner($this->logger, $this->container, [
-            'my-platform' => 'service.builder'
+            'my-platform' => 'service.builder',
+            'this_platform' => '1234'
         ]);
 
-        $properties = $config = [];
-        $actual = $builder($this->build, $this->io(), 'my-platform', $config, $properties);
+        $actual = $builder($this->build, $this->io(), $execution, []);
         $this->assertSame(false, $actual);
     }
 
@@ -70,20 +73,15 @@ class JobRunnerTest extends IOTestCase
     {
         $this->logger
             ->shouldReceive('event')
-            ->with(
-                'failure',
-                Mockery::any(),
-                [
-                    'platform' => 'my-platform',
-                    'validPlatforms' => ['my-platform', 'your-platform', 'test-builder']
-                ]
-            )
+            ->with('failure', Mockery::any(), Mockery::any())
             ->once();
 
         $this->container
             ->shouldReceive('get')
             ->with('service.builder', Mockery::any())
             ->andReturn('hai');
+
+        $execution = new JobExecution('my-platform', 'build', []);
 
         $builder = new JobRunner($this->logger, $this->container, [
             'my-platform' => 'service.builder',
@@ -92,22 +90,28 @@ class JobRunnerTest extends IOTestCase
         ]);
 
         $properties = $config = [];
-        $actual = $builder($this->build, $this->io(), 'my-platform', $config, $properties);
+        $actual = $builder($this->build, $this->io(), $execution, []);
         $this->assertSame(false, $actual);
     }
 
-    public function testBuilderSaysFail()
+    public function testPlatformSaysFail()
     {
         $platform = Mockery::mock(JobPlatformInterface::class, [
             'setIO' => null
         ]);
 
+        $execution = new JobExecution('my-platform.a', 'build', []);
+
         $platform
             ->shouldReceive('__invoke')
-            ->with($this->build, ['this_is_project_config'], ['this_is_agent_config'])
+            ->with($this->build, $execution, ['this_is_agent_config'])
             ->once()
             ->andReturn(false);
 
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', 'Job stage failed', Mockery::any())
+            ->once();
         $this->logger
             ->shouldReceive('setStage')
             ->with('running')
@@ -126,7 +130,7 @@ class JobRunnerTest extends IOTestCase
         $properties = ['this_is_agent_config'];
         $config = ['this_is_project_config'];
 
-        $actual = $builder($this->build, $this->io(), 'my-platform.a', $config, $properties);
+        $actual = $builder($this->build, $this->io(), $execution, $properties);
 
         $this->assertSame(false, $actual);
     }
@@ -137,9 +141,11 @@ class JobRunnerTest extends IOTestCase
             'setIO' => null
         ]);
 
+        $execution = new JobExecution('my-platform.b', 'deploy', []);
+
         $platform
             ->shouldReceive('__invoke')
-            ->with($this->build, ['this_is_project_config'], ['this_is_agent_config'])
+            ->with($this->build, $execution, ['this_is_agent_config'])
             ->once()
             ->andReturn(true);
 
@@ -147,7 +153,6 @@ class JobRunnerTest extends IOTestCase
             ->shouldReceive('setStage')
             ->with('running')
             ->once();
-
 
         $this->container
             ->shouldReceive('get')
@@ -160,9 +165,8 @@ class JobRunnerTest extends IOTestCase
         ]);
 
         $properties = ['this_is_agent_config'];
-        $config = ['this_is_project_config'];
 
-        $actual = $builder($this->build, $this->io(), 'my-platform.b', $config, $properties);
+        $actual = $builder($this->build, $this->io(), $execution, $properties);
 
         $this->assertSame(true, $actual);
     }

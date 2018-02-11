@@ -15,6 +15,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class JobRunner
 {
+    private const MSG_SUCCESS = 'Job stage completed successfully';
+
+    private const ERR_JOB_FAILURE = 'Job stage failed';
     private const ERR_INVALID_BUILDER = 'Invalid job platform specified';
     private const ERR_NONE_CONFIGURED = 'No platforms configured';
 
@@ -55,27 +58,36 @@ class JobRunner
     /**
      * @param Job $job
      * @param IOInterface $io
-     * @param string $platform
-     * @param array $config
+     * @param JobExecution $execution
      * @param array $properties
      *
      * @return bool
      */
-    public function __invoke(Job $job, IOInterface $io, string $platform, array $config, array $properties): bool
+    public function __invoke(Job $job, IOInterface $io, JobExecution $execution, array $properties): bool
     {
+        $platform = $execution->platform();
+
         if (!$platform || !isset($this->platforms[$platform])) {
-            return $this->explode($platform ?: 'Unknown');
+            return $this->sendFailureEvent($io, $platform ?: 'Unknown', self::ERR_INVALID_BUILDER);
         }
 
         if (!$service = $this->getPlatform($platform)) {
-            return $this->explode($platform);
+            return $this->sendFailureEvent($io, $platform, self::ERR_INVALID_BUILDER);
         }
 
         $this->logger->setStage(JobEventStageEnum::TYPE_RUNNING);
 
         $service->setIO($io);
 
-        return $service($job, $config, $properties);
+        $result = $service($job, $execution, $properties);
+
+        if (!$result) {
+            return $this->sendFailureEvent($io, $platform, self::ERR_JOB_FAILURE);
+        }
+
+        $io->success(self::MSG_SUCCESS);
+
+        return true;
     }
 
     /**
@@ -99,16 +111,20 @@ class JobRunner
     }
 
     /**
+     * @param IOInterface $io
      * @param string $platform
+     * @param string $message
      *
      * @return bool
      */
-    private function explode($platform)
+    private function sendFailureEvent(IOInterface $io, $platform, $message)
     {
-        $this->logger->event('failure', self::ERR_INVALID_BUILDER, [
+        $this->logger->event('failure', $message, [
             'platform' => $platform,
             'validPlatforms' => $this->platforms ? array_keys($this->platforms) : self::ERR_NONE_CONFIGURED
         ]);
+
+        $io->error($message);
 
         return false;
     }

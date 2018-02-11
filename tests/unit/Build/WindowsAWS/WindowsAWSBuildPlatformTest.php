@@ -13,6 +13,7 @@ use Hal\Agent\Build\WindowsAWS\Steps\Cleaner;
 use Hal\Agent\Build\WindowsAWS\Steps\Configurator;
 use Hal\Agent\Build\WindowsAWS\Steps\Exporter;
 use Hal\Agent\Build\WindowsAWS\Steps\Importer;
+use Hal\Agent\JobExecution;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
@@ -63,8 +64,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
     public function testSuccess()
     {
         $build = $this->generateMockBuild();
-
-        $config = [
+        $execution = $this->generateMockExecution([
             'image' => 'my-project-image:latest',
             'build' => [
                 'step1',
@@ -75,7 +75,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
                     'CONFIG_VAR' => '5678'
                 ]
             ],
-        ];
+        ]);
 
         $properties = [
             'workspace_path' => '/path/to/workspace',
@@ -155,7 +155,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             'Windows Docker Platform - Validating Windows configuration',
@@ -188,8 +188,10 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
     public function testFailOnConfigurator()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'build' => []
+        ]);
 
-        $config = [];
         $properties = [];
 
         $this->configurator
@@ -217,7 +219,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             '[ERROR] Windows Docker build platform is not configured correctly'
@@ -230,8 +232,10 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
     public function testFailOnExport()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'build' => []
+        ]);
 
-        $config = [];
         $properties = [
             'workspace_path' => ''
         ];
@@ -274,7 +278,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             '[ERROR] Failed to export build to build system'
@@ -287,8 +291,11 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
     public function testFailOnDecryptingConfiguration()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'env' => [],
+            'build' => []
+        ]);
 
-        $config = [];
         $properties = [
             'workspace_path' => '',
             'encrypted' => ['TEST_VAR' => '']
@@ -339,7 +346,7 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $expected = [
             '[ERROR] An error occured while decrypting encrypted configuration'
@@ -352,10 +359,11 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
     public function testFailOnBuild()
     {
         $build = $this->generateMockBuild();
+        $execution = $this->generateMockExecution([
+            'env' => [],
+            'build' => []
+        ]);
 
-        $config = [
-            'env' => []
-        ];
         $properties = [
             'workspace_path' => '',
             'encrypted' => []
@@ -398,9 +406,14 @@ class WindowsAWSBuildPlatformTest extends IOTestCase
         );
         $platform->setIO($this->io());
 
-        $actual = $platform($build, $config, $properties);
+        $actual = $platform($build, $execution, $properties);
 
         $this->assertSame(false, $actual);
+    }
+
+    public function generateMockExecution(array $config)
+    {
+        return new JobExecution('windows', 'build', $config);
     }
 
     public function generateMockBuild()

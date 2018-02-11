@@ -72,6 +72,10 @@ class Artifacter
      */
     private function unpackArtifactToWorkspace($artifactFile, $deploymentPath)
     {
+        if (!$this->fileCompression->createWorkspace($deploymentPath)) {
+            return false;
+        }
+
         return $this->fileCompression->unpackTarArchive($deploymentPath, $artifactFile);
     }
 

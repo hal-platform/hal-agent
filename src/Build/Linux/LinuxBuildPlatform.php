@@ -15,6 +15,7 @@ use Hal\Agent\Build\Linux\Steps\Packer;
 use Hal\Agent\Build\Linux\Steps\Unpacker;
 use Hal\Agent\Build\PlatformTrait;
 use Hal\Agent\Command\FormatterTrait;
+use Hal\Agent\JobExecution;
 use Hal\Agent\JobPlatformInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
@@ -118,10 +119,10 @@ class LinuxBuildPlatform implements JobPlatformInterface
     /**
      * {@inheritdoc}
      */
-    public function __invoke(Job $job, array $config, array $properties): bool
+    public function __invoke(Job $job, JobExecution $execution, array $properties): bool
     {
-        $image = $config['image'] ?? $this->defaultDockerImage;
-        $steps = $config['build'] ?? [];
+        $image = $execution->parameter('image') ?? $this->defaultDockerImage;
+        $steps = $execution->steps();
 
         if (!$platformConfig = $this->configurator($job)) {
             $this->sendFailureEvent(self::ERR_CONFIGURATOR);
@@ -134,14 +135,14 @@ class LinuxBuildPlatform implements JobPlatformInterface
         }
 
         // decrypt
-        $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $config);
+        $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $execution->parameter('env'));
         if ($env === null) {
             $this->sendFailureEvent(self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
         }
 
         // run build
-        if (!$this->build($job->id(), $image, $platformConfig, $steps, $env)) {
+        if (!$this->build($job->id(), $image, $steps, $env, $platformConfig)) {
             return $this->bombout(false);
         }
 
@@ -211,18 +212,18 @@ class LinuxBuildPlatform implements JobPlatformInterface
     /**
      * @param array $encryptedConfig
      * @param array $platformEnv
-     * @param array $config
+     * @param array $env
      *
      * @return array|null
      */
-    private function decrypt(array $encryptedConfig, array $platformEnv, array $config)
+    private function decrypt(array $encryptedConfig, array $platformEnv, array $env)
     {
         $decrypted = $this->decrypter->decryptProperties($encryptedConfig);
         if (count($decrypted) !== count($encryptedConfig)) {
             return null;
         }
 
-        $env = $this->determineEnviroment($platformEnv, $decrypted, $config['env']);
+        $env = $this->determineEnviroment($platformEnv, $decrypted, $env);
 
         return $env;
     }
@@ -230,13 +231,14 @@ class LinuxBuildPlatform implements JobPlatformInterface
     /**
      * @param array $jobID
      * @param array $image
-     * @param array $platformConfig
+     *
      * @param array $steps
      * @param array $env
+     * @param array $platformConfig
      *
      * @return bool
      */
-    private function build($jobID, $image, array $platformConfig, array $steps, array $env)
+    private function build($jobID, $image, array $steps, array $env, array $platformConfig)
     {
         $this->getIO()->section(self::STEP_3_BUILDING);
 
