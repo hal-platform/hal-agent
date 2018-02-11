@@ -41,6 +41,8 @@ class DeployerTest extends MockeryTestCase
 
     public function testSuccess()
     {
+        $this->markTestSkipped();
+
         $properties = [
             'release' => $this->buildMockRelease(),
             's3' => [
@@ -99,6 +101,8 @@ class DeployerTest extends MockeryTestCase
 
     public function testAuthenticatorFails()
     {
+        $this->markTestSkipped();
+
         $properties = [
             's3' => [
                 'region' => 'aws-region',
@@ -126,6 +130,8 @@ class DeployerTest extends MockeryTestCase
 
     public function testPreparerFails()
     {
+        $this->markTestSkipped();
+
         $properties = [
             'release' => $this->buildMockRelease(),
             's3' => [
@@ -162,6 +168,8 @@ class DeployerTest extends MockeryTestCase
 
     public function testUploaderFails()
     {
+        $this->markTestSkipped();
+
         $properties = [
             'release' => $this->buildMockRelease(),
             's3' => [
@@ -206,6 +214,8 @@ class DeployerTest extends MockeryTestCase
 
     public function testPushCommandsAreLoggedAndSkipped()
     {
+        $this->markTestSkipped();
+
         $properties = [
             'release' => $this->buildMockRelease(),
             's3' => [
