@@ -42,14 +42,17 @@ trait OutputAwareTrait
      */
     public function status($message, $section = '')
     {
-        if ($output = $this->getOutput()) {
-            if ($section) {
-                $message = sprintf('[<comment>%s</comment>] %s', $section, $message);
-            } else {
-                $message = sprintf('<comment>%s</comment>', $message);
-            }
-            $output->writeln($message);
+        if (!$output = $this->getOutput()) {
+            return;
         }
+
+        if ($section) {
+            $message = sprintf('[<comment>%s</comment>] %s', $section, $message);
+        } else {
+            $message = sprintf('<comment>%s</comment>', $message);
+        }
+
+        $output->writeln($message);
     }
 
     /**

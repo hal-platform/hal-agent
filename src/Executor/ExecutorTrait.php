@@ -69,11 +69,17 @@ trait ExecutorTrait
      */
     private function colorize($message, $type = 'info')
     {
-        $messages = is_array($message) ? array_values($message) : array($message);
+        $messages = is_array($message) ? array_values($message) : [$message];
 
-        return array_map(function ($m) use ($type) {
+        $output = array_map(function ($m) use ($type) {
             return sprintf('<%s>%s</%s>', $type, $m, $type);
         }, $messages);
+
+        if (!is_array($message)) {
+            return $output[0];
+        }
+
+        return $output;
     }
 
     /**

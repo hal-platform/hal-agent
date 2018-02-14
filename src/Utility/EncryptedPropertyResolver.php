@@ -9,13 +9,13 @@ namespace Hal\Agent\Utility;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Exception;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Crypto\Encryption;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\EncryptedProperty;
 use Hal\Core\Entity\Environment;
+use Hal\Core\Repository\EncryptedPropertyRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -27,7 +27,7 @@ class EncryptedPropertyResolver
     const ERR_MISCONFIGURED_ENCRYPTION = 'A serious error occured while decrypting. HAL Agent may not be configured correctly.';
 
     /**
-     * @var EntityRepository
+     * @var EncryptedPropertyRepository
      */
     private $encryptedRepo;
 
@@ -99,64 +99,6 @@ class EncryptedPropertyResolver
     }
 
     /**
-     * @param array $env
-     * @param array $decrypteds
-     *
-     * @return array
-     */
-    public function mergePropertiesIntoEnv(array $env, array $decrypteds)
-    {
-        if ($decrypteds) {
-            foreach ($decrypteds as $property => $decrypted) {
-                $key = sprintf('ENCRYPTED_%s', strtoupper($property));
-                $env[$key] = $decrypted;
-            }
-        }
-
-        return $env;
-    }
-
-    /**
-     * @param Application $application
-     * @param Environment|null $environment
-     *
-     * @return array
-     */
-    public function getProperties(Application $application, ?Environment $environment)
-    {
-        if (is_null($environment)) {
-            $environmentCriteria = Criteria::expr()->isNull('environment');
-        } else {
-            $environmentCriteria = Criteria::expr()->orX(
-                Criteria::expr()->eq('environment', $environment),
-                Criteria::expr()->isNull('environment')
-            );
-        }
-
-        $criteria = (new Criteria)
-            ->where(Criteria::expr()->eq('application', $application))
-            ->andWhere($environmentCriteria)
-
-            // null must be first!
-            ->orderBy(['environment' => 'ASC']);
-
-        $properties = $this->encryptedRepo->matching($criteria);
-
-        if (count($properties) === 0) {
-            return [];
-        }
-
-        $encrypted = [];
-        foreach ($properties->toArray() as $property) {
-            $encrypted[$property->name()] = $property;
-        }
-
-        ksort($encrypted);
-
-        return $encrypted;
-    }
-
-    /**
      * @param Application $application
      * @param Environment|null $environment
      *
@@ -168,7 +110,7 @@ class EncryptedPropertyResolver
             'encrypted' => []
         ];
 
-        if (!$properties = $this->getProperties($application, $environment)) {
+        if (!$properties = $this->encryptedRepo->getPropertiesForEnvironment($application, $environment)) {
             return $data;
         }
 
@@ -177,12 +119,11 @@ class EncryptedPropertyResolver
 
         // format encrypted for use by build step
         array_walk($encrypted, function (&$v) {
-            $v = $v->data();
+            $v = $v->secret();
         });
 
         // format encrypted sources for logs
         array_walk($sources, function (&$v) {
-
             $from = 'Global';
             if ($env = $v->environment()) {
                 $from = $env->name();
@@ -191,7 +132,7 @@ class EncryptedPropertyResolver
         });
 
         $data['encrypted'] = $encrypted;
-        $data['encryptedSources'] = $sources;
+        $data['encrypted_sources'] = $sources;
 
         return $data;
     }

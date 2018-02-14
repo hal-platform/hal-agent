@@ -1,37 +1,33 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Executor\Runner;
 
+use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\BuildException;
-use Hal\Agent\Build\ConfigurationReader;
-use Hal\Agent\Build\DelegatingBuilder;
 use Hal\Agent\Build\Downloader;
-use Hal\Agent\Build\Mover;
-use Hal\Agent\Build\Packer;
 use Hal\Agent\Build\Resolver;
-use Hal\Agent\Build\Unpacker;
+use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Agent\JobConfiguration\ConfigurationReader;
+use Hal\Agent\JobExecution;
+use Hal\Agent\JobRunner;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Type\JobEventStageEnum;
+use Hal\Core\Type\VCSProviderEnum;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Filesystem\Exception\IOException;
-use Symfony\Component\Filesystem\Filesystem;
 
-/**
- * Build an application for a particular environment.
- *
- * The amount of dependencies of this command is too damn high.
- */
 class BuildCommand implements ExecutorInterface
 {
     use ExecutorTrait;
@@ -46,26 +42,32 @@ class BuildCommand implements ExecutorInterface
 
     const STEPS = [
         1 => 'Resolving configuration',
-        2 => 'Downloading source code',
-        3 => 'Unpacking source code',
-        4 => 'Reading .hal.yml configuration',
-        5 => 'Running build process',
-        6 => 'Packing build artifact',
-        7 => 'Exporting build artifact',
+        2 => 'Downloading source code and preparing workspace',
+        3 => 'Reading .hal.yml configuration',
+        4 => 'Running build stage',
+        5 => 'Storing build artifact'
     ];
 
-    const ERR_NOT_RUNNABLE = 'Build cannot be run.';
-    const ERR_DOWNLOAD = 'Source code cannot be downloaded.';
-    const ERR_UNPACK = 'Source code cannot be unpacked.';
-    const ERR_CONFIG = '.hal.yml configuration is invalid and cannot be read.';
-    const ERR_BUILD = 'Build process failed.';
-    const ERR_PACK = 'Build artifact cannot be packed.';
-    const ERR_EXPORT = 'Build artifact cannot be exported to artifact repository.';
+    private const ERR_NOT_RUNNABLE = 'Build cannot be run.';
+    private const ERR_DOWNLOAD = 'Source code cannot be downloaded.';
+    private const ERR_CONFIG = '.hal.yaml configuration is invalid and cannot be read.';
+    private const ERR_BUILD = 'Build stage failed.';
+    private const ERR_STORE_ARTIFACT = 'Build artifact cannot be stored and exported to artifact repository.';
 
     /**
      * @var EventLogger
      */
     private $logger;
+
+    /**
+     * @var LocalCleaner
+     */
+    private $cleaner;
+
+    /**
+     * @var SSHSessionManager
+     */
+    private $sshManager;
 
     /**
      * @var Resolver
@@ -78,47 +80,22 @@ class BuildCommand implements ExecutorInterface
     private $downloader;
 
     /**
-     * @var Unpacker
-     */
-    private $unpacker;
-
-    /**
      * @var ConfigurationReader
      */
     private $reader;
 
     /**
-     * @var DelegatingBuilder
+     * @var JobRunner
      */
     private $builder;
 
     /**
-     * @var Packer
+     * @var Artifacter
      */
-    private $packer;
+    private $artifacter;
 
     /**
-     * @var Mover
-     */
-    private $mover;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var SSHSessionManager
-     */
-    private $sshManager;
-
-    /**
-     * @var string[]
-     */
-    private $artifacts;
-
-    /**
-     * @var boolean
+     * @var bool
      */
     private $enableShutdownHandler;
 
@@ -129,44 +106,37 @@ class BuildCommand implements ExecutorInterface
 
     /**
      * @param EventLogger $logger
+     * @param LocalCleaner $cleaner
+     * @param SSHSessionManager $sshManager
+     *
      * @param Resolver $resolver
      * @param Downloader $downloader
-     * @param Unpacker $unpacker
      * @param ConfigurationReader $reader
-     * @param DelegatingBuilder $builder
-     * @param Packer $packer
-     * @param Mover $mover
-     * @param Filesystem $filesystem
-     * @param SSHSessionManager $sshManager
+     * @param JobRunner $builder
+     * @param Artifacter $artifacter
      */
     public function __construct(
         EventLogger $logger,
+        LocalCleaner $cleaner,
+        SSHSessionManager $sshManager,
+
         Resolver $resolver,
         Downloader $downloader,
-        Unpacker $unpacker,
         ConfigurationReader $reader,
-        DelegatingBuilder $builder,
-        Packer $packer,
-        Mover $mover,
-        Filesystem $filesystem,
-        SSHSessionManager $sshManager
+        JobRunner $builder,
+        Artifacter $artifacter
     ) {
         $this->logger = $logger;
+        $this->cleaner = $cleaner;
+        $this->sshManager = $sshManager;
 
         $this->resolver = $resolver;
         $this->downloader = $downloader;
-        $this->unpacker = $unpacker;
         $this->reader = $reader;
         $this->builder = $builder;
-        $this->packer = $packer;
-        $this->mover = $mover;
+        $this->artifacter = $artifacter;
 
-        $this->filesystem = $filesystem;
-        $this->sshManager = $sshManager;
-
-        $this->artifacts = [];
-
-        $this->enableShutdownHandler = true;
+        $this->enableShutdownHandler = false;
         $this->startTimer();
     }
 
@@ -185,13 +155,11 @@ class BuildCommand implements ExecutorInterface
     }
 
     /**
-     * Used during unit testing or other scenarios when we shouldn't attach to global state.
-     *
      * @return void
      */
-    public function disableShutdownHandler()
+    public function setShutdownHandler(bool $enabled): void
     {
-        $this->enableShutdownHandler = false;
+        $this->enableShutdownHandler = $enabled;
     }
 
     /**
@@ -202,7 +170,7 @@ class BuildCommand implements ExecutorInterface
     public static function configure(Command $command)
     {
         $command
-            ->setDescription('Run an application build.')
+            ->setDescription('Run a build for an application.')
 
             ->addArgument(self::PARAM_BUILD, InputArgument::REQUIRED, self::HELP_BUILD);
     }
@@ -218,41 +186,41 @@ class BuildCommand implements ExecutorInterface
 
         $io->title(self::COMMAND_TITLE);
 
-        $this->logger->setStage('build.start');
+        $this->logger->setStage(JobEventStageEnum::TYPE_CREATED);
 
-        if (!$properties = $this->resolve($io, $buildID)) {
+        if (!$properties = $this->prepareAgentConfiguration($io, $buildID)) {
             return $this->buildFailure($io, self::ERR_NOT_RUNNABLE);
         }
 
-        if (!$this->download($io, $properties)) {
+        $job = $properties['job'];
+
+        // The build has officially started running.
+        // Set the build to in progress
+        $this->logger->start($job);
+        $this->logger->event('success', 'Resolved build configuration', [
+            'defaultConfiguration' => $properties['default_configuration'],
+            'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
+        ]);
+
+        if (!$this->downloadSourceCode($io, $job, $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_DOWNLOAD);
         }
 
-        if (!$this->unpack($io, $properties)) {
-            return $this->buildFailure($io, self::ERR_UNPACK);
-        }
-
-        if (!$properties = $this->read($io, $properties)) {
+        if (!$config = $this->loadConfiguration($io, $properties['default_configuration'], $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_CONFIG);
         }
 
-        if (!$this->build($io, $properties)) {
-            $io->note($this->builder->getFailureMessage());
+        if (!$this->build($io, $job, $config, $properties)) {
             return $this->buildFailure($io, self::ERR_BUILD);
         }
 
-        $this->logger->setStage('end');
+        $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
-        if (!$this->pack($io, $properties)) {
-            return $this->buildFailure($io, self::ERR_PACK);
-        }
-
-        if (!$this->export($io, $properties)) {
-            return $this->buildFailure($io, self::ERR_EXPORT);
+        if (!$this->storeArtifact($io, $config, $properties['artifact_stored_file'], $properties['workspace_path'])) {
+            return $this->buildFailure($io, self::ERR_STORE_ARTIFACT);
         }
 
         $this->outputJobStats($io);
-
         return $this->buildSuccess($io, self::MSG_SUCCESS);
     }
 
@@ -262,7 +230,7 @@ class BuildCommand implements ExecutorInterface
      *
      * @return array|null
      */
-    private function resolve(IOInterface $io, $buildID)
+    private function prepareAgentConfiguration(IOInterface $io, $buildID)
     {
         $io->section($this->step(1));
 
@@ -273,265 +241,185 @@ class BuildCommand implements ExecutorInterface
             $properties = null;
         }
 
-        if ($properties) {
-            $this->prepare($io, $properties);
+        if (!$properties) {
+            return null;
         }
 
+        // We must set an emergency handler in case of super fatal to ensure it is always
+        // safely finished and clean-up is run.
+        $this->setCleanupHandler($io, $properties['workspace_path']);
+
+        $this->outputJobInformation($properties['job'], $io, $properties);
         return $properties;
     }
 
     /**
+     * @param Build $build
      * @param IOInterface $io
      * @param array $properties
      *
      * @return void
      */
-    private function prepare(IOInterface $io, array $properties)
+    private function outputJobInformation(Build $build, IOInterface $io, array $properties)
     {
-        $build = $properties['build'];
+        $application = $build->application();
+        $environment = $build->environment();
 
-        // Set the build to in progress
-        $this->logger->start($build);
-
-        if ($environment = $build->environment()) {
-            $environmentName = $environment->name();
-            $environmentID = $environment->id();
-        } else {
-            $environmentName = 'Any';
-            $environmentID = 'N/A';
-        }
+        $applicationName = $application ? $application->name() : 'Unknown';
+        $applicationID = $application ? $application->id() : 'N/A';
+        $environmentName = $environment ? $environment->name() : 'None';
+        $environmentID = $environment ? $environment->id() : 'N/A';
 
         $io->listing([
-            sprintf('Build: <info>%s</info>', $build->id()),
-            sprintf('Application: <info>%s</info> (ID: %s)', $build->application()->name(), $build->application()->id()),
-            sprintf('Environment: <info>%s</info> (ID: %s)', $environmentName, $environmentID)
+            sprintf('Build: %s', $this->colorize($build->id())),
+            sprintf('Application: %s (ID: %s)', $this->colorize($applicationName), $applicationID),
+            sprintf('Environment: %s (ID: %s)', $this->colorize($environmentName), $environmentID)
         ]);
 
-        // The build has officially started running.
-        // We must set an emergency handler in case of super fatal to ensure it is always
-        // safely finished and clean-up is run.
-        $this->prepareCleanup($io);
-        if ($this->enableShutdownHandler) {
-            register_shutdown_function([$this, 'emergencyCleanup']);
-        }
-
-        $this->logConfigurationEvent($properties);
-
-        // add artifacts for cleanup
-        $this->artifacts = $properties['artifacts'];
-    }
-
-    /**
-     * @param array $properties
-     *
-     * @return void
-     */
-    private function logConfigurationEvent(array $properties)
-    {
-        // Explicitly define which config is passed through to the event, since the entire propreties
-        // may contain sensitive information.
-        $context = [
-            'defaultConfiguration' => $properties['configuration'],
-            'github' => $properties['github'],
-            'location' => $properties['location']
-        ];
-
-        // Add "resolved encrypted config" if used.
-        if (isset($properties['encryptedSources'])) {
-            $context['encrypted'] = $properties['encryptedSources'];
-        }
-
-        // Add an event
-        $this->logger->event('success', 'Resolved build properties', $context);
+        $outputConfig = array_intersect_key($properties, array_fill_keys(['encrypted_sources', 'artifacts', 'artifact_stored_file'], 1));
+        $this->outputTable($io, 'Agent configuration:', $outputConfig);
     }
 
     /**
      * @param IOInterface $io
-     * @param array $properties
+     * @param Build $build
+     * @param string $workspacePath
      *
      * @return bool
      */
-    private function download(IOInterface $io, array $properties)
+    private function downloadSourceCode(IOInterface $io, Build $build, string $workspacePath)
     {
         $io->section($this->step(2));
 
+        $provider = $build->application()->provider();
+        $providerName = $provider ? $provider->name() : 'None';
+        $provideType = $provider ? VCSProviderEnum::format($provider->type()) : 'N/A';
+
         $io->listing([
-            sprintf('Source repository: <info>%s/%s</info>', $properties['github']['user'], $properties['github']['repo']),
-            sprintf('Source reference: <info>%s</info>', $properties['github']['reference']),
-            sprintf('Target: <info>%s</info>', $properties['location']['download'])
+            sprintf('Build Workspace: %s', $this->colorize($workspacePath)),
+            sprintf('VCS Provider: %s (Type: %s)', $this->colorize($providerName), $provideType),
+            sprintf('VCS Reference: %s (Commit: %s)', $this->colorize($build->reference()), $build->commit())
         ]);
 
-        return ($this->downloader)(
-            $properties['github']['user'],
-            $properties['github']['repo'],
-            $properties['github']['reference'],
-            $properties['location']['download']
-        );
+        return ($this->downloader)($build, $workspacePath);
     }
 
     /**
      * @param IOInterface $io
-     * @param array $properties
+     * @param array $defaultConfiguration
+     * @param string $workspacePath
      *
-     * @return bool
+     * @return array|null
      */
-    private function unpack(IOInterface $io, array $properties)
+    private function loadConfiguration(IOInterface $io, array $defaultConfiguration, string $workspacePath): ?array
     {
         $io->section($this->step(3));
 
-        $io->listing([
-            sprintf('Source file: <info>%s</info>', $properties['location']['download']),
-            sprintf('Build directory: <info>%s</info>', $properties['location']['path']),
-        ]);
+        $buildPath = $workspacePath . '/job';
 
-        return ($this->unpacker)(
-            $properties['location']['download'],
-            $properties['location']['path']
-        );
-    }
-
-    /**
-     * @param IOInterface $io
-     * @param array $properties
-     *
-     * @return bool|array
-     */
-    private function read(IOInterface $io, array &$properties)
-    {
-        $io->section($this->step(4));
-
-        $config = ($this->reader)(
-            $properties['location']['path'],
-            $properties['configuration']
-        );
+        $config = ($this->reader)($buildPath, $defaultConfiguration);
 
         if (!$config) {
             return null;
         }
 
-        $rows = [];
-        foreach ($config as $p => $v) {
-            $rows[] = [$p, json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)];
-        }
+        $this->outputTable($io, 'Application configuration:', $config);
 
-        $io->listing(['Application configuration:']);
-        $io->table(['Configuration', 'Value'], $rows);
-
-        $properties['configuration'] = $config;
-        return $properties;
+        return $config;
     }
 
     /**
      * @param IOInterface $io
+     * @param Build $build
+     * @param array $config
      * @param array $properties
      *
      * @return bool
      */
-    private function build(IOInterface $io, array $properties)
+    private function build(IOInterface $io, Build $build, array $config, array $properties)
     {
-        $io->section($this->step(5));
+        $io->section($this->step(4));
 
-        $platform = $properties['configuration']['image'] ? $properties['configuration']['platform'] : 'default';
-        $image = $properties['configuration']['image'] ? $properties['configuration']['image'] : 'default';
+        $platform = $config['platform'];
+        $image = $config['image'];
+        $steps = $config['build'];
 
-        if (!$properties['configuration']['build']) {
-            $io->text('No build commands found. Skipping build process.');
+        $execution = new JobExecution($platform, 'build', $config);
+
+        if (!$steps) {
+            $io->text('No steps found. Skipping...');
             return true;
         }
 
         $io->listing([
-            sprintf('Platform: <info>%s</info>', $platform),
-            sprintf('Platform Image: <info>%s</info>', $image)
+            sprintf('Platform: %s', $this->colorize($platform)),
+            sprintf('Docker Image: %s', $this->colorize($image))
         ]);
 
-        $io->text('Commands:');
-        $io->listing($this->colorize($properties['configuration']['build']));
+        $io->text('Running steps:');
+        $io->listing($this->colorize($steps));
 
-        return ($this->builder)(
-            $io,
-            $properties['configuration']['platform'],
-            $properties['configuration']['image'],
-            $properties['configuration']['build'],
-            $properties
-        );
+        return ($this->builder)($build, $io, $execution, $properties);
     }
 
     /**
      * @param IOInterface $io
-     * @param array $properties
+     * @param array $config
+     * @param string $storedArtifactFile
+     * @param string $workspacePath
      *
      * @return bool
      */
-    private function pack(IOInterface $io, array $properties)
+    private function storeArtifact(IOInterface $io, array $config, string $storedArtifactFile, string $workspacePath)
     {
-        $io->section($this->step(6));
+        $io->section($this->step(5));
+
+        $buildPath = $workspacePath . '/job';
+        $artifactFile = $workspacePath . '/artifact.tgz';
 
         $io->listing([
-            sprintf('Build directory: <info>%s</info>', $properties['location']['path']),
-            sprintf('Artifact path: <info>%s</info>', $properties['configuration']['dist']),
-            sprintf('Artifact file: <info>%s</info>', $properties['location']['path'])
+            sprintf('Artifact Path: %s', $this->colorize($buildPath . '/' . $config['dist'])),
+            sprintf('Artifact File: %s', $this->colorize($artifactFile)),
+
+            sprintf('Artifact Repository: %s', $this->colorize('Filesystem')),
+            sprintf('Repository Location: %s', $this->colorize($storedArtifactFile))
         ]);
 
-        return ($this->packer)(
-            $properties['location']['path'],
-            $properties['configuration']['dist'],
-            $properties['location']['tempArchive']
-        );
+        return ($this->artifacter)($buildPath, $config['dist'], $artifactFile, $storedArtifactFile);
     }
 
     /**
      * @param IOInterface $io
-     * @param array $properties
-     *
-     * @return bool
-     */
-    private function export(IOInterface $io, array $properties)
-    {
-        $io->section($this->step(7));
-
-        $io->listing([
-            sprintf('Artifact file: <info>%s</info>', $properties['location']['tempArchive']),
-            sprintf('Repository storage: <info>%s</info>', $properties['location']['archive'])
-        ]);
-
-        return ($this->mover)(
-            $properties['location']['tempArchive'],
-            $properties['location']['archive']
-        );
-    }
-
-    /**
-     * @param IOInterface $io
+     * @param string $workspacePath
      *
      * @return void
      */
-    private function prepareCleanup(IOInterface $io)
+    private function setCleanupHandler(IOInterface $io, $workspacePath)
     {
-        $this->cleanup = function () use ($io) {
+        $cleanup = function () use ($io, $workspacePath) {
+            $artifacts = [$workspacePath];
 
-            if ($this->artifacts) {
-                $io->section('Build clean-up');
+            $io->newLine();
+            $io->section('Build clean-up');
 
-                $io->text('Build artifacts to remove:');
-                $io->listing($this->colorize($this->artifacts));
+            $io->text('Build artifacts to remove:');
+            $io->listing($this->colorize($artifacts));
 
-                $io->text('Disconnecting all open SSH connections.');
-            }
+            $io->text('Disconnecting all open SSH connections.');
+            $io->newLine();
 
-            foreach ($this->artifacts as $artifact) {
-                try {
-                    $this->filesystem->remove($artifact);
-
-                } catch (IOException $e) {
-                }
-            }
-
-            // Clear artifacts
-            $this->artifacts = [];
-
-            // Disconnect any active ssh sessions
             $this->sshManager->disconnectAll();
+
+            ($this->cleaner)($artifacts);
         };
+
+        $this->cleanup = $cleanup;
+        if ($this->enableShutdownHandler) {
+            // protip: avoid [$this, 'method'] notation, it makes searching and refactoring more difficult.
+            register_shutdown_function(function() {
+                $this->emergencyCleanup();
+            });
+        }
     }
 
     /**

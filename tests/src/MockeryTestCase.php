@@ -7,6 +7,7 @@
 
 namespace Hal\Agent\Testing;
 
+use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
@@ -16,4 +17,27 @@ use PHPUnit\Framework\TestCase;
 abstract class MockeryTestCase extends TestCase
 {
     use MockeryPHPUnitIntegration;
+
+
+    /**
+     * Returns with expectation and spy in an array.
+     * When the spy is called, it returns the spied input from the with expectation.
+     *
+     * @return array
+     */
+    public function spy()
+    {
+        $spied = null;
+
+        $with = Mockery::on(function($v) use (&$spied) {
+            $spied = $v;
+            return true;
+        });
+
+        $spy = function() use (&$spied) {
+            return $spied;
+        };
+
+        return [$with, $spy];
+    }
 }

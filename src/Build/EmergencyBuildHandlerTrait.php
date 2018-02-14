@@ -7,12 +7,8 @@
 
 namespace Hal\Agent\Build;
 
-use Hal\Agent\Symfony\OutputAwareTrait;
-
 trait EmergencyBuildHandlerTrait
 {
-    use OutputAwareTrait;
-
     /**
      * @var bool
      */
@@ -22,11 +18,6 @@ trait EmergencyBuildHandlerTrait
      * @var callable|null
      */
     private $emergencyCleaner = null;
-
-    /**
-     * @var string
-     */
-    private $emergencyMessage = '';
 
     /**
      * In case of error or critical failure, ensure that we clean up the build artifacts.
@@ -42,63 +33,55 @@ trait EmergencyBuildHandlerTrait
     }
 
     /**
-     * Emergency failsafe
-     *
      * Set or execute the emergency cleanup process
      *
      * @param callable|null $cleaner
-     * @param string $message
      *
-     * @return null
+     * @return void
      */
-    public function cleanup(callable $cleaner = null, $message = '')
+    public function cleanup(callable $cleaner = null): void
     {
         if (func_num_args() > 0) {
             $this->emergencyCleaner = $cleaner;
-            $this->emergencyMessage = $message;
 
         } elseif (is_callable($this->emergencyCleaner)) {
-            if ($this->emergencyMessage) {
-                $this->status($this->emergencyMessage, 'Shutdown');
-            }
-
             call_user_func($this->emergencyCleaner);
             $this->emergencyCleaner = null;
         }
     }
 
     /**
-     * @return null
+     * @return void
      */
-    public function disableShutdownHandler()
+    public function disableShutdownHandler(): void
     {
         $this->enableShutdownHandler = false;
     }
 
     /**
-     * @param int $exitCode
+     * @param bool $isSuccess
      *
-     * @return int
+     * @return bool
      */
-    private function bombout($exitCode)
+    private function bombout(bool $isSuccess): bool
     {
         $this->cleanup();
 
-        return $exitCode;
+        return $isSuccess;
     }
 
     /**
-     * @param callable $cleaner
-     * @param string $message
-     * @param array $args
+     * Emergency failsafe
      *
-     * @return null
+     * Set the emergency cleanup process
+     *
+     * @param callable $cleaner
+     *
+     * @return void
      */
-    private function enableEmergencyHandler(callable $cleaner, $message, array $args = [])
+    private function enableEmergencyHandler(callable $cleaner)
     {
-        $this->cleanup(function () use ($cleaner, $args) {
-            $cleaner(...$args);
-        }, $message);
+        $this->cleanup($cleaner);
 
         // Set emergency handler in case of super fatal
         if ($this->enableShutdownHandler) {

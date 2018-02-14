@@ -17,7 +17,7 @@ use Hal\Agent\Executor\JobStatsTrait;
 use Hal\Core\Entity\JobProcess;
 use Psr\Log\LoggerInterface;
 use Hal\Core\Entity\Target;
-use Hal\Core\Entity\Release;
+use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Repository\ReleaseRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;

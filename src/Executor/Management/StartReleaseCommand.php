@@ -131,7 +131,7 @@ class StartReleaseCommand implements ExecutorInterface
         $applicationName = $release['_links']['application']['title'] ?? 'Unknown';
         $environmentName = $release['_links']['environment']['title'] ?? 'Unknown';
 
-        $build = $releases['_embedded']['build'] ?? [];
+        $build = $release['_embedded']['build'] ?? [];
 
         $buildID = $build['id'] ?? 'Unknown';
         $buildPageURL = $build['_links']['page']['href'] ?? 'Unknown';
@@ -185,9 +185,13 @@ class StartReleaseCommand implements ExecutorInterface
             return $target;
         }
 
+        if (!$isBuildGUID) {
+            return false;
+        }
+
         // We need to find the build as well, because target names are not unique,
         // so we can limit the scope to just this app.
-        if ($isBuildGUID && !$build = $this->buildRepo->find($buildID)) {
+        if (!$build = $this->buildRepo->find($buildID)) {
             return null;
         }
 

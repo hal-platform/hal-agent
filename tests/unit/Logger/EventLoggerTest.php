@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -9,61 +9,46 @@ namespace Hal\Agent\Logger;
 
 use Doctrine\ORM\EntityManager;
 use Hal\Agent\Testing\MockeryTestCase;
-use Hal\Core\Entity\Build;
-use Hal\Core\Entity\Release;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
 use Mockery;
 use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Time\TimePoint;
 
 class EventLoggerTest extends MockeryTestCase
 {
     public $em;
-    public $factory;
     public $handler;
     public $clock;
 
     public function setUp()
     {
-        $this->em = Mockery::mock(EntityManager::class);
-        $this->factory = Mockery::mock(EventFactory::class);
+        $this->em = Mockery::mock(EntityManager::class, [
+            'merge' => null,
+            'flush' => null
+        ]);
+
         $this->handler = Mockery::mock(ProcessHandler::class);
-        $this->clock = Mockery::mock(Clock::class);
+        $this->meta = Mockery::mock(MetadataHandler::class);
+
+        $this->clock = Mockery::mock(Clock::class, [
+            'read' => new TimePoint(2018, 1, 15, 12, 30, 45, 'UTC')
+        ]);
     }
 
-    public function testEventIsPassedToFactory()
+    public function testNoEventCreatedWithNoJob()
     {
-        $this->factory
-            ->shouldReceive('info')
-            ->with('test message', ['data' => 'test1'])
-            ->once();
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
 
-        $logger = new EventLogger($this->em, $this->factory, $this->handler, $this->clock);
+        $actual = $logger->event('info', 'test message', ['data' => 'test1']);
 
-        $logger->event('info', 'test message', ['data' => 'test1']);
-    }
-
-    public function testInvalidEventStatusIsIgnored()
-    {
-        $this->factory
-            ->shouldReceive('info')
-            ->never();
-
-        $logger = new EventLogger($this->em, $this->factory, $this->handler, $this->clock);
-
-        $logger->event('testing');
+        $this->assertSame(null, $actual);
     }
 
     public function testBuildIsSavedAndPersistedWhenStarted()
     {
         $build = new Build;
 
-        $this->factory
-            ->shouldReceive('setBuild')
-            ->with($build)
-            ->once();
-
-        $this->clock
-            ->shouldReceive('read')
-            ->once();
         $this->em
             ->shouldReceive('merge')
             ->with($build)
@@ -72,64 +57,56 @@ class EventLoggerTest extends MockeryTestCase
             ->shouldReceive('flush')
             ->once();
 
-        $logger = new EventLogger($this->em, $this->factory, $this->handler, $this->clock);
-
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
         $logger->start($build);
+
+        $this->assertSame('running', $build->status());
+        $this->assertSame('2018-01-15T12:30:45Z', $build->start()->jsonSerialize());
+    }
+
+    public function testNoEventCreatedWithInvalidStatus()
+    {
+        $build = new Build;
+
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
+        $logger->start($build);
+
+        $actual = $logger->event('testing', 'test message');
+
+        $this->assertSame(null, $actual);
     }
 
     public function testReleaseIsSuccessAndLaunchesChildren()
     {
-        $push = new Release;
+        $release = new Release;
 
-        $this->factory
-            ->shouldReceive('setStage')
-            ->with('release.success')
-            ->once();
         $this->handler
             ->shouldReceive('launch')
+            ->with($release)
             ->once();
 
-        $this->factory
-            ->shouldReceive('setRelease');
-        $this->clock
-            ->shouldReceive('read')
-            ->twice();
-        $this->em
-            ->shouldReceive('merge');
-        $this->em
-            ->shouldReceive('flush');
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
 
-        $logger = new EventLogger($this->em, $this->factory, $this->handler, $this->clock);
-
-        $logger->start($push);
+        $logger->start($release);
         $logger->success();
+
+        $this->assertSame('success', $release->status());
     }
 
     public function testBuildIsFailureAndAbortsChildren()
     {
         $build = new Build;
 
-        $this->factory
-            ->shouldReceive('setStage')
-            ->with('build.failure')
-            ->once();
         $this->handler
             ->shouldReceive('abort')
+            ->with($build)
             ->once();
 
-        $this->factory
-            ->shouldReceive('setBuild');
-        $this->clock
-            ->shouldReceive('read')
-            ->twice();
-        $this->em
-            ->shouldReceive('merge');
-        $this->em
-            ->shouldReceive('flush');
-
-        $logger = new EventLogger($this->em, $this->factory, $this->handler, $this->clock);
+        $logger = new EventLogger($this->em, $this->handler, $this->meta, $this->clock);
 
         $logger->start($build);
         $logger->failure();
+
+        $this->assertSame('failure', $build->status());
     }
 }

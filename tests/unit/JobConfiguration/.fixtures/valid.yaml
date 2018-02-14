@@ -1,0 +1,53 @@
+platform: linux
+image: node8.1.4
+
+env:
+    __novalidate:
+        C3: '56             '
+        MULTLINE_TEST: |
+            derp herp
+            oklol
+    test:
+        A1: 12
+        B_2: '34'
+    prod:
+        derp: '1'
+        HERP_DERP1: '2'
+
+# build
+
+dist: '/path/to/build'
+build:
+    - 'step build 1'
+    - 'step build 2'
+    - 'step build 3'
+    - 'step build 4'
+
+# deploy
+
+transform_dist: './path/to/release'
+build_transform:
+    - 'step build_transform 1'
+
+before_deploy:
+    - 'step before_deploy 1'
+
+deploy:
+    - 'step deploy 1'
+    - 'step deploy 2'
+
+after_deploy:
+    - 'step after_deploy 1'
+    - 'step after_deploy 2'
+    - 'step after_deploy 3'
+
+# rsync only
+
+exclude:
+    - 'excluded_dir'
+
+pre_push:
+    - 'cp file_a file_b'
+
+post_push:
+    - 'cp file_1 file_2'

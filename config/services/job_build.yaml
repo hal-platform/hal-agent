@@ -1,0 +1,59 @@
+services:
+    build.resolver:
+        class: 'Hal\Agent\Build\Resolver'
+        arguments:
+            - '@doctrine.em'
+            - '@encrypted.resolver'
+        calls:
+            - ['setLocalTempPath', ['%path.temp%']]
+            - ['setArchivePath', ['%path.archive%']]
+
+    build.downloader:
+        class: 'Hal\Agent\Build\Downloader'
+        arguments:
+            - '@logger.event'
+            - '@build.support.file_compression'
+            - '@vcs'
+
+    build.build_runner:
+        class: 'Hal\Agent\JobRunner'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%build.platforms%'
+
+    build.artifacter:
+        class: 'Hal\Agent\Build\Artifacter'
+        arguments:
+            - '@logger.event'
+            - '@filesystem'
+            - '@build.support.file_compression'
+
+    build.cleaner:
+        class: 'Hal\Agent\Job\LocalCleaner'
+        arguments: ['@filesystem']
+
+    ############################################################################
+    # support for build platforms
+    ############################################################################
+
+    build.support.file_compression:
+        class: 'Hal\Agent\Job\FileCompression'
+        arguments:
+            - '@process_runner'
+            - '%timeout.filepacking%'
+
+    build.support.aws_authenticator:
+        class: 'Hal\Core\AWS\AWSAuthenticator'
+        arguments:
+            - '@logger'
+            - '@build.support.credential_provider'
+            - '@aws'
+
+    build.support.credential_provider:
+        class: 'Hal\Core\AWS\CredentialProvider'
+        arguments:
+            - '@logger'
+            - '@encryption'
+            - '@doctrine.em'
+            - '@aws'

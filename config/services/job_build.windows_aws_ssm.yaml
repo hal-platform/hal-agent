@@ -1,0 +1,165 @@
+services:
+
+    ############################################################################
+    # platforms
+    ############################################################################
+
+    build_platform.windows_aws:
+        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
+        arguments:
+            - '@logger.event'
+            - '@encrypted.resolver'
+            - '@build.windows_aws.configurator'
+            - '@build.windows_aws.exporter'
+            - '@build.windows_aws.native_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    build_platform.windows_aws_docker:
+        class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
+        arguments:
+            - '@logger.event'
+            - '@encrypted.resolver'
+            - '@build.windows_aws.configurator'
+            - '@build.windows_aws.exporter'
+            - '@build.windows_aws.docker_builder'
+            - '@build.windows_aws.importer'
+            - '@build.windows_aws.cleaner'
+            - '%build.platforms.option.windows.docker_default_image%'
+
+    ############################################################################
+    # builders
+    ############################################################################
+
+    build.windows_aws.docker_builder:
+        class: 'Hal\Agent\Build\WindowsAWS\DockerBuilder'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.support_ssm_runner'
+            - '@build.windows_aws.support_dockerinator'
+            - '@build.windows_aws.support_docker_validator'
+            - '@build.windows_aws.support_powershellinator'
+            - '@job_configuration.step_parser'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+
+    build.windows_aws.native_builder:
+        class: 'Hal\Agent\Build\WindowsAWS\NativeBuilder'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.support_ssm_runner'
+            - '@build.windows_aws.support_powershellinator'
+            - '%timeout.build%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+
+    ############################################################################
+    # steps
+    ############################################################################
+
+    build.windows_aws.configurator:
+        class: 'Hal\Agent\Build\WindowsAWS\Steps\Configurator'
+        arguments:
+            - '@doctrine.em'
+            - '@build.support.aws_authenticator'
+            - '@build.windows_aws.support_builder_finder'
+            - '%build.windows_aws.region%'
+            - '%build.windows_aws.credential_name%'
+            - '%build.windows_aws.bucket%'
+            - '%build.windows_aws.builder_filter%'
+
+    build.windows_aws.exporter:
+        class: 'Hal\Agent\Build\WindowsAWS\Steps\Exporter'
+        arguments:
+            - '@logger.event'
+            - '@build.support.file_compression'
+            - '@build.windows_aws.support_s3_uploader'
+            - '@build.windows_aws.support_ssm_runner'
+            - '@build.windows_aws.support_powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.windows_aws.importer:
+        class: 'Hal\Agent\Build\WindowsAWS\Steps\Importer'
+        arguments:
+            - '@logger.event'
+            - '@build.support.file_compression'
+            - '@filesystem'
+            - '@build.windows_aws.s3_downloader'
+            - '@build.windows_aws.support_ssm_runner'
+            - '@build.windows_aws.support_powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.windows_aws.cleaner:
+        class: 'Hal\Agent\Build\WindowsAWS\Steps\Cleaner'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.support_ssm_runner'
+            - '@build.windows_aws.support_powershellinator'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    ############################################################################
+    # support
+    ############################################################################
+
+    build.windows_aws.support_builder_finder:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\BuilderFinder'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.support_ec2_finder'
+
+    build.windows_aws.support_ec2_finder:
+        class: 'Hal\Agent\AWS\EC2Finder'
+
+    build.windows_aws.support_s3_uploader:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Uploader'
+        arguments: ['@logger.event']
+
+    build.windows_aws.s3_downloader:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Downloader'
+        arguments: ['@logger.event']
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+
+    build.windows_aws.support_ssm_runner:
+        class: 'Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner'
+        arguments: ['@logger.event', '@build.windows_aws.support_ssm_runner.waiter']
+    build.windows_aws.support_ssm_runner.waiter:
+        class: 'Hal\Agent\Waiter\Waiter'
+        arguments: ['%build.ssm.waiter.interval%', '%build.ssm.waiter.max%']
+
+    build.windows_aws.support_powershellinator:
+        class: 'Hal\Agent\Build\WindowsAWS\Utility\Powershellinator'
+        arguments:
+            - '%build.windows_aws.build_path%'
+            - '%build.windows_aws.build_script_path%'
+            - '%build.windows_aws.build_tools_path%'
+
+    ############################################################################
+    # support - docker
+    ############################################################################
+
+    build.windows_aws.support_dockerinator:
+        class: 'Hal\Agent\Docker\WindowsSSMDockerinator'
+        arguments:
+            - '@logger.event'
+            - '@build.windows_aws.support_ssm_runner'
+            - '@build.windows_aws.support_powershellinator'
+            - '%build.platforms.option.manual_dns%'
+        calls:
+            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
+            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+            - ['setBuildCommandTimeout', ['%timeout.build%']]
+
+    build.windows_aws.support_docker_validator:
+        class: 'Hal\Agent\Docker\DockerImageValidator'
+        arguments:
+            - '@logger.event'
+            - '%build.platforms.option.windows.allowed_images%'
+            - '%build.platforms.option.windows.docker_easy_repo%'
+            - '%build.platforms.option.windows.docker_private_registry%'

@@ -1,0 +1,54 @@
+services:
+
+    deploy.resolver:
+        class: 'Hal\Agent\Deploy\Resolver'
+        arguments:
+            - '@doctrine.em'
+            - '@encrypted.resolver'
+        calls:
+            - ['setLocalTempPath', ['%path.temp%']]
+            - ['setArchivePath', ['%path.archive%']]
+
+    deploy.artifacter:
+        class: 'Hal\Agent\Deploy\Artifacter'
+        arguments:
+            - '@logger.event'
+            - '@filesystem'
+            - '@build.support.file_compression'
+
+    deploy.build_runner:
+        class: 'Hal\Agent\JobRunner'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%build.platforms%'
+
+    deploy.release_runner:
+        class: 'Hal\Agent\JobRunner'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%deployment.platforms%'
+
+    deploy.cleaner:
+        class: 'Hal\Agent\Job\LocalCleaner'
+        arguments: ['@filesystem']
+
+    ############################################################################
+    # support for deploy platforms
+    ############################################################################
+
+    deploy.support.aws_authenticator:
+        class: 'Hal\Core\AWS\AWSAuthenticator'
+        arguments:
+            - '@logger'
+            - '@deploy.support.credential_provider'
+            - '@aws'
+
+    deploy.support.credential_provider:
+        class: 'Hal\Core\AWS\CredentialProvider'
+        arguments:
+            - '@logger'
+            - '@encryption'
+            - '@doctrine.em'
+            - '@aws'

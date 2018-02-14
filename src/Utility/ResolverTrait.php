@@ -14,10 +14,9 @@ use Hal\Core\JobGenerator;
 
 trait ResolverTrait
 {
-    private static $TEMP_ARCHIVE_FILE = 'hal9000-%s-%s.tar.gz';
-    private static $ARCHIVE_FILE = 'hal9000-%s.tar.gz';
-
-    private static $UNIQUE_TEMP_PATH = 'hal9000-%s-%s';
+    private static $TEMP_ARCHIVE_FILE = 'hal-%s-%s.tar.gz';
+    private static $ARCHIVE_FILE = 'hal-%s.tar.gz';
+    private static $UNIQUE_TEMP_PATH = 'hal-%s-%s';
 
     /**
      * @var string

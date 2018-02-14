@@ -10,14 +10,12 @@ namespace Hal\Agent\Push;
 use Doctrine\ORM\EntityManagerInterface;
 use Hal\Agent\Build\Unix\UnixBuildHandler;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Utility\BuildEnvironmentResolver;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Credential\AWSRoleCredential;
 use Hal\Core\Entity\Credential\AWSStaticCredential;
-// use Hal\Core\Entity\Group;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
 use Hal\Core\Repository\JobType\ReleaseRepository;
@@ -70,11 +68,6 @@ class Resolver
     private $clock;
 
     /**
-     * @var BuildEnvironmentResolver
-     */
-    private $buildEnvironmentResolver;
-
-    /**
      * @var EncryptedPropertyResolver
      */
     private $encryptedResolver;
@@ -83,11 +76,6 @@ class Resolver
      * @var string
      */
     private $sshUser;
-
-    /**
-     * @var string
-     */
-    private $githubBaseUrl;
 
     /**
      * @var string|null
@@ -99,29 +87,23 @@ class Resolver
      * @param EventLogger $logger
      * @param EntityManagerInterface $em
      * @param Clock $clock
-     * @param BuildEnvironmentResolver $buildEnvironmentResolver
      * @param EncryptedPropertyResolver $encryptedResolver
      *
      * @param string $sshUser
-     * @param string $githubBaseUrl
      */
     public function __construct(
         EventLogger $logger,
         EntityManagerInterface $em,
         Clock $clock,
-        BuildEnvironmentResolver $buildEnvironmentResolver,
         EncryptedPropertyResolver $encryptedResolver,
-        $sshUser,
-        $githubBaseUrl
+        $sshUser
     ) {
         $this->logger = $logger;
         $this->releaseRepo = $em->getRepository(Release::class);
         $this->clock = $clock;
-        $this->buildEnvironmentResolver = $buildEnvironmentResolver;
         $this->encryptedResolver = $encryptedResolver;
 
         $this->sshUser = $sshUser;
-        $this->githubBaseUrl = $githubBaseUrl;
     }
 
     /**
@@ -178,15 +160,9 @@ class Resolver
                 'windowsOutputArchive' => $this->generateTempTransferFile($release->id(), 'windows-output'),
             ],
 
-
             'pushProperties' => [
                 'id' => $build->id(),
-                'source' => sprintf(
-                    '%s/%s/%s',
-                    rtrim($this->githubBaseUrl, '/'),
-                    $github->owner(),
-                    $github->repository()
-                ),
+                'source' => 'TODO',
                 'env' => $release->target()->group()->environment()->name(),
                 'user' => $release->user() ? $release->user()->username() : null,
                 'reference' => $build->reference(),
@@ -197,10 +173,6 @@ class Resolver
 
         // deployment system configuration
         $properties[$method] = $this->buildDeploymentSystemProperties($method, $release);
-
-        // build system configuration
-        $buildSystemProperties = $this->buildEnvironmentResolver->getReleaseProperties($release);
-        $properties = array_merge($properties, $buildSystemProperties);
 
         // Merge build and push env for rsync deployment method (used for server commands)
         if ($method === GroupEnum::TYPE_RSYNC) {
@@ -358,17 +330,17 @@ class Resolver
      */
     private function mergeRsyncBuildAndPushEnvironment(array $properties)
     {
-        $platform = UnixBuildHandler::PLATFORM_TYPE;
-        $method = GroupEnum::TYPE_RSYNC;
+        // $platform = UnixBuildHandler::PLATFORM_TYPE;
+        // $method = GroupEnum::TYPE_RSYNC;
 
-        if (!isset($properties[$method]['environmentVariables']) || !isset($properties[$platform]['environmentVariables'])) {
-            return $properties;
-        }
+        // if (!isset($properties[$method]['environmentVariables']) || !isset($properties[$platform]['environmentVariables'])) {
+        //     return $properties;
+        // }
 
-        $env = array_merge($properties[$method]['environmentVariables'], $properties[$platform]['environmentVariables']);
+        // $env = array_merge($properties[$method]['environmentVariables'], $properties[$platform]['environmentVariables']);
 
-        $properties[$method]['environmentVariables'] = $env;
-        $properties[$platform]['environmentVariables'] = $env;
+        // $properties[$method]['environmentVariables'] = $env;
+        // $properties[$platform]['environmentVariables'] = $env;
 
         return $properties;
     }

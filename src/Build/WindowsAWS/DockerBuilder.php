@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -11,38 +11,36 @@ use Aws\Ssm\SsmClient;
 use Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
-use Hal\Agent\Build\WindowsAWS\Docker\DockerImageValidator;
-use Hal\Agent\Build\WindowsAWS\Utility\Dockerinator;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
+use Hal\Agent\Docker\DockerImageValidator;
+use Hal\Agent\Docker\WindowsSSMDockerinator;
+use Hal\Agent\JobConfiguration\StepParser;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Symfony\OutputAwareInterface;
+use Hal\Agent\Symfony\IOAwareTrait;
 
 class DockerBuilder implements BuilderInterface
 {
-    // Comes with OutputAwareTrait
     use EmergencyBuildHandlerTrait;
     use InternalDebugLoggingTrait;
+    use IOAwareTrait;
 
-    /**
-     * @var string
-     */
-    const SECTION = 'AWS Windows Docker';
+    private const EVENT_MESSAGE = 'Build step %s';
+    private const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
 
-    const EVENT_MESSAGE = 'Run build command %s';
-    const EVENT_MESSAGE_CUSTOM = 'Run build command %s "%s"';
+    private const ACTION_PREPARING_INSTANCE = 'Preparing AWS instance for job';
+    private const ACTION_STARTING_CONTAINER = 'Starting Docker container';
+    private const ACTION_START_CONTAINER_STARTED = 'Docker container "%s" started';
+    private const ACTION_DOCKER_CLEANUP = 'Cleaning up Docker container "%s"';
 
-    const EVENT_STARTING_CONTAINER = 'Starting Docker container';
-    const EVENT_START_CONTAINER_STARTED = 'Docker container "%s" started';
-    const EVENT_AWS_DOCKER_CLEANUP = 'Clean up docker build server';
+    private const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Windows AWS Docker container';
 
-    const STATUS_CLI = 'Running build command [ <info>%s</info> ] in AWS Docker container';
+    private const ERR_PREPARE_FAILED = 'Failed to prepare builder';
+    private const ERR_SHIFT_FAILED = 'Failed to shift workspace for next container';
+    private const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build steps';
 
-    const ERR_PREPARE_FAILED = 'Failed to prepare build server';
-    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build commands';
+    private const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,80}$/';
 
-    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,50}$/';
-    const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
-    const DOCKER_PREFIX = 'windocker:';
+    private const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
 
     /**
      * @var EventLogger
@@ -55,14 +53,9 @@ class DockerBuilder implements BuilderInterface
     private $runner;
 
     /**
-     * @var Dockerinator
+     * @var WindowsSSMDockerinator
      */
     private $docker;
-
-    /**
-     * @var Powershellinator
-     */
-    private $powershell;
 
     /**
      * @var DockerImageValidator
@@ -70,31 +63,44 @@ class DockerBuilder implements BuilderInterface
     private $validator;
 
     /**
-     * @var int
+     * @var Powershellinator
+     */
+    private $powershell;
+
+    /**
+     * @var StepParser
+     */
+    private $steps;
+
+    /**
+     * @var string
      */
     private $internalTimeout;
 
     /**
      * @param EventLogger $logger
      * @param SSMCommandRunner $runner
-     * @param Dockerinator $docker
+     * @param WindowsSSMDockerinator $docker
      * @param Powershellinator $powershell
      * @param DockerImageValidator $validator
+     * @param StepParser $steps
      */
     public function __construct(
         EventLogger $logger,
         SSMCommandRunner $runner,
-        Dockerinator $docker,
+        WindowsSSMDockerinator $docker,
+        DockerImageValidator $validator,
         Powershellinator $powershell,
-        DockerImageValidator $validator
+        StepParser $steps
     ) {
         $this->logger = $logger;
         $this->runner = $runner;
         $this->docker = $docker;
         $this->powershell = $powershell;
         $this->validator = $validator;
+        $this->steps = $steps;
 
-        $this->internalTimeout = self::DEFAULT_TIMEOUT_INTERNAL_COMMAND;
+        $this->setInternalCommandTimeout(self::DEFAULT_TIMEOUT_INTERNAL_COMMAND);
     }
 
     /**
@@ -102,72 +108,93 @@ class DockerBuilder implements BuilderInterface
      *
      * @return void
      */
-    public function setInternalCommandTimeout($seconds)
+    public function setInternalCommandTimeout(int $seconds)
     {
-        $this->internalTimeout = (int) $seconds;
+        // yep this is weird. AWS SDK requires this to be string.
+        $this->internalTimeout = (string) $seconds;
     }
 
     /**
      * @inheritdoc
      */
-    public function __invoke(SsmClient $ssm, $image, $instanceID, $buildID, array $commands, array $env)
+    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $steps, array $env): bool
     {
-        $workDir = $this->powershell->getBaseBuildPath();
-
-        $inputDir = "${workDir}\\${buildID}";
-        $outputDir = "${workDir}\\${buildID}-output";
-        $commands = $this->parseCommandsToScripts($buildID, $commands);
-
         if (!$dockerImage = $this->validator->validate($image)) {
             return $this->bombout(false);
         }
 
+        $this->getIO()->note(self::ACTION_PREPARING_INSTANCE);
+
+        // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
+        $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $steps);
+
+        $workDir = $this->powershell->getBaseBuildPath();
+        $inputDir = "${workDir}\\${jobID}";
+        $outputDir = "${workDir}\\${jobID}-output";
+
+        $scriptedJobs = $this->parseCommandsToScripts($jobID, $jobs);
+
         // 1. Prepare instance to run build commands
-        if (!$result = $this->prepare($ssm, $instanceID, $buildID, $inputDir, $commands, $env)) {
+        if (!$this->prepare($ssm, $instanceID, $jobID, $inputDir, $scriptedJobs, $env)) {
             return $this->bombout(false);
         }
 
-        // 2. Enable cleanup failsafe
-        $cleanup = $this->enableCleanup($ssm, $instanceID, $inputDir, $buildID);
+        $total = count($steps);
+        $current = 0;
 
-        // 3. Build container
+        foreach ($scriptedJobs as $jobNum => $job) {
+            [$image, $scripts] = $job;
 
-        $containerName = strtolower(str_replace('.', '', $buildID));
+            $containerName = ($jobNum + 1) . '_' . strtolower($jobID);
 
-        // 4. Create container
-        if (!$this->docker->createContainer($ssm, $instanceID, $dockerImage, $containerName)) {
-            return $this->bombout(false);
+            // 2. Create container
+            if (!$this->docker->createContainer($ssm, $instanceID, $image, $containerName)) {
+                return $this->bombout(false);
+            }
+
+            $this->getIO()->note(self::ACTION_STARTING_CONTAINER);
+
+            // 3. Enable cleanup failsafe
+            $cleanup = $this->enableDockerCleanup($ssm, $instanceID, $containerName);
+
+            // 4. Copy into container
+            if (!$this->docker->copyIntoContainer($ssm, $instanceID, $jobID, $containerName, $inputDir)) {
+                return $this->bombout(false);
+            }
+
+            // 5. Start container
+            if (!$this->docker->startContainer($ssm, $instanceID, $containerName)) {
+                return $this->bombout(false);
+            }
+
+            $this->getIO()->note(sprintf(self::ACTION_START_CONTAINER_STARTED, $containerName));
+
+            // 6. Run steps
+            foreach ($scripts as $script) {
+                $current++;
+
+                if (!$result = $this->runStep($ssm, $instanceID, $containerName, $script, $current, $total)) {
+                    return $this->bombout(false);
+                }
+            }
+
+            // 7. Copy out of container
+            if (!$this->docker->copyFromContainer($ssm, $instanceID, $containerName, $outputDir)) {
+                return $this->bombout(false);
+            }
+
+            // 8. Run and clear docker cleanup/shutdown functionality
+            $this->runDockerCleanup($cleanup);
+
+            // 9. Reset the workspace
+            // This is necessary because we "shift" between the build dir and output dir.
+            // If there are multiple containers used, we need to shift the output to the next job's input.
+            if (count($scriptedJobs) > ($jobNum + 1)) {
+                if (!$this->shiftBuildWorkspace($ssm, $instanceID, $outputDir, $inputDir)) {
+                    return $this->bombout(false);
+                }
+            }
         }
-
-        $this->status(self::EVENT_STARTING_CONTAINER, self::SECTION);
-
-        // 5. Enable docker cleanup failsafe
-        $cleanup = $this->enableDockerCleanup($ssm, $instanceID, $containerName, $cleanup);
-
-        // 6. Copy into container
-        if (!$this->docker->copyIntoContainer($ssm, $instanceID, $buildID, $containerName, $inputDir)) {
-            return $this->bombout(false);
-        }
-
-        // 7. Start container
-        if (!$this->docker->startContainer($ssm, $instanceID, $containerName)) {
-            return $this->bombout(false);
-        }
-
-        $this->status(sprintf(self::EVENT_START_CONTAINER_STARTED, $containerName), self::SECTION);
-
-        // 8. Run commands
-        if (!$this->runCommands($ssm, $instanceID, $containerName, $commands)) {
-            return $this->bombout(false);
-        }
-
-        // 9. Copy out of container
-        if (!$this->docker->copyFromContainer($ssm, $instanceID, $containerName, $outputDir)) {
-            return $this->bombout(false);
-        }
-
-        // 10. Cleanup and clear cleanup/shutdown functionality
-        $this->runCleanup($cleanup);
 
         return $this->bombout(true);
     }
@@ -175,14 +202,14 @@ class DockerBuilder implements BuilderInterface
     /**
      * @param SsmClient $ssm
      * @param string $instanceID
-     * @param string $buildID
+     * @param string $jobID
      * @param string $inputDir
-     * @param array $commandsWithScripts
+     * @param array $scriptedJobs
      * @param array $env
      *
      * @return bool
      */
-    private function prepare(SsmClient $ssm, $instanceID, $buildID, $inputDir, array $commandsWithScripts, array $env)
+    private function prepare(SsmClient $ssm, $instanceID, $jobID, $inputDir, array $scriptedJobs, array $env)
     {
         // We use a custom log context, so we dont mistakenly output secrets in the logs
         $logContext = [
@@ -190,8 +217,13 @@ class DockerBuilder implements BuilderInterface
             'commandType' => SSMCommandRunner::TYPE_POWERSHELL
         ];
 
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
+        // Recombine the [$image, [$steps]] steps into one list so they can be easily written at once
+        $combinedScripts = [];
+        foreach ($scriptedJobs as $scripts) {
+            $combinedScripts = array_merge($combinedScripts, array_pop($scripts));
+        }
+
+        $config = [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
                 $this->powershell->getScript('verifyBuildEnvironment', [
@@ -199,16 +231,24 @@ class DockerBuilder implements BuilderInterface
                 ]),
                 $this->powershell->getScript('loginDocker'),
                 $this->powershell->getScript('writeUserCommandsToBuildScripts', [
-                    'buildID' => $buildID,
-                    'commandsParsed' => $commandsWithScripts,
+                    'buildID' => $jobID,
+                    'commandsParsed' => $combinedScripts,
                 ]),
                 $this->powershell->getScript('writeEnvFile', [
-                    'buildID' => $buildID,
+                    'buildID' => $jobID,
                     'environment' => $env,
                 ])
             ],
-            'executionTimeout' => [(string) $this->internalTimeout],
-        ], [$this->isDebugLoggingEnabled(), SSMCommandRunner::EVENT_MESSAGE, $logContext]);
+            'executionTimeout' => [$this->internalTimeout],
+        ];
+
+        $result = ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [$this->isDebugLoggingEnabled(), SSMCommandRunner::EVENT_MESSAGE, $logContext]
+        );
 
         if (!$result) {
             $this->logger->event('failure', self::ERR_PREPARE_FAILED);
@@ -222,69 +262,58 @@ class DockerBuilder implements BuilderInterface
      * @param string $instanceID
      *
      * @param string $containerName
-     * @param array $commands
+     * @param array $script
+     * @param int $currentStep
+     * @param int $totalSteps
      *
      * @return bool
      */
-    private function runCommands(SsmClient $ssm, $instanceID, $containerName, array $commands)
+    private function runStep(SsmClient $ssm, $instanceID, $containerName, array $script, $currentStep, $totalSteps)
     {
-        $isSuccess = true;
+        $remaining = $totalSteps - $currentStep;
 
-        $total = count($commands);
-        foreach ($commands as $num => $command) {
-            $current = $num + 1;
-            $remaining = $total - $current;
+        $msg = $this->getEventMessage($script['command'], "[${currentStep}/${totalSteps}]");
 
-            $msg = $this->getEventMessage($command['command'], "[${current}/${total}]");
-            $result = $this->docker->runCommand($ssm, $instanceID, $containerName, $command, $msg);
-            if (!$result) {
-                if ($remaining > 0) {
-                    $this->logSkippedCommands($remaining);
-                }
-
-                $isSuccess = false;
-                break;
+        if (!$result = $this->docker->runCommand($ssm, $instanceID, $containerName, $script, $msg)) {
+            if ($remaining > 0) {
+                $this->logSkippedCommands($remaining);
             }
+
+            return false;
         }
 
-        return $isSuccess;
+        return true;
     }
 
     /**
      * @param SsmClient $ssm
      * @param string $instanceID
-     * @param string $inputDir
-     * @param string $buildID
+     *
+     * @param string $outputDir
+     * @param array $inputDir
      *
      * @return bool
      */
-    private function cleanupBuilder(SsmClient $ssm, $instanceID, $inputDir, $buildID)
+    private function shiftBuildWorkspace(SsmClient $ssm, $instanceID, $outputDir, $inputDir)
     {
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
+        $config = [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
-                $this->powershell->getScript('cleanupAfterBuild', [
-                    'buildID' => $buildID,
+                $this->powershell->getScript('shiftBuildWorkspaceFromOutput', [
+                    'outputDir' => $outputDir,
                     'inputDir' => $inputDir
                 ])
             ],
-            'executionTimeout' => [(string) $this->internalTimeout],
-        ], [$this->isDebugLoggingEnabled()]);
+            'executionTimeout' => [$this->internalTimeout],
+        ];
 
-        return $result;
-    }
-
-    /**
-     * @param string $containerName
-     *
-     * @return void
-     */
-    private function cleanupContainer(SsmClient $ssm, $instanceID, $containerName)
-    {
-        $this->status(sprintf('Cleaning up container "%s"', $containerName), self::SECTION);
-
-        $this->docker->cleanupContainer($ssm, $instanceID, $containerName);
+        return ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [$this->isDebugLoggingEnabled(), self::ERR_SHIFT_FAILED]
+        );
     }
 
     /**
@@ -304,33 +333,65 @@ class DockerBuilder implements BuilderInterface
             $msgCLI = "${count} ${clean}";
         }
 
-        $this->status(sprintf(static::STATUS_CLI, $msgCLI), static::SECTION);
+        $this->getIO()->listing([sprintf(static::STATUS_CLI, $msgCLI)]);
+
         return $msg;
     }
 
     /**
-     * @param string $buildID
-     * @param array $commands
+     * @param string $jobID
+     * @param array $jobs
      *
      * @return array
      */
-    private function parseCommandsToScripts($buildID, array $commands)
+    private function parseCommandsToScripts($jobID, array $jobs)
     {
-        $commandScripts = [];
+        $scriptedJobs = [];
 
-        foreach ($commands as $num => $command) {
-            $commandScripts[] = [
-                'command' => $command,
-                'script' => $this->powershell->getScript('getBuildScript', [
-                    'command' => $command,
-                    'envFile' => $this->powershell->getUserScriptFilePathForContainer($buildID, 'env')
-                ]),
-                'file' => $this->powershell->getUserScriptFilePath($buildID, $num),
-                'container_file' => $this->powershell->getUserScriptFilePathForContainer($buildID, $num)
-            ];
+        foreach ($jobs as $jobNum => $job) {
+            [$image, $steps] = $job;
+
+            $scriptedSteps = [];
+            foreach ($steps as $stepNum => $step) {
+                $num = sprintf('%d_%d', $jobNum + 1, $stepNum + 1);
+
+                $scriptedSteps[] = [
+                    'command' => $step,
+                    'script' => $this->powershell->getScript('getBuildScript', [
+                        'command' => $step,
+                        'envFile' => $this->powershell->getUserScriptFilePathForContainer(
+                            WindowsSSMDockerinator::CONTAINER_SCRIPTS_DIR,
+                            $jobID,
+                            'env'
+                        )
+                    ]),
+                    'file' => $this->powershell->getUserScriptFilePath($jobID, $num),
+                    'container_file' => $this->powershell->getUserScriptFilePathForContainer(
+                        WindowsSSMDockerinator::CONTAINER_SCRIPTS_DIR,
+                        $jobID,
+                        $num
+                    )
+                ];
+            }
+
+            $scriptedJobs[] = [$image, $scriptedSteps];
         }
 
-        return $commandScripts;
+        return $scriptedJobs;
+    }
+
+    /**
+     * @param SsmClient $ssm
+     * @param string $instanceID
+     * @param string $containerName
+     *
+     * @return void
+     */
+    private function cleanupContainer(SsmClient $ssm, $instanceID, $containerName)
+    {
+        $this->getIO()->note(sprintf(self::ACTION_DOCKER_CLEANUP, $containerName));
+
+        $this->docker->cleanupContainer($ssm, $instanceID, $containerName);
     }
 
     /**
@@ -344,28 +405,8 @@ class DockerBuilder implements BuilderInterface
 
         $this->logger->event('info', $msg);
 
-        $this->status('<error>Build command failed</error>', static::SECTION);
-        $this->status($msg, static::SECTION);
-    }
-
-    /**
-     * @param SsmClient $ssm
-     * @param string $instanceID
-     * @param string $inputDir
-     * @param string $buildID
-     *
-     * @return callable
-     */
-    private function enableCleanup(SsmClient $ssm, $instanceID, $inputDir, $buildID)
-    {
-        $cleanup = function () use ($ssm, $instanceID, $inputDir, $buildID) {
-            $this->cleanupBuilder($ssm, $instanceID, $inputDir, $buildID);
-        };
-
-        // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($cleanup, self::EVENT_AWS_DOCKER_CLEANUP);
-
-        return $cleanup;
+        $this->getIO()->warning('Build step failed.');
+        $this->getIO()->text($msg);
     }
 
     /**
@@ -373,19 +414,17 @@ class DockerBuilder implements BuilderInterface
      * @param string $instanceID
      *
      * @param string $containerName
-     * @param callable $builderCleanup
      *
      * @return callable
      */
-    private function enableDockerCleanup(SsmClient $ssm, $instanceID, $containerName, callable $builderCleanup)
+    private function enableDockerCleanup(SsmClient $ssm, $instanceID, $containerName)
     {
-        $cleanup = function () use ($ssm, $instanceID, $containerName, $builderCleanup) {
+        $cleanup = function () use ($ssm, $instanceID, $containerName) {
             $this->cleanupContainer($ssm, $instanceID, $containerName);
-            $builderCleanup();
         };
 
         // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($cleanup, self::EVENT_AWS_DOCKER_CLEANUP);
+        $this->enableEmergencyHandler($cleanup);
 
         return $cleanup;
     }
@@ -395,7 +434,7 @@ class DockerBuilder implements BuilderInterface
      *
      * @return void
      */
-    private function runCleanup(callable $cleanup)
+    private function runDockerCleanup(callable $cleanup)
     {
         $cleanup();
         $this->cleanup(null);

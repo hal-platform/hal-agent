@@ -1,0 +1,41 @@
+services:
+
+    deploy_platform.cd:
+        class: 'Hal\Agent\Push\CodeDeploy\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@deploy.support.aws_authenticator'
+            - '@push.cd.healthchecker'
+            # - '@deploy.support.packer'
+            - '@push.cd.uploader'
+            - '@push.cd.pusher'
+
+    ############################################################################
+    # support
+    ############################################################################
+
+    push.cd.healthchecker:
+        class: 'Hal\Agent\Push\CodeDeploy\HealthChecker'
+        arguments:
+            - '@clock'
+            - '%date.timezone%'
+
+    push.cd.uploader:
+        class: 'Hal\Agent\Push\CodeDeploy\Uploader'
+        arguments: ['@logger.event']
+        calls:
+            - ['allowOverwrite', [false]]
+
+    push.cd.pusher:
+        class: 'Hal\Agent\Push\CodeDeploy\Pusher'
+        arguments:
+            - '@logger.event'
+            - '@push.cd.healthchecker'
+            - '@push.cd.waiter'
+            - '%hal.baseurl%'
+
+    push.cd.waiter:
+        class: 'Hal\Agent\Waiter\Waiter'
+        arguments:
+            - '%push.cd.waiter.interval%'
+            - '%push.cd.waiter.max%'

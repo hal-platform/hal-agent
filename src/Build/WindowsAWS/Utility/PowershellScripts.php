@@ -217,6 +217,27 @@ POWERSHELL;
     }
 
     /**
+     * @param string $outputDir
+     * @param string $inputDir
+     *
+     * @return string
+     */
+    public static function shiftBuildWorkspaceFromOutput($outputDir, $inputDir)
+    {
+        $powershell = <<<POWERSHELL
+if (Test-Path "${inputDir}") { Remove-Item "${inputDir}" -Recurse -Force }
+New-Item ${inputDir} -type directory
+
+Copy-Item ${outputDir}\* -Destination ${inputDir} -Recurse
+
+Remove-Item "${outputDir}" -Recurse -Force
+New-Item ${outputDir} -type directory
+POWERSHELL;
+
+        return $powershell;
+    }
+
+    /**
      * @param string $inputDir
      * @param string $buildScriptPath
      *
@@ -242,6 +263,8 @@ POWERSHELL;
     public static function cleanupAfterBuildOutput($outputDir, $inputDir, $buildScriptPath)
     {
         $powershell = <<<POWERSHELL
+if (Test-Path "${inputDir}") { Remove-Item "${inputDir}" -Recurse -Force }
+if (Test-Path "${buildScriptPath}") { Remove-Item "${buildScriptPath}" -Recurse -Force }
 if (Test-Path "${outputDir}") { Remove-Item "${outputDir}" -Recurse -Force }
 POWERSHELL;
         return $powershell . "\n" . self::cleanupAfterBuild($inputDir, $buildScriptPath);
@@ -289,6 +312,10 @@ Set-Alias bsdtar "${env:ProgramFiles(x86)}\GnuWin32\bin\bsdtar.exe"
 POWERSHELL;
 
         $command = <<<POWERSHELL
+if (-not (Test-Path "${buildDir}")) {
+    New-Item ${buildDir} -type directory
+}
+
 bsdtar -cz --file=${localFile} -C ${buildDir} .
 
 Remove-Item ${buildDir} -Recurse -Force

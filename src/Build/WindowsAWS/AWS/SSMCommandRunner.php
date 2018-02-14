@@ -24,6 +24,8 @@ class SSMCommandRunner
     const ERR_WAITING = 'Waited for command to finish, but the operation timed out.';
 
     const TIMEOUT_TO_START_COMMAND = 30;
+    const WAIT_TIME_BEFORE_CHECKING_OUTPUT = 2;
+
     const TYPE_POWERSHELL = 'AWS-RunPowerShellScript';
 
     /**
@@ -100,7 +102,7 @@ class SSMCommandRunner
         if ($this->mandatoryWaitPeriod) {
             // wait a few seconds. If we call "GetCommandInvocation"
             // too quickly after SendCommand, we get an error.
-            sleep(5);
+            sleep(self::WAIT_TIME_BEFORE_CHECKING_OUTPUT);
         }
 
         // Wait for command to finish

@@ -1,0 +1,4 @@
+env:
+    test:
+        DERP: '1234'
+        'invalid-env': 5678

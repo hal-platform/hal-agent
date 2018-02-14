@@ -1,0 +1,9 @@
+exclude:
+    - 'excluded_dir'
+build: []
+build_transform: null
+
+before_deploy: 'single_cmd'
+deploy: null
+after_deploy:
+    - ['array_cmd_is_bad']

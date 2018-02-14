@@ -1,0 +1,18 @@
+services:
+
+    deploy_platform.script:
+        class: 'Hal\Agent\Push\Script\Deployer'
+        arguments:
+            - '@logger.event'
+            - '@deploy.script.builder'
+
+    ############################################################################
+    # support
+    ############################################################################
+
+    deploy.script.builder:
+        class: 'Hal\Agent\Push\Script\DeployDelegatingBuilder'
+        arguments:
+            - '@logger.event'
+            - '@service_container'
+            - '%deployment_platform.script.platforms%'

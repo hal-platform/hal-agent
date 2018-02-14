@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -8,31 +8,30 @@
 namespace Hal\Agent\Build\WindowsAWS;
 
 use Aws\Ssm\SsmClient;
-use Hal\Agent\Build\EmergencyBuildHandlerTrait;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Symfony\IOAwareTrait;
 
 class NativeBuilder implements BuilderInterface
 {
-    // Comes with OutputAwareTrait
-    use EmergencyBuildHandlerTrait;
     use InternalDebugLoggingTrait;
+    use IOAwareTrait;
 
-    const SECTION = 'AWS Windows';
+    private const EVENT_MESSAGE = 'Build step %s';
+    private const EVENT_MESSAGE_CUSTOM = 'Build step %s "%s"';
 
-    const EVENT_MESSAGE = 'Run build command %s';
-    const EVENT_MESSAGE_CUSTOM = 'Run build command %s "%s"';
-    const EVENT_AWS_CLEANUP = 'Clean up build server';
+    private const ACTION_PREPARING_INSTANCE = 'Preparing AWS instance for job';
 
-    const STATUS_CLI = 'Running build command [ <info>%s</info> ] in AWS';
+    private const STATUS_CLI = 'Running build step [ <info>%s</info> ] in Windows AWS';
 
-    const ERR_PREPARE_FAILED = 'Failed to prepare build server';
-    const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build commands';
+    private const ERR_PREPARE_FAILED = 'Failed to prepare builder';
+    private const ERR_MESSAGE_SKIPPING = 'Skipping %s remaining build steps';
 
-    const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,50}$/';
-    const TIMEOUT_INTERNAL_COMMAND = 120;
+    private const SHORT_COMMAND_VALIDATION = '/^[\S\h]{1,80}$/';
+
+    private const DEFAULT_TIMEOUT_INTERNAL_COMMAND = 120;
 
     /**
      * @var EventLogger
@@ -52,89 +51,123 @@ class NativeBuilder implements BuilderInterface
     /**
      * @var string
      */
-    private $commandTimeout;
+    private $internalTimeout;
+    private $buildStepTimeout;
 
     /**
      * @param EventLogger $logger
      * @param SSMCommandRunner $runner
      * @param Powershellinator $powershell
-     * @param string $commandTimeout
+     * @param string $buildStepTimeout
      */
-    public function __construct(EventLogger $logger, SSMCommandRunner $runner, Powershellinator $powershell, $commandTimeout)
-    {
+    public function __construct(
+        EventLogger $logger,
+        SSMCommandRunner $runner,
+        Powershellinator $powershell,
+        string $buildStepTimeout
+    ) {
         $this->logger = $logger;
         $this->runner = $runner;
         $this->powershell = $powershell;
-        $this->commandTimeout = (string) $commandTimeout;
+
+        $this->buildStepTimeout = $buildStepTimeout;
+        $this->setInternalCommandTimeout(self::DEFAULT_TIMEOUT_INTERNAL_COMMAND);
+    }
+
+    /**
+     * @param int $seconds
+     *
+     * @return void
+     */
+    public function setInternalCommandTimeout(int $seconds)
+    {
+        // yep this is weird. AWS SDK requires this to be string.
+        $this->internalTimeout = (string) $seconds;
     }
 
     /**
      * @inheritdoc
      */
-    public function __invoke(SsmClient $ssm, $image, $instanceID, $buildID, array $commands, array $env)
+    public function __invoke(string $jobID, $image, SsmClient $ssm, $instanceID, array $commands, array $env): bool
     {
         // $image = throwaway
 
-        $workDir = $this->powershell->getBaseBuildPath();
+        $this->getIO()->note(self::ACTION_PREPARING_INSTANCE);
 
-        $inputDir = "${workDir}\\${buildID}";
-        $outputDir = "${workDir}\\${buildID}-output";
-        $commands = $this->parseCommandsToScripts($buildID, $commands);
+        $workDir = $this->powershell->getBaseBuildPath();
+        $inputDir = "${workDir}\\${jobID}";
+        $outputDir = "${workDir}\\${jobID}-output";
+
+        $scriptedSteps = $this->parseCommandsToScripts($jobID, $commands);
 
         // 1. Prepare instance to run build commands
-        if (!$result = $this->prepare($ssm, $instanceID, $buildID, $inputDir, $commands, $env)) {
-            return $this->bombout(false);
+        if (!$result = $this->prepare($ssm, $instanceID, $jobID, $inputDir, $scriptedSteps, $env)) {
+            return false;
         }
 
-        // 2. Enable cleanup failsafe
-        $cleanup = $this->enableCleanup($ssm, $instanceID, $inputDir, $buildID);
+        $total = count($scriptedSteps);
+        $current = 0;
 
-        // 3. Run commands
-        if (!$this->runCommands($ssm, $instanceID, $inputDir, $commands)) {
-            return $this->bombout(false);
+        // 2. Run steps
+        foreach ($scriptedSteps as $step) {
+            $current++;
+
+            if (!$result = $this->runStep($ssm, $instanceID, $inputDir, $step, $current, $total)) {
+                return false;
+            }
         }
 
-        // 4. Transfer to build output
+        // 3. Transfer to build output
         if (!$this->transferToOutput($ssm, $instanceID, $inputDir, $outputDir)) {
-            return $this->bombout(false);
+            return false;
         }
 
-        // 5. Cleanup and clear cleanup/shutdown functionality
-        $this->runCleanup($cleanup);
-
-        return $this->bombout(true);
+        return true;
     }
 
     /**
      * @param SsmClient $ssm
      * @param string $instanceID
-     * @param string $buildID
+     * @param string $jobID
      * @param string $inputDir
      * @param array $commandsWithScripts
      * @param array $env
      *
      * @return bool
      */
-    private function prepare(SsmClient $ssm, $instanceID, $buildID, $inputDir, array $commandsWithScripts, $env)
+    private function prepare(SsmClient $ssm, $instanceID, $jobID, $inputDir, array $commandsWithScripts, $env)
     {
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
+        // We use a custom log context, so we dont mistakenly output secrets in the logs
+        $logContext = [
+            'instanceID' => $instanceID,
+            'commandType' => SSMCommandRunner::TYPE_POWERSHELL
+        ];
+
+        $config = [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
                 $this->powershell->getScript('verifyBuildEnvironment', [
                     'inputDir' => $inputDir
                 ]),
                 $this->powershell->getScript('writeUserCommandsToBuildScripts', [
-                    'buildID' => $buildID,
+                    'buildID' => $jobID,
                     'commandsParsed' => $commandsWithScripts,
                 ]),
                 $this->powershell->getScript('writeEnvFile', [
-                    'buildID' => $buildID,
+                    'buildID' => $jobID,
                     'environment' => $env,
                 ])
             ],
-            'executionTimeout' => [(string) self::TIMEOUT_INTERNAL_COMMAND],
-        ], [$this->isDebugLoggingEnabled()]);
+            'executionTimeout' => [$this->internalTimeout],
+        ];
+
+        $result = ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [$this->isDebugLoggingEnabled(), SSMCommandRunner::EVENT_MESSAGE, $logContext]
+        );
 
         if (!$result) {
             $this->logger->event('failure', self::ERR_PREPARE_FAILED);
@@ -147,50 +180,52 @@ class NativeBuilder implements BuilderInterface
      * @param SsmClient $ssm
      * @param string $instanceID
      * @param string $inputDir
-     * @param array $commands
+     * @param array $script
+     * @param array $currentStep
+     * @param array $totalSteps
      *
      * @return bool
      */
-    private function runCommands(SsmClient $ssm, $instanceID, $inputDir, array $commands)
+    private function runStep(SsmClient $ssm, $instanceID, $inputDir, array $script, $currentStep, $totalSteps)
     {
-        $isSuccess = true;
-        $runner = $this->runner;
+        $remaining = $totalSteps - $currentStep;
 
-        $total = count($commands);
-        foreach ($commands as $num => $command) {
-            $current = $num + 1;
-            $remaining = $total - $current;
+        $msg = $this->getEventMessage($script['command'], "[${currentStep}/${totalSteps}]");
 
-            $msg = $this->getEventMessage($command['command'], "[${current}/${total}]");
+        $customContext = [
+            'command' => $script['command'],
+            'script' => $script['script'],
+            'scriptFile' => $script['file']
+        ];
 
-            $customContext = [
-                'command' => $command['command'],
-                'script' => $command['script'],
-                'scriptFile' => $command['file']
-            ];
+        $config = [
+            'commands' => [
+                $this->powershell->getStandardPowershellHeader(),
+                $this->powershell->getScript('runBuildScriptNative', [
+                    'buildScript' => $script['file']
+                ])
+            ],
+            'workingDirectory' => [$inputDir],
+            'executionTimeout' => [$this->buildStepTimeout],
+        ];
 
-            $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
-                'commands' => [
-                    $this->powershell->getStandardPowershellHeader(),
-                    $this->powershell->getScript('runBuildScriptNative', [
-                        'buildScript' => $command['file']
-                    ])
-                ],
-                'workingDirectory' => [$inputDir],
-                'executionTimeout' => [$this->commandTimeout],
-            ], [true, $msg, $customContext]);
+        $result = ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [true, $msg, $customContext]
+        );
 
-            if (!$result) {
-                if ($remaining > 0) {
-                    $this->logSkippedCommands($remaining);
-                }
-
-                $isSuccess = false;
-                break;
+        if (!$result) {
+            if ($remaining > 0) {
+                $this->logSkippedCommands($remaining);
             }
+
+            return false;
         }
 
-        return $isSuccess;
+        return true;
     }
 
     /**
@@ -203,8 +238,7 @@ class NativeBuilder implements BuilderInterface
      */
     private function transferToOutput(SsmClient $ssm, $instanceID, $inputDir, $outputDir)
     {
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
+        $config = [
             'commands' => [
                 $this->powershell->getStandardPowershellHeader(),
                 $this->powershell->getScript('transferBuildToOutput', [
@@ -212,35 +246,16 @@ class NativeBuilder implements BuilderInterface
                     'outputDir' => $outputDir
                 ])
             ],
-            'executionTimeout' => [(string) self::TIMEOUT_INTERNAL_COMMAND],
-        ], [$this->isDebugLoggingEnabled()]);
+            'executionTimeout' => [$this->internalTimeout],
+        ];
 
-        return $result;
-    }
-
-    /**
-     * @param SsmClient $ssm
-     * @param string $instanceID
-     * @param string $inputDir
-     * @param string $buildID
-     *
-     * @return bool
-     */
-    private function cleanupBuilder(SsmClient $ssm, $instanceID, $inputDir, $buildID)
-    {
-        $runner = $this->runner;
-        $result = $runner($ssm, $instanceID, SSMCommandRunner::TYPE_POWERSHELL, [
-            'commands' => [
-                $this->powershell->getStandardPowershellHeader(),
-                $this->powershell->getScript('cleanupAfterBuild', [
-                    'buildID' => $buildID,
-                    'inputDir' => $inputDir
-                ])
-            ],
-            'executionTimeout' => [(string) self::TIMEOUT_INTERNAL_COMMAND],
-        ], [$this->isDebugLoggingEnabled()]);
-
-        return $result;
+        return ($this->runner)(
+            $ssm,
+            $instanceID,
+            SSMCommandRunner::TYPE_POWERSHELL,
+            $config,
+            [$this->isDebugLoggingEnabled()]
+        );
     }
 
     /**
@@ -260,33 +275,33 @@ class NativeBuilder implements BuilderInterface
             $msgCLI = "${count} ${clean}";
         }
 
-        $this->status(sprintf(static::STATUS_CLI, $msgCLI), static::SECTION);
+        $this->getIO()->listing([sprintf(static::STATUS_CLI, $msgCLI)]);
+
         return $msg;
     }
 
     /**
-     * @param string $buildID
-     * @param array $commands
+     * @param string $jobID
+     * @param array $steps
      *
      * @return array
      */
-    private function parseCommandsToScripts($buildID, array $commands)
+    private function parseCommandsToScripts($jobID, array $steps)
     {
-        $commandScripts = [];
+        $scriptedSteps = [];
 
-        foreach ($commands as $num => $command) {
-            $commandScripts[] = [
-                'command' => $command,
+        foreach ($steps as $stepNum => $step) {
+            $scriptedSteps[] = [
+                'command' => $step,
                 'script' => $this->powershell->getScript('getBuildScript', [
-                    'command' => $command,
-                    'envFile' => $this->powershell->getUserScriptFilePath($buildID, 'env')
+                    'command' => $step,
+                    'envFile' => $this->powershell->getUserScriptFilePath($jobID, 'env')
                 ]),
-                'file' => $this->powershell->getUserScriptFilePath($buildID, $num),
-                'container_file' => $this->powershell->getUserScriptFilePathForContainer($buildID, $num)
+                'file' => $this->powershell->getUserScriptFilePath($jobID, $stepNum)
             ];
         }
 
-        return $commandScripts;
+        return $scriptedSteps;
     }
 
     /**
@@ -300,38 +315,7 @@ class NativeBuilder implements BuilderInterface
 
         $this->logger->event('info', $msg);
 
-        $this->status('<error>Build command failed</error>', static::SECTION);
-        $this->status($msg, static::SECTION);
-    }
-
-    /**
-     * @param SsmClient $ssm
-     * @param string $instanceID
-     * @param string $inputDir
-     * @param string $buildID
-     *
-     * @return callable
-     */
-    private function enableCleanup(SsmClient $ssm, $instanceID, $inputDir, $buildID)
-    {
-        $cleanup = function () use ($ssm, $instanceID, $inputDir, $buildID) {
-            $this->cleanupBuilder($ssm, $instanceID, $inputDir, $buildID);
-        };
-
-        // Set emergency handler in case of super fatal
-        $this->enableEmergencyHandler($cleanup, self::EVENT_AWS_CLEANUP);
-
-        return $cleanup;
-    }
-
-    /**
-     * @param callable $cleanup
-     *
-     * @return void
-     */
-    private function runCleanup(callable $cleanup)
-    {
-        $cleanup();
-        $this->cleanup(null);
+        $this->getIO()->warning('Build step failed.');
+        $this->getIO()->text($msg);
     }
 }

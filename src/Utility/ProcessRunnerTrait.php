@@ -17,9 +17,9 @@ trait ProcessRunnerTrait
      * @param Process $process
      * @param int $timeout
      *
-     * @return boolean
+     * @return bool
      */
-    private function runProcess(Process $process, $timeout)
+    private function runProcess(Process $process, $timeout): bool
     {
         try {
             $process->run();
@@ -51,9 +51,9 @@ trait ProcessRunnerTrait
      * @param string $cmd
      * @param Process $process
      *
-     * @return boolean
+     * @return bool
      */
-    private function processFailure($cmd, Process $process)
+    private function processFailure($cmd, Process $process): bool
     {
         if (defined('static::EVENT_MESSAGE')) {
             $msg = static::EVENT_MESSAGE;
@@ -75,9 +75,9 @@ trait ProcessRunnerTrait
      * @param string $cmd
      * @param Process $process
      *
-     * @return boolean
+     * @return bool
      */
-    private function processSuccess($cmd, Process $process)
+    private function processSuccess($cmd, Process $process): bool
     {
         if (defined('static::EVENT_MESSAGE')) {
             $msg = static::EVENT_MESSAGE;

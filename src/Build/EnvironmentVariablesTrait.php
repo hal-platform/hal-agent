@@ -7,6 +7,11 @@
 
 namespace Hal\Agent\Build;
 
+use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\Target;
+
 trait EnvironmentVariablesTrait
 {
     /**
@@ -41,20 +46,69 @@ trait EnvironmentVariablesTrait
     {
         $localEnv = [];
 
-        if (isset($configurationEnv['global'])) {
-            foreach ($configurationEnv['global'] as $name => $value) {
-                $localEnv[$name] = $value;
-            }
+        $globals = $configurationEnv['global'] ?? [];
+        foreach ($globals as $name => $value) {
+            $localEnv[$name] = $value;
         }
 
-        $targetEnv = isset($env['HAL_ENVIRONMENT']) ? $env['HAL_ENVIRONMENT'] : '';
+        $targetEnv = $env['HAL_ENVIRONMENT'] ?? '';
 
-        if (isset($configurationEnv[$targetEnv])) {
-            foreach ($configurationEnv[$targetEnv] as $name => $value) {
-                $localEnv[$name] = $value;
-            }
+        $specific = $configurationEnv[$targetEnv] ?? [];
+        foreach ($specific as $name => $value) {
+            $localEnv[$name] = $value;
         }
 
         return $env + $localEnv;
+    }
+
+    /**
+     * @param Job $job
+     *
+     * @return array
+     */
+    private function buildEnvironmentVariables(Job $job): array
+    {
+        $environmentName = 'None';
+        $applicationName = 'None';
+
+        $vcsCommit = '';
+        $vcsReference = '';
+
+        $context = '';
+
+        if ($job instanceof Build || $job instanceof Release) {
+            $environmentName = ($environment = $job->environment()) ? $environment->name() : 'None';
+            $applicationName = ($application = $job->application()) ? $application->name() : 'None';
+        }
+
+        if ($job instanceof Build) {
+            $vcsCommit = $job->commit();
+            $vcsReference = $job->reference();
+
+        } elseif ($job instanceof Release && $build = $job->build()) {
+            $vcsCommit = $build->commit();
+            $vcsReference = $build->reference();
+
+            if ($target = $job->target()) {
+                $context = $target->parameter(Target::PARAM_CONTEXT) ?: '';
+            }
+        }
+
+        $env = [
+            'HAL_JOB_ID' => $job->id(),
+            'HAL_JOB_TYPE' => $job->type(),
+
+            'HAL_VCS_COMMIT' => $vcsCommit,
+            'HAL_VCS_REF' => $vcsReference,
+
+            'HAL_ENVIRONMENT' => $environmentName,
+            'HAL_APPLICATION' => $applicationName,
+
+            'HAL_CONTEXT' => $context,
+            // 'HAL_DEPLOY_PLATFORM' => $platform,
+
+        ];
+
+        return $env;
     }
 }
