@@ -47,7 +47,7 @@ class DownloaderTest extends MockeryTestCase
             ->andReturn(true);
         $this->compression
             ->shouldReceive('createWorkspace')
-            ->with('/workspace/build')
+            ->with('/workspace/job')
             ->once()
             ->andReturn(true);
 
@@ -75,12 +75,12 @@ class DownloaderTest extends MockeryTestCase
             ->andReturn(true);
         $this->compression
             ->shouldReceive('createWorkspace')
-            ->with(__DIR__ . '/.fixtures/build')
+            ->with(__DIR__ . '/.fixtures/job')
             ->once()
             ->andReturn(true);
         $this->compression
             ->shouldReceive('unpackTarArchive')
-            ->with(__DIR__ . '/.fixtures/build', __DIR__ . '/.fixtures/source_code.tgz', 1)
+            ->with(__DIR__ . '/.fixtures/job', __DIR__ . '/.fixtures/source_code.tgz', 1)
             ->once()
             ->andReturn(true);
 
@@ -148,7 +148,7 @@ class DownloaderTest extends MockeryTestCase
             ->andReturn(true);
         $this->compression
             ->shouldReceive('createWorkspace')
-            ->with(__DIR__ . '/.fixtures/build')
+            ->with(__DIR__ . '/.fixtures/job')
             ->once()
             ->andReturn(true);
         $this->compression

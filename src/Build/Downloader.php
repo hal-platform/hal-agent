@@ -53,7 +53,7 @@ class Downloader
      */
     public function __invoke(Build $build, string $workspace): bool
     {
-        $buildPath = $workspace . '/build';
+        $buildPath = $workspace . '/job';
         $sourceCodeFile = $workspace . '/source_code.tgz';
 
         if (!$downloader = $this->getVCSDownloader($build)) {
