@@ -127,8 +127,7 @@ class Downloader
         $commit = $build->commit();
 
         try {
-            $isSuccessful = true;
-            $result = $downloader->download($application, $commit, $targetFile);
+            $isSuccessful = $downloader->download($application, $commit, $targetFile);
         } catch (VCSException $ex) {
             $isSuccessful = false;
         }
