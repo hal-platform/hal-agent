@@ -94,13 +94,11 @@ class LinuxBuildPlatform implements JobPlatformInterface
     public function __construct(
         EventLogger $logger,
         EncryptedPropertyResolver $decrypter,
-
         Configurator $configurator,
         Exporter $exporter,
         BuilderInterface $builder,
         Importer $importer,
         Cleaner $cleaner,
-
         $defaultDockerImage
     ) {
         $this->logger = $logger;

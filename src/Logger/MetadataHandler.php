@@ -99,7 +99,7 @@ class MetadataHandler
         $response = $this->http->post($url, ['json' => ['data' => $data]]);
         $statusCode = ((int) floor($response->getStatusCode() / 100)) * 100;
 
-         if ($statusCode !== 200) {
+        if ($statusCode !== 200) {
             $this->logger->error(self::ERR_METADATA_FAILED, [
                 'responseStatus' => $response->getStatusCode(),
                 'responseBody' => (string) $response->getBody()

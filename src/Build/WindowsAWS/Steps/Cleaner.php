@@ -113,7 +113,6 @@ class Cleaner
     private function cleanObject(S3Client $s3, $bucket, $file)
     {
         try {
-
             if (!$s3->doesObjectExist($bucket, $file)) {
                 return true;
             }

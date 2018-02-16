@@ -175,7 +175,6 @@ trait APIClientTrait
         $json = is_array($json) ? $json : [];
 
         if (\JSON_ERROR_NONE !== json_last_error()) {
-dump($body);
             throw new Exception(sprintf(static::ERT_INVALID_RESPONSE, $url));
         }
 

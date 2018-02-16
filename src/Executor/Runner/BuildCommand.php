@@ -119,7 +119,6 @@ class BuildCommand implements ExecutorInterface
         EventLogger $logger,
         LocalCleaner $cleaner,
         SSHSessionManager $sshManager,
-
         Resolver $resolver,
         Downloader $downloader,
         ConfigurationReader $reader,
@@ -416,7 +415,7 @@ class BuildCommand implements ExecutorInterface
         $this->cleanup = $cleanup;
         if ($this->enableShutdownHandler) {
             // protip: avoid [$this, 'method'] notation, it makes searching and refactoring more difficult.
-            register_shutdown_function(function() {
+            register_shutdown_function(function () {
                 $this->emergencyCleanup();
             });
         }

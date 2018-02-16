@@ -72,5 +72,4 @@ class StepParser
 
         return [$defaultImage, $command];
     }
-
 }

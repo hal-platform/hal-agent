@@ -91,7 +91,7 @@ trait ExecutorTrait
     {
         $def = null;
         if ($parameters) {
-            $def = new InputDefinition(array_map(function($v) {
+            $def = new InputDefinition(array_map(function ($v) {
                 return new InputArgument($v);
             }, array_keys($parameters)));
         }

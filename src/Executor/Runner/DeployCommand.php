@@ -119,7 +119,6 @@ class DeployCommand implements ExecutorInterface
     public function __construct(
         EventLogger $logger,
         LocalCleaner $cleaner,
-
         Resolver $resolver,
         Artifacter $artifacter,
         ConfigurationReader $reader,
@@ -511,7 +510,7 @@ class DeployCommand implements ExecutorInterface
         $this->cleanup = $cleanup;
         if ($this->enableShutdownHandler) {
             // protip: avoid [$this, 'method'] notation, it makes searching and refactoring more difficult.
-            register_shutdown_function(function() {
+            register_shutdown_function(function () {
                 $this->emergencyCleanup();
             });
         }
