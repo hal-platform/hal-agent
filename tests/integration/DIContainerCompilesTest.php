@@ -22,8 +22,10 @@ class ContainerIntegrationTest extends MockeryTestCase
         putenv("HAL_DB_USER=postgres");
         putenv("HAL_DB_PASSWORD=");
         putenv("HAL_BASEURL=http://hal.example.com");
-        putenv("HAL_GITHUB_ENTERPRISE_TOKEN=123");
-        putenv("HAL_GITHUB_ENTERPRISE_URL=http://github.example.com");
+        putenv("HAL_API_TOKEN=123");
+
+        putenv("HAL_WIN_AWS_REGION=us-east-2");
+        putenv("HAL_WIN_AWS_BUCKET=test_bucket");
     }
 
     public function tearDown()
@@ -32,8 +34,10 @@ class ContainerIntegrationTest extends MockeryTestCase
         putenv("HAL_DB_USER=postgres");
         putenv("HAL_DB_PASSWORD=");
         putenv("HAL_BASEURL=");
-        putenv("HAL_GITHUB_ENTERPRISE_TOKEN=");
-        putenv("HAL_GITHUB_ENTERPRISE_URL=");
+        putenv("HAL_API_TOKEN=");
+
+        putenv("HAL_WIN_AWS_REGION=");
+        putenv("HAL_WIN_AWS_BUCKET=");
     }
 
     /**
