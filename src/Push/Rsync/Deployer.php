@@ -11,7 +11,7 @@ use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
-use Hal\Core\Type\GroupEnum;
+use Hal\Core\Type\TargetEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -75,7 +75,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[GroupEnum::TYPE_RSYNC]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_RSYNC])) {
+        if (!isset($properties[TargetEnum::TYPE_RSYNC]) || !$this->verifyConfiguration($properties[TargetEnum::TYPE_RSYNC])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 100;
         }
@@ -158,9 +158,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $verify = $this->verify;
         return $verify(
-            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[GroupEnum::TYPE_RSYNC]['remotePath']
+            $properties[TargetEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[TargetEnum::TYPE_RSYNC]['remotePath']
         );
     }
 
@@ -175,9 +175,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $delta = $this->delta;
         return $delta(
-            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[TargetEnum::TYPE_RSYNC]['remotePath'],
             $properties['pushProperties']
         );
     }
@@ -198,11 +198,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $prepush = $this->serverCommand;
         return $prepush(
-            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[TargetEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['pre_push'],
-            $properties[GroupEnum::TYPE_RSYNC]['environmentVariables']
+            $properties[TargetEnum::TYPE_RSYNC]['environmentVariables']
         );
     }
 
@@ -219,9 +219,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $pusher(
             $properties['location']['path'],
-            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[TargetEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['exclude']
         );
     }
@@ -242,11 +242,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         $postpush = $this->serverCommand;
         return $postpush(
-            $properties[GroupEnum::TYPE_RSYNC]['remoteUser'],
-            $properties[GroupEnum::TYPE_RSYNC]['remoteServer'],
-            $properties[GroupEnum::TYPE_RSYNC]['remotePath'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteUser'],
+            $properties[TargetEnum::TYPE_RSYNC]['remoteServer'],
+            $properties[TargetEnum::TYPE_RSYNC]['remotePath'],
             $properties['configuration']['post_push'],
-            $properties[GroupEnum::TYPE_RSYNC]['environmentVariables']
+            $properties[TargetEnum::TYPE_RSYNC]['environmentVariables']
         );
     }
 }

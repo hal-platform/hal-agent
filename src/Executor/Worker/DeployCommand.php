@@ -14,11 +14,11 @@ use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
-use Hal\Core\Entity\JobProcess;
+use Hal\Core\Entity\Job;
 use Psr\Log\LoggerInterface;
 use Hal\Core\Entity\Target;
 use Hal\Core\Entity\JobType\Release;
-use Hal\Core\Repository\ReleaseRepository;
+use Hal\Core\Repository\JobType\ReleaseRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
@@ -72,7 +72,7 @@ class DeployCommand implements ExecutorInterface
     private $logger;
 
     /**
-     * @var JobProcess[]
+     * @var Job[]
      */
     private $processes;
 

@@ -20,7 +20,7 @@ use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
 use Hal\Core\Repository\JobType\ReleaseRepository;
 use Hal\Core\Type\CredentialEnum;
-use Hal\Core\Type\GroupEnum;
+use Hal\Core\Type\TargetEnum;
 use QL\MCP\Common\Time\Clock;
 
 /**
@@ -131,10 +131,10 @@ class Resolver
         $target = $release->target();
         $build = $release->build();
         $application = $release->application();
-        $group = $target->group();
-        $github = $application->gitHub();
+        //$group = $target->group();
+        //$provider = $application->provider();
 
-        $method = $group->type();
+        $method = $target->type();
 
         $properties = [
             'build' => $build,
@@ -163,8 +163,8 @@ class Resolver
             'pushProperties' => [
                 'id' => $build->id(),
                 'source' => 'TODO',
-                'env' => $release->target()->group()->environment()->name(),
-                'user' => $release->user() ? $release->user()->username() : null,
+                'env' => $release->target()->environment()->name(),
+                'user' => $release->user() ? $release->user()->name() : null,
                 'reference' => $build->reference(),
                 'commit' => $build->commit(),
                 'date' => $this->clock->read()->format('c', 'America/Detroit')
@@ -175,14 +175,14 @@ class Resolver
         $properties[$method] = $this->buildDeploymentSystemProperties($method, $release);
 
         // Merge build and push env for rsync deployment method (used for server commands)
-        if ($method === GroupEnum::TYPE_RSYNC) {
+        if ($method === TargetEnum::TYPE_RSYNC) {
             $properties = $this->mergeRsyncBuildAndPushEnvironment($properties);
         }
 
         // Get encrypted properties for use in build_transform, with sources as well (for logging)
         $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources(
             $build->application(),
-            $release->target()->group()->environment()
+            $release->target()->environment()
         );
         $properties = array_merge($properties, $encryptedProperties);
 
@@ -207,12 +207,12 @@ class Resolver
     private function buildDeploymentSystemProperties($method, Release $release)
     {
         $target = $release->target();
-        $group = $target->group();
+        //$group = $target->group();
 
-        if ($method === GroupEnum::TYPE_RSYNC) {
+        if ($method === TargetEnum::TYPE_RSYNC) {
             //$credential = ($target->credential()->details() instanceof PrivateKeyCredential) ? $target->credential()->details(): null;
 
-            $hostname = $this->attemptHostnameValidation($group);
+            $hostname = $this->attemptHostnameValidation($target);
 
             return [
                 'remoteUser' => $this->sshUser,
@@ -228,15 +228,15 @@ class Resolver
                 //'credential' => $credential
             ];
 
-        } elseif ($method === GroupEnum::TYPE_SCRIPT) {
+        } elseif ($method === TargetEnum::TYPE_SCRIPT) {
             return [];
 
-        } elseif ($method === GroupEnum::TYPE_EB) {
+        } elseif ($method === TargetEnum::TYPE_EB) {
             $replacements = $this->buildTokenReplacements($release);
             $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_EB_FILENAME;
 
             return [
-                'region' => $group->name(),
+                'region' => $target->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
                 'application' => $target->parameter(Target::PARAM_APP),
@@ -247,12 +247,12 @@ class Resolver
                 'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
-        } elseif ($method === GroupEnum::TYPE_S3) {
+        } elseif ($method === TargetEnum::TYPE_S3) {
             $replacements = $this->buildTokenReplacements($release);
             $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_S3_FILENAME;
 
             return [
-                'region' => $group->name(),
+                'region' => $target->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
                 'bucket' => $target->parameter(Target::PARAM_BUCKET),
@@ -261,12 +261,12 @@ class Resolver
                 'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
-        } elseif ($method === GroupEnum::TYPE_CD) {
+        } elseif ($method === TargetEnum::TYPE_CD) {
             $replacements = $this->buildTokenReplacements($release);
             $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_CD_FILENAME;
 
             return [
-                'region' => $group->name(),
+                'region' => $target->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
                 'application' => $target->parameter(TARGET::PARAM_APP),
@@ -284,14 +284,14 @@ class Resolver
     }
 
     /**
-     * @param Group $group
+     * @param Target $target
      *
      * @return string
      */
-    private function attemptHostnameValidation(Group $group)
+    private function attemptHostnameValidation(Target $target)
     {
         // validate remote hostname
-        $serverName = $group->name();
+        $serverName = $target->name();
         if (!$hostname = $this->validateHostname($serverName)) {
             $this->logger->event('failure', sprintf(self::ERR_HOSTNAME_RESOLUTION, $serverName));
 
@@ -315,7 +315,7 @@ class Resolver
         $now = $this->clock->read();
         return [
             'APPID' => $application->id(),
-            'APP' => $application->identifier(),
+            'APP' => $application->name(),
             'BUILDID' => $build->id(),
             'PUSHID' => $release->id(),
             'DATE' => $now->format('Ymd', 'UTC'),
@@ -331,7 +331,7 @@ class Resolver
     private function mergeRsyncBuildAndPushEnvironment(array $properties)
     {
         // $platform = UnixBuildHandler::PLATFORM_TYPE;
-        // $method = GroupEnum::TYPE_RSYNC;
+        // $method = TargetEnum::TYPE_RSYNC;
 
         // if (!isset($properties[$method]['environmentVariables']) || !isset($properties[$platform]['environmentVariables'])) {
         //     return $properties;

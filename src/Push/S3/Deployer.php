@@ -13,7 +13,7 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Core\AWS\AWSAuthenticator;
-use Hal\Core\Type\GroupEnum;
+use Hal\Core\Type\TargetEnum;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
@@ -77,7 +77,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[GroupEnum::TYPE_S3]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_S3])) {
+        if (!isset($properties[TargetEnum::TYPE_S3]) || !$this->verifyConfiguration($properties[TargetEnum::TYPE_S3])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return self::INVALID_DEPLOYMENT_SYSTEM_FAILURE_CODE;
         }
@@ -132,7 +132,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      */
     private function getDeploymentStrategy(array $properties)
     {
-        $s3Properties = $properties[GroupEnum::TYPE_S3];
+        $s3Properties = $properties[TargetEnum::TYPE_S3];
         if (!array_key_exists('strategy', $s3Properties)) {
             return false;
         }
