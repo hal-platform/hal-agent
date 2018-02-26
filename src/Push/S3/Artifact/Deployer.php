@@ -13,7 +13,7 @@ use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Core\AWS\AWSAuthenticator;
-use Hal\Core\Type\GroupEnum;
+use Hal\Core\Type\TargetEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -112,8 +112,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Authenticating with AWS', self::SECTION);
 
         return $this->authenticator->getS3(
-            $properties[GroupEnum::TYPE_S3]['region'],
-            $properties[GroupEnum::TYPE_S3]['credential']
+            $properties[TargetEnum::TYPE_S3]['region'],
+            $properties[TargetEnum::TYPE_S3]['credential']
         );
     }
 
@@ -138,9 +138,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $preparer(
             $properties['location']['path'],
-            $properties[GroupEnum::TYPE_S3]['src'],
+            $properties[TargetEnum::TYPE_S3]['src'],
             $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_S3]['file']
+            $properties[TargetEnum::TYPE_S3]['file']
         );
     }
 
@@ -168,8 +168,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_S3]['bucket'],
-            $properties[GroupEnum::TYPE_S3]['file'],
+            $properties[TargetEnum::TYPE_S3]['bucket'],
+            $properties[TargetEnum::TYPE_S3]['file'],
             $metadata
         );
     }

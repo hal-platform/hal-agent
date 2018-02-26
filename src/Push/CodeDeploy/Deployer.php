@@ -15,7 +15,7 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Core\AWS\AWSAuthenticator;
-use Hal\Core\Type\GroupEnum;
+use Hal\Core\Type\TargetEnum;
 
 /**
  * @see http://docs.aws.amazon.com/codedeploy/latest/userguide/welcome.html
@@ -97,7 +97,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[GroupEnum::TYPE_CD]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_CD])) {
+        if (!isset($properties[TargetEnum::TYPE_CD]) || !$this->verifyConfiguration($properties[TargetEnum::TYPE_CD])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 500;
         }
@@ -193,8 +193,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Authenticating with AWS', self::SECTION);
 
         $cd = $this->authenticator->getCD(
-            $properties[GroupEnum::TYPE_CD]['region'],
-            $properties[GroupEnum::TYPE_CD]['credential']
+            $properties[TargetEnum::TYPE_CD]['region'],
+            $properties[TargetEnum::TYPE_CD]['credential']
         );
 
         if (!$cd) {
@@ -202,8 +202,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         }
 
         $s3 = $this->authenticator->getS3(
-            $properties[GroupEnum::TYPE_CD]['region'],
-            $properties[GroupEnum::TYPE_CD]['credential']
+            $properties[TargetEnum::TYPE_CD]['region'],
+            $properties[TargetEnum::TYPE_CD]['credential']
         );
 
         if (!$s3) {
@@ -226,8 +226,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $health = $this->health;
         $health = $health(
             $cd,
-            $properties[GroupEnum::TYPE_CD]['application'],
-            $properties[GroupEnum::TYPE_CD]['group']
+            $properties[TargetEnum::TYPE_CD]['application'],
+            $properties[TargetEnum::TYPE_CD]['group']
         );
 
         if (!in_array($health['status'], ['Succeeded', 'Failed', 'Stopped', 'None'])) {
@@ -249,9 +249,9 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $this->packer->packZipOrTar(
             $properties['location']['path'],
-            $properties[GroupEnum::TYPE_CD]['src'],
+            $properties[TargetEnum::TYPE_CD]['src'],
             $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_CD]['file']
+            $properties[TargetEnum::TYPE_CD]['file']
         );
     }
 
@@ -279,8 +279,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_CD]['bucket'],
-            $properties[GroupEnum::TYPE_CD]['file'],
+            $properties[TargetEnum::TYPE_CD]['bucket'],
+            $properties[TargetEnum::TYPE_CD]['file'],
             $metadata
         );
     }
@@ -302,11 +302,11 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $pusher = $this->pusher;
         return $pusher(
             $cd,
-            $properties[GroupEnum::TYPE_CD]['application'],
-            $properties[GroupEnum::TYPE_CD]['group'],
-            $properties[GroupEnum::TYPE_CD]['configuration'],
-            $properties[GroupEnum::TYPE_CD]['bucket'],
-            $properties[GroupEnum::TYPE_CD]['file'],
+            $properties[TargetEnum::TYPE_CD]['application'],
+            $properties[TargetEnum::TYPE_CD]['group'],
+            $properties[TargetEnum::TYPE_CD]['configuration'],
+            $properties[TargetEnum::TYPE_CD]['bucket'],
+            $properties[TargetEnum::TYPE_CD]['file'],
             $build->id(),
             $release->id(),
             $environment->name()

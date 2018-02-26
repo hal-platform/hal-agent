@@ -15,7 +15,7 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\OutputAwareInterface;
 use Hal\Agent\Symfony\OutputAwareTrait;
 use Hal\Core\AWS\AWSAuthenticator;
-use Hal\Core\Type\GroupEnum;
+use Hal\Core\Type\TargetEnum;
 
 class Deployer implements DeployerInterface, OutputAwareInterface
 {
@@ -93,7 +93,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status(self::STATUS, self::SECTION);
 
         // sanity check
-        if (!isset($properties[GroupEnum::TYPE_EB]) || !$this->verifyConfiguration($properties[GroupEnum::TYPE_EB])) {
+        if (!isset($properties[TargetEnum::TYPE_EB]) || !$this->verifyConfiguration($properties[TargetEnum::TYPE_EB])) {
             $this->logger->event('failure', self::ERR_INVALID_DEPLOYMENT_SYSTEM);
             return 200;
         }
@@ -183,8 +183,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $this->status('Authenticating with AWS', self::SECTION);
 
         $eb = $this->authenticator->getEB(
-            $properties[GroupEnum::TYPE_EB]['region'],
-            $properties[GroupEnum::TYPE_EB]['credential']
+            $properties[TargetEnum::TYPE_EB]['region'],
+            $properties[TargetEnum::TYPE_EB]['credential']
         );
 
         if (!$eb) {
@@ -192,8 +192,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         }
 
         $s3 = $this->authenticator->getS3(
-            $properties[GroupEnum::TYPE_EB]['region'],
-            $properties[GroupEnum::TYPE_EB]['credential']
+            $properties[TargetEnum::TYPE_EB]['region'],
+            $properties[TargetEnum::TYPE_EB]['credential']
         );
 
         if (!$s3) {
@@ -216,8 +216,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $health = $this->health;
         $health = $health(
             $eb,
-            $properties[GroupEnum::TYPE_EB]['application'],
-            $properties[GroupEnum::TYPE_EB]['environment']
+            $properties[TargetEnum::TYPE_EB]['application'],
+            $properties[TargetEnum::TYPE_EB]['environment']
         );
 
         if ($health['status'] !== 'Ready') {
@@ -239,7 +239,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
 
         return $this->packer->packZip(
             $properties['location']['path'],
-            $properties[GroupEnum::TYPE_EB]['src'],
+            $properties[TargetEnum::TYPE_EB]['src'],
             $properties['location']['tempUploadArchive']
         );
     }
@@ -268,8 +268,8 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         return $uploader(
             $s3,
             $properties['location']['tempUploadArchive'],
-            $properties[GroupEnum::TYPE_EB]['bucket'],
-            $properties[GroupEnum::TYPE_EB]['file'],
+            $properties[TargetEnum::TYPE_EB]['bucket'],
+            $properties[TargetEnum::TYPE_EB]['file'],
             $metadata
         );
     }
@@ -291,10 +291,10 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         $pusher = $this->pusher;
         return $pusher(
             $eb,
-            $properties[GroupEnum::TYPE_EB]['application'],
-            $properties[GroupEnum::TYPE_EB]['environment'],
-            $properties[GroupEnum::TYPE_EB]['bucket'],
-            $properties[GroupEnum::TYPE_EB]['file'],
+            $properties[TargetEnum::TYPE_EB]['application'],
+            $properties[TargetEnum::TYPE_EB]['environment'],
+            $properties[TargetEnum::TYPE_EB]['bucket'],
+            $properties[TargetEnum::TYPE_EB]['file'],
             $build->id(),
             $release->id(),
             $environment->name()
