@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\S3\Sync;
+namespace Hal\Agent\Deploy\S3\Sync\Upload;
 
 use Aws\S3\S3Client;
 use GuzzleHttp\Promise\PromiseInterface;

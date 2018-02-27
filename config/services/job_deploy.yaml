@@ -52,3 +52,8 @@ services:
             - '@encryption'
             - '@doctrine.em'
             - '@aws'
+
+    deploy.support.aws_configurator:
+        class: 'Hal\Agent\Deploy\AWS\Configurator'
+        arguments: ['@encryption']
+

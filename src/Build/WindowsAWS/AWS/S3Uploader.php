@@ -7,7 +7,7 @@
 
 namespace Hal\Agent\Build\WindowsAWS\AWS;
 
-use Hal\Agent\Push\S3\Artifact\Uploader;
+use Hal\Agent\Deploy\S3\Artifact\Steps\Uploader;
 
 class S3Uploader extends Uploader
 {

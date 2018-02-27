@@ -10,9 +10,11 @@ namespace Hal\Agent\Logger;
 use Doctrine\ORM\EntityManagerInterface;
 use Hal\Core\Entity\Job;
 use Hal\Core\Entity\Job\JobEvent;
+use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Type\JobEventStageEnum;
 use Hal\Core\Type\JobEventStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
+use Hal\Core\Type\JobEnum;
 use JsonSerializable;
 use QL\MCP\Common\Time\Clock;
 
@@ -145,6 +147,14 @@ class EventLogger
 
         $this->job->withStatus(JobStatusEnum::TYPE_RUNNING);
         $this->job->withStart($this->clock->read());
+
+        // if ($this->job->type() === JobEnum::TYPE_RELEASE)
+        if ($this->job instanceof Release) {
+            $target = $this->job->target();
+            $target->withLastJob($this->job);
+
+            $this->em->merge($target);
+        }
 
         // immediately merge and flush, so frontend picks up changes
         $this->em->merge($job);
