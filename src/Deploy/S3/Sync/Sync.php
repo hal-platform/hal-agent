@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Deploy\S3\Sync\Upload;
+namespace Hal\Agent\Deploy\S3\Sync;
 
 use Aws\S3\S3Client;
 use Aws\S3\Transfer;

@@ -4,30 +4,13 @@ services:
         class: 'Hal\Agent\Deploy\S3\S3DeployPlatform'
         arguments:
             - '@logger.event'
-            - '@deploy.support.aws_configurator'
             - '@deploy.s3.configurator'
-            - '@service_container'
-            - '%deploy.s3.strategies%'
-
-    ############################################################################
-    # subplatforms
-    ############################################################################
-
-    deploy_platform.s3.sync:
-        class: 'Hal\Agent\Deploy\S3\Sync\S3SyncDeployPlatform'
-        arguments:
-            - '@logger.event'
             - '@deploy.support.aws_authenticator'
             - '@deploy.s3.validator'
+            - '@deploy.s3.compressor'
+            - '@deploy.s3_artifact.uploader'
             - '@deploy.s3_sync.uploader'
-
-    # deploy_platform.s3.artifact:
-        # class: 'Hal\Agent\Deploy\S3\Artifact\S3ArtifactDeployPlatform'
-        # arguments:
-            # - '@logger.event'
-            # - '@deploy.support.aws_authenticator'
-            # - '@deploy.s3.validator'
-            # - '@deploy.s3_artifact.uploader'
+            - '@deploy.s3_artifact.verifier'
 
     ############################################################################
     # steps
@@ -35,7 +18,9 @@ services:
 
     deploy.s3.configurator:
         class: 'Hal\Agent\Deploy\S3\Steps\Configurator'
-        arguments: ['@clock']
+        arguments:
+            - '@encryption'
+            - '@clock'
 
     deploy.s3.validator:
         class: 'Hal\Agent\Deploy\S3\Steps\Validator'
@@ -44,34 +29,33 @@ services:
             - '@utility.process.builder'
             - '%timeout.deploy.serverCommand%'
 
+    deploy.s3.compressor:
+        class: 'Hal\Agent\Deploy\S3\Steps\Compressor'
+        arguments: ['@build.support.file_compression']
+
+    deploy.s3_artifact.uploader:
+        class: 'Hal\Agent\Deploy\S3\Steps\ArtifactUploader'
+
     deploy.s3_sync.uploader:
-        class: 'Hal\Agent\Deploy\S3\Sync\Steps\Uploader'
+        class: 'Hal\Agent\Deploy\S3\Steps\SyncUploader'
         arguments: ['@deploy.s3_sync.support.synchronizer']
 
-    deploy.s3_artifact.compressor:
-        class: 'Hal\Agent\Deploy\S3\Artifact\Steps\Compressor'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '%timeout.deploy.serverCommand%'
-
-    # deploy.s3_artifact.uploader:
-        # class: 'Hal\Agent\Deploy\S3\Artifact\Steps\Uploader'
+    deploy.s3_artifact.verifier:
+        class: 'Hal\Agent\Deploy\S3\Steps\ArtifactVerifier'
 
     ############################################################################
     # support
     ############################################################################
 
     deploy.s3_sync.support.synchronizer:
-        class: 'Hal\Agent\Deploy\S3\Sync\Upload\SyncManager'
+        class: 'Hal\Agent\Deploy\S3\Sync\SyncManager'
         arguments:
             - '@deploy.s3_sync.support.transferer'
             - '@deploy.s3_sync.support.deleter'
             - '@utility.finder'
 
     deploy.s3_sync.support.transferer:
-        class: 'Hal\Agent\Deploy\S3\Sync\Upload\TransferManager'
+        class: 'Hal\Agent\Deploy\S3\Sync\TransferManager'
 
     deploy.s3_sync.support.deleter:
-        class: 'Hal\Agent\Deploy\S3\Sync\Upload\BatchDeleteManager'
+        class: 'Hal\Agent\Deploy\S3\Sync\BatchDeleteManager'

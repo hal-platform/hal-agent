@@ -7,18 +7,31 @@
 
 namespace Hal\Agent\Deploy\S3;
 
+use Aws\S3\S3Client;
 use Hal\Agent\Command\FormatterTrait;
-use Hal\Agent\Deploy\AWS\Configurator as AWSConfigurator;
-use Hal\Agent\Deploy\S3\Steps\Configurator as S3Configurator;
+use Hal\Agent\Deploy\S3\Steps\Configurator;
+use Hal\Agent\Deploy\S3\Steps\Validator;
+use Hal\Agent\Deploy\S3\Steps\Compressor;
+use Hal\Agent\Deploy\S3\Steps\ArtifactUploader;
+use Hal\Agent\Deploy\S3\Steps\SyncUploader;
+use Hal\Agent\Deploy\S3\Steps\ArtifactVerifier;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Build\PlatformTrait;
 use Hal\Agent\JobPlatformInterface;
 use Hal\Agent\JobExecution;
 use Hal\Agent\Symfony\IOAwareInterface;
 use Hal\Agent\Symfony\IOAwareTrait;
+use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Type\TargetEnum;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+
+use Aws\Exception\AwsException;
+use Aws\Exception\CredentialsException;
+use Hal\Agent\Deploy\DeployException;
+use InvalidArgumentException;
+use RuntimeException;
 
 class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
 {
@@ -27,10 +40,27 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
     use PlatformTrait;
 
     private const STEP_1_CONFIGURING = 'S3 Platform - Validating S3 configuration';
-    private const STEP_2_DELEGATING = 'S3 Platform - Determining S3 subplatform';
+    private const STEP_2_AUTHENTICATING = 'S3 Platform - Authenticating with AWS';
+    private const STEP_3_VALIDATING = 'S3 Platform - Validating source and target bucket';
+    private const STEP_4_COMPRESSING = 'S3 Platform - Compressing source';
+    private const STEP_5_UPLOADING = 'S3 Platform - Uploading file(s) to S3 bucket';
+    private const STEP_6_VERIFYING = 'S3 Platform - Verifying successful artifact upload';
 
+    private const NOTE_SKIP_COMPRESSION = 'Skipping compression step: in sync mode';
+    private const NOTE_ALREADY_COMPRESSED = 'Skipping compression step: source is not a directory';
+    private const NOTE_SKIP_VERIFICATION = 'Skipping artifact verification step: in sync mode';
+    private const NOTE_ARTIFACT_VERIFIED = 'Artifact upload successfully verified';
+
+    private const ERR_INVALID_JOB = 'The provided job is an invalid type for this job platform';
     private const ERR_CONFIGURATOR = 'S3 deploy platform is not configured correctly';
-    private const ERR_DELEGATOR = 'S3 deploy platform is not configured correctly';
+    private const ERR_AUTHENTICATOR = 'AWS credentials could not be authenticated';
+    private const ERR_VALIDATOR = 'Either source or target bucket could not be validated';
+    private const ERR_VALIDATOR_SOURCE = 'The source could not be validated';
+    private const ERR_VALIDATOR_TARGET = 'The target bucket could not be validated';
+    private const ERR_COMPRESSOR = 'The source directory could not be compressed';
+    private const ERR_UPLOADER = 'The file(s) could not be uploaded to the S3 Bucket';
+    private const ERR_UPLOADER_CREDENTIALS = 'AWS credentials could not be authenticated';
+    private const ERR_VERIFIER = 'The artifact could not be verified as uploaded';
 
     /**
      * @var EventLogger
@@ -38,55 +68,70 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
     private $logger;
 
     /**
-     * @var ContainerInterface
+     * @var Configurator
      */
-    private $container;
+    private $configurator;
 
     /**
-     * @var AWSConfigurator
+     * @var AWSAuthenticator
      */
-    private $awsConfigurator;
+    private $awsAuthenticator;
 
     /**
-     * @var S3Configurator
+     * @var Validator
      */
-    private $s3Configurator;
+    private $validator;
 
     /**
-     ** An associative array of s3 sub platforms by strategy
-     * Example:
-     *     [
-     *         artifact => 'deploy_platform.s3.artifact',
-     *         sync => 'deploy_platform.s3.sync'
-     *     ]
-     *
-     * @var array
+     * @var Compressor
      */
-    private $subPlatforms;
+    private $compressor;
+
+    /**
+     * @var ArtifactUploader
+     */
+    private $artifactUploader;
+
+    /**
+     * @var SyncUploader
+     */
+    private $syncUploader;
+
+    /**
+     * @var ArtifactVerifier
+     */
+    private $verifier;
 
     /**
      * @param EventLogger $logger
      *
-     * @param AWSConfigurator $awsConfigurator
-     * @param S3Configurator $s3Configurator
-     *
-     * @param ContainerInterface $container
-     * @param array $subPlatforms
+     * @param Configurator $configurator
+     * @param AWSAuthenticator $awsAuthenticator
+     * @param Validator $validator
+     * @param Compressor $compressor
+     * @param ArtifactUploader $artifactUploader
+     * @param SyncUploader $syncUploader
+     * @param ArtifactVerifier $verifier
      */
     public function __construct(
         EventLogger $logger,
-        AWSConfigurator $awsConfigurator,
-        S3Configurator $s3Configurator,
-        ContainerInterface $container,
-        array $subPlatforms = []
+        Configurator $configurator,
+        AWSAuthenticator $awsAuthenticator,
+        Validator $validator,
+        Compressor $compressor,
+        ArtifactUploader $artifactUploader,
+        SyncUploader $syncUploader,
+        ArtifactVerifier $verifier
     ) {
         $this->logger = $logger;
 
-        $this->awsConfigurator = $awsConfigurator;
-        $this->s3Configurator = $s3Configurator;
-
-        $this->container = $container;
-        $this->subPlatforms = $subPlatforms;
+        $this->configurator = $configurator;
+        $this->awsAuthenticator = $awsAuthenticator;
+        $this->validator = $validator;
+        $this->compressor = $compressor;
+        $this->artifactUploader = $artifactUploader;
+        $this->syncUploader = $syncUploader;
+        $this->verifier = $verifier;
     }
 
     /**
@@ -94,19 +139,42 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
      */
     public function __invoke(Job $job, JobExecution $execution, array $properties): bool
     {
-        $steps = $execution->steps();
+        if (!$job instanceof Release) {
+            $this->sendFailureEvent(self::ERR_INVALID_JOB);
+            return $this->bombout(false);
+        }
 
         if (!$config = $this->configurator($job)) {
             $this->sendFailureEvent(self::ERR_CONFIGURATOR);
             return $this->bombout(false);
         }
 
-        if (!$subPlatform = $this->delegator($config)) {
-            $this->sendFailureEvent(self::ERR_DELEGATOR);
+        if (!$s3 = $this->authenticator($config)) {
+            $this->sendFailureEvent(self::ERR_AUTHENTICATOR);
             return $this->bombout(false);
         }
 
-        return $subPlatform($job, $execution, $properties, $config);
+        if (!$this->validator($s3, $properties, $config)) {
+            $this->sendFailureEvent(self::ERR_VALIDATOR);
+            return $this->bombout(false);
+        }
+
+        if (!$artifact = $this->compressor($properties, $config)) {
+            $this->sendFailureEvent(self::ERR_COMPRESSOR);
+            return $this->bombout(false);
+        }
+
+        if (!$this->uploader($job, $s3, $artifact, $config)) {
+            $this->sendFailureEvent(self::ERR_UPLOADER);
+            return $this->bombout(false);
+        }
+
+        if (!$this->verifier($s3, $config)) {
+            $this->sendFailureEvent(self::ERR_VERIFIER);
+            return $this->bombout(false);
+        }
+
+        return true;
     }
 
     /**
@@ -118,17 +186,10 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
     {
         $this->getIO()->section(self::STEP_1_CONFIGURING);
 
-        $awsConfig = ($this->awsConfigurator)($job);
-        if (!$awsConfig) {
+        $platformConfig = ($this->configurator)($job);
+        if (!$platformConfig) {
             return null;
         }
-
-        $s3Config = ($this->s3Configurator)($job);
-        if (!$s3Config) {
-            return null;
-        }
-
-        $platformConfig = array_merge($awsConfig, $s3Config);
 
         $this->outputTable($this->getIO(), 'Platform configuration:', $platformConfig);
 
@@ -136,31 +197,200 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
     }
 
     /**
-     * @param array $properties
+     * @param array $config
      *
-     * @return JobPlatformInterface|null
+     * @return S3Client|null
      */
-    private function delegator(array $properties)
+    private function authenticator(array $config)
     {
-        $this->getIO()->section(self::STEP_2_DELEGATING);
+        $this->getIO()->section(self::STEP_2_AUTHENTICATING);
 
-        if (!isset($properties[TargetEnum::TYPE_S3]['strategy'])) {
+        $s3 = $this->awsAuthenticator->getS3(
+            $config['aws']['region'],
+            $config['aws']['credential']
+        );
+        if (!$s3) {
             return null;
         }
 
-        $strategy = $properties[TargetEnum::TYPE_S3]['strategy'];
-        $dependency = $this->subPlatforms[$strategy];
-        $subPlatform = $this->container->get($dependency, ContainerInterface::NULL_ON_INVALID_REFERENCE);
+        $this->getIO()->listing([
+            sprintf('Region: <info>%s</info>', $config['aws']['region'])
+        ]);
 
-        if (!$subPlatform instanceof S3DeployInterface) {
+        return $s3;
+    }
+
+    /**
+     * @param S3Client $s3
+     * @param array $properties
+     * @param array $config
+     *
+     * @return bool
+     */
+    private function validator(S3Client $s3, array $properties, array $config)
+    {
+        $this->getIO()->section(self::STEP_3_VALIDATING);
+
+        $wholeSourcePath = $properties['workspace_path'] . '/job/' . $config[TargetEnum::TYPE_S3]['src'];
+
+        if (!$this->validator->localPathExists($wholeSourcePath)) {
+            $this->sendFailureEvent(self::ERR_VALIDATOR_SOURCE);
+            return false;
+        }
+
+        if (!$this->validator->bucketExists($s3, $config[TargetEnum::TYPE_S3]['bucket'])) {
+            $this->sendFailureEvent(self::ERR_VALIDATOR_TARGET);
+            return false;
+        }
+
+        $this->getIO()->listing([
+            sprintf('Source: <info>%s</info>', $wholeSourcePath),
+            sprintf('Target: <info>%s</info>', $config[TargetEnum::TYPE_S3]['bucket'])
+        ]);
+
+        return true;
+    }
+
+
+    /**
+     * @param array $properties
+     * @param array $config
+     *
+     * @return string|null
+     */
+    private function compressor(array $properties, array $config)
+    {
+        $this->getIO()->section(self::STEP_4_COMPRESSING);
+
+        $wholeSourcePath = $properties['workspace_path'] . '/job/' . $config[TargetEnum::TYPE_S3]['src'];
+
+        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'sync') {
+            $this->getIO()->note(self::NOTE_SKIP_COMPRESSION);
+            return $wholeSourcePath;
+        }
+
+        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'artifact') {
+            try {
+                $isDirectory = $this->validator->isDirectory($wholeSourcePath);
+            } catch (DeployException $e) {
+                $this->sendFailureEvent($e->getMessage());
+                return false;
+            }
+
+            if (!$isDirectory) {
+                $this->getIO()->note(self::NOTE_ALREADY_COMPRESSED);
+                return $wholeSourcePath;
+            }
+
+            $isSuccessful = ($this->compressor)(
+                $wholeSourcePath,
+                $properties['artifact_stored_file']
+            );
+            if (!$isSuccessful) {
+                return null;
+            }
+
+            $this->getIO()->listing([
+                sprintf('Original: <info>%s</info>', $wholeSourcePath),
+                sprintf('Compressed: <info>%s</info>', $properties['artifact_stored_file'])
+            ]);
+
+            return $properties['artifact_stored_file'];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param Release $job
+     * @param S3Client $s3
+     * @param string $source
+     * @param array $config
+     *
+     * return bool|null
+     */
+    private function uploader(Release $job, S3Client $s3, $source, array $config)
+    {
+        $this->getIO()->section(self::STEP_5_UPLOADING);
+
+        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'sync') {
+            $uploader = $this->syncUploader;
+        } else if ($config[TargetEnum::TYPE_S3]['strategy'] === 'artifact') {
+            $uploader = $this->artifactUploader;
+        } else {
             return null;
         }
 
-        if ($subPlatform instanceof IOAwareInterface) {
-            $subPlatform->setIO($this->getIO());
+        $metadata = [
+            'Build' => $job->build()->id(),
+            'Release' => $job->id(),
+            'Environment' => $job->environment()->name()
+        ];
+
+        try {
+            $isSuccessful = $uploader(
+                $s3,
+                $source,
+                $config[TargetEnum::TYPE_S3]['bucket'],
+                $config[TargetEnum::TYPE_S3]['file'],
+                $metadata
+            );
+        } catch (AwsException $e) {
+            $this->sendFailureEvent($e->getMessage());
+            return null;
+        } catch (InvalidArgumentException $e) {
+            $this->sendFailureEvent($e->getMessage());
+            return null;
+        } catch (CredentialsException $e) {
+            $this->sendFailureEvent($e->getMessage());
+            return null;
         }
 
-        return $subPlatform;
+        if (!$isSuccessful) {
+            return null;
+        }
+
+        $this->outputTable($this->getIO(), 'Metadata:', $metadata);
+
+        return true;
+    }
+
+    /**
+     * @param S3Client $s3
+     * @param array $config
+     *
+     * return bool|null
+     */
+    private function verifier(S3Client $s3, array $config)
+    {
+        $this->getIO()->section(self::STEP_6_VERIFYING);
+
+        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'sync') {
+            $this->getIO()->note(self::NOTE_SKIP_VERIFICATION);
+            return true;
+        }
+
+        try {
+            $isSuccessful = ($this->verifier)(
+                $s3,
+                $config[TargetEnum::TYPE_S3]['bucket'],
+                $config[TargetEnum::TYPE_S3]['file']
+            );
+        } catch (AwsException $e) {
+            $this->sendFailureEvent($e->getMessage());
+            return null;
+        } catch (RuntimeException $e) {
+            $this->sendFailureEvent($e->getMessage());
+            return null;
+        }
+
+        if (!$isSuccessful) {
+            return null;
+        }
+
+        $this->getIO()->note(self::NOTE_ARTIFACT_VERIFIED);
+
+        return true;
     }
 
     /**

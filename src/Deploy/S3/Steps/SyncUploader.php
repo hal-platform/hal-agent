@@ -5,16 +5,16 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Deploy\S3\Sync\Steps;
+namespace Hal\Agent\Deploy\S3\Steps;
 
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
 use Aws\S3\S3Client;
 use InvalidArgumentException;
-use Hal\Agent\Deploy\S3\Sync\Upload\SyncManager;
-use Hal\Agent\Deploy\S3\Sync\Upload\Sync;
+use Hal\Agent\Deploy\S3\Sync\SyncManager;
+use Hal\Agent\Deploy\S3\Sync\Sync;
 
-class Uploader
+class SyncUploader
 {
     // 10s * 30 attempts = 5 minutes
     const WAITER_INTERVAL = 10;
@@ -46,7 +46,7 @@ class Uploader
      *
      * @return boolean
      */
-    public function __invoke(S3Client $s3, $tempArchive, $bucket, $directory, array $metadata = [])
+    public function __invoke(S3Client $s3, string $tempArchive, string $bucket, string $directory, array $metadata = [])
     {
         $context = [
             'bucket' => $bucket,

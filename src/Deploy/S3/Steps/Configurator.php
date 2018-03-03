@@ -7,8 +7,13 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
+use Hal\Core\Crypto\Encryption;
 use Hal\Core\Entity\Target;
 use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\Credential;
+use Hal\Core\Entity\Credential\AWSRoleCredential;
+use Hal\Core\Entity\Credential\AWSStaticCredential;
+use Hal\Core\Type\CredentialEnum;
 use Hal\Core\Type\TargetEnum;
 use QL\MCP\Common\Time\Clock;
 
@@ -24,10 +29,16 @@ class Configurator
     private $clock;
 
     /**
+     * @var Encryption
+     */
+    private $encryption;
+
+    /**
      * @param Clock $clock
      */
-    public function __construct(Clock $clock)
+    public function __construct(Encryption $encryption, Clock $clock)
     {
+        $this->encryption = $encryption;
         $this->clock = $clock;
     }
 
@@ -43,6 +54,11 @@ class Configurator
         $replacements = $this->buildTokenReplacements($release);
         $template = $this->getTemplate($target);
 
+        $aws = [
+            'region' => $target->parameter(Target::PARAM_REGION),
+            'credential' => $target->credential() ? $this->getCredentials($target->credential()) : null
+        ];
+
         $s3 = [
             'bucket' => $target->parameter(Target::PARAM_BUCKET),
             'strategy' => $target->parameter(Target::PARAM_S3_METHOD),
@@ -50,7 +66,10 @@ class Configurator
             'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_SRC
         ];
 
-        return [TargetEnum::TYPE_S3 => $s3];
+        return [
+            'aws' => $aws,
+            's3' => $s3
+        ];
     }
 
     /**
@@ -103,5 +122,21 @@ class Configurator
             'DATE' => $now->format('Ymd', 'UTC'),
             'TIME' => $now->format('His', 'UTC')
         ];
+    }
+
+    /**
+     * Get AWS Credentials out of Credential object
+     *
+     * @param Credential $credential
+     *
+     * @return AWSStaticCredential|AWSRoleCredential
+     */
+    private function getCredentials(Credential $credential)
+    {
+        if (!in_array($credential->type(), [CredentialEnum::TYPE_AWS_STATIC, CredentialEnum::TYPE_AWS_ROLE])) {
+            return null;
+        }
+
+        return $credential->details();
     }
 }
