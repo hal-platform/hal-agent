@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\S3\Sync;
+namespace Hal\Agent\Deploy\S3\Sync;
 
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;

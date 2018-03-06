@@ -54,7 +54,7 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
     private const ERR_INVALID_JOB = 'The provided job is an invalid type for this job platform';
     private const ERR_CONFIGURATOR = 'S3 deploy platform is not configured correctly';
     private const ERR_AUTHENTICATOR = 'AWS credentials could not be authenticated';
-    private const ERR_VALIDATOR = 'Either source or target bucket could not be validated';
+    private const ERR_VALIDATOR = 'Either the source or target bucket could not be validated';
     private const ERR_VALIDATOR_SOURCE = 'The source could not be validated';
     private const ERR_VALIDATOR_TARGET = 'The target bucket could not be validated';
     private const ERR_COMPRESSOR = 'The source directory could not be compressed';
@@ -342,7 +342,7 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
             $this->sendFailureEvent($e->getMessage());
             return null;
         } catch (CredentialsException $e) {
-            $this->sendFailureEvent($e->getMessage());
+            $this->sendFailureEvent(self::ERR_UPLOADER_CREDENTIALS);
             return null;
         }
 
