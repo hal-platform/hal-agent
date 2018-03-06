@@ -41,7 +41,7 @@
         "predis/predis":                "~1.0",
         "psr/log":                      "*",
 
-        "hal/hal-core":                 "dev-master",
+        "hal/hal-core":                 "dev-add-param-region-to-target",
 
         "ql/mcp-cache":                 "~3.0.0",
         "ql/mcp-common":                "~1.1",
