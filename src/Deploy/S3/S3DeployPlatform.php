@@ -238,7 +238,14 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
             return false;
         }
 
-        if (!$this->validator->bucketExists($s3, $config[TargetEnum::TYPE_S3]['bucket'])) {
+        try {
+            $bucketExists = $this->validator->bucketExists($s3, $config[TargetEnum::TYPE_S3]['bucket']);
+        } catch (S3Exception $e) {
+            $this->sendFailureEvent($e->getMessage());
+            return false;
+        }
+
+        if (!$bucketExists) {
             $this->sendFailureEvent(self::ERR_VALIDATOR_TARGET);
             return false;
         }
@@ -264,17 +271,17 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
 
         $wholeSourcePath = $properties['workspace_path'] . '/job/' . $config[TargetEnum::TYPE_S3]['src'];
 
-        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'sync') {
+        if ($config[TargetEnum::TYPE_S3]['method'] === 'sync') {
             $this->getIO()->note(self::NOTE_SKIP_COMPRESSION);
             return $wholeSourcePath;
         }
 
-        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'artifact') {
+        if ($config[TargetEnum::TYPE_S3]['method'] === 'artifact') {
             try {
                 $isDirectory = $this->validator->isDirectory($wholeSourcePath);
             } catch (DeployException $e) {
                 $this->sendFailureEvent($e->getMessage());
-                return false;
+                return null;
             }
 
             if (!$isDirectory) {
@@ -307,18 +314,18 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
      * @param string $source
      * @param array $config
      *
-     * return bool|null
+     * return bool
      */
     private function uploader(Release $job, S3Client $s3, $source, array $config)
     {
         $this->getIO()->section(self::STEP_5_UPLOADING);
 
-        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'sync') {
+        if ($config[TargetEnum::TYPE_S3]['method'] === 'sync') {
             $uploader = $this->syncUploader;
-        } else if ($config[TargetEnum::TYPE_S3]['strategy'] === 'artifact') {
+        } else if ($config[TargetEnum::TYPE_S3]['method'] === 'artifact') {
             $uploader = $this->artifactUploader;
         } else {
-            return null;
+            return false;
         }
 
         $metadata = [
@@ -337,17 +344,17 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
             );
         } catch (AwsException $e) {
             $this->sendFailureEvent($e->getMessage());
-            return null;
+            return false;
         } catch (InvalidArgumentException $e) {
             $this->sendFailureEvent($e->getMessage());
-            return null;
+            return false;
         } catch (CredentialsException $e) {
             $this->sendFailureEvent(self::ERR_UPLOADER_CREDENTIALS);
-            return null;
+            return false;
         }
 
         if (!$isSuccessful) {
-            return null;
+            return false;
         }
 
         $this->outputTable($this->getIO(), 'Metadata:', $metadata);
@@ -359,13 +366,13 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
      * @param S3Client $s3
      * @param array $config
      *
-     * return bool|null
+     * return bool
      */
     private function verifier(S3Client $s3, array $config)
     {
         $this->getIO()->section(self::STEP_6_VERIFYING);
 
-        if ($config[TargetEnum::TYPE_S3]['strategy'] === 'sync') {
+        if ($config[TargetEnum::TYPE_S3]['method'] === 'sync') {
             $this->getIO()->note(self::NOTE_SKIP_VERIFICATION);
             return true;
         }
@@ -378,14 +385,14 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
             );
         } catch (AwsException $e) {
             $this->sendFailureEvent($e->getMessage());
-            return null;
+            return false;
         } catch (RuntimeException $e) {
             $this->sendFailureEvent($e->getMessage());
-            return null;
+            return false;
         }
 
         if (!$isSuccessful) {
-            return null;
+            return false;
         }
 
         $this->getIO()->note(self::NOTE_ARTIFACT_VERIFIED);

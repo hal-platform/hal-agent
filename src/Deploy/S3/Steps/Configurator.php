@@ -14,7 +14,6 @@ use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Credential\AWSRoleCredential;
 use Hal\Core\Entity\Credential\AWSStaticCredential;
 use Hal\Core\Type\CredentialEnum;
-use Hal\Core\Type\TargetEnum;
 use QL\MCP\Common\Time\Clock;
 
 class Configurator
@@ -61,7 +60,7 @@ class Configurator
 
         $s3 = [
             'bucket' => $target->parameter(Target::PARAM_BUCKET),
-            'strategy' => $target->parameter(Target::PARAM_S3_METHOD),
+            'method' => $target->parameter(Target::PARAM_S3_METHOD),
             'file' => $this->buildFilename($replacements, $template),
             'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_SRC
         ];

@@ -316,7 +316,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'artifact',
+                'method' => 'artifact',
                 'src' => 'source',
                 'bucket' => 'target_bucket'
             ]
@@ -389,7 +389,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'sync',
+                'method' => 'sync',
                 'src' => 'source',
                 'bucket' => 'target_bucket',
                 'file' => 'target_file'
@@ -468,7 +468,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'sync',
+                'method' => 'sync',
                 'src' => 'source',
                 'bucket' => 'target_bucket',
                 'file' => 'target_file'
@@ -554,7 +554,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'artifact',
+                'method' => 'artifact',
                 'src' => 'source',
                 'bucket' => 'target_bucket',
                 'file' => 'target_file'
@@ -654,7 +654,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'artifact',
+                'method' => 'artifact',
                 'src' => 'source',
                 'bucket' => 'target_bucket',
                 'file' => 'target_file'
@@ -730,7 +730,7 @@ class DeployerTest extends IOTestCase
             '                      "credential": ""',
             '                  }',
             '  s3              {',
-            '                      "strategy": "artifact",',
+            '                      "method": "artifact",',
             '                      "src": "source",',
             '                      "bucket": "target_bucket",',
             '                      "file": "target_file"',
@@ -774,7 +774,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'artifact',
+                'method' => 'artifact',
                 'src' => 'source',
                 'bucket' => 'target_bucket',
                 'file' => 'target_file'
@@ -858,7 +858,7 @@ class DeployerTest extends IOTestCase
                 'credential' => ''
             ],
             's3' => [
-                'strategy' => 'sync',
+                'method' => 'sync',
                 'src' => 'source',
                 'bucket' => 'target_bucket',
                 'file' => 'target_file'

@@ -16,10 +16,6 @@ use Hal\Agent\Deploy\S3\Sync\Sync;
 
 class SyncUploader
 {
-    // 10s * 30 attempts = 5 minutes
-    const WAITER_INTERVAL = 10;
-    const WAITER_ATTEMPTS = 30;
-
     /**
      * @var SyncManager
      */
@@ -48,11 +44,6 @@ class SyncUploader
      */
     public function __invoke(S3Client $s3, string $tempArchive, string $bucket, string $directory, array $metadata = [])
     {
-        $context = [
-            'bucket' => $bucket,
-            'object' => $directory
-        ];
-
         $params = $metadata ? ['params' => ['Metadata' => $metadata]] : [];
 
         if ($directory === '.') {

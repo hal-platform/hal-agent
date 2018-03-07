@@ -41,11 +41,6 @@ class ArtifactUploader
     {
         $fileHandle = call_user_func($this->fileStreamer, $tempArchive, 'r+');
 
-        $context = [
-            'bucket' => $bucket,
-            'object' => $file
-        ];
-
         $params = $metadata ? ['params' => ['Metadata' => $metadata]] : [];
 
         $object = $s3->upload(
