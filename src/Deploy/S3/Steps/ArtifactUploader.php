@@ -9,6 +9,8 @@ namespace Hal\Agent\Deploy\S3\Steps;
 
 use Aws\S3\S3Client;
 
+use Aws\S3\Exception\S3Exception;
+
 class ArtifactUploader
 {
     /**
@@ -36,6 +38,7 @@ class ArtifactUploader
      * @param array $metadata
      *
      * @return boolean
+     * @throws S3Exception
      */
     public function __invoke(S3Client $s3, string $tempArchive, string $bucket, string $file, array $metadata = []): bool
     {
