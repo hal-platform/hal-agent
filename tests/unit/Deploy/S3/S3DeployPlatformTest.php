@@ -318,7 +318,8 @@ class DeployerTest extends IOTestCase
             's3' => [
                 'method' => 'artifact',
                 'src' => 'source',
-                'bucket' => 'target_bucket'
+                'bucket' => 'target_bucket',
+                'file' => 'target_file'
             ]
         ];
 
@@ -347,7 +348,7 @@ class DeployerTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/source', '/temp/artifact.tar')
+            ->with('/workspace/job/source', '/temp/artifact.tar', 'target_file')
             ->andReturn(null);
 
         $this->logger
@@ -586,7 +587,7 @@ class DeployerTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/source', '/temp/artifact.tar')
+            ->with('/workspace/job/source', '/temp/artifact.tar', 'target_file')
             ->andReturn('/temp/artifact.tar');
 
         $this->artifactUploader
@@ -686,7 +687,7 @@ class DeployerTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/source', '/temp/artifact.tar')
+            ->with('/workspace/job/source', '/temp/artifact.tar', 'target_file')
             ->andReturn('/temp/artifact.tar');
 
         $this->artifactUploader

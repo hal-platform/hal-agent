@@ -29,6 +29,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
+use Aws\S3\Exception\S3Exception;
 use Hal\Agent\Deploy\DeployException;
 use InvalidArgumentException;
 use RuntimeException;
@@ -289,10 +290,17 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
                 return $wholeSourcePath;
             }
 
-            $isSuccessful = ($this->compressor)(
-                $wholeSourcePath,
-                $properties['artifact_stored_file']
-            );
+            try {
+                $isSuccessful = ($this->compressor)(
+                    $wholeSourcePath,
+                    $properties['artifact_stored_file'],
+                    $config[TargetEnum::TYPE_S3]['file']
+                );
+            } catch (DeployException $e) {
+                $this->sendFailureEvent($e->getMessage());
+                return null;
+            }
+
             if (!$isSuccessful) {
                 return null;
             }

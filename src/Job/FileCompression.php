@@ -16,6 +16,7 @@ class FileCompression
 
     private const UNCOMPRESS_TGZ_FLAGS = '-vxz';
     private const COMPRESS_TGZ_FLAGS = '-vcz';
+    private const COMPRESS_ZIP_FLAGS = '--recurse-paths';
 
     /**
      * @var ProcessRunner
@@ -110,6 +111,35 @@ class FileCompression
             '.'
         ];
 
+        return $this->executePackCommand($packCommand, $workspacePath);
+    }
+
+    /**
+     * @param string $workspacePath
+     * @param string $zipFile
+     *
+     * @return bool
+     */
+    public function packZipArchive(string $workspacePath, string $zipFile): bool
+    {
+        $packCommand = [
+            'zip',
+            static::COMPRESS_ZIP_FLAGS,
+            $zipFile,
+            '.'
+        ];
+
+        return $this->executePackCommand($packCommand, $workspacePath);
+    }
+
+    /**
+     * @param array $packCommand
+     * @param string $workspacePath
+     *
+     * @return bool
+     */
+    private function executePackCommand(array $packCommand, string $workspacePath)
+    {
         // @todo may need to NOT escape args?
         $process = $this->runner->prepare($packCommand, $workspacePath, $this->commandTimeout);
         if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
