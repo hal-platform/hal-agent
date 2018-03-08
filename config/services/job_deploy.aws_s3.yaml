@@ -18,9 +18,7 @@ services:
 
     deploy.s3.configurator:
         class: 'Hal\Agent\Deploy\S3\Steps\Configurator'
-        arguments:
-            - '@encryption'
-            - '@clock'
+        arguments: ['@clock']
 
     deploy.s3.validator:
         class: 'Hal\Agent\Deploy\S3\Steps\Validator'

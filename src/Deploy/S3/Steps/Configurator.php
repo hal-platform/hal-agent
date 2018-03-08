@@ -7,7 +7,6 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
-use Hal\Core\Crypto\Encryption;
 use Hal\Core\Entity\Target;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Credential;
@@ -28,16 +27,10 @@ class Configurator
     private $clock;
 
     /**
-     * @var Encryption
-     */
-    private $encryption;
-
-    /**
      * @param Clock $clock
      */
-    public function __construct(Encryption $encryption, Clock $clock)
+    public function __construct(Clock $clock)
     {
-        $this->encryption = $encryption;
         $this->clock = $clock;
     }
 
