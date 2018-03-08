@@ -7,12 +7,13 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
+use Aws\S3\S3Client;
+use Hal\Agent\Deploy\S3\Sync\Sync;
+use Hal\Agent\Deploy\S3\Sync\SyncManager;
+
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
-use Aws\S3\S3Client;
 use InvalidArgumentException;
-use Hal\Agent\Deploy\S3\Sync\SyncManager;
-use Hal\Agent\Deploy\S3\Sync\Sync;
 
 class SyncUploader
 {
