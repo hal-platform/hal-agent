@@ -175,7 +175,7 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
             return $this->bombout(false);
         }
 
-        return true;
+        return $this->bombout(true);
     }
 
     /**
