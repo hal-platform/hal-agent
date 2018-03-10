@@ -7,17 +7,19 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
+use Hal\Core\Entity\Job;
 use Hal\Core\Entity\Target;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Credential\AWSRoleCredential;
 use Hal\Core\Entity\Credential\AWSStaticCredential;
+use Hal\Core\Parameters;
 use Hal\Core\Type\CredentialEnum;
 use QL\MCP\Common\Time\Clock;
 
 class Configurator
 {
-    private const DEFAULT_ARCHIVE_FILE = '$PUSHID.tar.gz';
+    private const DEFAULT_ARCHIVE_FILE = '$JOBID.tar.gz';
     private const DEFAULT_SYNC_FILE = '.';
     private const DEFAULT_SRC = '.';
 
@@ -43,19 +45,17 @@ class Configurator
     {
         $target = $release->target();
 
-        $replacements = $this->buildTokenReplacements($release);
-        $template = $this->getTemplate($target);
-
         $aws = [
-            'region' => $target->parameter(Target::PARAM_REGION),
+            'region' => $target->parameter(Parameters::TARGET_REGION),
             'credential' => $target->credential() ? $this->getCredentials($target->credential()) : null
         ];
 
         $s3 = [
-            'bucket' => $target->parameter(Target::PARAM_BUCKET),
-            'method' => $target->parameter(Target::PARAM_S3_METHOD),
-            'file' => $this->buildFilename($replacements, $template),
-            'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_SRC
+            'bucket' => $target->parameter(Parameters::TARGET_S3_BUCKET),
+            'method' => $target->parameter(Parameters::TARGET_S3_METHOD),
+
+            'local' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: static::DEFAULT_SRC,
+            'remote' => $this->buildRemotePath($release)
         ];
 
         return [
@@ -65,13 +65,15 @@ class Configurator
     }
 
     /**
-     * @param array $replacements
-     * @param string $template
+     * @param Release $release
      *
      * @return string
      */
-    private function buildFilename(array $replacements, $template)
+    private function buildRemotePath(Release $release)
     {
+        $template = $this->getRemotePath($release->target());
+        $replacements = $this->buildTokenReplacements($release);
+
         foreach ($replacements as $name => $val) {
             $name = '$' . $name;
             $template = str_replace($name, $val, $template);
@@ -85,32 +87,35 @@ class Configurator
      *
      * @return string
      */
-    private function getTemplate(Target $target)
+    private function getRemotePath(Target $target)
     {
-        $template = $target->parameter(Target::PARAM_REMOTE_PATH);
-        if (!$template) {
-            $template = $target->parameter(Target::PARAM_S3_METHOD) === 'sync' ? self::DEFAULT_SYNC_FILE : self::DEFAULT_ARCHIVE_FILE;
+        if ($template = $target->parameter(Parameters::PARAM_REMOTE_PATH)) {
+            return $template;
         }
 
-        return $template;
+        if ($target->parameter(Parameters::PARAM_S3_METHOD) === 'sync') {
+            return static::DEFAULT_SYNC_FILE;
+        }
+
+        return static::DEFAULT_ARCHIVE_FILE;
     }
 
     /**
-     * @param Release $release
+     * @param Job $job
      *
      * @return array
      */
-    private function buildTokenReplacements(Release $release)
+    private function buildTokenReplacements(Job $job)
     {
-        $application = $release->application();
-        $build = $release->build();
-
+        $application = $job->application();
         $now = $this->clock->read();
+
         return [
+            'JOBID' => $job->id(),
+
             'APPID' => $application->id(),
             'APP' => $application->name(),
-            'BUILDID' => $build->id(),
-            'PUSHID' => $release->id(),
+
             'DATE' => $now->format('Ymd', 'UTC'),
             'TIME' => $now->format('His', 'UTC')
         ];
