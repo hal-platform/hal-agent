@@ -117,8 +117,7 @@ services:
         class: 'Hal\Agent\AWS\EC2Finder'
 
     build.windows_aws.support_s3_uploader:
-        class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Uploader'
-        arguments: ['@logger.event']
+        class: 'Hal\Agent\AWS\S3Uploader'
 
     build.windows_aws.s3_downloader:
         class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Downloader'

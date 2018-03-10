@@ -140,6 +140,10 @@ class FileCompression
      */
     private function executePackCommand(array $packCommand, string $workspacePath)
     {
+        if (!is_dir($workspacePath)) {
+            return false;
+        }
+
         // @todo may need to NOT escape args?
         $process = $this->runner->prepare($packCommand, $workspacePath, $this->commandTimeout);
         if (!$this->runner->run($process, self::ERR_TIMEOUT)) {

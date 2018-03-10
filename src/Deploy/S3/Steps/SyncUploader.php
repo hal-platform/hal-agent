@@ -8,61 +8,60 @@
 namespace Hal\Agent\Deploy\S3\Steps;
 
 use Aws\S3\S3Client;
-use Hal\Agent\Deploy\S3\Sync\Sync;
-use Hal\Agent\Deploy\S3\Sync\SyncManager;
-
-use Aws\Exception\AwsException;
-use Aws\Exception\CredentialsException;
-use InvalidArgumentException;
+use Hal\Agent\Deploy\S3\FileSync;
 
 class SyncUploader
 {
     /**
-     * @var SyncManager
+     * @var FileSync
      */
-    private $syncManager;
+    private $filesync;
 
     /**
-     * @param SyncManager $syncManager
+     * @param FileSync $filesync
      */
-    public function __construct(SyncManager $syncManager)
+    public function __construct(FileSync $filesync)
     {
-        $this->syncManager = $syncManager;
+        $this->filesync = $filesync;
     }
 
     /**
      * @param S3Client $s3
-     * @param string $tempArchive
+     * @param string $localPath
      * @param string $bucket
-     * @param string $directory
+     * @param string $path
      * @param array $metadata
      *
-     * @throws AwsException
-     * @throws InvalidArgumentException
-     * @throws CredentialsException
-     *
-     * @return boolean
+     * @return bool
      */
-    public function __invoke(S3Client $s3, string $tempArchive, string $bucket, string $directory, array $metadata = [])
+    public function __invoke(S3Client $s3, string $localPath, string $bucket, string $path, array $metadata = []): bool
     {
         $params = $metadata ? ['params' => ['Metadata' => $metadata]] : [];
 
-        if ($directory === '.') {
-            $directory = '';
-        } elseif (strpos($directory, './') === 0) {
-            $directory = substr($directory, 2);
-        } elseif (strpos($directory, '/') === 0) {
-            $directory = substr($directory, 1);
-        }
+        $remotePath = $this->buildObjectPath($path);
 
-        $this->syncManager->sync(
-            $s3,
-            $tempArchive,
-            $bucket,
-            $directory,
-            Sync::COMPARE | Sync::REMOVE
-        );
+        $this->filesync->filesync($s3, $localPath, $bucket, $remotePath);
 
         return true;
+    }
+
+    /**
+     * @param string $path
+     *
+     * @return string
+     */
+    private function buildObjectPath($path)
+    {
+        if ($path === '.') {
+            return '';
+
+        } elseif (strpos($path, './') === 0) {
+            return substr($path, 2);
+
+        } elseif (strpos($path, '/') === 0) {
+            return substr($path, 1);
+        }
+
+        return $path;
     }
 }

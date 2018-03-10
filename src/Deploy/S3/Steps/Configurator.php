@@ -7,14 +7,13 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
-use Hal\Core\Entity\Job;
-use Hal\Core\Entity\Target;
-use Hal\Core\Entity\JobType\Release;
+use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Credential;
-use Hal\Core\Entity\Credential\AWSRoleCredential;
-use Hal\Core\Entity\Credential\AWSStaticCredential;
+use Hal\Core\Entity\Job;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\Target;
 use Hal\Core\Parameters;
-use Hal\Core\Type\CredentialEnum;
 use QL\MCP\Common\Time\Clock;
 
 class Configurator
@@ -29,39 +28,68 @@ class Configurator
     private $clock;
 
     /**
+     * @var AWSAuthenticator
+     */
+    private $authenticator;
+
+    /**
+     * @param AWSAuthenticator $authenticator
      * @param Clock $clock
      */
-    public function __construct(Clock $clock)
+    public function __construct(AWSAuthenticator $authenticator, Clock $clock)
     {
+        $this->authenticator = $authenticator;
         $this->clock = $clock;
     }
 
     /**
      * @param Release $release
      *
-     * @return array
+     * @return array|null
      */
-    public function __invoke(Release $release): array
+    public function __invoke(Release $release): ?array
     {
         $target = $release->target();
+        $region = $target->parameter(Parameters::TARGET_REGION);
 
-        $aws = [
-            'region' => $target->parameter(Parameters::TARGET_REGION),
-            'credential' => $target->credential() ? $this->getCredentials($target->credential()) : null
-        ];
+        if (!$s3 = $this->authenticate($region, $target->credential())) {
+            return null;
+        }
 
-        $s3 = [
+        return [
+            'sdk' => [
+                's3' => $s3
+            ],
+
+            'region' => $region,
+
             'bucket' => $target->parameter(Parameters::TARGET_S3_BUCKET),
             'method' => $target->parameter(Parameters::TARGET_S3_METHOD),
 
-            'local' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: static::DEFAULT_SRC,
-            'remote' => $this->buildRemotePath($release)
+            'local_path' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: static::DEFAULT_SRC,
+            'remote_path' => $this->buildRemotePath($release)
         ];
+    }
 
-        return [
-            'aws' => $aws,
-            's3' => $s3
-        ];
+    /**
+     * @param string $region
+     * @param Credential|null $credential
+     *
+     * @return array|null
+     */
+    private function authenticate($region, $credential)
+    {
+        if (!$credential instanceof Credential) {
+            return null;
+        }
+
+        $s3 = $this->authenticator->getS3($region, $credential->details());
+
+        if (!$s3) {
+            return null;
+        }
+
+        return $s3;
     }
 
     /**
@@ -89,11 +117,11 @@ class Configurator
      */
     private function getRemotePath(Target $target)
     {
-        if ($template = $target->parameter(Parameters::PARAM_REMOTE_PATH)) {
+        if ($template = $target->parameter(Parameters::TARGET_S3_REMOTE_PATH)) {
             return $template;
         }
 
-        if ($target->parameter(Parameters::PARAM_S3_METHOD) === 'sync') {
+        if ($target->parameter(Parameters::TARGET_S3_METHOD) === 'sync') {
             return static::DEFAULT_SYNC_FILE;
         }
 
@@ -107,33 +135,22 @@ class Configurator
      */
     private function buildTokenReplacements(Job $job)
     {
-        $application = $job->application();
+        $application = null;
+
+        if ($job instanceof Build || $job instanceof Release) {
+            $application = $job->application();
+        }
+
         $now = $this->clock->read();
 
         return [
             'JOBID' => $job->id(),
 
-            'APPID' => $application->id(),
-            'APP' => $application->name(),
+            'APPID' => $application ? $application->id() : '',
+            'APP' => $application ? $application->name() : '',
 
             'DATE' => $now->format('Ymd', 'UTC'),
             'TIME' => $now->format('His', 'UTC')
         ];
-    }
-
-    /**
-     * Get AWS Credentials out of Credential object
-     *
-     * @param Credential $credential
-     *
-     * @return AWSStaticCredential|AWSRoleCredential
-     */
-    private function getCredentials(Credential $credential)
-    {
-        if (!in_array($credential->type(), [CredentialEnum::TYPE_AWS_STATIC, CredentialEnum::TYPE_AWS_ROLE])) {
-            return null;
-        }
-
-        return $credential->details();
     }
 }

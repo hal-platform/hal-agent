@@ -5,12 +5,9 @@ services:
         arguments:
             - '@logger.event'
             - '@deploy.s3.configurator'
-            - '@deploy.support.aws_authenticator'
-            - '@deploy.s3.validator'
             - '@deploy.s3.compressor'
-            - '@deploy.s3_artifact.uploader'
-            - '@deploy.s3_sync.uploader'
-            - '@deploy.s3_artifact.verifier'
+            - '@deploy.s3.artifact_uploader'
+            - '@deploy.s3.sync_uploader'
 
     ############################################################################
     # steps
@@ -18,42 +15,36 @@ services:
 
     deploy.s3.configurator:
         class: 'Hal\Agent\Deploy\S3\Steps\Configurator'
-        arguments: ['@clock']
-
-    deploy.s3.validator:
-        class: 'Hal\Agent\Deploy\S3\Steps\Validator'
         arguments:
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '%timeout.deploy.serverCommand%'
+            - '@deploy.support.aws_authenticator'
+            - '@clock'
 
     deploy.s3.compressor:
         class: 'Hal\Agent\Deploy\S3\Steps\Compressor'
-        arguments: ['@build.support.file_compression']
+        arguments:
+            - '@logger.event'
+            - '@filesystem'
+            - '@deploy.support.file_compression'
 
-    deploy.s3_artifact.uploader:
-        class: 'Hal\Agent\Deploy\S3\Steps\ArtifactUploader'
+    deploy.s3.artifact_uploader:
+        class: 'Hal\Agent\AWS\S3Uploader'
 
-    deploy.s3_sync.uploader:
+    deploy.s3.sync_uploader:
         class: 'Hal\Agent\Deploy\S3\Steps\SyncUploader'
-        arguments: ['@deploy.s3_sync.support.synchronizer']
-
-    deploy.s3_artifact.verifier:
-        class: 'Hal\Agent\Deploy\S3\Steps\ArtifactVerifier'
+        arguments: ['@deploy.s3.support_sync_filesync']
 
     ############################################################################
     # support
     ############################################################################
 
-    deploy.s3_sync.support.synchronizer:
-        class: 'Hal\Agent\Deploy\S3\Sync\SyncManager'
+    deploy.s3.support_sync_comparator:
+        class: 'Hal\Agent\Deploy\S3\Comparator'
+
+    deploy.s3.support_sync_filesync:
+        class: 'Hal\Agent\Deploy\S3\FileSync'
         arguments:
-            - '@deploy.s3_sync.support.transferer'
-            - '@deploy.s3_sync.support.deleter'
             - '@utility.finder'
-
-    deploy.s3_sync.support.transferer:
-        class: 'Hal\Agent\Deploy\S3\Sync\TransferManager'
-
-    deploy.s3_sync.support.deleter:
-        class: 'Hal\Agent\Deploy\S3\Sync\BatchDeleteManager'
+            - '@deploy.s3.support_sync_comparator'
+        calls:
+            - ['withFlag', ['COMPARE_FILES']]
+            - ['withFlag', ['REMOVE_EXTRA_FILES']]

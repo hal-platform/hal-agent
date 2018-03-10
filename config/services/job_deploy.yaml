@@ -38,6 +38,12 @@ services:
     # support for deploy platforms
     ############################################################################
 
+    deploy.support.file_compression:
+        class: 'Hal\Agent\Job\FileCompression'
+        arguments:
+            - '@process_runner'
+            - '%timeout.filepacking%'
+
     deploy.support.aws_authenticator:
         class: 'Hal\Core\AWS\AWSAuthenticator'
         arguments:
@@ -52,8 +58,4 @@ services:
             - '@encryption'
             - '@doctrine.em'
             - '@aws'
-
-    deploy.support.aws_configurator:
-        class: 'Hal\Agent\Deploy\AWS\Configurator'
-        arguments: ['@encryption']
 

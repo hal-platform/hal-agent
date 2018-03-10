@@ -18,6 +18,7 @@ use Hal\Core\Entity\Credential\AWSRoleCredential;
 use Hal\Core\Entity\Credential\AWSStaticCredential;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
+use Hal\Core\Parameters;
 use Hal\Core\Repository\JobType\ReleaseRepository;
 use Hal\Core\Type\CredentialEnum;
 use Hal\Core\Type\TargetEnum;
@@ -217,12 +218,12 @@ class Resolver
             return [
                 'remoteUser' => $this->sshUser,
                 'remoteServer' => $hostname,
-                'remotePath' => $target->parameter(Target::PARAM_REMOTE_PATH),
-                'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $target->parameter(Target::PARAM_REMOTE_PATH)),
+                'remotePath' => $target->parameter(Parameters::TARGET_RSYNC_REMOTE_PATH),
+                'syncPath' => sprintf('%s@%s:%s', $this->sshUser, $hostname, $target->parameter(Parameters::TARGET_RSYNC_REMOTE_PATH)),
 
                 'environmentVariables' => [
                     'HAL_HOSTNAME' => $hostname,
-                    'HAL_PATH' => $target->parameter(Target::PARAM_REMOTE_PATH),
+                    'HAL_PATH' => $target->parameter(Parameters::TARGET_RSYNC_REMOTE_PATH),
                 ]
 
                 //'credential' => $credential
@@ -233,49 +234,49 @@ class Resolver
 
         } elseif ($method === TargetEnum::TYPE_EB) {
             $replacements = $this->buildTokenReplacements($release);
-            $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_EB_FILENAME;
+            $template = $target->parameter(Parameters::TARGET_S3_REMOTE_PATH) ?: self::DEFAULT_EB_FILENAME;
 
             return [
                 'region' => $target->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
-                'application' => $target->parameter(Target::PARAM_APP),
-                'environment' => $target->parameter(Target::PARAM_ENV),
+                'application' => $target->parameter(Parameters::TARGET_EB_APP),
+                'environment' => $target->parameter(Parameters::TARGET_EB_ENV),
 
-                'bucket' => $target->parameter(Target::PARAM_BUCKET),
+                'bucket' => $target->parameter(Parameters::TARGET_S3_BUCKET),
                 'file' => $this->buildS3Filename($replacements, $template),
-                'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
+                'src' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
         } elseif ($method === TargetEnum::TYPE_S3) {
             $replacements = $this->buildTokenReplacements($release);
-            $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_S3_FILENAME;
+            $template = $target->parameter(Parameters::TARGET_S3_REMOTE_PATH) ?: self::DEFAULT_S3_FILENAME;
 
             return [
                 'region' => $target->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
-                'bucket' => $target->parameter(Target::PARAM_BUCKET),
-                'strategy' => $target->parameter(Target::PARAM_S3_METHOD),
+                'bucket' => $target->parameter(Parameters::TARGET_S3_BUCKET),
+                'strategy' => $target->parameter(Parameters::TARGET_S3_METHOD),
                 'file' => $this->buildS3Filename($replacements, $template),
-                'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
+                'src' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
         } elseif ($method === TargetEnum::TYPE_CD) {
             $replacements = $this->buildTokenReplacements($release);
-            $template = $target->parameter(Target::PARAM_REMOTE_PATH) ?: self::DEFAULT_CD_FILENAME;
+            $template = $target->parameter(Parameters::TARGET_S3_REMOTE_PATH) ?: self::DEFAULT_CD_FILENAME;
 
             return [
                 'region' => $target->name(),
                 'credential' => $target->credential() ? $this->getAWSCredentials($target->credential()) : null,
 
-                'application' => $target->parameter(TARGET::PARAM_APP),
-                'group' => $target->parameter(Target::PARAM_GROUP),
-                'configuration' => $target->parameter(Target::PARAM_CONFIG),
+                'application' => $target->parameter(Parameters::TARGET_CD_APP),
+                'group' => $target->parameter(Parameters::TARGET_CD_GROUP),
+                'configuration' => $target->parameter(Parameters::TARGET_CD_CONFIG),
 
-                'bucket' => $target->parameter(Target::PARAM_BUCKET),
+                'bucket' => $target->parameter(Parameters::TARGET_S3_BUCKET),
                 'file' => $this->buildS3Filename($replacements, $template),
-                'src' => $target->parameter(Target::PARAM_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
+                'src' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: self::DEFAULT_AWS_SRC
             ];
 
         }
