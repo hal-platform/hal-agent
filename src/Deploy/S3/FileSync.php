@@ -1,17 +1,14 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Deploy\S3;
 
-use ArrayIterator;
 use Aws\S3\S3Client;
-use Aws\S3\Transfer;
-use Aws\S3\BatchDelete;
-use GuzzleHttp\Promise\PromiseInterface;
+use Hal\Agent\AWS\S3Batcher;
 use Hal\Agent\Utility\OptionTrait;
 use Symfony\Component\Finder\Finder;
 
@@ -40,13 +37,20 @@ class FileSync
     private $comparator;
 
     /**
+     * @var S3Batcher
+     */
+    private $batcher;
+
+    /**
      * @param Finder $finder
      * @param Comparator $comparator
+     * @param S3Batcher $batcher
      */
-    public function __construct(Finder $finder, Comparator $comparator)
+    public function __construct(Finder $finder, Comparator $comparator, S3Batcher $batcher)
     {
         $this->finder = $finder;
         $this->comparator = $comparator;
+        $this->batcher = $batcher;
     }
 
     /**
@@ -64,35 +68,29 @@ class FileSync
 
         [$uploads, $removals] = $this->buildFilesToActUpon($prefixPath, $localFiles, $remoteObjects);
 
-        $async = $this->transferFiles($s3, $uploads, $localPath, $bucket, $prefixPath);
-        $async = $this->maybeDeleteExtras($async, $s3, $removals, $bucket);
+        $this->batcher->transferFiles($s3, $uploads, $localPath, $bucket, $prefixPath);
 
-        $async->wait();
+        $this->maybeDeleteExtras($s3, $removals, $bucket);
     }
 
     /**
-     * @param PromiseInterface $promise
      * @param S3Client $s3
      * @param array $removals
      * @param string $bucket
      *
-     * @return PromiseInterface
+     * @return void
      */
-    private function maybeDeleteExtras(PromiseInterface $promise, S3Client $s3, array $removals, $bucket)
+    private function maybeDeleteExtras(S3Client $s3, array $removals, $bucket)
     {
         if (!$this->isFlagEnabled(self::REMOVE_EXTRA_FILES)) {
-            return $promise;
+            return;
         }
 
         if (!$removals) {
-            return $promise;
+            return;
         }
 
-        $delete = function () use ($s3, $removals, $bucket) {
-            return $this->deleteExtraFiles($s3, $removals, $bucket);
-        };
-
-        return $promise->then($delete);
+        $this->batcher->deleteFiles($s3, $removals, $bucket);
     }
 
     /**
@@ -111,7 +109,7 @@ class FileSync
         foreach ($remoteObjects as $s3Object) {
             $path = $this->buildRelativeS3ObjectPathname($prefixPath, $s3Object);
 
-            $sourceFile = array_key_exists($path, $localFiles) ? $localFiles[$path] : null;
+            $sourceFile = $localFiles[$path] ?? null;
 
             if ($this->isFlagEnabled(self::COMPARE_FILES) && $this->comparator->areSame($sourceFile, $s3Object)) {
                 unset($localFiles[$path]);
@@ -197,46 +195,5 @@ class FileSync
         }
 
         return $map;
-    }
-
-    /**
-     * @param S3Client $s3
-     * @param array $uploads
-     * @param string $localPath
-     * @param string $bucket
-     * @param string $prefix
-     *
-     * @return PromiseInterface
-     */
-    private function transferFiles(S3Client $s3, array $uploads, $localPath, $bucket, $prefix)
-    {
-        $from = new ArrayIterator($uploads);
-        $to = rtrim("s3://${bucket}/${prefix}", '/');
-
-        $options = [
-            'base_dir' => $localPath,
-            'concurrency' => 20,
-            // 'debug' => true,
-        ];
-
-        $transfer = new Transfer($s3, $from, $to, $options);
-
-        return $transfer->promise();
-    }
-
-    /**
-     * @param S3Client $s3
-     * @param array $removals
-     * @param string $bucket
-     *
-     * @return PromiseInterface
-     */
-    private function deleteExtraFiles(S3Client $s3, array $removals, $bucket)
-    {
-        $iterator = new ArrayIterator($removals);
-
-        $async = BatchDelete::fromIterator($s3, $bucket, $iterator);
-
-        return $async->promise();
     }
 }

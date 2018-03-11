@@ -30,13 +30,15 @@ class SyncUploader
      * @param string $localPath
      * @param string $bucket
      * @param string $path
-     * @param array $metadata
      *
      * @return bool
      */
-    public function __invoke(S3Client $s3, string $localPath, string $bucket, string $path, array $metadata = []): bool
+    public function __invoke(S3Client $s3, string $localPath, string $bucket, string $path): bool
     {
-        $params = $metadata ? ['params' => ['Metadata' => $metadata]] : [];
+        // Do not allow dir traversal. Source path must be within workspace
+        if (stripos($localPath, '/..') !== false) {
+            return false;
+        }
 
         $remotePath = $this->buildObjectPath($path);
 
@@ -52,6 +54,8 @@ class SyncUploader
      */
     private function buildObjectPath($path)
     {
+        $path = rtrim($path, '/');
+
         if ($path === '.') {
             return '';
 

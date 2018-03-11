@@ -136,9 +136,11 @@ class Configurator
     private function buildTokenReplacements(Job $job)
     {
         $application = null;
+        $environment = null;
 
         if ($job instanceof Build || $job instanceof Release) {
             $application = $job->application();
+            $environment = $job->environment();
         }
 
         $now = $this->clock->read();
@@ -148,6 +150,8 @@ class Configurator
 
             'APPID' => $application ? $application->id() : '',
             'APP' => $application ? $application->name() : '',
+
+            'ENV' => $environment ? $environment->name() : '',
 
             'DATE' => $now->format('Ymd', 'UTC'),
             'TIME' => $now->format('His', 'UTC')

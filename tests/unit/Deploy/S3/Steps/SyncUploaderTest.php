@@ -8,39 +8,85 @@
 namespace Hal\Agent\Deploy\S3\Steps;
 
 use Aws\S3\S3Client;
-use Hal\Agent\Deploy\S3\Sync\Sync;
-use Hal\Agent\Deploy\S3\Sync\SyncManager;
+use Hal\Agent\Deploy\S3\FileSync;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryTestCase;
 
 class SyncUploaderTest extends MockeryTestCase
 {
     public $s3;
+    public $filesync;
 
     public function setUp()
     {
         $this->s3 = Mockery::mock(S3Client::class);
-        $this->synchronizer = Mockery::mock(SyncManager::class);
+        $this->filesync = Mockery::mock(FileSync::class);
     }
 
     public function testSuccess()
     {
-        $this->synchronizer
-            ->expects('sync')
-            ->with($this->s3, 'temp_archive', 'bucket', 'directory', Sync::COMPARE | Sync::REMOVE)
-            ->andReturns(null)
+        $this->filesync
+            ->shouldReceive('filesync')
+            ->with($this->s3, './local_path', 'bucket', 'object/path')
             ->once();
 
-        $syncUploader = new SyncUploader($this->synchronizer);
+        $uploader = new SyncUploader($this->filesync);
 
-        $actual = $syncUploader(
+        $actual = $uploader(
             $this->s3,
-            'temp_archive',
+            './local_path',
             'bucket',
-            'directory',
-            [ 'meta' => 'data' ]
+            'object/path'
         );
 
         $this->assertSame(true, $actual);
     }
+
+    public function testFailIfSourceTraverses()
+    {
+        $uploader = new SyncUploader($this->filesync);
+
+        $actual = $uploader(
+            $this->s3,
+            '/dir/../local_path',
+            'bucket',
+            'object/path'
+        );
+
+        $this->assertSame(false, $actual);
+    }
+
+    /**
+     * @dataProvider pathSanitizationsProvider
+     */
+    public function testSanitizeObjectPaths($input, $expected)
+    {
+        $this->filesync
+            ->shouldReceive('filesync')
+            ->with($this->s3, './local_path', 'bucket', $expected)
+            ->once();
+
+        $uploader = new SyncUploader($this->filesync);
+
+        $actual = $uploader(
+            $this->s3,
+            './local_path',
+            'bucket',
+            $input
+        );
+
+        $this->assertSame(true, $actual);
+    }
+
+    public function pathSanitizationsProvider()
+    {
+        return [
+            ['.',               ''],
+            ['./path',          'path'],
+            ['/object/path/',   'object/path'],
+            ['/object/path',    'object/path'],
+            ['./',              '']
+        ];
+    }
+
 }

@@ -16,7 +16,7 @@ class Compressor
 {
     private const ERR_SOURCE_NOT_VALID = 'Invalid source file or directory specified';
     private const ERR_PREPARE_FILE_FOR_UPLOAD = 'Failed to prepare artifact for upload';
-    private const ERR_INVALID_EXTENSION = "Target file's extension is not valid: valid extensions are .zip, .tgz, and .tar.gz";
+    private const ERR_INVALID_EXTENSION = 'Artifact file extension is not valid';
 
     /**
      * @var EventLogger
@@ -54,7 +54,7 @@ class Compressor
      */
     public function __invoke(string $sourcePath, string $targetFile, string $remoteFile): bool
     {
-        // Do not allow dir traversal. Dist path must be within build dir
+        // Do not allow dir traversal. Source path must be within workspace
         if (stripos($sourcePath, '/..') !== false) {
             $this->logger->event('failure', self::ERR_SOURCE_NOT_VALID, ['path' => $sourcePath]);
             return false;
@@ -89,7 +89,9 @@ class Compressor
         }
 
         if (!$archiver) {
-            $this->logger->event('failure', static::ERR_INVALID_EXTENSION);
+            $this->logger->event('failure', static::ERR_INVALID_EXTENSION, [
+                'validExtensions' => array_keys($supported)
+            ]);
             return false;
         }
 

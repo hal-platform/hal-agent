@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -32,7 +32,7 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
     private const STEP_2_COMPRESSING = 'S3 Platform - Compressing source';
     private const STEP_3_UPLOADING = 'S3 Platform - Uploading artifacts to S3 bucket';
 
-    private const NOTE_SKIP_COMPRESSION = 'Skipping compression step: in sync mode';
+    private const NOTE_SKIP_COMPRESSION = 'Skipping compression step in sync mode';
 
     private const ERR_INVALID_JOB = 'The provided job is an invalid type for this job platform';
     private const ERR_CONFIGURATOR = 'S3 deploy platform is not configured correctly';
@@ -179,10 +179,6 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
 
         $method = $platformConfig['method'];
         $s3 = $platformConfig['sdk']['s3'];
-        $metadata = [
-            'Job' => $release->id(),
-            'Environment' => $release->environment()->name()
-        ];
 
         if ($method === 'sync') {
             $sourcePath = $workspacePath . '/job/' . $platformConfig['local_path'];
@@ -190,8 +186,7 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
                 $s3,
                 $sourcePath,
                 $platformConfig['bucket'],
-                $platformConfig['remote_path'],
-                $metadata
+                $platformConfig['remote_path']
             );
 
         } elseif ($method === 'artifact') {
@@ -201,7 +196,10 @@ class S3DeployPlatform implements IOAwareInterface, JobPlatformInterface
                 $sourceFile,
                 $platformConfig['bucket'],
                 $platformConfig['remote_path'],
-                $metadata
+                [
+                    'Job' => $release->id(),
+                    'Environment' => $release->environment()->name()
+                ]
             );
         }
 

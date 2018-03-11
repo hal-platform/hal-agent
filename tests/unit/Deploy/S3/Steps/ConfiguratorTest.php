@@ -7,6 +7,7 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
+use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Credential\AWSRoleCredential;
@@ -14,139 +15,88 @@ use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
-use PHPUnit\Framework\TestCase;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryTestCase;
 use QL\MCP\Common\Time\Clock;
 
-class ConfiguratorTest extends TestCase
+class ConfiguratorTest extends MockeryTestCase
 {
+    public $authenticator;
     public $clock;
     public $credential;
 
     public function setUp()
     {
-        $this->clock = new Clock('2018-03-07T15:29:55.011111Z', 'UTC');
-        $this->credential = (new Credential)
-            ->withDetails(
-                new AWSRoleCredential
-            );
+        $this->authenticator = Mockery::mock(AWSAuthenticator::class);
+        $this->clock = new Clock('2018-03-07T12:15:30Z', 'UTC');
     }
 
     public function testSuccess()
     {
         $expected = [
-            'aws' => [
-                'region' => 'us-test-1',
-                'credential' => $this->credential->details()
-            ],
-            's3' => [
-                'bucket' => 'bucket',
-                'method' => 'artifact',
-                'file' => 'file.zip',
-                'src' => '.'
-            ]
+            'region' => 'us-test-1',
+
+            'bucket' => 'bucket',
+            'method' => 'artifact',
+
+            'local_path' => '.',
+            'remote_path' => 'file.zip'
         ];
 
+        $this->authenticator
+            ->shouldReceive('getS3')
+            ->with('us-test-1', Mockery::any())
+            ->once()
+            ->andReturn(true);
+
         $release = $this->createMockRelease();
-        $configurator = new Configurator($this->clock);
+        $configurator = new Configurator($this->authenticator, $this->clock);
 
         $actual = $configurator($release);
+
+        $this->assertTrue(isset($actual['sdk']['s3']));
+        unset($actual['sdk']);
 
         $this->assertSame($expected, $actual);
     }
 
-    public function testAppIDToken()
+    public function testRemotePathTokenReplacements()
     {
-        $expectedFile = '1234.zip';
+        $inputPath = '$JOBID-$APPID-$APP/$ENV/$DATE_$TIME.zip';
+        $expectedPath = '1234-5678-TestApp/test/20180307_121530.zip';
 
         $release = $this->createMockRelease();
-        $release->target()->withParameter(Target::PARAM_REMOTE_PATH, '$APPID.zip');
+        $release->target()->withParameter('path', $inputPath);
 
-        $configurator = new Configurator($this->clock);
+        $this->authenticator
+            ->shouldReceive('getS3')
+            ->andReturn(true);
+
+        $configurator = new Configurator($this->authenticator, $this->clock);
 
         $actual = $configurator($release);
 
-        $this->assertSame($expectedFile, $actual['s3']['file']);
+        $this->assertSame($expectedPath, $actual['remote_path']);
     }
 
-    public function testAppNameToken()
+    public function testAuthenticatorFails()
     {
-        $expectedFile = 'TestApp.zip';
-
         $release = $this->createMockRelease();
-        $release->target()->withParameter(Target::PARAM_REMOTE_PATH, '$APP.zip');
+        $release->target()->withCredential(null);
 
-        $configurator = new Configurator($this->clock);
+        $configurator = new Configurator($this->authenticator, $this->clock);
 
         $actual = $configurator($release);
 
-        $this->assertSame($expectedFile, $actual['s3']['file']);
-    }
-
-    public function testBuildIDToken()
-    {
-        $expectedFile = '5678.zip';
-
-        $release = $this->createMockRelease();
-        $release->target()->withParameter(Target::PARAM_REMOTE_PATH, '$BUILDID.zip');
-
-        $configurator = new Configurator($this->clock);
-
-        $actual = $configurator($release);
-
-        $this->assertSame($expectedFile, $actual['s3']['file']);
-    }
-
-    public function testPushIDToken()
-    {
-        $expectedFile = '9000.zip';
-
-        $release = $this->createMockRelease();
-        $release->target()->withParameter(Target::PARAM_REMOTE_PATH, '$PUSHID.zip');
-
-        $configurator = new Configurator($this->clock);
-
-        $actual = $configurator($release);
-
-        $this->assertSame($expectedFile, $actual['s3']['file']);
-    }
-
-    public function testDateToken()
-    {
-        $expectedFile = '20180307.zip';
-
-        $release = $this->createMockRelease();
-        $release->target()->withParameter(Target::PARAM_REMOTE_PATH, '$DATE.zip');
-
-        $configurator = new Configurator($this->clock);
-
-        $actual = $configurator($release);
-
-        $this->assertSame($expectedFile, $actual['s3']['file']);
-    }
-
-    public function testTimeToken()
-    {
-        $expectedFile = '152955.zip';
-
-        $release = $this->createMockRelease();
-        $release->target()->withParameter(Target::PARAM_REMOTE_PATH, '$TIME.zip');
-
-        $configurator = new Configurator($this->clock);
-
-        $actual = $configurator($release);
-
-        $this->assertSame($expectedFile, $actual['s3']['file']);
+        $this->assertSame(null, $actual);
     }
 
     private function createMockRelease()
     {
-        return (new Release('9000'))
+        return (new Release('1234'))
             ->withApplication(
-                (new Application('1234'))
+                (new Application('5678'))
                     ->withName('TestApp')
-            )
-            ->withBuild(
-                (new Build('5678'))
             )
             ->withEnvironment(
                 (new Environment)
@@ -154,12 +104,17 @@ class ConfiguratorTest extends TestCase
             )
             ->withTarget(
                 (new Target)
-                    ->withParameter(Target::PARAM_REGION, 'us-test-1')
-                    ->withParameter(Target::PARAM_S3_METHOD, 'artifact')
-                    ->withParameter(Target::PARAM_BUCKET, 'bucket')
-                    ->withParameter(Target::PARAM_LOCAL_PATH, '.')
-                    ->withParameter(Target::PARAM_REMOTE_PATH, 'file.zip')
-                    ->withCredential($this->credential)
+                    ->withParameter('region', 'us-test-1')
+                    ->withParameter('s3_method', 'artifact')
+                    ->withParameter('bucket', 'bucket')
+                    ->withParameter('source', '.')
+                    ->withParameter('path', 'file.zip')
+                    ->withCredential(
+                        (new Credential)
+                            ->withDetails(
+                                new AWSRoleCredential
+                            )
+                    )
             );
     }
 }
