@@ -9,6 +9,7 @@ namespace Hal\Agent\Push\ElasticBeanstalk;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\S3\S3Client;
+use Hal\Agent\AWS\S3Uploader;
 use Hal\Agent\Push\DeployerInterface;
 use Hal\Agent\Push\ReleasePacker;
 use Hal\Agent\Logger\EventLogger;
@@ -51,7 +52,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
     private $packer;
 
     /**
-     * @var Uploader
+     * @var S3Uploader
      */
     private $uploader;
 
@@ -65,7 +66,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
      * @param AWSAuthenticator $authenticator
      * @param HealthChecker $health
      * @param ReleasePacker $packer
-     * @param Uploader $uploader
+     * @param S3Uploader $uploader
      * @param Pusher $pusher
      */
     public function __construct(
@@ -73,7 +74,7 @@ class Deployer implements DeployerInterface, OutputAwareInterface
         AWSAuthenticator $authenticator,
         HealthChecker $health,
         ReleasePacker $packer,
-        Uploader $uploader,
+        S3Uploader $uploader,
         Pusher $pusher
     ) {
         $this->logger = $logger;

@@ -69,11 +69,13 @@ class FileCompressionTest extends MockeryTestCase
 
     public function testPackTar()
     {
+        $sourcePath = __DIR__ . '/.fixtures';
+
         $process = Mockery::mock(Process::class, ['isSuccessful' => true]);
 
         $this->runner
             ->shouldReceive('prepare')
-            ->with(['tar', '-vcz', '--file=/path/artifact.tgz', '.'], '/path/workspace', 10)
+            ->with(['tar', '-vcz', '--file=/path/artifact.tgz', '.'], $sourcePath, 10)
             ->once()
             ->andReturn($process);
 
@@ -85,7 +87,7 @@ class FileCompressionTest extends MockeryTestCase
 
         $compression = new FileCompression($this->runner, 10);
 
-        $actual = $compression->packTarArchive('/path/workspace', '/path/artifact.tgz');
+        $actual = $compression->packTarArchive($sourcePath, '/path/artifact.tgz');
 
         $this->assertSame(true, $actual);
     }

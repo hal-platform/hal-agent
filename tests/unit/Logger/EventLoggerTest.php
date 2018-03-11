@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManager;
 use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Entity\Target;
 use Mockery;
 use QL\MCP\Common\Time\Clock;
 use QL\MCP\Common\Time\TimePoint;
@@ -79,6 +80,7 @@ class EventLoggerTest extends MockeryTestCase
     public function testReleaseIsSuccessAndLaunchesChildren()
     {
         $release = new Release;
+        $release->withTarget(new Target);
 
         $this->handler
             ->shouldReceive('launch')

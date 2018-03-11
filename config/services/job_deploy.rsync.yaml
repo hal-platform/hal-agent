@@ -45,7 +45,7 @@ services:
         arguments:
             - '@logger.event'
             - '@ssh.manager'
-            - '%timeout.push.serverCommand%'
+            - '%timeout.deploy.serverCommand%'
 
     # push.rsync.delta.remoter:
     #     class: 'Hal\Agent\Remoting\SSHProcess'

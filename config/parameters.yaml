@@ -55,7 +55,7 @@ parameters:
     timeout.push: 300
 
     timeout.push.build: 300
-    timeout.push.serverCommand: 120
+    timeout.deploy.serverCommand: 120
 
     timeout.standard: 20
     timeout.filepacking: 120
@@ -156,15 +156,14 @@ parameters:
     deployment_after.build.platforms: '%build.platforms%'
 
     deployment.platforms:
-        derp: lol
         # rsync: 'deploy_platform.rsync'
         # eb: 'deploy_platform.eb'
-        # s3: 'deploy_platform.s3'
+        s3: 'deploy_platform.s3'
         # cd: 'deploy_platform.cd'
         # script: 'deploy_platform.script'
 
     deployment_platform.script.platforms: '%build.platforms%'
 
-    push.s3.strategies:
+    deploy.s3.strategies:
         artifact: 'deploy_platform.s3.artifact'
         sync: 'deploy_platform.s3.sync'

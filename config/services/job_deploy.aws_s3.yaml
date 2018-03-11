@@ -1,77 +1,54 @@
 services:
 
     deploy_platform.s3:
-        class: 'Hal\Agent\Push\S3\Deployer'
+        class: 'Hal\Agent\Deploy\S3\S3DeployPlatform'
         arguments:
             - '@logger.event'
-            - '@service_container'
-            - '%push.s3.strategies%'
+            - '@deploy.s3.configurator'
+            - '@deploy.s3.compressor'
+            - '@deploy.s3.artifact_uploader'
+            - '@deploy.s3.sync_uploader'
 
     ############################################################################
-    # types
+    # steps
     ############################################################################
 
-    deploy_platform.s3.artifact:
-        class: 'Hal\Agent\Push\S3\Artifact\Deployer'
+    deploy.s3.configurator:
+        class: 'Hal\Agent\Deploy\S3\Steps\Configurator'
         arguments:
-            - '@logger.event'
             - '@deploy.support.aws_authenticator'
-            - '@push.s3_artifact.preparer'
-            - '@push.s3_artifact.uploader'
+            - '@clock'
 
-    deploy_platform.s3.sync:
-        class: 'Hal\Agent\Push\S3\Sync\Deployer'
+    deploy.s3.compressor:
+        class: 'Hal\Agent\Deploy\S3\Steps\Compressor'
         arguments:
             - '@logger.event'
-            - '@deploy.support.aws_authenticator'
-            - '@push.s3_sync.preparer'
-            - '@push.s3_sync.uploader'
+            - '@filesystem'
+            - '@deploy.support.file_compression'
+
+    deploy.s3.artifact_uploader:
+        class: 'Hal\Agent\AWS\S3Uploader'
+
+    deploy.s3.sync_uploader:
+        class: 'Hal\Agent\Deploy\S3\Steps\SyncUploader'
+        arguments: ['@deploy.s3.support_sync_filesync']
 
     ############################################################################
     # support
     ############################################################################
 
-    push.s3_sync.preparer:
-        class: 'Hal\Agent\Push\S3\Sync\Preparer'
+    deploy.s3.support_sync_filesync:
+        class: 'Hal\Agent\Deploy\S3\FileSync'
         arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            - '%timeout.filepacking%'
-
-    push.s3_artifact.preparer:
-        class: 'Hal\Agent\Push\S3\Artifact\Preparer'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@utility.process.builder'
-            # - '@deploy.support.mover'
-            # - '@deploy.support.packer'
-            - '%timeout.filepacking%'
-
-    push.s3_sync.uploader:
-        class: 'Hal\Agent\Push\S3\Sync\Uploader'
-        arguments:
-            - '@logger.event'
-            - '@push.s3_sync.manager.sync'
-        calls:
-            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-
-    push.s3_artifact.uploader:
-        class: 'Hal\Agent\Push\S3\Artifact\Uploader'
-        arguments: ['@logger.event']
-        calls:
-            - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-
-    push.s3_sync.manager.sync:
-        class: 'Hal\Agent\Push\S3\Sync\SyncManager'
-        arguments:
-            - '@push.s3_sync.manager.transfer'
-            - '@push.s3_sync.manager.delete'
             - '@utility.finder'
+            - '@deploy.s3.support_sync_comparator'
+            - '@deploy.s3.support_sync_batcher'
+        calls:
+            - ['withFlag', ['COMPARE_FILES']]
+            - ['withFlag', ['REMOVE_EXTRA_FILES']]
 
-    push.s3_sync.manager.transfer:
-        class: 'Hal\Agent\Push\S3\Sync\TransferManager'
+    deploy.s3.support_sync_comparator:
+        class: 'Hal\Agent\Deploy\S3\Comparator'
 
-    push.s3_sync.manager.delete:
-        class: 'Hal\Agent\Push\S3\Sync\BatchDeleteManager'
+    deploy.s3.support_sync_batcher:
+        class: 'Hal\Agent\AWS\S3Batcher'

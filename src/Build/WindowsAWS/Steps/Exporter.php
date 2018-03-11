@@ -12,7 +12,7 @@ use Aws\Ssm\SsmClient;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Job\FileCompression;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Build\WindowsAWS\AWS\S3Uploader;
+use Hal\Agent\AWS\S3Uploader;
 use Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner;
 use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 

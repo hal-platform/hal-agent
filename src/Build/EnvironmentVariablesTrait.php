@@ -10,7 +10,7 @@ namespace Hal\Agent\Build;
 use Hal\Core\Entity\Job;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
-use Hal\Core\Entity\Target;
+use Hal\Core\Parameters;
 
 trait EnvironmentVariablesTrait
 {
@@ -90,7 +90,7 @@ trait EnvironmentVariablesTrait
             $vcsReference = $build->reference();
 
             if ($target = $job->target()) {
-                $context = $target->parameter(Target::PARAM_CONTEXT) ?: '';
+                $context = $target->parameter(Parameters::TARGET_CONTEXT) ?: '';
             }
         }
 
