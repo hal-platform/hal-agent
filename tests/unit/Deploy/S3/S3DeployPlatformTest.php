@@ -21,7 +21,7 @@ use Hal\Core\Entity\JobType\Release;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-class DeployerTest extends IOTestCase
+class S3DeployPlatformTest extends IOTestCase
 {
     use MockeryPHPUnitIntegration;
 

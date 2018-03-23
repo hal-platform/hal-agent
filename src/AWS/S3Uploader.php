@@ -104,5 +104,4 @@ class S3Uploader
 
         return true;
     }
-
 }
