@@ -7,6 +7,11 @@ defaults: &defaults
     docker:
         - image: 'halplatform/php:latest'
 
+node_defaults: &node_defaults
+    working_directory: '~/project'
+    docker:
+        - image: 'circleci/node:9-stretch'
+
 attach_workspace: &attach_workspace
     attach_workspace:
         at: '.'
@@ -41,6 +46,8 @@ workflows:
             - static_analysis:
                 requires: [ install_php_dependencies ]
             - linting:
+                requires: [ install_php_dependencies ]
+            - security_tests:
                 requires: [ install_php_dependencies ]
 
 jobs:
@@ -113,3 +120,18 @@ jobs:
             - run:
                 name: 'Run code formatting check'
                 command: 'vendor/bin/phpcs -n --colors src'
+
+    security_tests:
+        <<: *node_defaults
+        steps:
+            - *attach_workspace
+
+            - run:
+                name: 'Install Snyk CLI'
+                command: 'yarn global add snyk'
+
+            - run:
+                name: 'Run snyk'
+                command: |
+                    $(yarn global bin)/snyk test
+                    $(yarn global bin)/snyk monitor

@@ -24,7 +24,7 @@ class Verifier
     private $logger;
 
     /**
-     * @var HealthChecker
+     * @var CodeDeployHealthChecker
      */
     private $healthChecker;
 
