@@ -140,9 +140,8 @@ parameters:
         - ['%build.linux.user%',  '*', 'key:%build.linux.keypath%']
         - ['%deploy.rsync.user%', '*', 'key:%deploy.rsync.keypath%']
 
-    aws.credentials.use_host: '%env(HAL_AWS_CREDENTIALS_USE_HOST)%'
-    aws.credentials.profile: '%env(HAL_AWS_CREDENTIALS_PROFILE)%'
-    aws.credentials.path: '%env(HAL_AWS_CREDENTIALS_PATH)%'
+    aws.use_host_credentials: '%env(HAL_AWS_CREDENTIALS_USE_HOST)%'
+    aws.host_credentials_path: '%env(HAL_AWS_HOST_CREDENTIALS_PATH)%'
 
     encrypter.secret.path: '%env(HAL_CRYPTO_SECRETPATH)%'
     encrypter.publickey: '%env(HAL_CRYPTO_PUBLICKEY)%'

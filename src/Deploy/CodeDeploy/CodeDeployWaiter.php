@@ -8,11 +8,10 @@
 namespace Hal\Agent\Deploy\CodeDeploy;
 
 use Aws\CodeDeploy\CodeDeployClient;
-use Hal\Agent\Deploy\CodeDeploy\HealthChecker;
-use Hal\Agent\Logger\EventLogger;
-
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
+use Hal\Agent\AWS\CodeDeployHealthChecker;
+use Hal\Agent\Logger\EventLogger;
 
 class CodeDeployWaiter
 {
@@ -24,15 +23,15 @@ class CodeDeployWaiter
     private $logger;
 
     /**
-     * @var HealthChecker
+     * @var CodeDeployHealthChecker
      */
     private $health;
 
     /**
      * @param EventLogger $logger
-     * @param HealthChecker $health
+     * @param CodeDeployHealthChecker $health
      */
-    public function __construct(EventLogger $logger, HealthChecker $health)
+    public function __construct(EventLogger $logger, CodeDeployHealthChecker $health)
     {
         $this->logger = $logger;
         $this->health = $health;
@@ -51,15 +50,19 @@ class CodeDeployWaiter
         return function () use ($cd, $deployID, &$iteration) {
             try {
                 $health = $this->health->getDeploymentInstancesHealth($cd, $deployID);
+
             } catch (AwsException $e) {
                 return true;
+
             } catch (CredentialsException $e) {
                 return true;
             }
+
             // deployment is still running if following states
             if ($iteration > 3 && !in_array($health['status'], ['Created', 'Queued', 'InProgress'])) {
                 return true;
             }
+
             // Pop a status every 9 iterations (3 minutes, using 20s interval)
             if (++$iteration % 9 === 0) {
                 $this->logOngoingDeploymentHealth($health);

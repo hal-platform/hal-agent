@@ -5,21 +5,20 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Deploy\CodeDeploy;
+namespace Hal\Agent\AWS;
 
 use Aws\CommandInterface;
 use Aws\CodeDeploy\CodeDeployClient;
 use Aws\CodeDeploy\Exception\CodeDeployException;
 use Aws\Result;
-use Mockery;
+use DateTime;
 use Hal\Agent\Testing\LineCheckerTrait;
 use Hal\Agent\Testing\MockeryTestCase;
-
-use DateTime;
+use Mockery;
 use QL\MCP\Common\Time\Clock;
 use QL\MCP\Common\Time\TimePoint;
 
-class HealthCheckerTest extends MockeryTestCase
+class CodeDeployHealthCheckerTest extends MockeryTestCase
 {
     use LineCheckerTrait;
 
@@ -73,7 +72,7 @@ class HealthCheckerTest extends MockeryTestCase
             ])
             ->andReturn($infoResult);
 
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getLastDeploymentHealth($this->cd, 'appName', 'groupName');
 
         $expectedOverview = [
@@ -104,7 +103,7 @@ class HealthCheckerTest extends MockeryTestCase
             ])
             ->andReturn($deploymentsResult);
 
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getLastDeploymentHealth($this->cd, 'appName', 'groupName');
 
         $this->assertSame('None', $actual['status']);
@@ -119,7 +118,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->shouldReceive('listDeployments')
             ->andThrow($ex);
 
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getLastDeploymentHealth($this->cd, 'appName', 'groupName');
 
         $this->assertSame('Invalid', $actual['status']);
@@ -151,7 +150,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->with(['deploymentId' => '1234'])
             ->andReturn($infoResult);
 
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getDeploymentHealth($this->cd, '1234');
 
         $expectedOverview = [
@@ -188,7 +187,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->shouldReceive('listDeploymentInstances')
             ->never();
 
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getDeploymentInstancesHealth($this->cd, '1234');
 
         $this->assertSame('Pending', $actual['status']);
@@ -220,7 +219,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->with(['deploymentId' => '1234'])
             ->andReturn($instancesResult);
 
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getDeploymentInstancesHealth($this->cd, '1234');
 
         $this->assertSame('Succeeded', $actual['status']);
@@ -402,7 +401,7 @@ class HealthCheckerTest extends MockeryTestCase
             'BeforeInstall        | Skipped              | N/A                            | N/A                            |',
             'Install              | Skipped              | N/A                            | N/A                            |'
         ];
-        $checker = new HealthChecker($this->clock, 'America/Detroit');
+        $checker = new CodeDeployHealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getDeploymentInstancesHealth($this->cd, '1234');
 
         // Deployment info

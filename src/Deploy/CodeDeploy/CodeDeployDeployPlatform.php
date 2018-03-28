@@ -38,10 +38,10 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
     private const ERR_INVALID_JOB = 'The provided job is an invalid type for this job platform';
     private const ERR_CONFIGURATOR = 'CodeDeploy deploy platform is not configured correctly';
     private const ERR_HEALTH_VERIFIER = 'Could not validate CodeDeploy instance health';
-    private const ERR_COMPRESSOR = 'The code could not be compressed';
-    private const ERR_UPLOADER = 'The code could not be uploaded to the S3 Bucket';
-    private const ERR_DEPLOYER = 'The code could not be deployed to CodeDeploy';
-    private const ERR_DEPLOY_VERIFIER = 'Could not verify CodeDeploy deployment';
+    private const ERR_COMPRESSOR = 'The source artifact could not be compressed';
+    private const ERR_UPLOADER = 'The artifact(s) could not be uploaded to the S3 Bucket';
+    private const ERR_DEPLOYER = 'New application version failed to deploy to CodeDeploy';
+    private const ERR_DEPLOY_VERIFIER = 'Could not validate CodeDeploy deployment';
 
     /**
      * @var EventLogger
@@ -133,7 +133,7 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
             return false;
         }
 
-        if (!$this->deployVerifier($platformConfig, $deployment)) {
+        if (!$this->validateDeployment($platformConfig, $deployment)) {
             $this->sendFailureEvent(self::ERR_DEPLOY_VERIFIER);
             return false;
         }
@@ -170,7 +170,11 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
     {
         $this->getIO()->section(self::STEP_2_VERIFYING_HEALTH);
 
-        return ($this->verifier)->checkLastDeploymentHealth($platformConfig);
+        $cd = $platformConfig['sdk']['cd'];
+        $application = $platformConfig['application'];
+        $group = $platformConfig['group'];
+
+        return $this->verifier->isDeploymentGroupHealthy($cd, $application, $group);
     }
 
     /**
@@ -240,7 +244,7 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
             $platformConfig['application'],
             $platformConfig['group'],
             $platformConfig['configuration'],
-            $platformConfig['uri']
+            $platformConfig['deployment_description']
         );
 
         if (!$deployment) {
@@ -258,16 +262,19 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
      *
      * @return bool
      */
-    private function deployVerifier(array $platformConfig, array $deploymentInformation)
+    private function validateDeployment(array $platformConfig, array $deploymentInformation)
     {
         $this->getIO()->section(self::STEP_6_VERIFYING_DEPLOY);
 
-        $completed = ($this->verifier)->waitForHealth($platformConfig, $deploymentInformation);
+        $cd = $platformConfig['sdk']['cd'];
+        $deploymentID = $deploymentInformation['codeDeployID'];
+
+        $completed = $this->verifier->waitForHealth($cd, $deploymentID);
         if (!$completed) {
             return false;
         }
 
-        $health = ($this->verifier)->checkDeploymentHealth($platformConfig, $deploymentInformation);
+        $health = $this->verifier->checkDeploymentHealth($cd, $deploymentID);
         if (!$health) {
             return false;
         }

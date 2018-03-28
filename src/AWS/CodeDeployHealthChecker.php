@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Deploy\CodeDeploy;
+namespace Hal\Agent\AWS;
 
 use Aws\CodeDeploy\CodeDeployClient;
 use Aws\CodeDeploy\Exception\CodeDeployException;
@@ -30,7 +30,7 @@ use QL\MCP\Common\Time\TimePoint;
  *     - None
  *
  */
-class HealthChecker
+class CodeDeployHealthChecker
 {
     const STATUS_INVALID = 'Invalid';
     const STATUS_NEVER = 'None';
@@ -179,14 +179,14 @@ class HealthChecker
             $parts = explode('/', $id);
             $id = array_pop($parts);
 
-            $type = $this->nullable($summary, 'instanceType');
+            $type = $summary['instanceType'] ?? '';
             if ($type) {
                 $type = ($type === 'Green') ? 'Replacement (Green)' : 'Original (Blue)';
             } else {
                 $type = 'Original';
             }
 
-            $status = $this->nullable($summary, 'status', 'Unknown');
+            $status = $summary['status'] ?? 'Unknown';
             $events = $summary['lifecycleEvents'];
 
             $lastFinishedEvent = null;
@@ -198,13 +198,13 @@ class HealthChecker
 
             $start = $this->clock->fromString($summary['lastUpdatedAt'], DateTime::ATOM);
             $firstEvent = array_shift($events);
-            if ($firstEventTime = $this->nullable($firstEvent, 'startTime')) {
+            if ($firstEventTime = $firstEvent['startTime'] ?? '') {
                 $start = $this->clock->fromString($firstEventTime, DateTime::ATOM);
             }
 
             $end = null;
             $lastEvent = array_pop($events);
-            if ($lastEventTime = $this->nullable($lastEvent, 'endTime')) {
+            if ($lastEventTime = $lastEvent['endTime'] ?? '') {
                 $end = $this->clock->fromString($lastEventTime, DateTime::ATOM);
             }
 
@@ -240,7 +240,7 @@ class HealthChecker
         $summaries = $result->search('instancesSummary') ?: [];
         foreach ($summaries as $summary) {
             $id = $summary['instanceId'];
-            $type = $this->nullable($summary, 'instanceType', 'Original');
+            $type = $summary['instanceType'] ?? 'Original';
             $status = $summary['status'];
             $events = $summary['lifecycleEvents'];
             $updated = $this->formatTime($summary['lastUpdatedAt']);
@@ -288,16 +288,16 @@ class HealthChecker
         $diagnostics = [];
 
         foreach ($events as $event) {
-            if ($start = $this->nullable($event, 'startTime')) {
+            if ($start = $event['startTime'] ?? '') {
                 $start = $this->clock->fromString($start, DateTime::ATOM);
             }
 
-            if ($end = $this->nullable($event, 'endTime')) {
+            if ($end = $event['endTime'] ?? '') {
                 $end = $this->clock->fromString($end, DateTime::ATOM);
             }
 
-            $name = $this->nullable($event, 'lifecycleEventName', 'Unknown');
-            $status = $this->nullable($event, 'status', 'Unknown');
+            $name = $event['lifecycleEventName'] ?? 'Unknown';
+            $status = $event['status'] ?? 'Unknown';
 
             $output[] = [
                 $name,
@@ -309,7 +309,7 @@ class HealthChecker
 
             // Diagnostics are only added to failed events
             if ($status === 'Failed') {
-                $diagnostics[$name] = $this->nullable($event, 'diagnostics', []);
+                $diagnostics[$name] = $event['diagnostics'] ?? [];
             }
         }
 
@@ -369,18 +369,6 @@ class HealthChecker
         }
 
         return implode("\n", $formatted);
-    }
-
-    /**
-     * I hate php sometimes.
-     */
-    private function nullable(array $data, $key, $default = null)
-    {
-        if (isset($data[$key])) {
-            return $data[$key];
-        }
-
-        return $default;
     }
 
     /**

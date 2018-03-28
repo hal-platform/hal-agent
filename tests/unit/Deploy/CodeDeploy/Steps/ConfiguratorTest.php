@@ -50,7 +50,7 @@ class ConfiguratorTest extends MockeryTestCase
 
             'local_path' => '.',
             'remote_path' => 'file.zip',
-            'uri' => '[test]haltest/release/1234'
+            'deployment_description' => '[test]haltest/release/1234'
         ];
 
         $this->authenticator

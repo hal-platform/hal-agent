@@ -108,12 +108,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(false);
 
         $this->logger
@@ -158,12 +158,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(true);
 
         $this->compressor
@@ -213,12 +213,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(true);
 
         $this->compressor
@@ -273,12 +273,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(true);
 
         $this->compressor
@@ -338,12 +338,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(true);
 
         $this->compressor
@@ -363,7 +363,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->verifier
             ->shouldReceive('waitForHealth')
-            ->with(Mockery::type('array'), Mockery::type('array'))
+            ->with($this->cd, '1234')
             ->andReturn(false);
 
         $this->logger
@@ -408,12 +408,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(true);
 
         $this->compressor
@@ -433,12 +433,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->verifier
             ->shouldReceive('waitForHealth')
-            ->with(Mockery::type('array'), Mockery::type('array'))
+            ->with($this->cd, '1234')
             ->andReturn(true);
 
         $this->verifier
             ->shouldReceive('checkDeploymentHealth')
-            ->with(Mockery::type('array'), Mockery::type('array'))
+            ->with($this->cd, '1234')
             ->andReturn(false);
 
         $this->logger
@@ -483,12 +483,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
                 'application' => 'app',
                 'group' => 'grp',
                 'configuration' => 'cfg',
-                'uri' => 'uri'
+                'deployment_description' => 'uri'
             ]);
 
         $this->verifier
-            ->shouldReceive('checkLastDeploymentHealth')
-            ->with(Mockery::type('array'))
+            ->shouldReceive('isDeploymentGroupHealthy')
+            ->with($this->cd, 'app', 'grp')
             ->andReturn(true);
 
         $this->compressor
@@ -508,12 +508,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->verifier
             ->shouldReceive('waitForHealth')
-            ->with(Mockery::type('array'), Mockery::type('array'))
+            ->with($this->cd, '1234')
             ->andReturn(true);
 
         $this->verifier
             ->shouldReceive('checkDeploymentHealth')
-            ->with(Mockery::type('array'), Mockery::type('array'))
+            ->with($this->cd, '1234')
             ->andReturn(true);
 
         $platform = new CodeDeployDeployPlatform(

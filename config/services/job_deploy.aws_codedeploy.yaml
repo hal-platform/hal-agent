@@ -62,7 +62,7 @@ services:
             - '%deploy.cd.waiter.max%'
 
     deploy.cd.healthchecker:
-        class: 'Hal\Agent\Deploy\CodeDeploy\HealthChecker'
+        class: 'Hal\Agent\AWS\CodeDeployHealthChecker'
         arguments:
             - '@clock'
             - '%date.timezone%'

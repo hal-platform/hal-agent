@@ -6,11 +6,11 @@
  */
 namespace Hal\Agent\Deploy\CodeDeploy\Steps;
 
+use Aws\CodeDeploy\CodeDeployClient;
+use Hal\Agent\AWS\CodeDeployHealthChecker;
 use Hal\Agent\Deploy\CodeDeploy\CodeDeployWaiter;
-use Hal\Agent\Deploy\CodeDeploy\HealthChecker;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Waiter\Waiter;
-
 use Hal\Agent\Waiter\TimeoutException;
 
 class Verifier
@@ -40,14 +40,14 @@ class Verifier
 
     /**
      * @param EventLogger $logger
-     * @param HealthChecker $healthChecker
+     * @param CodeDeployHealthChecker $healthChecker
      *
      * @param Waiter $waiter
      * @param CodeDeployWaiter $deployWaiter
      */
     public function __construct(
         EventLogger $logger,
-        HealthChecker $healthChecker,
+        CodeDeployHealthChecker $healthChecker,
         Waiter $waiter,
         CodeDeployWaiter $deployWaiter
     ) {
@@ -59,54 +59,51 @@ class Verifier
     }
 
     /**
-     * @param array $platformConfig
+     * @param CodeDeployClient $client
+     * @param string $application
+     * @param string $group
      *
      * @return bool
      */
-    public function checkLastDeploymentHealth(array $platformConfig): bool
+    public function isDeploymentGroupHealthy(CodeDeployClient $client, string $application, string $group): bool
     {
-        $result = ($this->healthChecker)->getLastDeploymentHealth(
-            $platformConfig['sdk']['cd'],
-            $platformConfig['application'],
-            $platformConfig['group']
-        );
+        $result = $this->healthChecker->getLastDeploymentHealth($client, $application, $group);
 
         return $this->isStatusValid($result['status'], ['Succeeded', 'Failed', 'Stopped', 'None', 'Ready']);
     }
 
     /**
-     * @param array $platformConfig
-     * @param array $deploymentInformation
+     * @param CodeDeployClient $client
+     * @param string $deploymentID
      *
      * @return bool
      */
-    public function checkDeploymentHealth(array $platformConfig, array $deploymentInformation): bool
+    public function checkDeploymentHealth(CodeDeployClient $client, string $deploymentID): bool
     {
-        $result = ($this->healthChecker)->getDeploymentHealth(
-            $platformConfig['sdk']['cd'],
-            $deploymentInformation['codeDeployID']
-        );
+        $result = $this->healthChecker->getDeploymentHealth($client, $deploymentID);
 
         return $this->isStatusValid($result['status'], ['Succeeded', 'Ready']);
     }
 
     /**
-     * @param array $platformConfig
-     * @param array $deploymentInformation
+     * @param CodeDeployClient $client
+     * @param string $deploymentID
      *
      * @return bool
      */
-    public function waitForHealth(array $platformConfig, array $deploymentInformation): bool
+    public function waitForHealth(CodeDeployClient $client, string $deploymentID): bool
     {
-        $waiter = ($this->deployWaiter)($platformConfig['sdk']['cd'], $deploymentInformation['codeDeployID']);
+        $waiter = ($this->deployWaiter)($client, $deploymentID);
 
         try {
             $this->waiter->wait($waiter);
-            return true;
+
         } catch (TimeoutException $e) {
             $this->logger->event('failure', static::ERR_TIMEOUT);
             return false;
         }
+
+        return true;
     }
 
     /**
@@ -118,11 +115,11 @@ class Verifier
     private function isStatusValid(string $status, array $validStatuses)
     {
         if (!in_array($status, $validStatuses)) {
-            $context = [
+            $this->logger->event('failure', sprintf(static::ERR_HEALTH, $status), [
                 'Status' => $status,
                 'Valid Statuses' => $validStatuses
-            ];
-            $this->logger->event('failure', sprintf(static::ERR_HEALTH, $status), $context);
+            ]);
+
             return false;
         }
 

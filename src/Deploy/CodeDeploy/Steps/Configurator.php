@@ -19,11 +19,11 @@ use QL\MCP\Common\Time\Clock;
 
 class Configurator
 {
-    protected const DEFAULT_SRC = '.';
-    protected const DEFAULT_FILE = '$APPID/$JOBID.tar.gz';
+    private const DEFAULT_SRC = '.';
+    private const DEFAULT_FILE = '$APPID/$JOBID.tar.gz';
 
-    protected const ERR_CD = 'Could not authenticate with CodeDeploy';
-    protected const ERR_S3 = 'Could not authenticate with S3';
+    private const ERR_CD = 'Could not authenticate with CodeDeploy';
+    private const ERR_S3 = 'Could not authenticate with S3';
 
     /**
      * @var EventLogger
@@ -112,7 +112,7 @@ class Configurator
             'local_path' => $target->parameter(Parameters::TARGET_S3_LOCAL_PATH) ?: static::DEFAULT_SRC,
             'remote_path' => $this->buildRemotePath($release),
 
-            'uri' => $this->buildURI($release)
+            'deployment_description' => $this->buildDeploymentDescription($release)
         ];
     }
 
@@ -165,7 +165,7 @@ class Configurator
      *
      * @return string|null
      */
-    private function buildURI(Release $release)
+    private function buildDeploymentDescription(Release $release)
     {
         return sprintf('[%s]%s/%s/%s', $release->environment()->name(), $this->halBaseURL, $release->type(), $release->id());
     }

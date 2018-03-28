@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -8,21 +8,20 @@
 namespace Hal\Agent\Deploy\CodeDeploy\Steps;
 
 use Aws\CodeDeploy\CodeDeployClient;
+use Aws\Exception\AwsException;
+use Aws\Exception\CredentialsException;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Entity\Job;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
-
-use Aws\Exception\AwsException;
-use Aws\Exception\CredentialsException;
 
 class Deployer
 {
     /**
      * @var string
      */
-    const EVENT_MESSAGE = 'Code Deployment';
-    const INFO_STILL_DEPLOYING = 'Still deploying. Completed attempt %d';
+    private const EVENT_MESSAGE = 'Deploy new application version with AWS CodeDeploy';
+    private const INFO_STILL_DEPLOYING = 'Still deploying. Completed attempt %d';
 
     /**
      * @var EventLogger
@@ -60,6 +59,10 @@ class Deployer
         string $configuration,
         string $description
     ): ?array {
+        if (!$job instanceof Build && !$job instanceof Release) {
+            return null;
+        }
+
         $context = [
             'codeDeployApplication' => $application,
             'codeDeployConfiguration' => $configuration,
@@ -70,10 +73,6 @@ class Deployer
         ];
 
         try {
-            if (!$job instanceof Build && !$job instanceof Release) {
-                return null;
-            }
-
             $result = $cd->createDeployment([
                 'applicationName' => $application,
                 'deploymentGroupName' => $group,
@@ -96,15 +95,15 @@ class Deployer
 
             $deployID = $result->get('deploymentId');
             $context = array_merge($context, ['codeDeployID' => $deployID]);
+
         } catch (AwsException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', static::EVENT_MESSAGE, $context);
-
             return null;
+
         } catch (CredentialsException $e) {
             $context = array_merge($context, ['error' => $e->getMessage()]);
             $this->logger->event('failure', static::EVENT_MESSAGE, $context);
-
             return null;
         }
 

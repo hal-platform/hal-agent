@@ -7,14 +7,13 @@
 
 namespace Hal\Agent\Deploy\CodeDeploy\Steps;
 
-use Hal\Agent\Logger\EventLogger;
-
 use Aws\S3\S3Client;
 use Hal\Agent\AWS\S3Uploader;
+use Hal\Agent\Logger\EventLogger;
 
 class Uploader
 {
-    protected const ERR_OBJECT_EXISTS = 'Object already exists: cannot overwrite existing artifacts';
+    private const ERR_OBJECT_EXISTS = 'S3 object already exists for this application version';
 
     /**
      * @var EventLogger
@@ -37,7 +36,13 @@ class Uploader
     }
 
     /**
-     * {@inheritdoc}
+     * @param S3Client $s3
+     * @param string $localArtifact
+     * @param string $bucket
+     * @param string $object
+     * @param array $metadata
+     *
+     * @return bool
      */
     public function __invoke(S3Client $s3, string $localArtifact, string $bucket, string $object, array $metadata = []): bool
     {
