@@ -5,8 +5,10 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Deploy\S3\Steps;
+namespace Hal\Agent\Deploy\CodeDeploy\Steps;
 
+use Aws\CodeDeploy\CodeDeployClient;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Credential;
@@ -15,6 +17,7 @@ use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
+use Hal\Core\Parameters;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryTestCase;
 use QL\MCP\Common\Time\Clock;
@@ -22,12 +25,16 @@ use QL\MCP\Common\Time\Clock;
 class ConfiguratorTest extends MockeryTestCase
 {
     public $authenticator;
+    public $cd;
     public $clock;
+    public $logger;
 
     public function setUp()
     {
         $this->authenticator = Mockery::mock(AWSAuthenticator::class);
+        $this->cd = Mockery::mock(CodeDeployClient::class);
         $this->clock = new Clock('2018-03-07T12:15:30Z', 'UTC');
+        $this->logger = Mockery::Mock(EventLogger::class);
     }
 
     public function testSuccess()
@@ -36,10 +43,14 @@ class ConfiguratorTest extends MockeryTestCase
             'region' => 'us-test-1',
 
             'bucket' => 'bucket',
-            'method' => 'artifact',
+
+            'application' => 'app',
+            'group' => 'grp',
+            'configuration' => 'cfg',
 
             'local_path' => '.',
-            'remote_path' => 'file.zip'
+            'remote_path' => 'file.zip',
+            'uri' => '[test]haltest/release/1234'
         ];
 
         $this->authenticator
@@ -48,12 +59,24 @@ class ConfiguratorTest extends MockeryTestCase
             ->once()
             ->andReturn(true);
 
+        $this->authenticator
+            ->shouldReceive('getCD')
+            ->with('us-test-1', Mockery::any())
+            ->once()
+            ->andReturn($this->cd);
+
         $release = $this->createMockRelease();
-        $configurator = new Configurator($this->authenticator, $this->clock);
+        $configurator = new Configurator(
+            $this->logger,
+            $this->clock,
+            $this->authenticator,
+            'haltest'
+        );
 
         $actual = $configurator($release);
 
         $this->assertTrue(isset($actual['sdk']['s3']));
+        $this->assertTrue(isset($actual['sdk']['cd']));
         unset($actual['sdk']);
 
         $this->assertSame($expected, $actual);
@@ -71,7 +94,16 @@ class ConfiguratorTest extends MockeryTestCase
             ->shouldReceive('getS3')
             ->andReturn(true);
 
-        $configurator = new Configurator($this->authenticator, $this->clock);
+        $this->authenticator
+            ->shouldReceive('getCD')
+            ->andReturn($this->cd);
+
+        $configurator = new Configurator(
+            $this->logger,
+            $this->clock,
+            $this->authenticator,
+            'haltest'
+        );
 
         $actual = $configurator($release);
 
@@ -83,7 +115,16 @@ class ConfiguratorTest extends MockeryTestCase
         $release = $this->createMockRelease();
         $release->target()->withCredential(null);
 
-        $configurator = new Configurator($this->authenticator, $this->clock);
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any());
+
+        $configurator = new Configurator(
+            $this->logger,
+            $this->clock,
+            $this->authenticator,
+            'haltest'
+        );
 
         $actual = $configurator($release);
 
@@ -103,11 +144,14 @@ class ConfiguratorTest extends MockeryTestCase
             )
             ->withTarget(
                 (new Target)
-                    ->withParameter('region', 'us-test-1')
-                    ->withParameter('s3_method', 'artifact')
-                    ->withParameter('bucket', 'bucket')
-                    ->withParameter('source', '.')
-                    ->withParameter('path', 'file.zip')
+                    ->withParameter(Parameters::TARGET_REGION, 'us-test-1')
+                    ->withParameter(Parameters::TARGET_S3_BUCKET, 'bucket')
+                    ->withParameter(Parameters::TARGET_S3_METHOD, 'artifact')
+                    ->withParameter(Parameters::TARGET_CD_APP, 'app')
+                    ->withParameter(Parameters::TARGET_CD_GROUP, 'grp')
+                    ->withParameter(Parameters::TARGET_CD_CONFIG, 'cfg')
+                    ->withParameter(Parameters::TARGET_S3_LOCAL_PATH, '.')
+                    ->withParameter(Parameters::TARGET_S3_REMOTE_PATH, 'file.zip')
                     ->withCredential(
                         (new Credential)
                             ->withDetails(

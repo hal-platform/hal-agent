@@ -28,6 +28,7 @@ services:
 
     deploy.s3.artifact_uploader:
         class: 'Hal\Agent\AWS\S3Uploader'
+        arguments: ['@logger.event']
 
     deploy.s3.sync_uploader:
         class: 'Hal\Agent\Deploy\S3\Steps\SyncUploader'

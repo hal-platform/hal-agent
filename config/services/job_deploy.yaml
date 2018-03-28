@@ -58,4 +58,7 @@ services:
             - '@encryption'
             - '@doctrine.em'
             - '@aws'
+            - '%aws.credentials.use_host%'
+        calls:
+            - ['setHostCredentials', ['@aws.sdk_credential_provider']]
 

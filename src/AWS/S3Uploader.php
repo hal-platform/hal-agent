@@ -7,15 +7,25 @@
 
 namespace Hal\Agent\AWS;
 
+use Hal\Agent\Logger\EventLogger;
+
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use RuntimeException;
 
 class S3Uploader
 {
+    private const ERR_UPLOADING = 'Error uploading object to S3';
+    private const ERR_WAITING = 'Error verifying object exists in S3';
+
     // 10s * 30 attempts = 5 minutes
     private const WAITER_INTERVAL = 10;
     private const WAITER_ATTEMPTS = 30;
+
+    /**
+     * @var EventLogger
+     */
+    private $logger;
 
     /**
      * @var callable
@@ -23,10 +33,13 @@ class S3Uploader
     private $fileStreamer;
 
     /**
+     * @param EventLogger $logger
      * @param callable $fileStreamer
      */
-    public function __construct(callable $fileStreamer = null)
+    public function __construct(EventLogger $logger, callable $fileStreamer = null)
     {
+        $this->logger = $logger;
+
         if ($fileStreamer === null) {
             $fileStreamer = $this->getDefaultFileStreamer();
         }
@@ -59,9 +72,11 @@ class S3Uploader
             );
 
         } catch (AwsException $e) {
+            $this->logger->event('failure', static::ERR_UPLOADING);
             return false;
 
         } catch (RuntimeException $e) {
+            $this->logger->event('failure', static::ERR_UPLOADING);
             return false;
         }
 
@@ -96,9 +111,11 @@ class S3Uploader
             ]);
 
         } catch (AwsException $e) {
+            $this->logger->event('failure', static::ERR_WAITING);
             return false;
 
         } catch (RuntimeException $e) {
+            $this->logger->event('failure', static::ERR_WAITING);
             return false;
         }
 

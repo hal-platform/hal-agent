@@ -8,6 +8,7 @@
 namespace Hal\Agent\AWS;
 
 use Aws\S3\S3Client;
+use Hal\Agent\Logger\EventLogger;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryTestCase;
 use RuntimeException;
@@ -15,10 +16,12 @@ use RuntimeException;
 class S3UploaderTest extends MockeryTestCase
 {
     public $s3;
+    public $logger;
 
     public function setUp()
     {
         $this->s3 = Mockery::mock(S3Client::class);
+        $this->logger = Mockery::mock(EventLogger::class);
     }
 
     public function testSuccess()
@@ -53,7 +56,7 @@ class S3UploaderTest extends MockeryTestCase
             )
             ->once();
 
-        $uploader = new S3Uploader(function($file, $mode) {
+        $uploader = new S3Uploader($this->logger, function($file, $mode) {
             return "${file}:${mode}";
         });
 
@@ -78,7 +81,11 @@ class S3UploaderTest extends MockeryTestCase
             ->shouldReceive('upload')
             ->andThrow(RuntimeException::class);
 
-        $uploader = new S3Uploader(function($file, $mode) {
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any());
+
+        $uploader = new S3Uploader($this->logger, function($file, $mode) {
             return '';
         });
 
@@ -98,7 +105,11 @@ class S3UploaderTest extends MockeryTestCase
             ->shouldReceive('upload')
             ->once();
 
-        $uploader = new S3Uploader(function($file, $mode) {
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::any());
+
+        $uploader = new S3Uploader($this->logger, function($file, $mode) {
             return '';
         });
 

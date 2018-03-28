@@ -15,6 +15,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class IOTestCase extends TestCase
 {
+    use LineCheckerTrait;
     private $output;
 
     public function ioForCommand($configurator, array $args = [])
@@ -48,12 +49,5 @@ class IOTestCase extends TestCase
         }
 
         return '';
-    }
-
-    public function assertContainsLines(array $expected, $actual)
-    {
-        foreach ($expected as $line) {
-            $this->assertContains($line, $actual);
-        }
     }
 }

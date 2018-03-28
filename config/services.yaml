@@ -155,6 +155,13 @@ services:
         arguments:
             - { version: 'latest' }
 
+    aws.sdk_credential_provider:
+        class: 'Aws\Credentials\CredentialProvider'
+        factory: ['Aws\Credentials\CredentialProvider', 'ini']
+        arguments:
+            - '%aws.credentials.profile%'
+            - '%aws.credentials.path%'
+
     ####################################################################################################################
     # job configuration
     ####################################################################################################################

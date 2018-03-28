@@ -1,11 +1,11 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\CodeDeploy;
+namespace Hal\Agent\Deploy\CodeDeploy;
 
 use Aws\CodeDeploy\CodeDeployClient;
 use Aws\CodeDeploy\Exception\CodeDeployException;
@@ -49,7 +49,7 @@ class HealthChecker
      * @param Clock $clock
      * @param string $outputTimezone
      */
-    public function __construct(Clock $clock, $outputTimezone)
+    public function __construct(Clock $clock, string $outputTimezone)
     {
         $this->clock = $clock;
         $this->outputTimezone = $outputTimezone;
@@ -57,17 +57,17 @@ class HealthChecker
 
     /**
      * @param CodeDeployClient $cd
-     * @param string $cdName
-     * @param string $cdGroup
+     * @param string $name
+     * @param string $group
      *
      * @return array
      */
-    public function __invoke(CodeDeployClient $cd, $cdName, $cdGroup)
+    public function getLastDeploymentHealth(CodeDeployClient $cd, string $name, string $group): array
     {
         try {
             $result = $cd->listDeployments([
-                'applicationName' => $cdName,
-                'deploymentGroupName' => $cdGroup
+                'applicationName' => $name,
+                'deploymentGroupName' => $group
             ]);
 
             $lastDeploymentID = $result->search('deployments[0]');
@@ -88,7 +88,7 @@ class HealthChecker
      *
      * @return array
      */
-    public function getDeploymentHealth(CodeDeployClient $cd, $id)
+    public function getDeploymentHealth(CodeDeployClient $cd, string $id): array
     {
         $result = $cd->getDeployment(['deploymentId' => $id]);
         return $this->parseStatus($result);
@@ -100,7 +100,7 @@ class HealthChecker
      *
      * @return array
      */
-    public function getDeploymentInstancesHealth(CodeDeployClient $cd, $id)
+    public function getDeploymentInstancesHealth(CodeDeployClient $cd, string $id): array
     {
         $health = $this->getDeploymentHealth($cd, $id);
 
@@ -155,7 +155,7 @@ class HealthChecker
      *
      * @return string
      */
-    public function parseInstancesSummary(ResultInterface $result)
+    public function parseInstancesSummary(ResultInterface $result): string
     {
         $outputs = [];
 

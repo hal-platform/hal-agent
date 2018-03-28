@@ -61,8 +61,8 @@ parameters:
     timeout.filepacking: 120
     timeout.filetransfer: 120
 
-    push.cd.waiter.interval: 10
-    push.cd.waiter.max: 60
+    deploy.cd.waiter.interval: 10
+    deploy.cd.waiter.max: 60
 
     push.eb.waiter.interval: 10
     push.eb.waiter.max: 60
@@ -140,6 +140,10 @@ parameters:
         - ['%build.linux.user%',  '*', 'key:%build.linux.keypath%']
         - ['%deploy.rsync.user%', '*', 'key:%deploy.rsync.keypath%']
 
+    aws.credentials.use_host: '%env(HAL_AWS_CREDENTIALS_USE_HOST)%'
+    aws.credentials.profile: '%env(HAL_AWS_CREDENTIALS_PROFILE)%'
+    aws.credentials.path: '%env(HAL_AWS_CREDENTIALS_PATH)%'
+
     encrypter.secret.path: '%env(HAL_CRYPTO_SECRETPATH)%'
     encrypter.publickey: '%env(HAL_CRYPTO_PUBLICKEY)%'
     encrypter.encryptedkey: '%env(HAL_CRYPTO_PRIVATEKEY)%'
@@ -159,7 +163,7 @@ parameters:
         # rsync: 'deploy_platform.rsync'
         # eb: 'deploy_platform.eb'
         s3: 'deploy_platform.s3'
-        # cd: 'deploy_platform.cd'
+        cd: 'deploy_platform.cd'
         script: 'deploy_platform.script'
 
     deployment_platform.script.platforms: '%build.platforms%'

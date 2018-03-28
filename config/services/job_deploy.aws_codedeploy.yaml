@@ -1,41 +1,69 @@
 services:
 
     deploy_platform.cd:
-        class: 'Hal\Agent\Push\CodeDeploy\Deployer'
+        class: 'Hal\Agent\Deploy\CodeDeploy\CodeDeployDeployPlatform'
         arguments:
             - '@logger.event'
+            - '@deploy.cd.configurator'
+            - '@deploy.cd.verifier'
+            - '@deploy.cd.compressor'
+            - '@deploy.cd.uploader'
+            - '@deploy.cd.deployer'
+
+    ############################################################################
+    # steps
+    ############################################################################
+
+    deploy.cd.configurator:
+        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Configurator'
+        arguments:
+            - '@logger.event'
+            - '@clock'
             - '@deploy.support.aws_authenticator'
-            - '@push.cd.healthchecker'
-            # - '@deploy.support.packer'
-            - '@push.cd.uploader'
-            - '@push.cd.pusher'
+            - '%hal.baseurl%'
+
+    deploy.cd.verifier:
+        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Verifier'
+        arguments:
+            - '@logger.event'
+            - '@deploy.cd.healthchecker'
+            - '@deploy.cd.waiter'
+            - '@deploy.cd.deploywaiter'
+
+    deploy.cd.compressor:
+        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Compressor'
+        arguments: ['@deploy.s3.compressor']
+
+    deploy.cd.uploader:
+        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Uploader'
+        arguments:
+            - '@logger.event'
+            - '@deploy.s3.artifact_uploader'
+
+    deploy.cd.deployer:
+        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Deployer'
+        arguments:
+            - '@logger.event'
 
     ############################################################################
     # support
     ############################################################################
 
-    push.cd.healthchecker:
-        class: 'Hal\Agent\Push\CodeDeploy\HealthChecker'
+    deploy.cd.deploywaiter:
+        class: 'Hal\Agent\Deploy\CodeDeploy\CodeDeployWaiter'
+        arguments:
+            - '@logger.event'
+            - '@deploy.cd.healthchecker'
+
+    deploy.cd.waiter:
+        class: 'Hal\Agent\Waiter\Waiter'
+        arguments:
+            - '%deploy.cd.waiter.interval%'
+            - '%deploy.cd.waiter.max%'
+
+    deploy.cd.healthchecker:
+        class: 'Hal\Agent\Deploy\CodeDeploy\HealthChecker'
         arguments:
             - '@clock'
             - '%date.timezone%'
 
-    push.cd.uploader:
-        class: 'Hal\Agent\Push\CodeDeploy\Uploader'
-        arguments: ['@logger.event']
-        calls:
-            - ['allowOverwrite', [false]]
-
-    push.cd.pusher:
-        class: 'Hal\Agent\Push\CodeDeploy\Pusher'
-        arguments:
-            - '@logger.event'
-            - '@push.cd.healthchecker'
-            - '@push.cd.waiter'
-            - '%hal.baseurl%'
-
-    push.cd.waiter:
-        class: 'Hal\Agent\Waiter\Waiter'
-        arguments:
-            - '%push.cd.waiter.interval%'
-            - '%push.cd.waiter.max%'

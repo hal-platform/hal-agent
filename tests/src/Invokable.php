@@ -5,10 +5,11 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Waiter;
+namespace Hal\Agent\Testing;
 
-use Exception;
-
-class TimeoutException extends Exception
+class Invokable
 {
+    public function __invoke()
+    {
+    }
 }

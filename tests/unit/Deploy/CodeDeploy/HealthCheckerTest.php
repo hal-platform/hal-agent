@@ -1,17 +1,18 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\CodeDeploy;
+namespace Hal\Agent\Deploy\CodeDeploy;
 
 use Aws\CommandInterface;
 use Aws\CodeDeploy\CodeDeployClient;
 use Aws\CodeDeploy\Exception\CodeDeployException;
 use Aws\Result;
 use Mockery;
+use Hal\Agent\Testing\LineCheckerTrait;
 use Hal\Agent\Testing\MockeryTestCase;
 
 use DateTime;
@@ -20,6 +21,8 @@ use QL\MCP\Common\Time\TimePoint;
 
 class HealthCheckerTest extends MockeryTestCase
 {
+    use LineCheckerTrait;
+
     public $cd;
     public $clock;
 
@@ -71,7 +74,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->andReturn($infoResult);
 
         $checker = new HealthChecker($this->clock, 'America/Detroit');
-        $actual = $checker($this->cd, 'appName', 'groupName');
+        $actual = $checker->getLastDeploymentHealth($this->cd, 'appName', 'groupName');
 
         $expectedOverview = [
             'Failed' => 0,
@@ -102,7 +105,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->andReturn($deploymentsResult);
 
         $checker = new HealthChecker($this->clock, 'America/Detroit');
-        $actual = $checker($this->cd, 'appName', 'groupName');
+        $actual = $checker->getLastDeploymentHealth($this->cd, 'appName', 'groupName');
 
         $this->assertSame('None', $actual['status']);
         $this->assertSame(null, $actual['overview']);
@@ -117,7 +120,7 @@ class HealthCheckerTest extends MockeryTestCase
             ->andThrow($ex);
 
         $checker = new HealthChecker($this->clock, 'America/Detroit');
-        $actual = $checker($this->cd, 'appName', 'groupName');
+        $actual = $checker->getLastDeploymentHealth($this->cd, 'appName', 'groupName');
 
         $this->assertSame('Invalid', $actual['status']);
         $this->assertSame(null, $actual['overview']);
@@ -339,69 +342,66 @@ class HealthCheckerTest extends MockeryTestCase
             ])
             ->andReturn($instancesInfoResult);
 
-        $expectedInstanceSummary = <<<'TEXT'
-Instance ID          | Type                 | Status          | Start Time                     | End Time                       | Duration             | Most Recent Event   
--------------------- | -------------------- | --------------- | ------------------------------ | ------------------------------ | -------------------- | --------------------
-abcd                 | Original             | Failed          | Jan 13, 2017 12:45:09 EST      | N/A                            |                      | ValidateService     
-efgh                 | Original             | Failed          | Jan 13, 2017 01:49:42 EST      | Jan 13, 2017 02:06:44 EST      | 17 min, 2 sec        | Install             
-ijkl                 | Original             | Skipped         | Jan 13, 2017 02:07:09 EST      | N/A                            |                      |                     
-TEXT;
-        $expectedInstanceDetailed = <<<'TEXT'
->>>> Instance ID: abcd
->>>> Status: Failed (Type: Original)
->>>> Last Update: Jan 13, 2017 02:07:09 EST
+        $expectedInstanceSummary = [
+            'Instance ID          | Type                 | Status          | Start Time                     | End Time                       | Duration             | Most Recent Event',
+            '-------------------- | -------------------- | --------------- | ------------------------------ | ------------------------------ | -------------------- | --------------------',
+            'abcd                 | Original             | Failed          | Jan 13, 2017 12:45:09 EST      | N/A                            |                      | ValidateService',
+            'efgh                 | Original             | Failed          | Jan 13, 2017 01:49:42 EST      | Jan 13, 2017 02:06:44 EST      | 17 min, 2 sec        | Install',
+            'ijkl                 | Original             | Skipped         | Jan 13, 2017 02:07:09 EST      | N/A                            |                      |'
+        ];
 
-Event Name           | Status               | Start                          | End                            | Duration            
--------------------- | -------------------- | ------------------------------ | ------------------------------ | --------------------
-Install              | Failed               | Jan 13, 2017 12:45:09 EST      | Jan 13, 2017 02:03:56 EST      | 1 hr, 18 min        
-ValidateService      | Failed               | Jan 13, 2017 02:07:09 EST      | N/A                            |                     
+        $expectedInstanceDetailed = [
+            '>>>> Instance ID: abcd',
+            '>>>> Status: Failed (Type: Original)',
+            '>>>> Last Update: Jan 13, 2017 02:07:09 EST',
 
-Install event failed! Script is missing from revision.
+            'Event Name           | Status               | Start                          | End                            | Duration',
+            '-------------------- | -------------------- | ------------------------------ | ------------------------------ | --------------------',
+            'Install              | Failed               | Jan 13, 2017 12:45:09 EST      | Jan 13, 2017 02:03:56 EST      | 1 hr, 18 min',
+            'ValidateService      | Failed               | Jan 13, 2017 02:07:09 EST      | N/A                            |',
 
-Script: install-script.sh
-Error Code: ScriptMissing
+            'Install event failed! Script is missing from revision.',
 
+            'Script: install-script.sh',
+            'Error Code: ScriptMissing',
 
+            'ValidateService event failed! Script at specified location: scripts/test_script failed to complete in 30 seconds',
 
-ValidateService event failed! Script at specified location: scripts/test_script failed to complete in 30 seconds
+            'Script: scripts/test_script',
+            'Error Code: ScriptTimedOut',
 
-Script: scripts/test_script
-Error Code: ScriptTimedOut
+            'LifecycleEvent - ValidateService',
+            'Script - scripts/test_script',
+            '[stdout]Starting script and restarting service.',
 
-LifecycleEvent - ValidateService
-Script - scripts/test_script
-[stdout]Starting script and restarting service.
+            '>>>> Instance ID: efgh',
+            '>>>> Status: Failed (Type: Original)',
+            '>>>> Last Update: Jan 13, 2017 02:06:44 EST',
 
+            'Event Name           | Status               | Start                          | End                            | Duration',
+            '-------------------- | -------------------- | ------------------------------ | ------------------------------ | --------------------',
+            'ApplicationStop      | Succeeded            | Jan 13, 2017 01:49:42 EST      | Jan 13, 2017 01:46:10 EST      | 3 min, 32 sec',
+            'DownloadBundle       | Succeeded            | Jan 13, 2017 01:53:21 EST      | Jan 13, 2017 01:53:21 EST      | 0 sec',
+            'Install              | Failed               | Jan 13, 2017 01:57:21 EST      | Jan 13, 2017 02:06:44 EST      | 9 min, 23 sec',
 
->>>> Instance ID: efgh
->>>> Status: Failed (Type: Original)
->>>> Last Update: Jan 13, 2017 02:06:44 EST
+            'Install event failed! Something failed.',
 
-Event Name           | Status               | Start                          | End                            | Duration            
--------------------- | -------------------- | ------------------------------ | ------------------------------ | --------------------
-ApplicationStop      | Succeeded            | Jan 13, 2017 01:49:42 EST      | Jan 13, 2017 01:46:10 EST      | 3 min, 32 sec       
-DownloadBundle       | Succeeded            | Jan 13, 2017 01:53:21 EST      | Jan 13, 2017 01:53:21 EST      | 0 sec               
-Install              | Failed               | Jan 13, 2017 01:57:21 EST      | Jan 13, 2017 02:06:44 EST      | 9 min, 23 sec       
+            'Script: scripts/my-install.sh',
+            'Error Code: ScriptFailed',
 
-Install event failed! Something failed.
+            '[stdout] test',
 
-Script: scripts/my-install.sh
-Error Code: ScriptFailed
+            '>>>> Instance ID: ijkl',
+            '>>>> Status: Skipped (Type: Original)',
+            '>>>> Last Update: Jan 13, 2017 02:07:09 EST',
 
-[stdout] test
-
->>>> Instance ID: ijkl
->>>> Status: Skipped (Type: Original)
->>>> Last Update: Jan 13, 2017 02:07:09 EST
-
-Event Name           | Status               | Start                          | End                            | Duration            
--------------------- | -------------------- | ------------------------------ | ------------------------------ | --------------------
-ApplicationStop      | Skipped              | N/A                            | N/A                            |                     
-DownloadBundle       | Skipped              | N/A                            | N/A                            |                     
-BeforeInstall        | Skipped              | N/A                            | N/A                            |                     
-Install              | Skipped              | N/A                            | N/A                            |                     
-
-TEXT;
+            'Event Name           | Status               | Start                          | End                            | Duration',
+            '-------------------- | -------------------- | ------------------------------ | ------------------------------ | --------------------',
+            'ApplicationStop      | Skipped              | N/A                            | N/A                            |',
+            'DownloadBundle       | Skipped              | N/A                            | N/A                            |',
+            'BeforeInstall        | Skipped              | N/A                            | N/A                            |',
+            'Install              | Skipped              | N/A                            | N/A                            |'
+        ];
         $checker = new HealthChecker($this->clock, 'America/Detroit');
         $actual = $checker->getDeploymentInstancesHealth($this->cd, '1234');
 
@@ -410,7 +410,7 @@ TEXT;
 
         // Instances info
         $this->assertSame(['abcd', 'efgh', 'ijkl'], $actual['instances']);
-        $this->assertSame($expectedInstanceSummary, $actual['instancesSummary']);
-        $this->assertSame($expectedInstanceDetailed, $actual['instancesDetailed']);
+        $this->assertContainsLines($expectedInstanceSummary, $actual['instancesSummary']);
+        $this->assertContainsLines($expectedInstanceDetailed, $actual['instancesDetailed']);
     }
 }
