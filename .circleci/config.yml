@@ -134,8 +134,8 @@ jobs:
                 name: 'Run snyk'
                 command: |
                     if [ "${OPEN_SOURCE}" == "1" ] ; then
-                        echo "Detected open source repo. Skipping step."
+                       $(yarn global bin)/snyk test
+                       $(yarn global bin)/snyk monitor
                     else
-                        $(yarn global bin)/snyk test
-                        $(yarn global bin)/snyk monitor
+                        echo "Detected private repo. Skipping step."
                     fi
