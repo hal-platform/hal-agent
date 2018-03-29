@@ -25,10 +25,10 @@ enterprise_setup: &enterprise_setup
     run:
         name: 'Prepare Enterprise Setup'
         command: |
-            if [ "${CIRCLE_PROJECT_USERNAME}" != "hal-platform" ] ; then
-                curl -sLk "https://git/pages/circleci/prepare-environment/prepare.sh" | bash -
+            if [ "${OPEN_SOURCE}" == "1" ] ; then
+                echo "Detected open source repo. Skipping step."
             else
-                echo "Detected open source repo. Skipping private VCS setup."
+                curl -sLk "https://git/pages/circleci/prepare-environment/prepare.sh" | bash -
             fi
 
 workflows:
@@ -133,5 +133,9 @@ jobs:
             - run:
                 name: 'Run snyk'
                 command: |
-                    $(yarn global bin)/snyk test
-                    $(yarn global bin)/snyk monitor
+                    if [ "${OPEN_SOURCE}" == "1" ] ; then
+                        echo "Detected open source repo. Skipping step."
+                    else
+                        $(yarn global bin)/snyk test
+                        $(yarn global bin)/snyk monitor
+                    fi
