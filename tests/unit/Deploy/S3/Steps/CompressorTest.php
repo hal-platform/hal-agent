@@ -151,3 +151,4 @@ class CompressorTest extends MockeryTestCase
         $actual = $compressor($sourcePath, 'targetFile', 'file.7z');
     }
 }
+

@@ -1,38 +1,61 @@
 services:
 
     deploy_platform.eb:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Deployer'
+        class: 'Hal\Agent\Deploy\ElasticBeanstalk\EBDeployPlatform'
         arguments:
             - '@logger.event'
+            - '@deploy.eb.configurator'
+            - '@deploy.eb.compressor'
+            - '@deploy.eb.artifact_uploader'
+            - '@deploy.eb.healthchecker'
+            - '@deploy.eb.deployer'
+            - '@deploy.eb.verifier'
+
+    ############################################################################
+    # steps
+    ############################################################################
+
+    deploy.eb.configurator:
+        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Configurator'
+        arguments:
             - '@deploy.support.aws_authenticator'
-            - '@push.eb.healthchecker'
-            # - '@deploy.support.packer'
-            - '@push.eb.uploader'
-            - '@push.eb.pusher'
+            - '@clock'
+            - '%hal.baseurl%'
+
+    deploy.eb.compressor:
+        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Compressor'
+        arguments:
+            - '@deploy.s3.compressor'
+
+    deploy.eb.artifact_uploader:
+        class: 'Hal\Agent\AWS\S3Uploader'
+
+    deploy.eb.healthchecker:
+        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\HealthChecker'
+        arguments:
+            - '@clock'
+            - '%date.timezone%'
+
+    deploy.eb.deployer:
+        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Deployer'
+        arguments:
+            - '@logger.event'
+
+    deploy.eb.verifier:
+        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\DeploymentVerifier'
+        arguments:
+            - '@logger.event'
+            - '@deploy.eb.healthchecker'
+            - '@deploy.eb.waiter'
+            - '%deploy.eb.waiter.additionalWaitTimeSeconds%'
 
     ############################################################################
     # support
     ############################################################################
 
-    push.eb.healthchecker:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\HealthChecker'
-        arguments:
-            - '@clock'
-            - '%date.timezone%'
-
-    push.eb.uploader:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Uploader'
-        arguments: ['@logger.event']
-        calls:
-            - ['allowOverwrite', [false]]
-
-    push.eb.pusher:
-        class: 'Hal\Agent\Push\ElasticBeanstalk\Pusher'
+    deploy.eb.waiter:
+        class: 'Hal\Agent\Waiter\Waiter'
         arguments:
             - '@logger.event'
-            - '@push.eb.healthchecker'
-            - '@push.eb.waiter'
-
-    push.eb.waiter:
-        class: 'Hal\Agent\Waiter\Waiter'
-        arguments: ['%push.eb.waiter.interval%', '%push.eb.waiter.max%']
+            - '%deploy.eb.waiter.interval%'
+            - '%deploy.eb.waiter.max%'

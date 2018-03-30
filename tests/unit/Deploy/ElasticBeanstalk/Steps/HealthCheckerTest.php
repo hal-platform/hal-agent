@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\ElasticBeanstalk;
+namespace Hal\Agent\Deploy\ElasticBeanstalk\Steps;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\Result;

@@ -64,8 +64,9 @@ parameters:
     deploy.cd.waiter.interval: 10
     deploy.cd.waiter.max: 60
 
-    push.eb.waiter.interval: 10
-    push.eb.waiter.max: 60
+    deploy.eb.waiter.interval: 10
+    deploy.eb.waiter.max: 60
+    deploy.eb.waiter.additionalWaitTimeSeconds: 50
 
     build.ssm.waiter.interval: 10
     build.ssm.waiter.max: 180
@@ -160,7 +161,7 @@ parameters:
 
     deployment.platforms:
         # rsync: 'deploy_platform.rsync'
-        # eb: 'deploy_platform.eb'
+        eb: 'deploy_platform.eb'
         s3: 'deploy_platform.s3'
         cd: 'deploy_platform.cd'
         script: 'deploy_platform.script'
