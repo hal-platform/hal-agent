@@ -19,10 +19,11 @@ agent_version="dev-box"
 
 echo ; echo "> Installing hal-agent ${agent_version} (https://github.com/hal-platform/hal-agent)"
 echo
-composer create hal/hal-agent \
+composer create-project \
     --remove-vcs \
     --no-dev \
-    "${temp_dir}" "${agent_version}"
+    --no-interaction \
+    hal/hal-agent "${temp_dir}" "${agent_version}"
 
 
 box_version="${HAL_BOX_VERSION:-2.7.5}"

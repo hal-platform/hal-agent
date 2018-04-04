@@ -31,6 +31,6 @@
     ],
 
     "main": "bin/hal",
-    "output": "hal-@git-version@.phar",
+    "output": "hal.phar",
     "stub": true
 }
