@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+cur_dir="$( cd "$( dirname "$0" )" && pwd )"
+wd_dir="$(pwd)"
+temp_dir="${cur_dir}/.phar"
+
+cleanup_temp() {
+  if [ -d "${temp_dir}" ] ; then
+    echo "Removing ${temp_dir}"
+    rm -rf "${temp_dir}"
+  fi
+}
+
+trap cleanup_temp EXIT
+
+# download and install agent
+agent_version="dev-box"
+
+echo ; echo "> Installing hal-agent ${agent_version} (https://github.com/hal-platform/hal-agent)"
+echo
+composer create hal/hal-agent \
+    --remove-vcs \
+    --no-dev \
+    "${temp_dir}" "${agent_version}"
+
+
+box_version="${HAL_BOX_VERSION:-2.7.5}"
+
+# download and install box
+echo ; echo "> Installing box ${box_version} (https://github.com/box-project/box2)"
+echo
+curl -LSs \
+    -o "${temp_dir}/box.phar" \
+    "https://github.com/box-project/box2/releases/download/${box_version}/box-${box_version}.phar"
+
+chmod +x "${temp_dir}/box.phar"
+
+# download and install agent
+cd "${temp_dir}"
+
+php \
+    -d phar.readonly=0 \
+    "${temp_dir}/box.phar" build --help
+
+php \
+    -d phar.readonly=0 \
+    "${temp_dir}/box.phar" build -vvv
+
+cp "${temp_dir}/hal.phar" "${wd_dir}/hal.phar"
