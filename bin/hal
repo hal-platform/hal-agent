@@ -5,7 +5,7 @@ namespace Hal\Agent\Bootstrap;
 
 use Symfony\Component\Debug\ErrorHandler;
 
-$root = realpath(__DIR__ . '/../');
+$root = __DIR__ . '/..';
 putenv("HAL_ROOT=${root}");
 
 if (!$container = include "${root}/config/bootstrap.php") {

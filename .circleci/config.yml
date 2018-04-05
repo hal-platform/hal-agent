@@ -41,17 +41,18 @@ workflows:
             - install_php_dependencies:
                 requires: [ fetch_code ]
 
-            - unit_tests:
-                requires: [ install_php_dependencies ]
-            - static_analysis:
-                requires: [ install_php_dependencies ]
-            - linting:
-                requires: [ install_php_dependencies ]
-            - security_tests:
-                requires: [ install_php_dependencies ]
+            # - unit_tests:
+            #     requires: [ install_php_dependencies ]
+            # - static_analysis:
+            #     requires: [ install_php_dependencies ]
+            # - linting:
+            #     requires: [ install_php_dependencies ]
+            # - security_tests:
+            #     requires: [ install_php_dependencies ]
 
             - build_phar:
-                requires: [ unit_tests, static_analysis, linting, security_tests ]
+                requires: [ install_php_dependencies ]
+                # requires: [ unit_tests, static_analysis, linting, security_tests ]
                 filters:
                     branches: { only: 'box' }
 
