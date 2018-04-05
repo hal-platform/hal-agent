@@ -18,8 +18,10 @@ if (!ini_get('date.timezone')) {
     ini_set('date.timezone', 'UTC');
 }
 
-$dotenv = new Dotenv;
-$dotenv->load("${root}/config/.env");
+if (file_exists("${root}/config/.env")) {
+    $dotenv = new Dotenv;
+    $dotenv->load("${root}/config/.env");
+}
 
 $file = "${root}/src/CachedContainer.php";
 $class = CachedContainer::class;
