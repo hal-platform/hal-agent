@@ -12,8 +12,6 @@ use Hal\Agent\CachedContainer;
 use Symfony\Component\Dotenv\Dotenv;
 
 $root = __DIR__ . '/..';
-var_dump($root);
-var_dump(realpath($root));
 require_once "${root}/vendor/autoload.php";
 
 if (!ini_get('date.timezone')) {

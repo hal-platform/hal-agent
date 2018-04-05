@@ -35,7 +35,8 @@ cd "${temp_dir}"
 
 # run agent optimizations
 echo
-cp "config/.env.dist" "config/.env"
+cp ./config/.env.dist ./config/.env
+ls -hal ./config
 ./bin/cache-container
 
 echo
