@@ -17,8 +17,13 @@ trap cleanup_temp EXIT
 # download and install agent
 agent_version="dev-box"
 
-echo ; echo "> Installing hal-agent ${agent_version} (https://github.com/hal-platform/hal-agent)"
-echo
+cat <<EOF
+-------------------------------------------------------------------------------
+Installing hal-agent ${agent_version} (https://github.com/hal-platform/hal-agent)
+-------------------------------------------------------------------------------
+
+EOF
+
 composer create-project \
     --remove-vcs \
     --no-dev \
@@ -27,15 +32,26 @@ composer create-project \
     hal/hal-agent "${temp_dir}" "${agent_version}"
 
 # run agent optimizations
+echo
 cp "${cur_dir}/../config/.env.dist" "${cur_dir}/../config/.env"
 ${cur_dir}/cache-container
+
+echo
 ${cur_dir}/cache-doctrine-proxies
+
+echo
 composer dump-autoload --classmap-authoritative
 
 # download and install box
 box_version="${HAL_BOX_VERSION:-2.7.5}"
-echo ; echo "> Installing box ${box_version} (https://github.com/box-project/box2)"
-echo
+
+cat <<EOF
+-------------------------------------------------------------------------------
+Installing box ${box_version} (https://github.com/box-project/box2)
+-------------------------------------------------------------------------------
+
+EOF
+
 curl -LSs \
     -o "${temp_dir}/box.phar" \
     "https://github.com/box-project/box2/releases/download/${box_version}/box-${box_version}.phar"

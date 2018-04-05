@@ -9,12 +9,25 @@ use Hal\Agent\CachedContainer;
 $root = realpath(__DIR__ . '/../');
 putenv("HAL_ROOT=${root}");
 
+echo <<<OUTPUT
+-------------------------------------------------------------------------------
+Generating DI Container cache
+-------------------------------------------------------------------------------
+
+OUTPUT;
+
 $file = "${root}/src/CachedContainer.php";
 $class = CachedContainer::class;
 $options = [
     'class' => $class,
     'file' => $file
 ];
+
+echo <<<OUTPUT
+Class: ${class}
+File: ${file}
+
+OUTPUT;
 
 if (!$autoloader = @include "${root}/vendor/autoload.php") {
     echo "An error occured while attempting to cache the DI Container.\n";
@@ -28,10 +41,3 @@ if (!$cached = DI::cacheDI($container, $options)) {
 }
 
 file_put_contents($file, $cached);
-
-echo <<<OUTPUT
-Dumping DI Container cache:
-Class: ${class}
-File: ${file}
-
-OUTPUT;

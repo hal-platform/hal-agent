@@ -155,6 +155,10 @@ jobs:
                 name: 'Generate phar'
                 command: 'bin/bundle-phar'
 
+            - store_artifacts:
+                path: './hal.phar'
+                destination: 'hal.phar'
+
             - run:
                 name: 'Test phar'
                 command: './hal.phar'
