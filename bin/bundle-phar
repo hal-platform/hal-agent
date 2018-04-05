@@ -34,9 +34,12 @@ composer create-project \
 cd "${temp_dir}"
 
 # run agent optimizations
+if [ -f "${1}" ] ; then
+    echo ; echo "Copying \"${1}\" as .env file"
+    cp "${1}" ./config/.env
+fi
+
 echo
-mv ./config/.env.dist ./config/.env
-ls -hal ./config
 ./bin/cache-container
 
 echo

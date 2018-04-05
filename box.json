@@ -32,6 +32,11 @@
     ],
     "finder-bin": [
         {
+            "name": ".env.default",
+            "in": "config",
+            "ignoreDotFiles": false
+        },
+        {
             "name": ".env",
             "in": "config",
             "ignoreDotFiles": false
