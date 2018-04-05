@@ -26,9 +26,13 @@ composer create-project \
     --no-progress \
     hal/hal-agent "${temp_dir}" "${agent_version}"
 
-box_version="${HAL_BOX_VERSION:-2.7.5}"
+# run agent optimizations
+composer dump-autoload --classmap-authoritative
+${cur_dir}/cache-container
+${cur_dir}/cache-doctrine-proxies
 
 # download and install box
+box_version="${HAL_BOX_VERSION:-2.7.5}"
 echo ; echo "> Installing box ${box_version} (https://github.com/box-project/box2)"
 echo
 curl -LSs \
