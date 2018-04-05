@@ -20,12 +20,12 @@ if (!ini_get('date.timezone')) {
 
 $dotenv = new Dotenv;
 
-if (file_exists("${root}/config/.env")) {
-    $dotenv->load("${root}/config/.env");
-}
-
 if (file_exists("${root}/config/.env.default")) {
     $dotenv->load("${root}/config/.env.default");
+}
+
+if (file_exists("${root}/config/.env")) {
+    $dotenv->load("${root}/config/.env");
 }
 
 $file = "${root}/src/CachedContainer.php";
