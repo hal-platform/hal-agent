@@ -10,7 +10,8 @@
 
     "directories": [
         "config",
-        "src"
+        "src",
+        ".doctrine"
     ],
     "files": [
         "LICENSE",

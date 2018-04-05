@@ -31,16 +31,19 @@ composer create-project \
     --no-progress \
     hal/hal-agent "${temp_dir}" "${agent_version}"
 
+cd "${temp_dir}"
+
 # run agent optimizations
 echo
-cp "${cur_dir}/../config/.env.dist" "${cur_dir}/../config/.env"
-${cur_dir}/cache-container
+cp "config/.env.dist" "config/.env"
+./bin/cache-container
 
 echo
-${cur_dir}/cache-doctrine-proxies
+./bin/cache-doctrine-proxies
 
 echo
-composer dump-autoload --classmap-authoritative
+composer dump-autoload \
+    --classmap-authoritative
 
 # download and install box
 box_version="${HAL_BOX_VERSION:-2.7.5}"
@@ -58,8 +61,14 @@ curl -LSs \
 
 chmod +x "${temp_dir}/box.phar"
 
-# download and install agent
-cd "${temp_dir}"
+# compile the phar
+
+cat <<EOF
+-------------------------------------------------------------------------------
+Compiling phar
+-------------------------------------------------------------------------------
+
+EOF
 
 php \
     -d phar.readonly=0 \
