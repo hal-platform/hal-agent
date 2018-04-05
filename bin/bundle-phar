@@ -23,8 +23,8 @@ composer create-project \
     --remove-vcs \
     --no-dev \
     --no-interaction \
+    --no-progress \
     hal/hal-agent "${temp_dir}" "${agent_version}"
-
 
 box_version="${HAL_BOX_VERSION:-2.7.5}"
 
@@ -42,10 +42,7 @@ cd "${temp_dir}"
 
 php \
     -d phar.readonly=0 \
-    "${temp_dir}/box.phar" build --help
-
-php \
-    -d phar.readonly=0 \
-    "${temp_dir}/box.phar" build -vvv
+    "${temp_dir}/box.phar" build
 
 cp "${temp_dir}/hal.phar" "${wd_dir}/hal.phar"
+du -h "${wd_dir}/hal.phar"
