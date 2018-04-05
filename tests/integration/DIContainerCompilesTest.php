@@ -18,12 +18,16 @@ class ContainerIntegrationTest extends MockeryTestCase
         $this->rootPath = realpath(__DIR__ . '/../..');
         $this->envFile = "{$this->rootPath}/config/.env.dist";
 
+        $_ENV['HAL_ROOT'] = "{$this->rootPath}";
+        $_ENV['HAL_DI_DISABLE_CACHE_ON'] = "1";
         putenv("HAL_ROOT={$this->rootPath}");
+        putenv("HAL_DI_DISABLE_CACHE_ON=1");
     }
 
     public function tearDown()
     {
-        putenv("HAL_ROOT=");
+        unset($_ENV['HAL_ROOT']);
+        unset($_ENV['HAL_DI_DISABLE_CACHE_ON']);
     }
 
     /**
