@@ -30,6 +30,13 @@
             "in": "vendor"
         }
     ],
+    "finder-bin": [
+        {
+            "name": ".env",
+            "in": "config",
+            "ignoreDotFiles": false
+        }
+    ],
 
     "main": "bin/hal",
     "output": "hal.phar",
