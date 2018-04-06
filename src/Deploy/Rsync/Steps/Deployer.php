@@ -1,19 +1,21 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Utility\ProcessRunnerTrait;
 use Hal\Agent\Remoting\FileSyncManager;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Parameters;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessBuilder;
 
-class Pusher
+class Deployer
 {
     use ProcessRunnerTrait;
 
@@ -53,7 +55,7 @@ class Pusher
         EventLogger $logger,
         FileSyncManager $fileSyncManager,
         ProcessBuilder $processBuilder,
-        $commandTimeout
+        int $commandTimeout
     ) {
         $this->logger = $logger;
         $this->fileSyncManager = $fileSyncManager;
@@ -68,10 +70,15 @@ class Pusher
      * @param string $remotePath
      * @param array $excludedFiles
      *
-     * @return boolean
+     * @return bool
      */
-    public function __invoke($buildPath, $remoteUser, $remoteServer, $remotePath, array $excludedFiles)
-    {
+    public function __invoke(
+        string $buildPath,
+        string $remoteUser,
+        string $remoteServer,
+        string $remotePath,
+        array $excludedFiles
+    ): bool {
         $command = $this->fileSyncManager->buildOutgoingRsync(
             $buildPath,
             $remoteUser,

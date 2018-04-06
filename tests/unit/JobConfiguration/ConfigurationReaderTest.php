@@ -258,9 +258,9 @@ class ConfigurationReaderTest extends MockeryTestCase
         $this->assertSame(['step after_deploy 1', 'step after_deploy 2', 'step after_deploy 3'], $result['after_deploy']);
 
 
-        $this->assertSame(['excluded_dir'], $result['exclude']);
-        $this->assertSame(['cp file_a file_b'], $result['pre_push']);
-        $this->assertSame(['cp file_1 file_2'], $result['post_push']);
+        $this->assertSame(['excluded_dir'], $result['rsync_exclude']);
+        $this->assertSame(['cp file_a file_b'], $result['rsync_before']);
+        $this->assertSame(['cp file_1 file_2'], $result['rsync_after']);
 
         $this->assertSame([
             '__novalidate' => [

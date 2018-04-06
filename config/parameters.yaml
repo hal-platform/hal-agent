@@ -160,7 +160,7 @@ parameters:
     deployment_after.build.platforms: '%build.platforms%'
 
     deployment.platforms:
-        # rsync: 'deploy_platform.rsync'
+        rsync: 'deploy_platform.rsync'
         eb: 'deploy_platform.eb'
         s3: 'deploy_platform.s3'
         cd: 'deploy_platform.cd'

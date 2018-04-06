@@ -95,9 +95,9 @@ class ResolverTest extends MockeryTestCase
 
                 'after_deploy' => [],
 
-                'exclude' => [],
-                'pre_push' => [],
-                'post_push' =>[],
+                'rsync_exclude' => [],
+                'rsync_before' => [],
+                'rsync_after' =>[],
             ],
 
             'workspace_path' => __DIR__ . '/.temp/hal-build-1234',

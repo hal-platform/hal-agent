@@ -1,15 +1,15 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Hal\Agent\Remoting\SSHProcess;
 
-class ServerCommand
+class CommandRunner
 {
     const EVENT_MESSAGE = 'Run remote command';
     const EVENT_MESSAGE_CUSTOM = 'Run remote command "%s"';
@@ -36,10 +36,15 @@ class ServerCommand
      * @param array $commands
      * @param array $env
      *
-     * @return boolean
+     * @return bool
      */
-    public function __invoke($remoteUser, $remoteServer, $remotePath, array $commands, array $env)
-    {
+    public function __invoke(
+        string $remoteUser,
+        string $remoteServer,
+        string $remotePath,
+        array $commands,
+        array $env
+    ): bool {
         $chdir = sprintf('cd "%s" &&', $remotePath);
 
         foreach ($commands as $command) {

@@ -1,11 +1,11 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHProcess;
@@ -14,10 +14,10 @@ use Hal\Agent\Remoting\SSHSessionManager;
 /**
  * Ugh http://unix.stackexchange.com/questions/42685/rsync-how-to-exclude-the-topmost-directory
  */
-class Verify
+class Verifier
 {
-    const EVENT_MESSAGE = 'Verify connection to server';
     const CREATE_DIR = 'Create target directory';
+    const ERR_COULD_NOT_CONNECT = 'Could not connect to server';
     const ERR_READ_PERMISSIONS = 'Could not read permissions of target directory';
     const ERR_VERIFY_PERMISSIONS = 'Could not verify permissions of target directory';
 
@@ -55,7 +55,7 @@ class Verify
      *
      * @return bool
      */
-    public function __invoke($remoteUser, $remoteServer, $remotePath)
+    public function __invoke(string $remoteUser, string $remoteServer, string $remotePath): bool
     {
         if (!$this->verifyConnectability($remoteUser, $remoteServer)) {
             return false;
@@ -68,8 +68,6 @@ class Verify
         if (!$this->verifyTargetIsWriteable($remoteUser, $remoteServer, $remotePath)) {
             return false;
         }
-
-        $this->logger->event('success', self::EVENT_MESSAGE);
 
         // all good
         return true;
@@ -84,7 +82,7 @@ class Verify
     private function verifyConnectability($remoteUser, $remoteServer)
     {
         if (!$ssh = $this->sshManager->createSession($remoteUser, $remoteServer)) {
-            $this->logger->event('failure', self::EVENT_MESSAGE, ['errors' => $this->sshManager->getErrors()]);
+            $this->logger->event('failure', self::ERR_COULD_NOT_CONNECT, ['errors' => $this->sshManager->getErrors()]);
             return false;
         }
 

@@ -43,11 +43,11 @@ after_deploy:
 
 # rsync only
 
-exclude:
+rsync_exclude:
     - 'excluded_dir'
 
-pre_push:
+rsync_before:
     - 'cp file_a file_b'
 
-post_push:
+rsync_after:
     - 'cp file_1 file_2'

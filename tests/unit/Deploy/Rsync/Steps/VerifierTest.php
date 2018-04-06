@@ -5,7 +5,7 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
@@ -14,7 +14,7 @@ use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Agent\Remoting\SSHProcess;
 use Hal\Agent\Remoting\CommandContext;
 
-class VerifyTest extends MockeryTestCase
+class VerifierTest extends MockeryTestCase
 {
     public $logger;
     public $ssh;
@@ -43,10 +43,10 @@ class VerifyTest extends MockeryTestCase
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Verify::EVENT_MESSAGE, ['errors' => ['ssh error']])
+            ->with('failure', Mockery::type('string'), Mockery::type('array'))
             ->once();
 
-        $action = new Verify($this->logger, $this->ssh, $this->remoter);
+        $action = new Verifier($this->logger, $this->ssh, $this->remoter);
         $success = $action('sshuser', 'hostname', 'path');
 
         $this->assertFalse($success);
@@ -72,11 +72,11 @@ class VerifyTest extends MockeryTestCase
             ->once();
         $this->remoter
             ->shouldReceive('run')
-            ->with($this->context, [], [true, Verify::CREATE_DIR])
+            ->with($this->context, [], [true, Verifier::CREATE_DIR])
             ->andReturn(false)
             ->once();
 
-        $action = new Verify($this->logger, $this->ssh, $this->remoter);
+        $action = new Verifier($this->logger, $this->ssh, $this->remoter);
         $success = $action('sshuser', 'hostname', 'path');
 
         $this->assertFalse($success);
@@ -110,10 +110,10 @@ class VerifyTest extends MockeryTestCase
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Verify::ERR_READ_PERMISSIONS, ['directory' => 'path'])
+            ->with('failure', Mockery::type('string'), Mockery::type('array'))
             ->once();
 
-        $action = new Verify($this->logger, $this->ssh, $this->remoter);
+        $action = new Verifier($this->logger, $this->ssh, $this->remoter);
         $success = $action('sshuser', 'hostname', 'path');
 
         $this->assertFalse($success);
@@ -160,15 +160,10 @@ SHELL_OUTPUT;
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Verify::ERR_VERIFY_PERMISSIONS, [
-                'directory' => '/var/test',
-                'currentPermissions' => $lsOutput,
-                'requiredOwner' => 'sshuser',
-                'isWriteable' => 'No',
-            ])
+            ->with('failure', Mockery::type('string'), Mockery::type('array'))
             ->once();
 
-        $action = new Verify($this->logger, $this->ssh, $this->remoter);
+        $action = new Verifier($this->logger, $this->ssh, $this->remoter);
         $success = $action('sshuser', 'hostname', '/var/test');
 
         $this->assertFalse($success);
@@ -215,15 +210,10 @@ SHELL_OUTPUT;
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Verify::ERR_VERIFY_PERMISSIONS, [
-                'directory' => '/var/test',
-                'currentPermissions' => $lsOutput,
-                'requiredOwner' => 'sshuser',
-                'isWriteable' => 'Yes',
-            ])
+            ->with('failure', Mockery::type('string'), Mockery::type('array'))
             ->once();
 
-        $action = new Verify($this->logger, $this->ssh, $this->remoter);
+        $action = new Verifier($this->logger, $this->ssh, $this->remoter);
         $success = $action('sshuser', 'hostname', '/var/test');
 
         $this->assertFalse($success);

@@ -69,11 +69,7 @@ class JobExecution
      */
     public function steps(): array
     {
-        if (!isset($this->config[$this->stage])) {
-            return null;
-        }
-
-        return $this->config[$this->stage];
+        return $this->config[$this->stage] ?? [];
     }
 
     /**
@@ -81,10 +77,6 @@ class JobExecution
      */
     public function parameter(string $name)
     {
-        if (!isset($this->config[$name])) {
-            return null;
-        }
-
-        return $this->config[$name];
+        return $this->config[$name] ?? null;
     }
 }

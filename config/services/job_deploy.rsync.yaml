@@ -1,60 +1,55 @@
 services:
 
     deploy_platform.rsync:
-        class: 'Hal\Agent\Push\Rsync\Deployer'
+        class: 'Hal\Agent\Deploy\Rsync\RsyncDeployPlatform'
         arguments:
             - '@logger.event'
-            - '@push.rsync.verify'
-            # - '@push.rsync.delta'
-            - '@push.rsync.serverCommand'
-            - '@push.rsync.pusher'
+            - '@deploy.rsync.configurator'
+            - '@deploy.rsync.verifier'
+            - '@deploy.rsync.runner'
+            - '@deploy.rsync.deployer'
 
     ############################################################################
-    # support
+    # steps
     ############################################################################
 
-    push.rsync.verify:
-        class: 'Hal\Agent\Push\Rsync\Verify'
+    deploy.rsync.configurator:
+        class: 'Hal\Agent\Deploy\Rsync\Steps\Configurator'
+        arguments:
+            - '@logger.event'
+            - '%deploy.rsync.user%'
+
+    deploy.rsync.verifier:
+        class: 'Hal\Agent\Deploy\Rsync\Steps\Verifier'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
-            - '@push.rsync.verify.remoter'
+            - '@deploy.rsync.verify.remoter'
 
-    # push.rsync.delta:
-    #     class: 'Hal\Agent\Push\Rsync\CodeDelta'
-    #     arguments:
-    #         - '@logger.event'
-    #         - '@push.rsync.delta.remoter'
-    #         - '@yaml.parser'
-    #         - '@github.commits'
+    deploy.rsync.runner:
+        class: 'Hal\Agent\Deploy\Rsync\Steps\Runner'
+        arguments: ['@deploy.rsync.standard.remoter']
 
-    push.rsync.pusher:
-        class: 'Hal\Agent\Push\Rsync\Pusher'
+    deploy.rsync.deployer:
+        class: 'Hal\Agent\Deploy\Rsync\Steps\Deployer'
         arguments:
             - '@logger.event'
             - '@ssh.filemanager'
             - '@utility.process.builder'
             - '%timeout.push%'
 
-    push.rsync.serverCommand:
-        class: 'Hal\Agent\Push\Rsync\ServerCommand'
-        arguments: ['@push.rsync.standard.remoter']
+    ############################################################################
+    # support
+    ############################################################################
 
-    push.rsync.standard.remoter:
+    deploy.rsync.standard.remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'
             - '@ssh.manager'
             - '%timeout.deploy.serverCommand%'
 
-    # push.rsync.delta.remoter:
-    #     class: 'Hal\Agent\Remoting\SSHProcess'
-    #     arguments:
-    #         - '@logger.event'
-    #         - '@ssh.manager'
-    #         - '%timeout.standard%'
-
-    push.rsync.verify.remoter:
+    deploy.rsync.verify.remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
             - '@logger.event'

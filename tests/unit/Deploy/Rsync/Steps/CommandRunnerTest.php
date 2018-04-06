@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 
-class ServerCommandTest extends MockeryTestCase
+class CommandRunnerTest extends MockeryTestCase
 {
     public $remoter;
 
@@ -36,7 +36,7 @@ class ServerCommandTest extends MockeryTestCase
             ->shouldReceive('run')
             ->andReturn(true);
 
-        $serverCommand = new ServerCommand($this->remoter);
+        $serverCommand = new CommandRunner($this->remoter);
         $success = $serverCommand('sshuser', 'server', 'path', ['command'], []);
         $this->assertTrue($success);
     }
@@ -57,7 +57,7 @@ class ServerCommandTest extends MockeryTestCase
             ->shouldReceive('run')
             ->andReturn(false);
 
-        $serverCommand = new ServerCommand($this->remoter);
+        $serverCommand = new CommandRunner($this->remoter);
         $success = $serverCommand('sshuser', 'server', 'path', ['command'], []);
         $this->assertFalse($success);
     }
@@ -104,7 +104,7 @@ class ServerCommandTest extends MockeryTestCase
             ->andReturn(false)
             ->once();
 
-        $serverCommand = new ServerCommand($this->remoter);
+        $serverCommand = new CommandRunner($this->remoter);
         $success = $serverCommand('sshuser', 'server', 'path', $commands, $env);
 
         $this->assertSame(false, $success);

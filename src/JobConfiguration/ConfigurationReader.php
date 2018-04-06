@@ -155,9 +155,9 @@ class ConfigurationReader
 
             'after_deploy',         // deploy stage 4,
 
-            'exclude',
-            'pre_push',             // deploy stage 3 (rsync only)
-            'post_push',            // deploy stage 5 (rsync, success only)
+            'rsync_exclude',
+            'rsync_before',             // deploy stage 3 (rsync only)
+            'rsync_after',            // deploy stage 5 (rsync, success only)
         ];
 
         foreach ($parsed as $p) {

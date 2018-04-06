@@ -33,9 +33,9 @@ trait DefaultConfigHelperTrait
             'after_deploy' => [],
 
             // rsync only
-            'exclude' => [],
-            'pre_push' => [],
-            'post_push' =>[],
+            'rsync_exclude' => [],
+            'rsync_before' => [],
+            'rsync_after' => []
         ];
     }
 }

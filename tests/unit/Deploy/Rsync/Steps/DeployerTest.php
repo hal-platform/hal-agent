@@ -5,12 +5,12 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Push\Rsync;
+namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 
-class PusherTest extends MockeryTestCase
+class DeployerTest extends MockeryTestCase
 {
     public $logger;
     public $syncer;
@@ -41,12 +41,12 @@ class PusherTest extends MockeryTestCase
 
         $this->logger
             ->shouldReceive('event')
-            ->with('success', Mockery::any(), [
+            ->with('success', Mockery::type('string'), [
                 'command' => "rsync\nparam",
                 'output' => 'test-output'
             ])->once();
 
-        $action = new Pusher($this->logger, $this->syncer, $builder, 20);
+        $action = new Deployer($this->logger, $this->syncer, $builder, 20);
 
         $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', []);
         $this->assertTrue($success);
@@ -69,7 +69,7 @@ class PusherTest extends MockeryTestCase
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Mockery::any(), [
+            ->with('failure', Mockery::type('string'), [
                 'command' => "rsync\nparam",
                 'exitCode' => 9000,
                 'output' => 'test-output',
@@ -81,7 +81,7 @@ class PusherTest extends MockeryTestCase
             ->shouldReceive('getProcess')
             ->andReturn($process);
 
-        $action = new Pusher($this->logger, $this->syncer, $builder, 20);
+        $action = new Deployer($this->logger, $this->syncer, $builder, 20);
 
         $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', ['excluded1', 'excluded2']);
         $this->assertFalse($success);
