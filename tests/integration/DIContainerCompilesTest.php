@@ -16,28 +16,18 @@ class ContainerIntegrationTest extends MockeryTestCase
     public function setUp()
     {
         $this->rootPath = realpath(__DIR__ . '/../..');
-        $this->envFile = "{$this->rootPath}/config/.env.dev.dist";
+        $this->envFile = "{$this->rootPath}/config/.env.default";
 
+        $_ENV['HAL_ROOT'] = "{$this->rootPath}";
+        $_ENV['HAL_DI_DISABLE_CACHE_ON'] = "1";
         putenv("HAL_ROOT={$this->rootPath}");
-        putenv("HAL_DB_USER=postgres");
-        putenv("HAL_DB_PASSWORD=");
-        putenv("HAL_BASEURL=http://hal.example.com");
-        putenv("HAL_API_TOKEN=123");
-
-        putenv("HAL_WIN_AWS_REGION=us-east-2");
-        putenv("HAL_WIN_AWS_BUCKET=test_bucket");
+        putenv("HAL_DI_DISABLE_CACHE_ON=1");
     }
 
     public function tearDown()
     {
-        putenv("HAL_ROOT=");
-        putenv("HAL_DB_USER=postgres");
-        putenv("HAL_DB_PASSWORD=");
-        putenv("HAL_BASEURL=");
-        putenv("HAL_API_TOKEN=");
-
-        putenv("HAL_WIN_AWS_REGION=");
-        putenv("HAL_WIN_AWS_BUCKET=");
+        unset($_ENV['HAL_ROOT']);
+        unset($_ENV['HAL_DI_DISABLE_CACHE_ON']);
     }
 
     /**

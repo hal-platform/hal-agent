@@ -5,3 +5,6 @@ imports:
 
     - resource: 'services.yaml'
     - resource: 'parameters.yaml'
+
+    - resource: 'hal.yaml'
+      ignore_errors: true

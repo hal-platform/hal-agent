@@ -2,7 +2,6 @@
 /.archive/
 /.build/
 /.buildserver/
-/.dockerfiles/
 
 # testing
 /.error.log
@@ -16,8 +15,6 @@
 # compiled configuration
 /config/.env
 /src/CachedContainer.php
-
-# deployment caches
 /.doctrine/
 
 # sensitive stuff

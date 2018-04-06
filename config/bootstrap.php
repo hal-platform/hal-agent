@@ -11,7 +11,7 @@ use Hal\Agent\Application\DI;
 use Hal\Agent\CachedContainer;
 use Symfony\Component\Dotenv\Dotenv;
 
-$root = realpath(__DIR__ . '/..');
+$root = __DIR__ . '/..';
 require_once "${root}/vendor/autoload.php";
 
 if (!ini_get('date.timezone')) {
@@ -19,7 +19,14 @@ if (!ini_get('date.timezone')) {
 }
 
 $dotenv = new Dotenv;
-$dotenv->load("${root}/config/.env");
+
+if (file_exists("${root}/config/.env.default")) {
+    $dotenv->load("${root}/config/.env.default");
+}
+
+if (file_exists("${root}/config/.env")) {
+    $dotenv->load("${root}/config/.env");
+}
 
 $file = "${root}/src/CachedContainer.php";
 $class = CachedContainer::class;

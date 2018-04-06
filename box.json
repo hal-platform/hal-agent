@@ -1,0 +1,49 @@
+{
+    "alias": "hal.phar",
+    "chmod": "0755",
+
+    "compression": "GZ",
+    "compactors": [
+        "Herrera\\Box\\Compactor\\Json",
+        "Herrera\\Box\\Compactor\\Php"
+    ],
+
+    "directories": [
+        "config",
+        "src",
+        ".doctrine"
+    ],
+    "files": [
+        "LICENSE",
+        "composer.json"
+    ],
+    "finder": [
+        {
+            "name": "*.php",
+            "exclude": [
+                "phpunit",
+                "phpunit-test-case",
+                "Tester",
+                "Tests",
+                "tests"
+            ],
+            "in": "vendor"
+        }
+    ],
+    "finder-bin": [
+        {
+            "name": ".env.default",
+            "in": "config",
+            "ignoreDotFiles": false
+        },
+        {
+            "name": ".env",
+            "in": "config",
+            "ignoreDotFiles": false
+        }
+    ],
+
+    "main": "bin/hal",
+    "output": "hal.phar",
+    "stub": true
+}

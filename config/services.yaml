@@ -187,7 +187,7 @@ services:
 
     encryption.factory:
         class: 'Hal\Core\Crypto\CryptoFilesystemFactory'
-        arguments: ['%encrypter.secret.path%']
+        arguments: ['%encryption.secret_path%']
 
     encrypted.resolver:
         class: 'Hal\Agent\Utility\EncryptedPropertyResolver'

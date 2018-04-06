@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+
+cur_dir="$( cd "$( dirname "$0" )" && pwd )"
+temp_dir="${cur_dir}/.phar"
+
+wd_dir="$(pwd)"
+output_phar_file="${wd_dir}/hal.phar"
+
+cleanup_temp() {
+  if [ -d "${temp_dir}" ] ; then
+    echo "Removing ${temp_dir}"
+    rm -rf "${temp_dir}"
+  fi
+}
+
+trap cleanup_temp EXIT
+
+if [ "${1}" == "--help" ] ; then
+    cat <<EOF
+-------------------------------------------------------------------------------
+Bundle PHAR
+-------------------------------------------------------------------------------
+Builds an optimized phar for easily deploying the agent CLI.
+PHAR will be output to "${output_phar_file}"
+
+Options:
+    - git ref or branch (default: master)
+    - custom envfile (default: none)
+
+Usage:
+bundle-phar [branch-or-ref] [path-to-custom-envfile]
+
+EOF
+fi
+
+# download and install agent
+agent_version="${1}"
+if [ -z "${agent_version}" ] ; then
+    used_agent_version="local"
+else
+    used_agent_version="${agent_version}"
+fi
+
+cat <<EOF
+-------------------------------------------------------------------------------
+Installing hal-agent ${used_agent_version} (https://github.com/hal-platform/hal-agent)
+-------------------------------------------------------------------------------
+
+EOF
+
+if [ -n "${agent_version}" ] ; then
+    composer create-project \
+        --remove-vcs \
+        --no-dev \
+        --no-interaction \
+        --no-progress \
+        hal/hal-agent "${temp_dir}" "${agent_version}"
+else
+    mkdir "${temp_dir}"
+
+    rsync \
+    -r \
+    --include="bin/" \
+    --include="bin/**" \
+    --include="config/" \
+    --include="config/**" \
+    --include="src/" \
+    --include="src/**" \
+    --include="box.json" \
+    --include="LICENSE" \
+    --include="composer.json" \
+    --include="composer.lock" \
+    --exclude="*" \
+    "${cur_dir}/../" "${temp_dir}"
+
+    if [ -f "${temp_dir}/config/.env" ] ; then
+        rm "${temp_dir}/config/.env"
+    fi
+
+    composer install \
+        --no-dev \
+        --no-interaction \
+        --no-progress \
+        --working-dir="${temp_dir}"
+fi
+
+cd "${temp_dir}"
+
+# run agent optimizations
+if [ -f "${2}" ] ; then
+    echo ; echo "Copying \"${2}\" as .env file"
+    cp "${2}" ./config/.env
+fi
+
+echo
+./bin/cache-container
+
+echo
+./bin/cache-doctrine-proxies
+
+echo
+composer dump-autoload \
+    --classmap-authoritative
+
+# download and install box
+box_version="${HAL_BOX_VERSION:-2.7.5}"
+
+cat <<EOF
+-------------------------------------------------------------------------------
+Installing box ${box_version} (https://github.com/box-project/box2)
+-------------------------------------------------------------------------------
+
+EOF
+
+curl -LSs \
+    -o "${temp_dir}/box.phar" \
+    "https://github.com/box-project/box2/releases/download/${box_version}/box-${box_version}.phar"
+
+chmod +x "${temp_dir}/box.phar"
+
+# compile the phar
+
+cat <<EOF
+-------------------------------------------------------------------------------
+Compiling phar
+-------------------------------------------------------------------------------
+
+EOF
+
+php \
+    -d phar.readonly=0 \
+    "${temp_dir}/box.phar" build -v
+
+cp "${temp_dir}/hal.phar" "${output_phar_file}"
+du -h "${output_phar_file}"

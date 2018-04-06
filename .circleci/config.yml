@@ -50,6 +50,9 @@ workflows:
             - security_tests:
                 requires: [ install_php_dependencies ]
 
+            - build_phar:
+                requires: [ unit_tests, static_analysis, linting, security_tests ]
+
 jobs:
     fetch_code:
         <<: *defaults
@@ -139,3 +142,23 @@ jobs:
                     else
                         echo "Detected private repo. Skipping step."
                     fi
+
+    build_phar:
+        <<: *defaults
+        steps:
+            - *attach_workspace
+
+            - run: 'composer self-update'
+            - run:
+                name: 'Generate phar'
+                command: |
+                    apt-get update && apt-get install -y rsync
+                    bin/bundle-phar
+
+            - store_artifacts:
+                path: './hal.phar'
+                destination: 'hal.phar'
+
+            - run:
+                name: 'Test phar'
+                command: './hal.phar'
