@@ -24,13 +24,13 @@ class Waiter
     private $maxAttempts;
 
     /**
-     * @param int $interval
+     * @param float $interval
      * @param int $maxAttempts
      */
-    public function __construct($interval = 10, $maxAttempts = 60)
+    public function __construct(float $interval = 10, int $maxAttempts = 60)
     {
-        $this->interval = (float) $interval;
-        $this->maxAttempts = (int) $maxAttempts;
+        $this->interval = $interval;
+        $this->maxAttempts = $maxAttempts;
     }
 
     /**
@@ -40,9 +40,9 @@ class Waiter
      *
      * @throws TimeoutException
      *
-     * @return null
+     * @return void
      */
-    public function wait(callable $process)
+    public function wait(callable $process): void
     {
         $attempts = 0;
         do {

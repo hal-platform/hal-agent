@@ -309,7 +309,7 @@ class LinuxDockerinator
     /**
      * @param array|string $command
      *
-     * @return array
+     * @return string
      */
     private function safetize($command)
     {

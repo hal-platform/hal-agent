@@ -185,7 +185,7 @@ class DockerBuilder implements BuilderInterface
 
     /**
      * @param string $command
-     * @param int $count
+     * @param string $count
      *
      * @return string
      */

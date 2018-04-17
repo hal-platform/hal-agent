@@ -10,15 +10,20 @@ namespace Hal\Agent\Deploy\Rsync\Steps;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
 
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+
 class DeployerTest extends MockeryTestCase
 {
     public $logger;
     public $syncer;
+    public $processRunner;
 
     public function setUp()
     {
         $this->logger = Mockery::mock('Hal\Agent\Logger\EventLogger');
         $this->syncer = Mockery::mock('Hal\Agent\Remoting\FileSyncManager');
+
+        $this->processRunner = Mockery::mock('Hal\Agent\Symfony\ProcessRunner', [$this->logger])->makePartial();
     }
 
     public function testSuccess()
@@ -30,23 +35,19 @@ class DeployerTest extends MockeryTestCase
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
             'run' => 0,
-            'getOutput' => 'test-output',
-            'isSuccessful' => true
+            'isSuccessful' => true,
+            'getOutput' => 'test-output'
         ])->makePartial();
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
+        $this->processRunner
+            ->shouldReceive('prepare')
             ->andReturn($process);
 
         $this->logger
             ->shouldReceive('event')
-            ->with('success', Mockery::type('string'), [
-                'command' => "rsync\nparam",
-                'output' => 'test-output'
-            ])->once();
+            ->with('success', Mockery::type('string'), Mockery::type('array'));
 
-        $action = new Deployer($this->logger, $this->syncer, $builder, 20);
+        $action = new Deployer($this->logger, $this->syncer, $this->processRunner, 20);
 
         $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', []);
         $this->assertTrue($success);
@@ -60,28 +61,54 @@ class DeployerTest extends MockeryTestCase
             ->andReturn(['rsync', 'param']);
 
         $process = Mockery::mock('Symfony\Component\Process\Process', [
-            'run' => 0,
+            'run' => 9000,
+            'isSuccessful' => false,
             'getOutput' => 'test-output',
             'getErrorOutput' => 'test-error-output',
-            'getExitCode' => 9000,
-            'isSuccessful' => false
+            'getExitCode' => 9000
         ])->makePartial();
+
+        $this->processRunner
+            ->shouldReceive('prepare')
+            ->andReturn($process);
 
         $this->logger
             ->shouldReceive('event')
-            ->with('failure', Mockery::type('string'), [
-                'command' => "rsync\nparam",
-                'exitCode' => 9000,
-                'output' => 'test-output',
-                'errorOutput' => 'test-error-output'
-            ])->once();
+            ->with('failure', Mockery::type('string'), Mockery::type('array'));
 
-        $builder = Mockery::mock('Symfony\Component\Process\ProcessBuilder[getProcess]');
-        $builder
-            ->shouldReceive('getProcess')
+        $action = new Deployer($this->logger, $this->syncer, $this->processRunner, 20);
+
+        $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', ['excluded1', 'excluded2']);
+        $this->assertFalse($success);
+    }
+
+    public function testTimeout()
+    {
+        $this->syncer
+            ->shouldReceive('buildOutgoingRsync')
+            ->with('build/path', 'xferuser', 'hostname', '/remote/path', ['excluded1', 'excluded2'])
+            ->andReturn(['rsync', 'param']);
+
+        $process = Mockery::mock('Symfony\Component\Process\Process')->makePartial();
+
+        $this->processRunner
+            ->shouldReceive('prepare')
             ->andReturn($process);
 
-        $action = new Deployer($this->logger, $this->syncer, $builder, 20);
+        $process->shouldReceive('run')
+            ->andThrow(new ProcessTimedOutException($process, ProcessTimedOutException::TYPE_GENERAL));
+
+        $process->shouldReceive([
+            'getTimeout' => 20,
+            'getOutput' => 'output here',
+            'getErrorOutput' => ''
+        ]);
+
+        $this->logger
+            ->shouldReceive('event')
+            ->with('failure', Mockery::type('string'), Mockery::type('array'));
+
+        $action = new Deployer($this->logger, $this->syncer, $this->processRunner, 20);
 
         $success = $action('build/path', 'xferuser', 'hostname', '/remote/path', ['excluded1', 'excluded2']);
         $this->assertFalse($success);

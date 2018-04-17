@@ -191,9 +191,9 @@ class SSHProcess
     }
 
     /**
-     * @return string
+     * @return array
      */
-    public function getLastStatus()
+    public function getLastStatus(): array
     {
         return [
             'output' => $this->lastOutput,

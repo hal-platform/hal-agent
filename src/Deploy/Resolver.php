@@ -7,8 +7,8 @@
 
 namespace Hal\Agent\Deploy;
 
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Hal\Agent\Utility\DefaultConfigHelperTrait;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
 use Hal\Agent\Utility\ResolverTrait;
@@ -25,7 +25,7 @@ class Resolver
     private const ERR_TEMP = 'Temporary build space "%s" could not be prepared. Either it does not exist, or is not writeable.';
 
     /**
-     * @var EntityRepository
+     * @var ObjectRepository
      */
     private $releaseRepo;
 

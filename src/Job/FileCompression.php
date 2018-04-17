@@ -47,9 +47,10 @@ class FileCompression
     public function createWorkspace(string $workspacePath): bool
     {
         $makeCommand = ['mkdir', $workspacePath];
+        $dispCommand = implode(' ', $makeCommand);
 
         $process = $this->runner->prepare($makeCommand, null, $this->commandTimeout);
-        if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
+        if (!$this->runner->run($process, $dispCommand, self::ERR_TIMEOUT)) {
             return false;
         }
 
@@ -57,7 +58,7 @@ class FileCompression
             return true;
         }
 
-        return $this->runner->onFailure($process, implode(' ', $makeCommand), self::EVENT_MESSAGE);
+        return $this->runner->onFailure($process, $dispCommand, self::EVENT_MESSAGE);
     }
 
     /**
@@ -83,9 +84,11 @@ class FileCompression
             sprintf('--directory=%s', $workspacePath)
         ]);
 
+        $dispCommand = implode(' ', $unpackCommand);
+
         // @todo may need to NOT escape args?
         $process = $this->runner->prepare($unpackCommand, null, $this->commandTimeout);
-        if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
+        if (!$this->runner->run($process, $dispCommand, self::ERR_TIMEOUT)) {
             return false;
         }
 
@@ -93,7 +96,7 @@ class FileCompression
             return true;
         }
 
-        return $this->runner->onFailure($process, implode(' ', $unpackCommand), self::EVENT_MESSAGE);
+        return $this->runner->onFailure($process, $dispCommand, self::EVENT_MESSAGE);
     }
 
     /**
@@ -144,9 +147,11 @@ class FileCompression
             return false;
         }
 
+        $dispCommand = implode(' ', $packCommand);
+
         // @todo may need to NOT escape args?
         $process = $this->runner->prepare($packCommand, $workspacePath, $this->commandTimeout);
-        if (!$this->runner->run($process, self::ERR_TIMEOUT)) {
+        if (!$this->runner->run($process, $dispCommand, self::ERR_TIMEOUT)) {
             return false;
         }
 
@@ -154,6 +159,6 @@ class FileCompression
             return true;
         }
 
-        return $this->runner->onFailure($process, implode(' ', $packCommand), self::EVENT_MESSAGE);
+        return $this->runner->onFailure($process, $dispCommand, self::EVENT_MESSAGE);
     }
 }

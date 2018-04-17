@@ -7,19 +7,19 @@
 
 namespace Hal\Agent\Executor\Worker;
 
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Agent\Symfony\ProcessRunner;
 use Hal\Core\Entity\JobType\Build;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Cron worker that will pick up and run any "waiting" builds.
@@ -49,14 +49,14 @@ class BuildCommand implements ExecutorInterface
     const DEFAULT_SLEEP_TIME = 5;
 
     /**
-     * @var EntityRepository
+     * @var ObjectRepository
      */
     private $buildRepo;
 
     /**
-     * @var ProcessBuilder
+     * @var ProcessRunner
      */
-    private $builder;
+    private $processRunner;
 
     /**
      * @var LoggerInterface
@@ -82,18 +82,18 @@ class BuildCommand implements ExecutorInterface
 
     /**
      * @param EntityManagerInterface $em
-     * @param ProcessBuilder $builder
+     * @param ProcessRunner $processRunner
      * @param LoggerInterface $logger
      * @param string $workingDir
      */
     public function __construct(
         EntityManagerInterface $em,
-        ProcessBuilder $builder,
+        ProcessRunner $processRunner,
         LoggerInterface $logger,
         $workingDir
     ) {
         $this->buildRepo = $em->getRepository(Build::class);
-        $this->builder = $builder;
+        $this->processRunner = $processRunner;
         $this->logger = $logger;
         $this->workingDir = $workingDir;
 
@@ -110,9 +110,9 @@ class BuildCommand implements ExecutorInterface
      *
      * @return void
      */
-    public function setSleepTime($seconds)
+    public function setSleepTime(int $seconds)
     {
-        $seconds = (int) $seconds;
+        $seconds = $seconds;
         if ($seconds > 0 && $seconds <= 30) {
             $this->sleepTime = $seconds;
         }
@@ -156,11 +156,7 @@ class BuildCommand implements ExecutorInterface
                 $id
             ];
 
-            $process = $this->builder
-                ->setWorkingDirectory($this->workingDir)
-                ->setArguments($command)
-                ->setTimeout(self::MAX_JOB_TIMEOUT)
-                ->getProcess();
+            $process = $this->processRunner->prepare($command, $this->workingDir, self::MAX_JOB_TIMEOUT);
 
             $io->listing([
                 sprintf("Starting build: <info>%s</info>\n   > %s", $id, implode(' ', $command))
@@ -188,39 +184,11 @@ class BuildCommand implements ExecutorInterface
     {
         $allDone = true;
         foreach ($this->processes as $id => $process) {
-            $name = sprintf('Build %s', $id);
-
-            if ($process->isRunning()) {
-                try {
-                    $io->note(sprintf('Checking build status: <info>%s</info>', $id));
-
-                    $process->checkTimeout();
-                    $allDone = false;
-
-                } catch (ProcessTimedOutException $e) {
-                    $output = $this->outputJob($name, $process, true);
-
-                    $io->section(sprintf('Build <info>%s</info> timed out', $id));
-                    $io->text($output);
-
-                    $this->logger->warning(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
-
-                    unset($this->processes[$id]);
-                }
-
-            } else {
-                $output = $this->outputJob($name, $process, false);
-
-                $io->section(sprintf('Build <info>%s</info> finished', $id));
-                $io->text($output);
-
-                if ($exit = $process->getExitCode()) {
-                    $this->logger->info(sprintf(self::ERR_JOB, $id), ['exceptionData' => $output, 'exitCode' => $exit]);
-                } else {
-                    $this->logger->info(sprintf(self::SUCCESS_JOB, $id), ['exceptionData' => $output]);
-                }
-
+            $isDone = $this->waitOnProcess($io, $process, $id);
+            if ($isDone) {
                 unset($this->processes[$id]);
+            } else {
+                $allDone = false;
             }
         }
 
@@ -230,5 +198,77 @@ class BuildCommand implements ExecutorInterface
             sleep($this->sleepTime);
             $this->wait($io);
         }
+    }
+
+    /**
+     * @param IOInterface $io
+     * @param Process $process
+     * @param string $id
+     *
+     * @return bool
+     */
+    private function waitOnProcess(IOInterface $io, Process $process, $id)
+    {
+        $name = sprintf('Build %s', $id);
+        $commandLine = $process->getCommandLine();
+
+        $io->note(sprintf('Checking build status: <info>%s</info>', $id));
+
+        $completed = $process->isTerminated();
+
+        if ($completed) {
+            $output = $this->outputJob($name, $process, false);
+
+            $message = 'Build <info>%s</info> finished';
+            $io->section(sprintf($message, $id));
+            $io->text($output);
+
+            if ($process->isSuccessful()) {
+                $message = sprintf(self::SUCCESS_JOB, $id);
+                $context = [
+                    'output' => $process->getOutput(),
+                    'command' => $commandLine
+                ];
+
+                $this->logger->info($message, $context);
+            } else {
+                $message = sprintf(self::ERR_JOB, $id);
+                $context = [
+                    'output' => $process->getOutput(),
+                    'command' => $commandLine,
+                    'errorOutput' => $process->getErrorOutput(),
+                    'exitCode' => $process->getExitCode()
+                ];
+
+                $this->logger->warning($message, $context);
+            }
+
+            return true;
+        }
+
+        try {
+            $process->checkTimeout();
+        } catch (ProcessTimedOutException $ex) {
+            $output = $this->outputJob($name, $process, true);
+
+            $message = 'Build <info>%s</info> timed out';
+            $io->section(sprintf($message, $id));
+            $io->text($output);
+
+            $message = sprintf(self::ERR_JOB_TIMEOUT, $id);
+            $context = [
+                'output' => $process->getOutput(),
+                'command' => $commandLine,
+                'maxTimeout' => $ex->getExceededTimeout(),
+                'errorOutput' => $process->getErrorOutput()
+            ];
+
+            $this->logger->warning($message, $context);
+
+            return true;
+        }
+
+
+        return false;
     }
 }

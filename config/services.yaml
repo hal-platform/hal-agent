@@ -125,11 +125,6 @@ services:
         class: 'Symfony\Component\Finder\Finder'
     utility.filesystem:
         class: 'Symfony\Component\Filesystem\Filesystem'
-    utility.process.builder:
-        class: 'Symfony\Component\Process\ProcessBuilder'
-        shared: false
-        calls:
-            - ['inheritEnvironmentVariables', [false]]
 
     utility.forker:
         class: 'Hal\Agent\Helper\ForkHelper'
@@ -139,7 +134,7 @@ services:
 
     utility.environment.resolver:
         class: 'Hal\Agent\Utility\BuildEnvironmentResolver'
-        arguments: ['@doctrine.em', '@utility.process.builder']
+        arguments: ['@doctrine.em', '@process_runner']
         calls:
             - ['setWindowsAWSBuilder', ['%build.windows_aws.region%', '%build.windows_aws.credential_name%', '%build.windows_aws.bucket%', '%build.windows_aws.builder_filter%']]
             - ['setUnixBuilder',       ['%build.linux.user%',         '%build.linux.server%',                '%path.linux_builder%']]
@@ -193,5 +188,5 @@ services:
         class: 'Hal\Agent\Utility\EncryptedPropertyResolver'
         arguments:
             - '@doctrine.em'
+            - '@encryption'
             - '@logger.event'
-            - '@service_container'

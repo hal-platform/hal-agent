@@ -18,24 +18,18 @@ class FileCompressionTest extends MockeryTestCase
 
     public function setUp()
     {
-        $this->runner = Mockery::mock(ProcessRunner::class);
+        $this->runner = Mockery::mock(ProcessRunner::class)->makePartial();
     }
 
     public function testCreateWorkspace()
     {
-        $process = Mockery::mock(Process::class, ['isSuccessful' => true]);
+        $process = Mockery::mock(Process::class, ['run' => 0, 'isSuccessful' => true, 'getOutput' => 'output here']);
 
         $this->runner
             ->shouldReceive('prepare')
             ->with(['mkdir', '/path/workspace'], null, 10)
             ->once()
             ->andReturn($process);
-
-        $this->runner
-            ->shouldReceive('run')
-            ->with($process, 'Filesystem action timed out')
-            ->once()
-            ->andReturn(true);
 
         $compression = new FileCompression($this->runner, 10);
 
@@ -46,19 +40,13 @@ class FileCompressionTest extends MockeryTestCase
 
     public function testUnpackTar()
     {
-        $process = Mockery::mock(Process::class, ['isSuccessful' => true]);
+        $process = Mockery::mock(Process::class, ['run' => 0, 'isSuccessful' => true, 'getOutput' => 'output here']);
 
         $this->runner
             ->shouldReceive('prepare')
             ->with(['tar', '-vxz', '--strip-components=2', '--file=/path/artifact.tgz', '--directory=/path/workspace'], null, 10)
             ->once()
             ->andReturn($process);
-
-        $this->runner
-            ->shouldReceive('run')
-            ->with($process, 'Filesystem action timed out')
-            ->once()
-            ->andReturn(true);
 
         $compression = new FileCompression($this->runner, 10);
 
@@ -71,19 +59,13 @@ class FileCompressionTest extends MockeryTestCase
     {
         $sourcePath = __DIR__ . '/.fixtures';
 
-        $process = Mockery::mock(Process::class, ['isSuccessful' => true]);
+        $process = Mockery::mock(Process::class, ['run' => 0, 'isSuccessful' => true, 'getOutput' => 'output here']);
 
         $this->runner
             ->shouldReceive('prepare')
             ->with(['tar', '-vcz', '--file=/path/artifact.tgz', '.'], $sourcePath, 10)
             ->once()
             ->andReturn($process);
-
-        $this->runner
-            ->shouldReceive('run')
-            ->with($process, 'Filesystem action timed out')
-            ->once()
-            ->andReturn(true);
 
         $compression = new FileCompression($this->runner, 10);
 

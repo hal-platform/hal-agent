@@ -69,9 +69,9 @@ class SSMCommandRunner
      *
      * @return void
      */
-    public function setMandatoryWaitPeriod($waitEnabled = true)
+    public function setMandatoryWaitPeriod(bool $waitEnabled = true)
     {
-        $this->mandatoryWaitPeriod = (bool) $waitEnabled;
+        $this->mandatoryWaitPeriod = $waitEnabled;
     }
 
     /**
@@ -164,7 +164,7 @@ class SSMCommandRunner
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function getLastStatus()
     {

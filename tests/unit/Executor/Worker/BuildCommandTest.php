@@ -8,14 +8,15 @@
 namespace Hal\Agent\Executor\Worker;
 
 use Doctrine\ORM\EntityManager;
+use Hal\Agent\Symfony\ProcessRunner;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Agent\Testing\MemoryLogger;
 use Mockery;
-use Hal\Core\Entity\Build;
-use Hal\Core\Repository\BuildRepository;
+use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Repository\JobType\BuildRepository;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 class BuildCommandTest extends IOTestCase
 {
@@ -24,7 +25,7 @@ class BuildCommandTest extends IOTestCase
     public $em;
     public $buildRepo;
 
-    public $builder;
+    public $processRunner;
     public $process;
     public $logger;
 
@@ -35,9 +36,9 @@ class BuildCommandTest extends IOTestCase
             'getRepository' => $this->buildRepo
         ]);
 
-        $this->builder = Mockery::mock(ProcessBuilder::class);
+        $this->processRunner = Mockery::mock(ProcessRunner::class)->makePartial();
         $this->process = Mockery::mock(Process::class, ['stop' => null]);
-        $this->logger = new MemoryLogger;
+        $this->logger = new MemoryLogger();
     }
 
     public function configureCommand($c)
@@ -55,7 +56,7 @@ class BuildCommandTest extends IOTestCase
 
         $command = new BuildCommand(
             $this->em,
-            $this->builder,
+            $this->processRunner,
             $this->logger,
             'workdir'
         );
@@ -77,45 +78,49 @@ class BuildCommandTest extends IOTestCase
 
         $build1 = new Build('1234');
         $build2 = new Build('5555');
+        $build3 = new Build('6789');
 
         $this->buildRepo
             ->shouldReceive('findBy')
-            ->andReturn([$build1, $build2]);
+            ->andReturn([$build1, $build2, $build3]);
 
-        $this->builder
-            ->shouldReceive([
-                'setWorkingDirectory' => $this->builder,
-                'setArguments' => $this->builder,
-                'setTimeout' => $this->builder
-            ]);
-        $this->builder
-            ->shouldReceive('getProcess')
-            ->times(2)
+        $this->processRunner
+            ->shouldReceive('prepare')
+            ->times(3)
             ->andReturn($this->process);
 
         $this->process
+            ->shouldReceive([
+                'getCommandLine' => 'command args here',
+                'getOutput' => 'output here',
+                'getErrorOutput' => '',
+                'getTimeout' => 1
+            ]);
+        $this->process
             ->shouldReceive('start')
-            ->times(2);
+            ->times(3);
         $this->process
             ->shouldReceive('isRunning')
-            ->times(3)
-            ->andReturn(false, true, false);
+            ->times(6)
+            ->andReturn(false, true, true, false, true, true);
         $this->process
             ->shouldReceive('checkTimeout')
-            ->once();
+            ->times(3);
+        $this->process
+            ->shouldReceive('checkTimeout')
+            ->andThrow(new ProcessTimedOutException($this->process, ProcessTimedOutException::TYPE_GENERAL));
+        $this->process
+            ->shouldReceive('isSuccessful')
+            ->times(2)
+            ->andReturn(true, false);
         $this->process
             ->shouldReceive('getExitCode')
             ->times(4)
-            ->andReturn(0, 0, 1, 1);
-        $this->process
-            ->shouldReceive([
-                'getOutput' => 'output here',
-                'getErrorOutput' => ''
-            ]);
+            ->andReturn(0, 1, 1, null);
 
         $command = new BuildCommand(
             $this->em,
-            $this->builder,
+            $this->processRunner,
             $this->logger,
             'workdir'
         );
@@ -125,17 +130,22 @@ class BuildCommandTest extends IOTestCase
         $exit = $command->execute($io);
 
         $expected = [
-            'Found 2 builds:',
+            'Found 3 builds:',
             ' * Starting build: 1234',
             '   > bin/hal runner:build 1234',
             ' * Starting build: 5555',
             '   > bin/hal runner:build 5555',
+            ' * Starting build: 6789',
+            '   > bin/hal runner:build 6789',
 
             'Build 1234 finished: success',
 
             '[NOTE] Checking build status: <info>5555</info>',
+            '[NOTE] Checking build status: <info>6789</info>',
             '[NOTE] Waiting 1 seconds...',
-            'Build 5555 finished: error'
+            'Build 5555 finished: error',
+
+            'Build 6789 finished: timed out'
         ];
 
         $this->assertContainsLines($expected, $this->output());

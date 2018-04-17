@@ -67,13 +67,13 @@ class DI
      * @param string $root
      * @param array $options
      *
-     * @return ContainerBuilder
+     * @return ContainerBuilder|ContainerInterface|null
      */
     public static function getDI(string $root, array $options)
     {
         $class = $options['class'] ?? '';
         if (!$class) {
-            return false;
+            return null;
         }
 
         $cacheDisabled = getenv(static::ENV_CACHE_DISABLED);
@@ -94,7 +94,7 @@ class DI
     {
         $class = $options['class'] ?? '';
         if (!$class) {
-            return false;
+            return '';
         }
 
         $exploded = explode('\\', $class);

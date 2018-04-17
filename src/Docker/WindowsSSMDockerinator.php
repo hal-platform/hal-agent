@@ -95,9 +95,9 @@ class WindowsSSMDockerinator
      *
      * @return void
      */
-    public function setInternalCommandTimeout($seconds)
+    public function setInternalCommandTimeout(int $seconds)
     {
-        $this->internalTimeout = (int) $seconds;
+        $this->internalTimeout = $seconds;
     }
 
     /**
@@ -105,9 +105,9 @@ class WindowsSSMDockerinator
      *
      * @return void
      */
-    public function setBuildCommandTimeout($seconds)
+    public function setBuildCommandTimeout(int $seconds)
     {
-        $this->buildTimeout = (int) $seconds;
+        $this->buildTimeout = $seconds;
     }
 
     /**
@@ -238,7 +238,7 @@ class WindowsSSMDockerinator
      *
      * @param string $containerName
      *
-     * @return string|null
+     * @return bool
      */
     public function startContainer(SsmClient $ssm, $instanceID, $containerName)
     {

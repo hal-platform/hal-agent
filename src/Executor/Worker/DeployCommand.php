@@ -14,15 +14,15 @@ use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
 use Hal\Agent\Executor\JobStatsTrait;
+use Hal\Agent\Symfony\ProcessRunner;
 use Hal\Core\Entity\Job;
-use Psr\Log\LoggerInterface;
 use Hal\Core\Entity\Target;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Repository\JobType\ReleaseRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * Cron worker that will pick up and run any "waiting" pushes.
@@ -62,9 +62,9 @@ class DeployCommand implements ExecutorInterface
     private $em;
 
     /**
-     * @var ProcessBuilder
+     * @var ProcessRunner
      */
-    private $builder;
+    private $processRunner;
 
     /**
      * @var LoggerInterface
@@ -72,7 +72,7 @@ class DeployCommand implements ExecutorInterface
     private $logger;
 
     /**
-     * @var Job[]
+     * @var Process[]
      */
     private $processes;
 
@@ -95,19 +95,19 @@ class DeployCommand implements ExecutorInterface
 
     /**
      * @param EntityManagerInterface $em
-     * @param ProcessBuilder $builder
+     * @param ProcessRunner $processRunner
      * @param LoggerInterface $logger
      * @param string $workingDir
      */
     public function __construct(
         EntityManagerInterface $em,
-        ProcessBuilder $builder,
+        ProcessRunner $processRunner,
         LoggerInterface $logger,
         $workingDir
     ) {
         $this->releaseRepo = $em->getRepository(Release::class);
         $this->em = $em;
-        $this->builder = $builder;
+        $this->processRunner = $processRunner;
         $this->logger = $logger;
         $this->workingDir = $workingDir;
 
@@ -124,9 +124,9 @@ class DeployCommand implements ExecutorInterface
      *
      * @return void
      */
-    public function setSleepTime($seconds)
+    public function setSleepTime(int $seconds)
     {
-        $seconds = (int) $seconds;
+        $seconds = $seconds;
         if ($seconds > 0 && $seconds < 30) {
             $this->sleepTime = $seconds;
         }
@@ -190,11 +190,7 @@ class DeployCommand implements ExecutorInterface
                 continue;
             }
 
-            $process = $this->builder
-                ->setWorkingDirectory($this->workingDir)
-                ->setArguments($command)
-                ->setTimeout(self::MAX_JOB_TIMEOUT)
-                ->getProcess();
+            $process = $this->processRunner->prepare($command, $this->workingDir, self::MAX_JOB_TIMEOUT);
 
             $io->listing([
                 sprintf("Starting release: <info>%s</info>\n   > %s", $id, implode(' ', $command))
@@ -248,37 +244,66 @@ class DeployCommand implements ExecutorInterface
     private function waitOnProcess(IOInterface $io, Process $process, $id)
     {
         $name = sprintf('Release %s', $id);
+        $commandLine = $process->getCommandLine();
 
-        if ($process->isRunning()) {
-            $io->note(sprintf('Checking release status: <info>%s</info>', $id));
+        $io->note(sprintf('Checking release status: <info>%s</info>', $id));
 
-            try {
-                $process->checkTimeout();
+        $completed = $process->isTerminated();
 
-            } catch (ProcessTimedOutException $e) {
-                $output = $this->outputJob($name, $process, true);
+        if ($completed) {
+            $output = $this->outputJob($name, $process, false);
 
-                $io->section(sprintf('Release <info>%s</info> timed out', $id));
-                $io->text($output);
+            $message = 'Release <info>%s</info> finished';
+            $io->section(sprintf($message, $id));
+            $io->text($output);
 
-                $this->logger->warning(sprintf(self::ERR_JOB_TIMEOUT, $id), ['exceptionData' => $output]);
-                return true;
+            if ($process->isSuccessful()) {
+                $message = sprintf(self::SUCCESS_JOB, $id);
+                $context = [
+                    'output' => $process->getOutput(),
+                    'command' => $commandLine
+                ];
+
+                $this->logger->info($message, $context);
+            } else {
+                $message = sprintf(self::ERR_JOB, $id);
+                $context = [
+                    'output' => $process->getOutput(),
+                    'command' => $commandLine,
+                    'errorOutput' => $process->getErrorOutput(),
+                    'exitCode' => $process->getExitCode()
+                ];
+
+                $this->logger->warning($message, $context);
             }
 
-            return false;
+            return true;
         }
 
-        $output = $this->outputJob($name, $process, false);
+        try {
+            $process->checkTimeout();
+        } catch (ProcessTimedOutException $ex) {
+            $output = $this->outputJob($name, $process, true);
 
-        $io->section(sprintf('Release <info>%s</info> finished', $id));
-        $io->text($output);
+            $message = 'Release <info>%s</info> timed out';
+            $io->section(sprintf($message, $id));
+            $io->text($output);
 
-        $exit = $process->getExitCode();
-        $context = ['exceptionData' => $output, 'exitCode' => $exit];
-        $msg = ($exit) ? self::ERR_JOB : self::SUCCESS_JOB;
+            $message = sprintf(self::ERR_JOB_TIMEOUT, $id);
+            $context = [
+                'output' => $process->getOutput(),
+                'command' => $commandLine,
+                'maxTimeout' => $ex->getExceededTimeout(),
+                'errorOutput' => $process->getErrorOutput()
+            ];
 
-        $this->logger->info(sprintf($msg, $id), $context);
-        return true;
+            $this->logger->warning($message, $context);
+
+            return true;
+        }
+
+
+        return false;
     }
 
     /**

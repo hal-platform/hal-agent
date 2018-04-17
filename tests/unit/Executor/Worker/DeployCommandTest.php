@@ -8,15 +8,16 @@
 namespace Hal\Agent\Executor\Worker;
 
 use Doctrine\ORM\EntityManager;
+use Hal\Agent\Symfony\ProcessRunner;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Agent\Testing\MemoryLogger;
 use Mockery;
 use Hal\Core\Entity\Target;
-use Hal\Core\Entity\Release;
-use Hal\Core\Repository\ReleaseRepository;
+use Hal\Core\Entity\JobType\Release;
+use Hal\Core\Repository\JobType\ReleaseRepository;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 class DeployCommandTest extends IOTestCase
 {
@@ -25,7 +26,7 @@ class DeployCommandTest extends IOTestCase
     public $releaseRepo;
     public $em;
 
-    public $builder;
+    public $processRunner;
     public $process;
     public $logger;
 
@@ -35,7 +36,8 @@ class DeployCommandTest extends IOTestCase
         $this->em = Mockery::mock(EntityManager::class, [
             'getRepository' => $this->releaseRepo
         ]);
-        $this->builder = Mockery::mock(ProcessBuilder::class);
+
+        $this->processRunner = Mockery::mock(ProcessRunner::class)->makePartial();
         $this->process = Mockery::mock(Process::class, ['stop' => null]);
         $this->logger = new MemoryLogger;
     }
@@ -55,7 +57,7 @@ class DeployCommandTest extends IOTestCase
 
         $command = new DeployCommand(
             $this->em,
-            $this->builder,
+            $this->processRunner,
             $this->logger,
             'workdir'
         );
@@ -76,68 +78,80 @@ class DeployCommandTest extends IOTestCase
         $this->markTestSkipped();
 
         $push1 = (new Release('1234'))
-            ->withTarget(
-                (new Target())
-                    ->withId('6666')
-            );
+            ->withTarget(new Target(null, '6666'));
 
         $push2 = (new Release('5555'))
-            ->withTarget(
-                (new Target())
-                    ->withId('8888')
-            );
+            ->withTarget(new Target(null, '8888'));
+
+        $push3 = (new Release('6789'))
+            ->withTarget(new Target(null, '0000'));
 
         $this->releaseRepo
             ->shouldReceive('findBy')
-            ->andReturn([$push1, $push2]);
+            ->andReturn([$push1, $push2, $push3]);
 
-        $this->builder
-            ->shouldReceive([
-                'setWorkingDirectory' => $this->builder,
-                'setArguments' => $this->builder,
-                'setTimeout' => $this->builder
-            ]);
-        $this->builder
-            ->shouldReceive('getProcess')
-            ->times(2)
+        $this->processRunner
+            ->shouldReceive('prepare')
+            ->times(3)
             ->andReturn($this->process);
 
         $this->process
+            ->shouldReceive([
+                'getCommandLine' => 'command args here',
+                'getOutput' => 'output here',
+                'getErrorOutput' => '',
+                'getTimeout' => 1
+            ]);
+        $this->process
             ->shouldReceive('start')
-            ->times(2);
+            ->times(3);
         $this->process
             ->shouldReceive('isRunning')
+            ->times(6)
+            ->andReturn(false, true, true, false, true, true);
+        $this->process
+            ->shouldReceive('checkTimeout')
+            ->times(3);
+        $this->process
+            ->shouldReceive('checkTimeout')
+            ->andThrow(new ProcessTimedOutException($this->process, ProcessTimedOutException::TYPE_GENERAL));
+        $this->process
+            ->shouldReceive('isSuccessful')
             ->times(2)
-            ->andReturn(false);
+            ->andReturn(true, false);
         $this->process
             ->shouldReceive('getExitCode')
             ->times(4)
-            ->andReturn(0, 0, 1, 1);
-        $this->process
-            ->shouldReceive([
-                'getOutput' => 'output here',
-                'getErrorOutput' => ''
-            ]);
+            ->andReturn(0, 1, 1, null);
 
         $command = new DeployCommand(
             $this->em,
-            $this->builder,
+            $this->processRunner,
             $this->logger,
             'workdir'
         );
+        $command->setSleepTime(1);
 
         $io = $this->ioForCommand('configureCommand');
         $exit = $command->execute($io);
 
         $expected = [
-            'Found 2 releases:',
+            'Found 3 releases:',
             ' * Starting release: 1234',
             '   > bin/hal runner:deploy 1234',
             ' * Starting release: 5555',
             '   > bin/hal runner:deploy 5555',
+            ' * Starting release: 6789',
+            '   > bin/hal runner:deploy 6789',
 
             'Release 1234 finished: success',
+
+            '[NOTE] Checking release status: <info>5555</info>',
+            '[NOTE] Checking release status: <info>6789</info>',
+            '[NOTE] Waiting 1 seconds...',
             'Release 5555 finished: error',
+
+            'Release 6789 finished: timed out',
         ];
 
         $this->assertContainsLines($expected, $this->output());
@@ -147,8 +161,7 @@ class DeployCommandTest extends IOTestCase
     {
         $this->markTestSkipped();
 
-        $push1 = new Release();
-        $push1->withId('1234');
+        $push1 = new Release('1234');
 
         $this->releaseRepo
             ->shouldReceive('findBy')
@@ -164,7 +177,7 @@ class DeployCommandTest extends IOTestCase
 
         $command = new DeployCommand(
             $this->em,
-            $this->builder,
+            $this->processRunner,
             $this->logger,
             'workdir'
         );
@@ -185,29 +198,20 @@ class DeployCommandTest extends IOTestCase
     {
         $this->markTestSkipped();
 
-        $deploy1 = (new Target())
-            ->withId('6666');
+        $deploy1 = new Target(null, '6666');
 
-        $push1 = (new Release())
-            ->withId('1234')
+        $push1 = (new Release('1234'))
             ->withTarget($deploy1);
 
-        $push2 = (new Release())
-            ->withId('5555')
+        $push2 = (new Release('5555'))
             ->withTarget($deploy1);
 
         $this->releaseRepo
             ->shouldReceive('findBy')
             ->andReturn([$push1, $push2]);
 
-        $this->builder
-            ->shouldReceive([
-                'setWorkingDirectory' => $this->builder,
-                'setArguments' => $this->builder,
-                'setTimeout' => $this->builder
-            ]);
-        $this->builder
-            ->shouldReceive('getProcess')
+        $this->processRunner
+            ->shouldReceive('prepare')
             ->once()
             ->andReturn($this->process);
 
@@ -219,15 +223,21 @@ class DeployCommandTest extends IOTestCase
             ->once()
             ->andReturn(false);
         $this->process
+            ->shouldReceive('isSuccessful')
+            ->times(1)
+            ->andReturn(true);
+        $this->process
             ->shouldReceive([
+                'getCommandLine' => 'command line args',
                 'getOutput' => 'output here',
                 'getErrorOutput' => '',
-                'getExitCode' => 0
+                'getExitCode' => 0,
+                'checkTimeout' => null
             ]);
 
         $command = new DeployCommand(
             $this->em,
-            $this->builder,
+            $this->processRunner,
             $this->logger,
             'workdir'
         );

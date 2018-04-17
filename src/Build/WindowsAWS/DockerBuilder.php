@@ -290,7 +290,7 @@ class DockerBuilder implements BuilderInterface
      * @param string $instanceID
      *
      * @param string $outputDir
-     * @param array $inputDir
+     * @param string $inputDir
      *
      * @return bool
      */

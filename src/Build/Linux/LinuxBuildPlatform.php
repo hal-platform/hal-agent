@@ -227,8 +227,8 @@ class LinuxBuildPlatform implements JobPlatformInterface
     }
 
     /**
-     * @param array $jobID
-     * @param array $image
+     * @param string $jobID
+     * @param string $image
      *
      * @param array $steps
      * @param array $env

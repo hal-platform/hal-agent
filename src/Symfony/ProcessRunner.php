@@ -17,22 +17,22 @@ class ProcessRunner
     private const DEFAULT_ERR_MESSAGE = 'System action failed';
     private const DEFAULT_ERR_TIMEOUT = 'System action timed out';
 
-    private const DEFAULT_TIMEOUT_SECONDS = 60;
+    private const DEFAULT_TIMEOUT_SECONDS = 60.0;
 
     /**
-     * @var EventLogger
+     * @var EventLogger|null
      */
     private $logger;
 
     /**
-     * @var int
+     * @var float
      */
     private $defaultTimeout;
 
     /**
-     * @param EventLogger $logger
+     * @param EventLogger|null $logger
      */
-    public function __construct(EventLogger $logger)
+    public function __construct(?EventLogger $logger = null)
     {
         $this->logger = $logger;
 
@@ -42,11 +42,11 @@ class ProcessRunner
     /**
      * @param array $args
      * @param string|null $workingDirectory
-     * @param int|null $timeout
+     * @param float|null $timeout
      *
      * @return Process
      */
-    public function prepare(array $args, ?string $workingDirectory, ?int $timeout = null): Process
+    public function prepare(array $args, ?string $workingDirectory, ?float $timeout = null): Process
     {
         if ($timeout === null) {
             $timeout = $this->defaultTimeout;
@@ -60,27 +60,17 @@ class ProcessRunner
 
     /**
      * @param Process $process
+     * @param string $args
      * @param string|null $timeoutMessage
      *
      * @return bool
      */
-    public function run(Process $process, ?string $timeoutMessage = null): bool
+    public function run(Process $process, string $args, ?string $timeoutMessage = null): bool
     {
-        if ($timeoutMessage === null) {
-            $timeoutMessage = self::DEFAULT_ERR_TIMEOUT;
-        }
-
         try {
             $process->run();
-
         } catch (ProcessTimedOutException $ex) {
-            $this->logger->event('failure', $timeoutMessage, [
-                'maxTimeout' => sprintf('%d seconds', $ex->getExceededTimeout()),
-                'output' => $process->getOutput(),
-                'errorOutput' => $process->getErrorOutput()
-            ]);
-
-            return false;
+            return $this->onTimeout($process, $args, $ex->getExceededTimeout(), $timeoutMessage);
         }
 
         return true;
@@ -99,7 +89,7 @@ class ProcessRunner
             $successMessage = self::DEFAULT_MESSAGE;
         }
 
-        $this->logger->event('success', $successMessage, [
+        $this->tryLogging('success', $successMessage, [
             'command' => $args,
             'output' => $process->getOutput()
         ]);
@@ -120,7 +110,7 @@ class ProcessRunner
             $failureMessage = self::DEFAULT_ERR_MESSAGE;
         }
 
-        $this->logger->event('failure', $failureMessage, [
+        $this->tryLogging('failure', $failureMessage, [
             'command' => $args,
             'output' => $process->getOutput(),
             'errorOutput' => $process->getErrorOutput(),
@@ -128,5 +118,45 @@ class ProcessRunner
         ]);
 
         return false;
+    }
+
+    /**
+     * @param Process $process
+     * @param string $args
+     * @param float $timedOutAt
+     * @param string|null $timeoutMessage
+     *
+     * @return bool
+     */
+    public function onTimeout(Process $process, string $args, float $timedOutAt, ?string $timeoutMessage = null): bool
+    {
+        if ($timeoutMessage === null) {
+            $timeoutMessage = self::DEFAULT_ERR_TIMEOUT;
+        }
+
+        $this->tryLogging('failure', $timeoutMessage, [
+            'command' => $args,
+            'output' => $process->getOutput(),
+            'errorOutput' => $process->getErrorOutput(),
+            'maxTimeout' => $timedOutAt
+        ]);
+
+        return false;
+    }
+
+    /**
+     * @param string $level
+     * @param string $message
+     * @param array $context
+     *
+     * @return void
+     */
+    private function tryLogging(string $level, string $message, array $context)
+    {
+        if (!$this->logger) {
+            return;
+        }
+
+        $this->logger->event($level, $message, $context);
     }
 }

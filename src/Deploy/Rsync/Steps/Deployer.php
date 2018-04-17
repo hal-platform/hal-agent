@@ -8,17 +8,11 @@
 namespace Hal\Agent\Deploy\Rsync\Steps;
 
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Utility\ProcessRunnerTrait;
 use Hal\Agent\Remoting\FileSyncManager;
-use Hal\Core\Entity\JobType\Release;
-use Hal\Core\Parameters;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
+use Hal\Agent\Symfony\ProcessRunner;
 
 class Deployer
 {
-    use ProcessRunnerTrait;
-
     /**
      * @var string
      */
@@ -36,9 +30,9 @@ class Deployer
     private $fileSyncManager;
 
     /**
-     * @var ProcessBuilder
+     * @var ProcessRunner
      */
-    private $processBuilder;
+    private $runner;
 
     /**
      * @var int
@@ -48,18 +42,18 @@ class Deployer
     /**
      * @param EventLogger $logger
      * @param FileSyncManager $fileSyncManager
-     * @param ProcessBuilder $processBuilder
+     * @param ProcessRunner $runner
      * @param int $commandTimeout
      */
     public function __construct(
         EventLogger $logger,
         FileSyncManager $fileSyncManager,
-        ProcessBuilder $processBuilder,
+        ProcessRunner $runner,
         int $commandTimeout
     ) {
         $this->logger = $logger;
         $this->fileSyncManager = $fileSyncManager;
-        $this->processBuilder = $processBuilder;
+        $this->runner = $runner;
         $this->commandTimeout = $commandTimeout;
     }
 
@@ -91,25 +85,21 @@ class Deployer
             return false;
         }
 
-        $rsyncCommand = implode(' ', $command);
+        $rsyncCommand = implode(' ', $command) . ' 2>&1';
         $dispCommand = implode("\n", $command);
 
-        $process = $this->processBuilder
-            ->setWorkingDirectory(null)
-            ->setArguments([''])
-            ->setTimeout($this->commandTimeout)
-            ->getProcess()
-            // processbuilder escapes input, but it breaks the rsync params
-            ->setCommandLine($rsyncCommand . ' 2>&1');
+        $process = $this->runner->prepare($command, '', $this->commandTimeout);
+        // We manually set the command line because Process' input escaping breaks the rsync parameters
+        $process->setCommandLine($rsyncCommand);
 
-        if (!$this->runProcess($process, $this->commandTimeout)) {
+        if (!$this->runner->run($process, $dispCommand, static::ERR_TIMEOUT)) {
             return false;
         }
 
         if ($process->isSuccessful()) {
-            return $this->processSuccess($dispCommand, $process);
+            return $this->runner->onSuccess($process, $dispCommand, self::EVENT_MESSAGE);
         }
 
-        return $this->processFailure($dispCommand, $process);
+        return $this->runner->onFailure($process, $dispCommand, self::EVENT_MESSAGE);
     }
 }

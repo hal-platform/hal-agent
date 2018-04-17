@@ -181,8 +181,8 @@ class NativeBuilder implements BuilderInterface
      * @param string $instanceID
      * @param string $inputDir
      * @param array $script
-     * @param array $currentStep
-     * @param array $totalSteps
+     * @param int $currentStep
+     * @param int $totalSteps
      *
      * @return bool
      */

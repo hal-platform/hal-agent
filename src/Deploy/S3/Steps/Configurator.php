@@ -7,6 +7,7 @@
 
 namespace Hal\Agent\Deploy\S3\Steps;
 
+use Aws\S3\S3Client;
 use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Credential;
 use Hal\Core\Entity\Job;
@@ -75,7 +76,7 @@ class Configurator
      * @param string $region
      * @param Credential|null $credential
      *
-     * @return array|null
+     * @return S3Client|null
      */
     private function authenticate($region, $credential)
     {

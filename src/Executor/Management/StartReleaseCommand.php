@@ -7,8 +7,8 @@
 
 namespace Hal\Agent\Executor\Management;
 
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Hal\Agent\Application\HalClient;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
@@ -36,9 +36,13 @@ class StartReleaseCommand implements ExecutorInterface
     private const HELP_TARGET = 'The ID or name of the target to deploy to.';
 
     /**
-     * @var EntityRepository
+     * @var ObjectRepository
      */
     private $targetRepo;
+
+    /**
+     * @var ObjectRepository
+     */
     private $buildRepo;
 
     /**
@@ -186,12 +190,16 @@ class StartReleaseCommand implements ExecutorInterface
         }
 
         if (!$isBuildGUID) {
-            return false;
+            return null;
         }
 
         // We need to find the build as well, because target names are not unique,
         // so we can limit the scope to just this app.
         if (!$build = $this->buildRepo->find($buildID)) {
+            return null;
+        }
+
+        if (!$build instanceof Build) {
             return null;
         }
 

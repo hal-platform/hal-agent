@@ -27,7 +27,7 @@ services:
             - '@deploy.rsync.verify.remoter'
 
     deploy.rsync.runner:
-        class: 'Hal\Agent\Deploy\Rsync\Steps\Runner'
+        class: 'Hal\Agent\Deploy\Rsync\Steps\CommandRunner'
         arguments: ['@deploy.rsync.standard.remoter']
 
     deploy.rsync.deployer:
@@ -35,7 +35,7 @@ services:
         arguments:
             - '@logger.event'
             - '@ssh.filemanager'
-            - '@utility.process.builder'
+            - '@process_runner'
             - '%timeout.push%'
 
     ############################################################################

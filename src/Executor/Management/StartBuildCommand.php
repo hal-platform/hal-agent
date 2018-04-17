@@ -7,8 +7,8 @@
 
 namespace Hal\Agent\Executor\Management;
 
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Hal\Agent\Application\HalClient;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
@@ -44,7 +44,7 @@ HELP;
     private const HELP_REF = 'The VCS reference to build.';
 
     /**
-     * @var EntityRepository
+     * @var ObjectRepository
      */
     private $applicationRepo;
 

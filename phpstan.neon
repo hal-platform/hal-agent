@@ -1,3 +1,8 @@
 parameters:
-	excludes_analyse:
-		- %rootDir%/../../../src/CachedContainer.php
+    excludes_analyse:
+        - %rootDir%/../../../src/CachedContainer.php
+    ignoreErrors:
+        - '#Repository\) does not accept Doctrine\\Common\\Persistence\\ObjectRepository#'
+        - '#should return Hal\\Core\\Entity\\(.)+\|null but returns object#'
+        - '#Hal\\Agent\\Application\\DI\:\:cacheDI\(\) should return string but returns array\|string#'
+

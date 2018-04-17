@@ -7,7 +7,6 @@
 
 namespace Hal\Agent\Utility;
 
-use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Hal\Agent\Logger\EventLogger;
@@ -16,7 +15,6 @@ use Hal\Core\Entity\Application;
 use Hal\Core\Entity\EncryptedProperty;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Repository\EncryptedPropertyRepository;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Resolve properties about the build environment
@@ -24,7 +22,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class EncryptedPropertyResolver
 {
     const ERR_BAD_DECRYPT = 'Some properties could not be decrypted';
-    const ERR_MISCONFIGURED_ENCRYPTION = 'A serious error occured while decrypting. HAL Agent may not be configured correctly.';
 
     /**
      * @var EncryptedPropertyRepository
@@ -37,28 +34,24 @@ class EncryptedPropertyResolver
     private $logger;
 
     /**
-     * @var ContainerInterface
-     */
-    private $di;
-
-    /**
-     * @var Encryption|null
+     * @var Encryption
      */
     private $encryption;
 
     /**
      * @param EntityManagerInterface $em
      * @param EventLogger $logger
-     * @param ContainerInterface $di
+     * @param Encryption $encryption
      */
     public function __construct(
         EntityManagerInterface $em,
-        EventLogger $logger,
-        ContainerInterface $di
+        Encryption $encryption,
+        EventLogger $logger
     ) {
-        $this->encryptedRepo = $em->getRepository(EncryptedProperty::CLASS);
+        $this->encryptedRepo = $em->getRepository(EncryptedProperty::class);
+        $this->encryption = $encryption;
+
         $this->logger = $logger;
-        $this->di = $di;
     }
 
     /**
@@ -66,7 +59,7 @@ class EncryptedPropertyResolver
      *
      * @return array
      */
-    public function decryptProperties(array $encrypteds)
+    public function decryptProperties(array $encrypteds): array
     {
         $decrypteds = [];
 
@@ -75,13 +68,11 @@ class EncryptedPropertyResolver
             return $decrypteds;
         }
 
-        $encryption = $this->encryption();
-
         $bads = [];
 
         foreach ($encrypteds as $key => $encrypted) {
             try {
-                $decrypted = $encryption->decrypt($encrypted);
+                $decrypted = $this->encryption->decrypt($encrypted);
                 $decrypteds[$key] = $decrypted;
 
             } catch (Exception $ex) {
@@ -104,7 +95,7 @@ class EncryptedPropertyResolver
      *
      * @return array
      */
-    public function getEncryptedPropertiesWithSources(Application $application, ?Environment $environment)
+    public function getEncryptedPropertiesWithSources(Application $application, ?Environment $environment): array
     {
         $data = [
             'encrypted' => []
@@ -135,25 +126,5 @@ class EncryptedPropertyResolver
         $data['encrypted_sources'] = $sources;
 
         return $data;
-    }
-
-    /**
-     * Lazy load the encryption from the symfony container so we can handle errors a bit better.
-     *
-     * @return Encryption|null
-     */
-    private function encryption()
-    {
-        if (!$this->encryption) {
-            try {
-                $this->encryption = $this->di->get('encryption');
-            } catch (Exception $ex) {
-                $this->logger->event('failure', self::ERR_MISCONFIGURED_ENCRYPTION);
-
-                throw $ex;
-            }
-        }
-
-        return $this->encryption;
     }
 }

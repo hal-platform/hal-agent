@@ -107,8 +107,9 @@ jobs:
                 name: 'Run static analysis'
                 command: |
                     vendor/bin/phpstan analyse \
-                    -l 2 \
                     --memory-limit=1G \
+                    --configuration=phpstan.neon \
+                    -l 5 \
                     src
 
     linting:

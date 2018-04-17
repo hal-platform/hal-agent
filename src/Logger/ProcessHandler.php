@@ -7,8 +7,8 @@
 
 namespace Hal\Agent\Logger;
 
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Hal\Core\Entity\Job;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
@@ -34,9 +34,13 @@ class ProcessHandler
     private $em;
 
     /**
-     * @var EntityRepository
+     * @var ObjectRepository
      */
     private $scheduledRepo;
+
+    /**
+     * @var ObjectRepository
+     */
     private $targetRepo;
 
     /**
@@ -114,20 +118,25 @@ class ProcessHandler
         // Invalid parameters
         if (!$targetID = $action->parameter('target_id')) {
             $action->withMessage(self::ERR_NO_TARGET);
-            return;
+            return null;
         }
 
         // Err: no valid deployment
         if (!$target = $this->targetRepo->findOneBy(['id' => $targetID, 'application' => $application])) {
             $action->withMessage(self::ERR_INVALID_TARGET);
-            return;
+            return null;
+        }
+
+
+        if (!$target instanceof Target) {
+            return null;
         }
 
         // Err: active push already underway
         $lastJob = $target->lastJob();
         if ($lastJob && $lastJob->inProgress()) {
             $action->withMessage(sprintf(self::ERR_IN_PROGRESS, $lastJob->id()));
-            return;
+            return null;
         }
 
         $release = (new Release)
