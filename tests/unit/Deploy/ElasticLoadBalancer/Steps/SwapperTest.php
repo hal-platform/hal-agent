@@ -7,15 +7,15 @@
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
-use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Waiter\Waiter;
+use Aws\CommandInterface;
 use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
-use Aws\Result;
+use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
-use Aws\CommandInterface;
-use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
+use Aws\Result;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\MockeryTestCase;
+use Hal\Agent\Waiter\Waiter;
 use Mockery;
 
 class SwapperTest extends MockeryTestCase

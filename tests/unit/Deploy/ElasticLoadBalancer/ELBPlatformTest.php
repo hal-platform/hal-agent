@@ -9,22 +9,19 @@ namespace Hal\Agent\Deploy\ElasticLoadBalancer;
 
 use Aws\Ec2\Ec2Client;
 use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
-
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Configurator;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\EC2Finder;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\ELBManager;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\HealthChecker;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Swapper;
-
 use Hal\Agent\JobExecution;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\Job;
-use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\JobType\Release;
 use Mockery;
-use Hal\Agent\Testing\MockeryTestCase;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
 class ELBDeployPlatformTest extends IOTestCase

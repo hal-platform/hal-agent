@@ -1,16 +1,16 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
-use Hal\Agent\Logger\EventLogger;
 use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
 use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
 use Aws\Exception\CredentialsException;
+use Hal\Agent\Logger\EventLogger;
 
 class ELBManager
 {
@@ -43,17 +43,17 @@ class ELBManager
             return null;
         }
 
-        list($destinationInstances, $unknownInstances) = $this->filterInstances($elbInstancesStates, $taggedInstances);
+        [$destinationInstances, $unknownInstances] = $this->filterInstances($elbInstancesStates, $taggedInstances);
 
         if (!$this->validateUnknownInstances($elbName, $unknownInstances, $taggedInstances)) {
             return null;
         }
 
-        if (empty($destinationInstances)) {
-            return null;
+        if ($destinationInstances) {
+            return $destinationInstances;
         }
 
-        return $destinationInstances;
+        return null;
     }
 
     /**
@@ -109,25 +109,25 @@ class ELBManager
      */
     private function validateUnknownInstances(string $elbName, array $unknownElbInstances, array $taggedInstances)
     {
-        if (!empty($unknownElbInstances)) {
-            $context = [
-                'loadBalancer' => $elbName,
-                'unknownInstances' => $unknownElbInstances,
-                'taggedInstances' => $taggedInstances,
+        if (!$unknownElbInstances) {
+            return true;
+        }
+
+        $context = [
+            'loadBalancer' => $elbName,
+            'unknownInstances' => $unknownElbInstances,
+            'taggedInstances' => $taggedInstances,
+        ];
+
+        $this->logger->event('info', self::STATUS_FOUND_UNKNOWNS, $context);
+
+        if ($activeUnknowns = $this->activeUnknownInstancesSummary($unknownElbInstances)) {
+            $context = $context + [
+                'invalidActiveInstances' => implode("\n\n", $activeUnknowns)
             ];
 
-            $this->logger->event('info', self::STATUS_FOUND_UNKNOWNS, $context);
-
-            if ($activeUnknowns = $this->activeUnknownInstancesSummary($unknownElbInstances)) {
-                $context = $context + [
-                    'invalidActiveInstances' => implode("\n\n", $activeUnknowns)
-                ];
-
-                $this->logger->event('failure', self::EVENT_MESSAGE, $context);
-
-                return false;
-            }
-
+            $this->logger->event('failure', self::EVENT_MESSAGE, $context);
+            return false;
         }
 
         return true;
@@ -154,10 +154,10 @@ class ELBManager
             }
         }
 
-        if (empty($activeUnknowns)) {
-            return null;
+        if ($activeUnknowns) {
+            return $activeUnknowns;
         }
 
-        return $activeUnknowns;
+        return null;
     }
 }

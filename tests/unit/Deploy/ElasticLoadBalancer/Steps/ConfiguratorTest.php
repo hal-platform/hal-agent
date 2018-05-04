@@ -7,6 +7,7 @@
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
+use Hal\Agent\Testing\MockeryTestCase;
 use Hal\Core\AWS\AWSAuthenticator;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Credential;
@@ -15,7 +16,6 @@ use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
-use Hal\Agent\Testing\MockeryTestCase;
 use Mockery;
 
 class ConfiguratorTest extends MockeryTestCase

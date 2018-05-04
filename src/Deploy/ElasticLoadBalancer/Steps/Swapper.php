@@ -1,19 +1,19 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
+use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
+use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
+use Aws\Exception\AwsException;
+use Aws\Exception\CredentialsException;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Waiter\Waiter;
 use Hal\Agent\Waiter\TimeoutException;
-use Aws\Exception\AwsException;
-use Aws\Exception\CredentialsException;
-use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
-use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
 use RuntimeException;
 
 class Swapper
@@ -128,14 +128,17 @@ class Swapper
     private function wait(ElasticLoadBalancingClient $elb, string $elbName, array $instances, string $state, string $waitingMessage, string $errorMessage) : bool
     {
         $waiter = $this->buildWaiter($elb, $elbName, $instances, $state, $waitingMessage);
+
         try {
             $this->waiter->wait($waiter);
-            return true;
+
         } catch (TimeoutException | AwsException | CredentialsException $ex) {
             $context = ['error' => $ex->getMessage()];
             $this->logger->event('failure', $errorMessage, $context);
             return false;
         }
+
+        return true;
     }
 
     /**

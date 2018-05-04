@@ -7,13 +7,13 @@
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
-use Hal\Agent\Logger\EventLogger;
-use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
-use Aws\Result;
+use Aws\CommandInterface;
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
-use Aws\CommandInterface;
+use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
 use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
+use Aws\Result;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\MockeryTestCase;
 use Mockery;
 

@@ -7,12 +7,12 @@
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
-use Hal\Agent\Logger\EventLogger;
+use Aws\Ec2\Ec2Client;
 use Aws\Exception\AwsException;
 use Aws\Exception\CredentialsException;
-use Aws\Ec2\Ec2Client;
 use Aws\CommandInterface;
 use Aws\Result;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\MockeryTestCase;
 use Mockery;
 
@@ -29,7 +29,6 @@ class EC2FinderTest extends MockeryTestCase
 
     public function testTagFiltersParseError()
     {
-
         $ec2Finder = new EC2Finder($this->logger);
 
         $actual = $ec2Finder(

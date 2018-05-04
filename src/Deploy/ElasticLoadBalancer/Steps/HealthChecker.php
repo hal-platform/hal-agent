@@ -1,22 +1,23 @@
 <?php
 /**
- * @copyright (c) 2017 Quicken Loans Inc.
+ * @copyright (c) 2018 Quicken Loans Inc.
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer\Steps;
 
-use Hal\Agent\Logger\EventLogger;
-use Aws\Exception\CredentialsException;
 use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
 use Aws\ElasticLoadBalancing\Exception\ElasticLoadBalancingException;
+use Aws\Exception\CredentialsException;
+use Hal\Agent\Logger\EventLogger;
 
 class HealthChecker
 {
     private const STATUS_EMPTY = 'Empty';
     private const STATUS_OK = 'Ok';
     private const EVENT_MESSAGE = 'Checking Health of Elastic Load Balancers';
+
     /**
      * @var EventLogger
      */
@@ -82,7 +83,7 @@ class HealthChecker
      */
     private function formatELBSummary(array $lb, array $instancesStates)
     {
-        $status = empty($instancesStates)  ? self::STATUS_EMPTY : self::STATUS_OK;
+        $status = $instancesStates ? self::STATUS_OK : self::STATUS_EMPTY;
         $outputs = [
             sprintf("Load Balancer: %s", $lb['LoadBalancerName']),
             sprintf("DNS: %s", $lb['DNSName']),

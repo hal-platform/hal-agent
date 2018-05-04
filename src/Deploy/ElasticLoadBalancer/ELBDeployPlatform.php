@@ -6,14 +6,14 @@
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer;
 
+use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Configurator;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\EC2Finder;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\ELBManager;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\HealthChecker;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Swapper;
-use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Deploy\PlatformTrait;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\JobExecution;
 use Hal\Agent\JobPlatformInterface;
 use Hal\Agent\Symfony\IOAwareInterface;
@@ -23,7 +23,6 @@ use Hal\Core\Entity\JobType\Release;
 
 class ELBDeployPlatform implements IOAwareInterface, JobPlatformInterface
 {
-
     use FormatterTrait;
     // Comes with IOAwareTrait
     use PlatformTrait;
@@ -188,11 +187,13 @@ class ELBDeployPlatform implements IOAwareInterface, JobPlatformInterface
         $ec2 = $platformConfig['sdk']['ec2'];
         $elbTag = $platformConfig['ec2_tag'];
 
-        if ( !$taggedInstances = ($this->ec2Finder)($ec2, $elbTag)) {
-            return null;
+        $tagged = ($this->ec2Finder)($ec2, $elbTag);
+
+        if ($tagged) {
+            return $tagged;
         }
 
-        return $taggedInstances;
+        return null;
     }
 
     /**

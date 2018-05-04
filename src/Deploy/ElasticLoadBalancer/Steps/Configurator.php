@@ -40,7 +40,8 @@ class Configurator
         $target = $release->target();
         $region = $target->parameter(Parameters::TARGET_REGION);
 
-        if (![$elb, $ec2] = $this->authenticate($region, $target->credential())) {
+        [$elb, $ec2] = $this->authenticate($region, $target->credential());
+        if (!$elb || !$ec2) {
             return null;
         }
 
