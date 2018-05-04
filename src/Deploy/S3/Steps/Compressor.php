@@ -9,10 +9,11 @@ namespace Hal\Agent\Deploy\S3\Steps;
 
 use Hal\Agent\Job\FileCompression;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Agent\Deploy\CompressorInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
-class Compressor
+class Compressor implements CompressorInterface
 {
     private const ERR_SOURCE_NOT_VALID = 'Invalid source file or directory specified';
     private const ERR_PREPARE_FILE_FOR_UPLOAD = 'Failed to prepare artifact for upload';

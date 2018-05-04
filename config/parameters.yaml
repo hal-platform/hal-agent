@@ -158,6 +158,7 @@ parameters:
     deployment_after.build.platforms: '%build.platforms%'
 
     deployment.platforms:
+        elb: 'deploy_platform.elb'
         rsync: 'deploy_platform.rsync'
         eb: 'deploy_platform.eb'
         s3: 'deploy_platform.s3'

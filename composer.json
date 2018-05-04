@@ -18,7 +18,6 @@
     "autoload-dev": {
         "psr-4": { "Hal\\Agent\\Testing\\": "tests/src" }
     },
-
     "require": {
         "php-64bit": "~7.1",
 
@@ -27,7 +26,7 @@
         "ext-pdo":            "*",
         "ext-pdo_mysql":      "*",
         "ext-pdo_sqlite":     "*",
-        "ext-sodium":         "~2.0",
+        "ext-sodium":         "~2.0 || ~7.2",
 
         "aws/aws-sdk-php": "~3.20",
         "doctrine/orm":    "~2.5",
