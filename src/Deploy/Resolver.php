@@ -99,10 +99,10 @@ class Resolver
             throw new DeployException(sprintf(self::ERR_NOT_PENDING, $releaseID, $release->status()));
         }
 
-        $lastJob = $release->target()->lastJob();
-        if ($lastJob && $lastJob->inProgress()) {
-            throw new DeployException(sprintf(self::ERR_CLOBBERING_TIME, $releaseID));
-        }
+        // $lastJob = $release->target()->lastJob();
+        // if ($lastJob && $lastJob->inProgress()) {
+            // throw new DeployException(sprintf(self::ERR_CLOBBERING_TIME, $releaseID));
+        // }
 
         return $release;
     }

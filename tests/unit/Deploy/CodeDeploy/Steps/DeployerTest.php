@@ -14,7 +14,7 @@ use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Release;
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryTestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
 use Aws\Exception\AwsException;
 

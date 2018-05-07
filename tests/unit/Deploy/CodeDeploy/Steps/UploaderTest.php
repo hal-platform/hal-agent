@@ -11,7 +11,7 @@ use Aws\S3\S3Client;
 use Hal\Agent\AWS\S3Uploader;
 use Hal\Agent\Logger\EventLogger;
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryTestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use RuntimeException;
 
 class UploaderTest extends MockeryTestCase

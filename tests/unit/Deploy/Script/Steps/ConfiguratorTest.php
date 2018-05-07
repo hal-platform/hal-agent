@@ -9,7 +9,7 @@ namespace Hal\Agent\Deploy\Script\Steps;
 
 use Hal\Agent\JobExecution;
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryTestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
 class ConfiguratorTest extends MockeryTestCase
 {

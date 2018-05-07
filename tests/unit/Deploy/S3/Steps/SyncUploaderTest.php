@@ -10,7 +10,7 @@ namespace Hal\Agent\Deploy\S3\Steps;
 use Aws\S3\S3Client;
 use Hal\Agent\Deploy\S3\FileSync;
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryTestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 
 class SyncUploaderTest extends MockeryTestCase
 {

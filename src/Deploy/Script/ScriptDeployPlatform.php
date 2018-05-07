@@ -7,7 +7,7 @@
 
 namespace Hal\Agent\Deploy\Script;
 
-use Hal\Agent\Build\PlatformTrait;
+use Hal\Agent\Deploy\PlatformTrait;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Deploy\Script\Steps\Configurator;
 use Hal\Agent\JobPlatformInterface;
@@ -21,7 +21,7 @@ use Hal\Core\Entity\Job;
 class ScriptDeployPlatform implements IOAwareInterface, JobPlatformInterface
 {
     use FormatterTrait;
-    // Comes with EmergencyBuildHandlerTrait, EnvironmentVariablesTrait, IOAwareTrait
+    // Comes with IOAwareTrait
     use PlatformTrait;
 
     private const STEP_1_CONFIGURING = 'Script Platform - Validating script configuration';

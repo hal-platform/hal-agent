@@ -221,7 +221,7 @@ class LinuxBuildPlatform implements JobPlatformInterface
             return null;
         }
 
-        $env = $this->determineEnviroment($platformEnv, $decrypted, $env);
+        $env = $this->determineEnvironment($platformEnv, $decrypted, $env);
 
         return $env;
     }

@@ -16,7 +16,7 @@ use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryTestCase;
+use Hal\Agent\Testing\MockeryTestCase;
 use QL\MCP\Common\Time\Clock;
 
 class ConfiguratorTest extends MockeryTestCase

@@ -21,7 +21,7 @@ trait EnvironmentVariablesTrait
      *
      * @return array
      */
-    public function determineEnviroment(array $env, array $decrypteds, $configurationEnv)
+    public function determineEnvironment(array $env, array $decrypteds, $configurationEnv)
     {
         if ($decrypteds) {
             foreach ($decrypteds as $property => $decrypted) {

@@ -23,6 +23,7 @@ use Hal\Core\Entity\JobType\Release;
 class RsyncDeployPlatform implements IOAwareInterface, JobPlatformInterface
 {
     use FormatterTrait;
+    // Comes with IOAwareTrait
     use PlatformTrait;
 
     private const STEP_1_CONFIGURING = 'Rsync Platform - Validating configuration';
