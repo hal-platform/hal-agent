@@ -5,14 +5,14 @@ namespace Hal\Bin;
 
 use Github\Exception\RuntimeException;
 use GuzzleHttp\Client;
-use Hal\Agent\Application\Di;
 use Hal\Agent\CachedContainer;
 use Hal\Agent\Github\ArchiveApi;
+use Hal\Core\DI;
 
 $root = __DIR__ . '/../..';
 require_once $root . '/configuration/bootstrap.php';
 
-$di = Di::getDi($root, CachedContainer::class);
+$di = DI::getDi([$root . '/config'], CachedContainer::class);
 $githubURL = $di->getParameter('github.baseurl.api');
 
 $guzzleClient = new Client;

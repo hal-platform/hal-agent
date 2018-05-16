@@ -2,9 +2,9 @@
 
 namespace Hal\Agent\Symfony;
 
-use Hal\Agent\Application\DI;
 use Hal\Agent\CachedContainer;
 use Hal\Agent\Testing\MockeryTestCase;
+use Hal\Core\DI;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -43,7 +43,7 @@ class ContainerIntegrationTest extends MockeryTestCase
             'file' => "{$this->rootPath}/src/CachedContainer.php"
         ];
 
-        $container = DI::getDI($this->rootPath, $options);
+        $container = DI::getDI([$this->rootPath . '/config'], $options);
 
         $this->assertInstanceOf(ContainerInterface::class, $container);
     }

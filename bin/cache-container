@@ -3,8 +3,8 @@
 
 namespace Hal\Bin;
 
-use Hal\Agent\Application\DI;
 use Hal\Agent\CachedContainer;
+use Hal\Core\DI;
 
 $root = realpath(__DIR__ . '/../');
 putenv("HAL_ROOT=${root}");
@@ -34,7 +34,7 @@ if (!$autoloader = @include "${root}/vendor/autoload.php") {
     exit(1);
 }
 
-$container = DI::buildDI($root, false);
+$container = DI::buildDI([$root . '/config'], false);
 if (!$cached = DI::cacheDI($container, $options)) {
     echo "An error occured while attempting to cache the DI Container.\n";
     exit(1);

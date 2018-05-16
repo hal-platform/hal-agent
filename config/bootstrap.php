@@ -7,8 +7,8 @@
 
 namespace Hal\Bootstrap;
 
-use Hal\Agent\Application\DI;
 use Hal\Agent\CachedContainer;
+use Hal\Core\DI;
 use Symfony\Component\Dotenv\Dotenv;
 
 $root = __DIR__ . '/..';
@@ -35,4 +35,4 @@ $options = [
     'file' => $file
 ];
 
-return DI::getDI($root, $options);
+return DI::getDI([$root . '/config'], $options);
