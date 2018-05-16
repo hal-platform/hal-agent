@@ -10,6 +10,7 @@ namespace Hal\Agent\Docker;
 use Hal\Agent\Build\InternalDebugLoggingTrait;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHProcess;
+use function json_decode;
 
 class LinuxDockerinator
 {
@@ -41,10 +42,10 @@ class LinuxDockerinator
     /**
      * Manually add hosts entries to the docker container. Provide a list like so:
      *
-     * [
-     *   myhostname: '127.0.0.1',
-     *   myhostname2: '192.168.0.1',
-     * ]
+     * {
+     *   "myhostname": "127.0.0.1",
+     *   "myhostname2": "192.168.0.1",
+     * }
      *
      * @var array
      */
@@ -66,7 +67,7 @@ class LinuxDockerinator
         $this->remoter = $remoter;
         $this->buildRemoter = $buildRemoter;
 
-        $this->manualDNS = $this->parseDNS($manualDNS);
+        $this->manualDNS = json_decode($manualDNS) ?? [];
     }
 
     /**
@@ -341,28 +342,5 @@ class LinuxDockerinator
     private function docker($command)
     {
         return 'docker ' . $command;
-    }
-
-    /**
-     * @param string $manualDNS
-     *
-     * @return array
-     */
-    private function parseDNS($manualDNS)
-    {
-        $dnsPairs = explode(':', $manualDNS);
-        $parsedDNS = [];
-
-        foreach ($dnsPairs as $dns) {
-            $matches = [];
-            if (!preg_match('/([a-zA-z].*)=([a-zA-Z0-9\.].*)/', $dns, $matches)) {
-                //TODO:: should we error here if the agent is not configured correctly
-                continue;
-            }
-
-            $parsedDns[$matches[1]] = $matches[2];
-        }
-
-        return $parsedDNS;
     }
 }

@@ -10,10 +10,13 @@ namespace Hal\Agent\Application;
 use RuntimeException;
 use Symfony\Bridge\ProxyManager\LazyProxy\PhpDumper\ProxyDumper;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Loader\DelegatingLoader;
+use Symfony\Component\Config\Loader\LoaderResolver;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
 class DI
 {
@@ -37,7 +40,8 @@ class DI
         $root = rtrim($root, '/');
 
         $container = new ContainerBuilder;
-        $loader = new YamlFileLoader($container, new FileLocator($root));
+
+        $loader = static::buildDefaultLoader($container, $root);
 
         $extensions = [];
         foreach (static::DI_EXTENSIONS as $extClass) {
@@ -103,6 +107,10 @@ class DI
             'namespace' => implode('\\', $exploded)
         ]);
 
+        if (!$container->isCompiled()) {
+            $container->compile();
+        }
+
         $dumper = new PhpDumper($container);
         if (class_exists(PhpDumper::class)) {
             $dumper->setProxyDumper(new ProxyDumper);
@@ -145,5 +153,25 @@ class DI
         }
 
         return $container;
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param string $root
+     *
+     * @return DelegatingLoader
+     */
+    private static function buildDefaultLoader(ContainerBuilder $container, string $root)
+    {
+        $locator = new FileLocator($root);
+
+        $loaders = [
+            new YamlFileLoader($container, $locator),
+            new PhpFileLoader($container, $locator)
+        ];
+
+        $resolver = new LoaderResolver($loaders);
+
+        return new DelegatingLoader($resolver);
     }
 }

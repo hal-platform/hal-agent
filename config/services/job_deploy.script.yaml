@@ -1,6 +1,7 @@
 services:
 
     deploy_platform.script:
+        public: true
         class: 'Hal\Agent\Deploy\Script\ScriptDeployPlatform'
         arguments:
             - '@logger.event'

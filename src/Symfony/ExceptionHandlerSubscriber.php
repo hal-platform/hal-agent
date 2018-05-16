@@ -10,7 +10,7 @@ namespace Hal\Agent\Symfony;
 use Psr\Log\LoggerInterface;
 use Hal\Agent\Utility\StacktraceFormatterTrait;
 use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\Console\Event\ConsoleExceptionEvent;
+use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExceptionHandlerSubscriber implements EventSubscriberInterface
@@ -31,13 +31,13 @@ class ExceptionHandlerSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param ConsoleExceptionEvent $event
+     * @param ConsoleErrorEvent $event
      * @param string $eventName
      * @return null
      */
-    public function handleException(ConsoleExceptionEvent $event, $eventName)
+    public function handleException(ConsoleErrorEvent $event, $eventName)
     {
-        $exception = $event->getException();
+        $exception = $event->getError();
 
         $context = [
             'message' => $exception->getMessage(),
@@ -56,7 +56,7 @@ class ExceptionHandlerSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-            ConsoleEvents::EXCEPTION => 'handleException'
+            ConsoleEvents::ERROR => 'handleException'
         ];
     }
 }

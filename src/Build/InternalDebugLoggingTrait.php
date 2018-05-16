@@ -19,9 +19,9 @@ trait InternalDebugLoggingTrait
      *
      * @return void
      */
-    public function setBuilderDebugLogging($logCommands)
+    public function setBuilderDebugLogging(bool $logCommands)
     {
-        $this->logInternalCommands = (bool) $logCommands;
+        $this->logInternalCommands = $logCommands;
     }
 
     /**
@@ -29,6 +29,6 @@ trait InternalDebugLoggingTrait
      */
     private function isDebugLoggingEnabled()
     {
-        return (bool) $this->logInternalCommands;
+        return $this->logInternalCommands;
     }
 }

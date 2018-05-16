@@ -1,6 +1,7 @@
 services:
 
     deploy_platform.s3:
+        public: true
         class: 'Hal\Agent\Deploy\S3\S3DeployPlatform'
         arguments:
             - '@logger.event'

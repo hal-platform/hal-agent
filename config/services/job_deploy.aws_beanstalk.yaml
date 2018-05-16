@@ -1,6 +1,7 @@
 services:
 
     deploy_platform.eb:
+        public: true
         class: 'Hal\Agent\Deploy\ElasticBeanstalk\EBDeployPlatform'
         arguments:
             - '@logger.event'

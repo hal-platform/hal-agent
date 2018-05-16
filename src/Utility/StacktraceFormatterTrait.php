@@ -31,9 +31,9 @@ trait StacktraceFormatterTrait
      *
      * @return void
      */
-    public function setStacktraceLogging($enableLogging)
+    public function setStacktraceLogging(bool $enableLogging)
     {
-        $this->logStacktraces = (bool) $enableLogging;
+        $this->logStacktraces = $enableLogging;
     }
 
     /**

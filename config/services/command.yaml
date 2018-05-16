@@ -59,6 +59,7 @@ services:
     # management
 
     executor.build.remove:
+        public: true
         class: 'Hal\Agent\Executor\Management\RemoveBuildCommand'
         arguments:
             - '@doctrine.em'
@@ -69,6 +70,7 @@ services:
     # jobs
 
     executor.build.start:
+        public: true
         class: 'Hal\Agent\Executor\Management\StartBuildCommand'
         arguments:
             - '@doctrine.em'
@@ -76,6 +78,7 @@ services:
             - '@hal.api'
 
     executor.release.start:
+        public: true
         class: 'Hal\Agent\Executor\Management\StartReleaseCommand'
         arguments:
             - '@doctrine.em'
@@ -85,6 +88,7 @@ services:
     # job runners
 
     executor.runner.build:
+        public: true
         class: 'Hal\Agent\Executor\Runner\BuildCommand'
         arguments:
             - '@logger.event'
@@ -98,6 +102,7 @@ services:
         calls:
             - ['setShutdownHandler', [true]]
     executor.runner.deploy:
+        public: true
         class: 'Hal\Agent\Executor\Runner\DeployCommand'
         arguments:
             - '@logger.event'
@@ -113,6 +118,7 @@ services:
     # workers - cron
 
     # executor.worker.build:
+        # public: true
         # class: 'Hal\Agent\Executor\Worker\BuildCommand'
         # arguments:
             # - '@doctrine.em'
@@ -120,6 +126,7 @@ services:
             # - '@mcp.logger'
             # - '%root%'
     # executor.worker.deploy:
+        # public: true
         # class: 'Hal\Agent\Executor\Worker\DeployCommand'
         # arguments:
             # - '@doctrine.em'

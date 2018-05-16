@@ -9,20 +9,20 @@ parameters:
     env(MCP_LOGGER_SERIALIZER_LINE_FORMAT): '[%%%%created%%%%] %%%%severity%%%% : %%%%message%%%% (App ID: %%%%app%%%%, Server: %%%%server.host%%%%)'
 
     env(MCP_LOGGER_SERIALIZER_JSON_LIMIT): 10000
-    env(MCP_LOGGER_SERIALIZER_JSON_OPTIONS): !php/const:QL\MCP\Logger\Service\Serializer\JSONSerializer::DEFAULT_JSON_OPTIONS
+    env(MCP_LOGGER_SERIALIZER_JSON_OPTIONS): !php/const QL\MCP\Logger\Service\Serializer\JSONSerializer::DEFAULT_JSON_OPTIONS
 
-    env(MCP_LOGGER_GUZZLE_ENDPOINT): !php/const:QL\MCP\Logger\Service\GuzzleService::DEFAULT_ENDPOINT
-    env(MCP_LOGGER_GUZZLE_SILENT): !php/const:QL\MCP\Logger\Service\GuzzleService::DEFAULT_SILENT
-    env(MCP_LOGGER_GUZZLE_TIMEOUT): !php/const:QL\MCP\Logger\Service\GuzzleService::DEFAULT_TIMEOUT
-    env(MCP_LOGGER_GUZZLE_CONNECT_TIMEOUT): !php/const:QL\MCP\Logger\Service\GuzzleService::DEFAULT_CONNECT_TIMEOUT
+    env(MCP_LOGGER_GUZZLE_ENDPOINT): !php/const QL\MCP\Logger\Service\GuzzleService::DEFAULT_ENDPOINT
+    env(MCP_LOGGER_GUZZLE_SILENT): !php/const QL\MCP\Logger\Service\GuzzleService::DEFAULT_SILENT
+    env(MCP_LOGGER_GUZZLE_TIMEOUT): !php/const QL\MCP\Logger\Service\GuzzleService::DEFAULT_TIMEOUT
+    env(MCP_LOGGER_GUZZLE_CONNECT_TIMEOUT): !php/const QL\MCP\Logger\Service\GuzzleService::DEFAULT_CONNECT_TIMEOUT
 
-    env(MCP_LOGGER_SYSLOG_SILENT): !php/const:QL\MCP\Logger\Service\SyslogService::DEFAULT_SILENT
-    env(MCP_LOGGER_SYSLOG_IDENT): !php/const:QL\MCP\Logger\Service\SyslogService::DEFAULT_IDENT
-    env(MCP_LOGGER_SYSLOG_FACILITY): !php/const:QL\MCP\Logger\Service\SyslogService::DEFAULT_FACILITY
-    env(MCP_LOGGER_SYSLOG_OPTIONS): !php/const:QL\MCP\Logger\Service\SyslogService::DEFAULT_OPTIONS
+    env(MCP_LOGGER_SYSLOG_SILENT): !php/const QL\MCP\Logger\Service\SyslogService::DEFAULT_SILENT
+    env(MCP_LOGGER_SYSLOG_IDENT): !php/const QL\MCP\Logger\Service\SyslogService::DEFAULT_IDENT
+    env(MCP_LOGGER_SYSLOG_FACILITY): !php/const QL\MCP\Logger\Service\SyslogService::DEFAULT_FACILITY
+    env(MCP_LOGGER_SYSLOG_OPTIONS): !php/const QL\MCP\Logger\Service\SyslogService::DEFAULT_OPTIONS
 
-    env(MCP_LOGGER_ERRORLOG_TYPE): !php/const:QL\MCP\Logger\Service\ErrorLogService::DEFAULT_TYPE
-    env(MCP_LOGGER_ERRORLOG_FILE): !php/const:QL\MCP\Logger\Service\ErrorLogService::DEFAULT_FILE
+    env(MCP_LOGGER_ERRORLOG_TYPE): !php/const QL\MCP\Logger\Service\ErrorLogService::DEFAULT_TYPE
+    env(MCP_LOGGER_ERRORLOG_FILE): !php/const QL\MCP\Logger\Service\ErrorLogService::DEFAULT_FILE
 
     ############################################################################
     # STATIC CONFIGURATION
@@ -87,12 +87,14 @@ services:
 
     # Services
     mcp.logger.service.syslog:
+        public: true
         class: 'QL\MCP\Logger\Service\SyslogService'
         arguments:
             - '@mcp.logger.serializer'
             - '%mcp.logger.service.syslog.options%'
 
     mcp.logger.service.guzzle:
+        public: true
         class: 'QL\MCP\Logger\Service\GuzzleService'
         arguments:
             - null
@@ -101,22 +103,27 @@ services:
             - '%mcp.logger.service.guzzle.options%'
 
     mcp.logger.service.errorlog:
+        public: true
         class: 'Hal\Agent\VendorAdapters\EnvErrorLogService'
         arguments:
             - '@mcp.logger.serializer'
             - '%mcp.logger.service.errorlog.options%'
 
     mcp.logger.service.null:
+        public: true
         class: 'QL\MCP\Logger\Service\NullService'
 
     # Serializers
     mcp.logger.serializer.line:
+        public: true
         class: 'QL\MCP\Logger\Service\Serializer\LineSerializer'
         arguments: ['%mcp.logger.serializer.line.options%']
     mcp.logger.serializer.json:
+        public: true
         class: 'QL\MCP\Logger\Service\Serializer\JSONSerializer'
         arguments: ['%mcp.logger.serializer.json.options%']
 
     mcp.logger.serializer.xml:
+        public: true
         class: 'QL\MCP\Logger\Service\Serializer\XMLSerializer'
 

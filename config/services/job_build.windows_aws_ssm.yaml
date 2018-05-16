@@ -5,6 +5,7 @@ services:
     ############################################################################
 
     build_platform.windows_aws:
+        public: true
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
         arguments:
             - '@logger.event'
@@ -17,6 +18,7 @@ services:
             - '%build.platforms.option.windows.docker_default_image%'
 
     build_platform.windows_aws_docker:
+        public: true
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
         arguments:
             - '@logger.event'

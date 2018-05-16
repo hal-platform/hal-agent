@@ -14,6 +14,7 @@ use Hal\Agent\Build\WindowsAWS\Utility\Powershellinator;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Core\Type\JobEventStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
+use function json_decode;
 
 class WindowsSSMDockerinator
 {
@@ -53,10 +54,10 @@ class WindowsSSMDockerinator
     /**
      * Manually add hosts entries to the docker container. Provide a list like so:
      *
-     * [
-     *   myhostname: '127.0.0.1',
-     *   myhostname2: '192.168.0.1',
-     * ]
+     * {
+     *   "myhostname": "127.0.0.1",
+     *   "myhostname2": "192.168.0.1",
+     * }
      *
      * @var array
      */
@@ -84,7 +85,7 @@ class WindowsSSMDockerinator
         $this->runner = $runner;
         $this->powershell = $powershell;
 
-        $this->manualDNS = $this->parseDNS($manualDNS);
+        $this->manualDNS = json_decode($manualDNS) ?? [];
 
         $this->internalTimeout = self::DEFAULT_TIMEOUT_INTERNAL_COMMAND;
         $this->buildTimeout = self::DEFAULT_TIMEOUT_BUILD_COMMAND;
@@ -445,28 +446,5 @@ class WindowsSSMDockerinator
     private function docker($command)
     {
         return 'docker ' . $command;
-    }
-
-    /**
-     * @param string $manualDNS
-     *
-     * @return array
-     */
-    private function parseDNS($manualDNS)
-    {
-        $dnsPairs = explode(':', $manualDNS);
-        $parsedDNS = [];
-
-        foreach ($dnsPairs as $dns) {
-            $matches = [];
-            if (!preg_match('/([a-zA-z].*)=([a-zA-Z0-9\.].*)/', $dns, $matches)) {
-                //TODO:: should we error here if the agent is not configured correctly
-                continue;
-            }
-
-            $parsedDns[$matches[1]] = $matches[2];
-        }
-
-        return $parsedDNS;
     }
 }

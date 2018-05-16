@@ -41,7 +41,7 @@ class WindowsSSMDockerinatorTest extends MockeryTestCase
             $this->logger,
             $this->runner,
             $this->powershell,
-            'customhost1=127.0.0.1:customhost2=192.168.0.1'
+            '{"customhost1": "127.0.0.1", "customhost2": "192.168.0.1"}'
         );
         $result = $dockerinator->createContainer($this->ssm, 'i-1234', 'microsoft/windowsservercore', 'random_container1', [
             'env1' => 'derp'

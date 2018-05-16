@@ -5,6 +5,7 @@ services:
     ############################################################################
 
     build_platform.linux:
+        public: true
         class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
             - '@logger.event'

@@ -2,6 +2,7 @@ imports:
     - resource: '../vendor/hal/hal-core/config/*.yaml'
     - resource: 'vendor/*.yaml'
     - resource: 'services/*.yaml'
+    - resource: 'services/*.php'
 
     - resource: 'services.yaml'
     - resource: 'parameters.yaml'

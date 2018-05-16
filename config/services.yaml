@@ -1,6 +1,7 @@
 services:
 
     application:
+        public: true
         class: 'Symfony\Component\Console\Application'
         arguments: ['%application.title%', '%application.version%']
         calls:
@@ -68,6 +69,7 @@ services:
     ####################################################################################################################
 
     logger:
+        public: true
         parent: 'mcp.logger'
 
     logger.exception_handler:
@@ -114,8 +116,13 @@ services:
     ####################################################################################################################
 
     doctrine.cache.redis:
+        public: true
         class: 'Hal\Core\Database\DoctrineUtility\DoctrinePredisCache'
         arguments: ['@redis', '%doctrine.cache.ttl%']
+
+    doctrine.cache.memory:
+        public: true
+        class: 'Doctrine\Common\Cache\ArrayCache'
 
     ####################################################################################################################
     # utility / shared

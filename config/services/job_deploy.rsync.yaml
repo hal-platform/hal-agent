@@ -1,6 +1,7 @@
 services:
 
     deploy_platform.rsync:
+        public: true
         class: 'Hal\Agent\Deploy\Rsync\RsyncDeployPlatform'
         arguments:
             - '@logger.event'

@@ -4,7 +4,8 @@
     "license": "MIT",
     "authors": [
         { "name": "Steve Kluck", "email": "steve@kluck.engineering" },
-        { "name": "Byron Nagi",  "email": "byro@fastmail.fm" }
+        { "name": "Byron Nagi",  "email": "byro@fastmail.fm" },
+        { "name": "James Thomason", "email": "james@jamesthomasonjr.com" }
     ],
     "support": {
         "source": "https://github.com/hal-platform/hal-agent",
@@ -45,20 +46,20 @@
         "ql/mcp-common":                "~1.2",
         "ql/mcp-logger":                "~3.1",
 
-        "symfony/config":                "~3.3",
-        "symfony/console":               "~3.3",
-        "symfony/debug":                 "~3.3",
-        "symfony/dependency-injection":  "~3.3",
-        "symfony/dotenv":                "~3.3",
-        "symfony/event-dispatcher":      "~3.3",
-        "symfony/filesystem":            "~3.3",
-        "symfony/finder":                "~3.3",
-        "symfony/process":               "~3.3",
-        "symfony/proxy-manager-bridge":  "~3.3",
-        "symfony/yaml":                  "~3.3"
+        "symfony/config":                "~4.0",
+        "symfony/console":               "~4.0",
+        "symfony/debug":                 "~4.0",
+        "symfony/dependency-injection":  "~4.0",
+        "symfony/dotenv":                "~4.0",
+        "symfony/event-dispatcher":      "~4.0",
+        "symfony/filesystem":            "~4.0",
+        "symfony/finder":                "~4.0",
+        "symfony/process":               "~4.0",
+        "symfony/proxy-manager-bridge":  "~4.0",
+        "symfony/yaml":                  "~4.0"
     },
     "require-dev": {
-        "symfony/var-dumper":        "~3.3",
+        "symfony/var-dumper":        "~4.0",
 
         "overtrue/phplint":          "~1.0",
         "phpstan/phpstan":           "~0.9",

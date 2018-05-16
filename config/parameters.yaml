@@ -4,22 +4,31 @@ parameters:
     ############################################################################
     application.id: '201359'
     application.title: 'Hal Agent'
-    application.environment: '%env(ENVIRONMENT)%'
+    application.environment: '%env(string:ENVIRONMENT)%'
 
-    application.major.version: '%env(HAL_APPLICATION_VERSION_MAJOR)%'
-    application.minor.version: '%env(HAL_APPLICATION_VERSION_MINOR)%'
+    application.major.version: '%env(string:HAL_APPLICATION_VERSION_MAJOR)%'
+    application.minor.version: '%env(string:HAL_APPLICATION_VERSION_MINOR)%'
     application.version: '%application.major.version%.%application.minor.version%'
 
-    application.sha: '%env(HAL_APPLICATION_SHA)%'
+    application.sha: '%env(string:HAL_APPLICATION_SHA)%'
+
+    application.commands:
+        management:build:remove: 'executor.build.remove'
+        job:build: 'executor.build.start'
+        job:release: 'executor.deploy.start'
+        runner:build: 'executor.runner.build'
+        runner:deploy: 'executor.runner.deploy'
+        # 'worker.build': 'executor.worker.build'
+        # 'worker.deploy': 'executor.worker.deploy'
 
     hal.pushfile.path: '%root%/.hal9000.push.yml'
 
     ############################################################################
     # general
     ############################################################################
-    root: '%env(HAL_ROOT)%'
-    hal.baseurl: '%env(HAL_BASEURL)%'
-    hal.api_token: '%env(HAL_API_TOKEN)%'
+    root: '%env(string:HAL_ROOT)%'
+    hal.baseurl: '%env(string:HAL_BASEURL)%'
+    hal.api_token: '%env(string:HAL_API_TOKEN)%'
 
     unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
     unique.size: 4
@@ -28,25 +37,25 @@ parameters:
     ############################################################################
     # paths
     ############################################################################
-    path.archive: '%env(HAL_PATH_ARTIFACT_ARCHIVE)%'        # permanent filesystem artifact repository
-    path.temp: '%env(HAL_PATH_BUILD_TEMP)%'                 # temporary scratch, local
-    path.linux_builder: '%env(HAL_PATH_LINUX_BUILDER)%'     # temporary scratch, linux builder
+    path.archive: '%env(string:HAL_PATH_ARTIFACT_ARCHIVE)%'        # permanent filesystem artifact repository
+    path.temp: '%env(string:HAL_PATH_BUILD_TEMP)%'                 # temporary scratch, local
+    path.linux_builder: '%env(string:HAL_PATH_LINUX_BUILDER)%'     # temporary scratch, linux builder
 
     ############################################################################
     # builders
     ############################################################################
-    build.linux.user: '%env(HAL_LINUX_BUILDER_USER)%'
-    build.linux.server: '%env(HAL_LINUX_BUILDER_SERVER)%'
-    build.linux.keypath: '%env(HAL_LINUX_SSH_KEYPATH)%'
+    build.linux.user: '%env(string:HAL_LINUX_BUILDER_USER)%'
+    build.linux.server: '%env(string:HAL_LINUX_BUILDER_SERVER)%'
+    build.linux.keypath: '%env(string:HAL_LINUX_SSH_KEYPATH)%'
 
-    deploy.rsync.user: '%env(HAL_RSYNC_DEPLOY_USER)%'
-    deploy.rsync.keypath: '%env(HAL_RSYNC_SSH_KEYPATH)%'
+    deploy.rsync.user: '%env(string:HAL_RSYNC_DEPLOY_USER)%'
+    deploy.rsync.keypath: '%env(string:HAL_RSYNC_SSH_KEYPATH)%'
 
     ############################################################################
     # logging
     ############################################################################
-    error_handling.log_stacktrace: '%env(HAL_LOG_STACKTRACES_ON)%'
-    error_handling.docker.debug: '%env(HAL_LOG_DOCKER_DEBUG_ON)%'
+    error_handling.log_stacktrace: "%env(bool:HAL_LOG_STACKTRACES_ON)%"
+    error_handling.docker.debug: "%env(bool:HAL_LOG_DOCKER_DEBUG_ON)%"
 
     ############################################################################
     # timeouts
@@ -77,11 +86,11 @@ parameters:
     ############################################################################
     # cache
     ############################################################################
-    redis.server: '%env(HAL_REDIS_SERVER)%'
-    redis.prefix: '%env(HAL_REDIS_PREFIX)%'
+    redis.server: '%env(string:HAL_REDIS_SERVER)%'
+    redis.prefix: '%env(string:HAL_REDIS_PREFIX)%'
 
-    cache.type.main: '%env(HAL_CACHE_MAIN)%'
-    cache.type.github: '%env(HAL_CACHE_GITHUB)%'
+    cache.type.main: '%env(string:HAL_CACHE_MAIN)%'
+    cache.type.github: '%env(string:HAL_CACHE_GITHUB)%'
 
     cache.github.default.ttl: 60
     cache.github.short.ttl: 20
@@ -89,20 +98,20 @@ parameters:
     ############################################################################
     # windows platform
     ############################################################################
-    build.windows_aws.build_path: '%env(HAL_WIN_AWS_BUILD_PATH)%'
-    build.windows_aws.build_script_path: '%env(HAL_WIN_AWS_BUILD_SCRIPT_PATH)%'
-    build.windows_aws.build_tools_path: '%env(HAL_WIN_AWS_BUILD_TOOLS_PATH)%'
+    build.windows_aws.build_path: '%env(string:HAL_WIN_AWS_BUILD_PATH)%'
+    build.windows_aws.build_script_path: '%env(string:HAL_WIN_AWS_BUILD_SCRIPT_PATH)%'
+    build.windows_aws.build_tools_path: '%env(string:HAL_WIN_AWS_BUILD_TOOLS_PATH)%'
 
-    build.windows_aws.region: '%env(HAL_WIN_AWS_REGION)%'
-    build.windows_aws.credential_name: '%env(HAL_WIN_AWS_CREDENTIAL)%'
-    build.windows_aws.bucket: '%env(HAL_WIN_AWS_BUCKET)%'
-    build.windows_aws.builder_filter: '%env(HAL_WIN_AWS_BUILDER_FILTER)%'
+    build.windows_aws.region: '%env(string:HAL_WIN_AWS_REGION)%'
+    build.windows_aws.credential_name: '%env(string:HAL_WIN_AWS_CREDENTIAL)%'
+    build.windows_aws.bucket: '%env(string:HAL_WIN_AWS_BUCKET)%'
+    build.windows_aws.builder_filter: '%env(string:HAL_WIN_AWS_BUILDER_FILTER)%'
 
     ############################################################################
     # windows docker
     ############################################################################
-    build.platforms.option.windows.docker_private_registry: '%env(HAL_WIN_DOCKER_PRIVATE_REG)%'
-    build.platforms.option.windows.docker_easy_repo: '%env(HAL_DOCKER_EASY_REPO)%'
+    build.platforms.option.windows.docker_private_registry: '%env(string:HAL_WIN_DOCKER_PRIVATE_REG)%'
+    build.platforms.option.windows.docker_easy_repo: '%env(string:HAL_DOCKER_EASY_REPO)%'
     build.platforms.option.windows.docker_default_image: '%build.platforms.option.windows.docker_private_registry%/hal-build-environments:vs2015'
 
     # "latest" also allows no tag
@@ -116,13 +125,15 @@ parameters:
         '%build.platforms.option.windows.docker_private_registry%/hal-build-environments':
             - '*'
 
-    build.platforms.option.manual_dns: '%env(HAL_DNS_INJECT_OPTIONS)%'
+    # We can use json: instead of string: after Symfony bug #27239 is fixed
+    # https://github.com/symfony/symfony/issues/27239
+    build.platforms.option.manual_dns: '%env(string:HAL_DNS_INJECT_OPTIONS)%'
 
     ############################################################################
     # linux platform
     ############################################################################
-    build.platforms.option.linux.docker_private_registry: '%env(HAL_LINUX_DOCKER_PRIVATE_REG)%'
-    build.platforms.option.linux.docker_easy_repo: '%env(HAL_DOCKER_EASY_REPO)%'
+    build.platforms.option.linux.docker_private_registry: '%env(string:HAL_LINUX_DOCKER_PRIVATE_REG)%'
+    build.platforms.option.linux.docker_easy_repo: '%env(string:HAL_DOCKER_EASY_REPO)%'
     build.platforms.option.linux.docker_default_image: 'halplatform/hal-build-environments:debian8-buildpack'
 
     # "latest" also allows no tag
@@ -141,10 +152,10 @@ parameters:
         - ['%build.linux.user%',  '*', 'key:%build.linux.keypath%']
         - ['%deploy.rsync.user%', '*', 'key:%deploy.rsync.keypath%']
 
-    aws.use_host_credentials: '%env(HAL_AWS_CREDENTIALS_USE_HOST)%'
-    aws.host_credentials_path: '%env(HAL_AWS_HOST_CREDENTIALS_PATH)%'
+    aws.use_host_credentials: "%env(bool:HAL_AWS_CREDENTIALS_USE_HOST)%"
+    aws.host_credentials_path: '%env(string:HAL_AWS_HOST_CREDENTIALS_PATH)%'
 
-    encryption.secret_path: '%env(HAL_CRYPTO_SECRETPATH)%'
+    encryption.secret_path: '%env(string:HAL_CRYPTO_SECRETPATH)%'
 
     ############################################################################
     # platform modules
@@ -166,7 +177,3 @@ parameters:
         script: 'deploy_platform.script'
 
     deployment_platform.script.platforms: '%build.platforms%'
-
-    deploy.s3.strategies:
-        artifact: 'deploy_platform.s3.artifact'
-        sync: 'deploy_platform.s3.sync'
