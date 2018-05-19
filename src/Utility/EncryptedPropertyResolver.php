@@ -98,7 +98,8 @@ class EncryptedPropertyResolver
     public function getEncryptedPropertiesWithSources(Application $application, ?Environment $environment): array
     {
         $data = [
-            'encrypted' => []
+            'encrypted' => [],
+            'sources' => []
         ];
 
         if (!$properties = $this->encryptedRepo->getPropertiesForEnvironment($application, $environment)) {
@@ -123,7 +124,7 @@ class EncryptedPropertyResolver
         });
 
         $data['encrypted'] = $encrypted;
-        $data['encrypted_sources'] = $sources;
+        $data['sources'] = $sources;
 
         return $data;
     }

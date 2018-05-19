@@ -215,7 +215,7 @@ class BuildCommand implements ExecutorInterface
 
         $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
-        if (!$this->storeArtifact($io, $config, $properties['artifact_stored_file'], $properties['workspace_path'])) {
+        if (!$this->storeArtifact($io, $job, $config, $properties['workspace_path'])) {
             return $this->buildFailure($io, self::ERR_STORE_ARTIFACT);
         }
 
@@ -275,7 +275,7 @@ class BuildCommand implements ExecutorInterface
             sprintf('Environment: %s (ID: %s)', $this->colorize($environmentName), $environmentID)
         ]);
 
-        $outputConfig = array_intersect_key($properties, array_fill_keys(['encrypted_sources', 'artifacts', 'artifact_stored_file'], 1));
+        $outputConfig = array_intersect_key($properties, array_fill_keys(['encrypted_sources', 'artifacts'], 1));
         $this->outputTable($io, 'Agent configuration:', $outputConfig);
     }
 
@@ -363,15 +363,17 @@ class BuildCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
+     * @param Job $job
      * @param array $config
-     * @param string $storedArtifactFile
      * @param string $workspacePath
      *
      * @return bool
      */
-    private function storeArtifact(IOInterface $io, array $config, string $storedArtifactFile, string $workspacePath)
+    private function storeArtifact(IOInterface $io, Job $job, array $config, string $workspacePath)
     {
         $io->section($this->step(5));
+
+        $storedArtifact = sprintf('%s-%s'), $job->type(), $job->id());
 
         $buildPath = $workspacePath . '/job';
         $artifactFile = $workspacePath . '/artifact.tgz';
@@ -381,10 +383,10 @@ class BuildCommand implements ExecutorInterface
             sprintf('Artifact File: %s', $this->colorize($artifactFile)),
 
             sprintf('Artifact Repository: %s', $this->colorize('Filesystem')),
-            sprintf('Repository Location: %s', $this->colorize($storedArtifactFile))
+            sprintf('Repository Location: %s', $this->colorize($storedArtifact))
         ]);
 
-        return ($this->artifacter)($buildPath, $config['dist'], $artifactFile, $storedArtifactFile);
+        return ($this->artifacter)($buildPath, $config['dist'], $artifactFile, $storedArtifact);
     }
 
     /**

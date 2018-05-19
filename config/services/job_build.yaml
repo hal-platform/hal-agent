@@ -4,9 +4,8 @@ services:
         arguments:
             - '@Doctrine\ORM\EntityManagerInterface'
             - '@Hal\Agent\Utility\EncryptedPropertyResolver'
-        calls:
-            - ['setLocalTempPath', ['%path.temp%']]
-            - ['setArchivePath', ['%path.archive%']]
+            - '@Symfony\Component\Filesystem\Filesystem'
+            - '%path.temp_workspace%'
 
     build.downloader:
         class: 'Hal\Agent\Build\Downloader'
@@ -28,6 +27,9 @@ services:
             - '@Hal\Agent\Logger\EventLogger'
             - '@Symfony\Component\Filesystem\Filesystem'
             - '@build.support.file_compression'
+            - '%path.artifacts%'
+        calls:
+            - ['setValidConfigurationLocations', ['%configuration.files%']]
 
     build.cleaner:
         class: 'Hal\Agent\Job\LocalCleaner'

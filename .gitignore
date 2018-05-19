@@ -1,7 +1,7 @@
 # temp spaces for dev
-/.archive/
-/.build/
-/.buildserver/
+/.workspace/
+/.artifacts/
+/.jobs/
 
 # testing
 /.error.log

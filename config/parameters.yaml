@@ -25,12 +25,19 @@ parameters:
 
     date.timezone: 'America/Detroit'
 
+    configuration.files:
+        - '.hal.yaml'
+        - '.hal.yml'
+        - '.hal/config.yml'
+        - '.hal/config.yaml'
+        - '.hal9000.yml'
+
     ############################################################################
     # paths
     ############################################################################
-    path.archive: '%env(string:HAL_PATH_ARTIFACT_ARCHIVE)%'        # permanent filesystem artifact repository
-    path.temp: '%env(string:HAL_PATH_BUILD_TEMP)%'                 # temporary scratch, local
-    path.linux_builder: '%env(string:HAL_PATH_LINUX_BUILDER)%'     # temporary scratch, linux builder
+    path.temp_workspace: '%env(string:HAL_PATH_TEMP)%'        # temporary scratch, local
+    path.artifacts: '%env(string:HAL_PATH_ARTIFACTS)%'        # permanent filesystem artifact repository
+    path.linux_builder: '%env(string:HAL_PATH_RUNNING_JOBS)%' # temporary scratch, linux builder
 
     ############################################################################
     # builders

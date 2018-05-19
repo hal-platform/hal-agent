@@ -12,7 +12,6 @@ use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Command\IOInterface;
 use Hal\Agent\Executor\ExecutorInterface;
 use Hal\Agent\Executor\ExecutorTrait;
-use Hal\Agent\Utility\ResolverTrait;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Repository\JobType\BuildRepository;
 use Symfony\Component\Console\Command\Command;
@@ -23,7 +22,6 @@ class RemoveBuildCommand implements ExecutorInterface
 {
     use ExecutorTrait;
     use FormatterTrait;
-    use ResolverTrait;
 
     const STEPS = [];
 
@@ -51,15 +49,23 @@ class RemoveBuildCommand implements ExecutorInterface
     private $filesystem;
 
     /**
+     * @var string
+     */
+    private $artifactStoragePath;
+
+    /**
      * @param EntityManagerInterface $em
      * @param Filesystem $filesystem
+     * @param string $artifactsPath
      */
-    public function __construct(EntityManagerInterface $em, Filesystem $filesystem)
+    public function __construct(EntityManagerInterface $em, Filesystem $filesystem, string $artifactsPath)
     {
         $this->em = $em;
         $this->buildRepo = $this->em->getRepository(Build::class);
 
         $this->filesystem = $filesystem;
+
+        $this->artifactStoragePath = rtrim($artifactsPath, '/');
     }
 
     /**
@@ -90,7 +96,7 @@ class RemoveBuildCommand implements ExecutorInterface
             return $this->failure($io, self::ERR_INVALID_BUILD);
         }
 
-        $archive = $this->generateArchiveLocation($build);
+        $archive = $this->generateArtifactLocation($build);
 
         $io->section('Build Information');
         $io->listing([
@@ -119,12 +125,16 @@ class RemoveBuildCommand implements ExecutorInterface
      *
      * @return string
      */
-    private function generateArchiveLocation(Build $build)
+    private function generateArtifactLocation(Build $build)
     {
         if (!$build->isSuccess()) {
             return '';
         }
 
-        return $this->generateBuildArchiveFile($build->id());
+        $storedArtifact = sprintf('%s-%s'), $build->type(), $build->id());
+        $path = $this->artifactStoragePath;
+        $fullArtifactPath = "${path}/${storedArtifact}";
+
+        return $fullArtifactPath;
     }
 }

@@ -9,15 +9,15 @@ namespace Hal\Agent\Deploy;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Hal\Agent\Utility\DefaultConfigHelperTrait;
+use Hal\Agent\JobConfiguration\DefaultConfigurationTrait;
 use Hal\Agent\Utility\EncryptedPropertyResolver;
-use Hal\Agent\Utility\ResolverTrait;
 use Hal\Core\Entity\JobType\Release;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
 class Resolver
 {
-    use DefaultConfigHelperTrait;
-    use ResolverTrait;
+    use DefaultConfigurationTrait;
 
     private const ERR_NOT_FOUND = 'Release "%s" could not be found!';
     private const ERR_NOT_PENDING = 'Release "%s" has a status of "%s"! It cannot be redeployed.';
@@ -35,13 +35,31 @@ class Resolver
     private $encryptedResolver;
 
     /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
+     * @var string
+     */
+    private $tempDir;
+
+    /**
      * @param EntityManagerInterface $em
      * @param EncryptedPropertyResolver $encryptedResolver
+     * @param Filesystem $filesystem
+     * @param string $tempDir
      */
-    public function __construct(EntityManagerInterface $em, EncryptedPropertyResolver $encryptedResolver)
-    {
+    public function __construct(
+        EntityManagerInterface $em,
+        EncryptedPropertyResolver $encryptedResolver,
+        Filesystem $filesystem,
+        string $tempDir
+    ) {
         $this->releaseRepo = $em->getRepository(Release::class);
         $this->encryptedResolver = $encryptedResolver;
+
+        $this->localWorkspace = rtrim($tempDir, '/');
     }
 
     /**
@@ -68,8 +86,7 @@ class Resolver
             // default, overwritten by .hal.yaml
             'default_configuration' => $this->buildDefaultConfiguration(),
 
-            'workspace_path' => $this->generateLocalTempPath($release->id(), 'release'),
-            'artifact_stored_file' => $this->generateBuildArchiveFile($build->id()),
+            'workspace_path' => $this->getLocalWorkspace($release->id(), 'release')
         ];
 
         // Get encrypted properties for use in build, with sources as well (for logging)
@@ -99,12 +116,31 @@ class Resolver
             throw new DeployException(sprintf(self::ERR_NOT_PENDING, $releaseID, $release->status()));
         }
 
-        // $lastJob = $release->target()->lastJob();
-        // if ($lastJob && $lastJob->inProgress()) {
-            // throw new DeployException(sprintf(self::ERR_CLOBBERING_TIME, $releaseID));
-        // }
+        $lastJob = $release->target()->lastJob();
+        if ($lastJob && $lastJob->inProgress()) {
+            throw new DeployException(sprintf(self::ERR_CLOBBERING_TIME, $releaseID));
+        }
 
         return $release;
+    }
+
+    /**
+     * Generate a unique temporary scratch space path for performing file system actions.
+     *
+     * Example:
+     * /tmp/builds/hal-build-1234
+     *
+     * @param string $id
+     * @param string $type
+     *
+     * @return string
+     */
+    private function getLocalWorkspace($id, $type)
+    {
+        $temp = $this->localWorkspace;
+        $type = ($type === 'release') ? 'release' : 'build';
+
+        return "${temp}/hal-${type}-${id}";
     }
 
     /**
@@ -114,15 +150,16 @@ class Resolver
      */
     private function ensureTempExistsAndIsWritable()
     {
-        $temp = $this->getLocalTempPath();
+        $temp = $this->localWorkspace;
 
-        if (!file_exists($temp)) {
-            if (!mkdir($temp, 0755, true)) {
-                throw new DeployException(sprintf(self::ERR_TEMP, $temp));
+        try {
+            if (!$this->filesystem->exists($temp)) {
+                $this->filesystem->mkdir($temp, 0755);
             }
-        }
 
-        if (!is_writeable($temp)) {
+            $this->filesystem->touch("${temp}/.hal-agent");
+
+        } catch(IOException $e) {
             throw new DeployException(sprintf(self::ERR_TEMP, $temp));
         }
     }

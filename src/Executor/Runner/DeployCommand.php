@@ -202,7 +202,7 @@ class DeployCommand implements ExecutorInterface
             'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
         ]);
 
-        if (!$this->downloadArtifacts($io, $properties['workspace_path'], $properties['artifact_stored_file'])) {
+        if (!$this->downloadArtifacts($io, $job, $properties['workspace_path'])) {
             return $this->deploymentFailure($io, self::ERR_DOWNLOAD);
         }
 
@@ -293,20 +293,23 @@ class DeployCommand implements ExecutorInterface
             sprintf('Environment: %s (ID: %s)', $this->colorize($environmentName), $environmentID)
         ]);
 
-        $outputConfig = array_intersect_key($properties, array_fill_keys(['encrypted_sources', 'artifacts', 'artifact_stored_file', 'platform'], 1));
+        $outputConfig = array_intersect_key($properties, array_fill_keys(['encrypted_sources', 'artifacts', 'platform'], 1));
         $this->outputTable($io, 'Agent configuration:', $outputConfig);
     }
 
     /**
      * @param IOInterface $io
+     * @param Job $job
      * @param string $workspacePath
-     * @param string $storedArtifactFile
      *
      * @return bool
      */
-    private function downloadArtifacts(IOInterface $io, string $workspacePath, string $storedArtifactFile)
+    private function downloadArtifacts(IOInterface $io, Job $job, string $workspacePath)
     {
         $io->section($this->step(2));
+
+        $build = $job->build();
+        $storedArtifact = sprintf('%s-%s'), $build->type(), $build->id());
 
         $deploymentPath = $workspacePath . '/job';
         $artifactFile = $workspacePath . '/artifact.tgz';
@@ -315,10 +318,10 @@ class DeployCommand implements ExecutorInterface
             sprintf('Release Workspace: %s', $this->colorize($workspacePath)),
 
             sprintf('Artifact Repository: %s', $this->colorize('Filesystem')),
-            sprintf('Repository Location: %s', $this->colorize($storedArtifactFile))
+            sprintf('Repository Location: %s', $this->colorize($storedArtifact))
         ]);
 
-        return ($this->artifacter)($deploymentPath, $artifactFile, $storedArtifactFile);
+        return ($this->artifacter)($deploymentPath, $artifactFile, $storedArtifact);
     }
 
     /**

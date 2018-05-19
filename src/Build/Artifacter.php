@@ -35,6 +35,11 @@ class Artifacter
     private $fileCompression;
 
     /**
+     * @var string
+     */
+    private $artifactStoragePath;
+
+    /**
      * @var array
      */
     private $fileLocations;
@@ -43,20 +48,21 @@ class Artifacter
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param FileCompression $fileCompression
+     * @param string $artifactsPath
      */
-    public function __construct(EventLogger $logger, Filesystem $filesystem, FileCompression $fileCompression)
-    {
+    public function __construct(
+        EventLogger $logger,
+        Filesystem $filesystem,
+        FileCompression $fileCompression,
+        string $artifactsPath
+    ) {
         $this->logger = $logger;
         $this->filesystem = $filesystem;
         $this->fileCompression = $fileCompression;
 
-        $this->fileLocations = [
-            '.hal.yaml',
-            '.hal.yml',
-            '.hal/config.yml',
-            '.hal/config.yaml',
-            '.hal9000.yml',
-        ];
+        $this->artifactStoragePath = rtrim($artifactsPath, '/');
+
+        $this->fileLocations = [];
     }
 
     /**
@@ -73,17 +79,20 @@ class Artifacter
      * @param string $buildPath
      * @param string $distPath
      * @param string $artifactFile
-     * @param string $storedArtifactFile
+     * @param string $storedArtifact
      *
      * @return bool
      */
-    public function __invoke(string $buildPath, string $distPath, string $artifactFile, string $storedArtifactFile): bool
+    public function __invoke(string $buildPath, string $distPath, string $artifactFile, string $storedArtifact): bool
     {
         if (!$this->packWorkspaceToArtifact($buildPath, $distPath, $artifactFile)) {
             return false;
         }
 
-        if (!$this->moveArtifactToStorage($artifactFile, $storedArtifactFile)) {
+        $path = $this->artifactStoragePath;
+        $fullArtifactPath = "${path}/${storedArtifact}";
+
+        if (!$this->moveArtifactToStorage($artifactFile, $fullArtifactPath)) {
             return false;
         }
 

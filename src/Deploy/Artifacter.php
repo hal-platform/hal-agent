@@ -32,27 +32,42 @@ class Artifacter
     private $fileCompression;
 
     /**
+     * @var string
+     */
+    private $artifactStoragePath;
+
+    /**
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param FileCompression $fileCompression
+     * @param string $artifactsPath
      */
-    public function __construct(EventLogger $logger, Filesystem $filesystem, FileCompression $fileCompression)
-    {
+    public function __construct(
+        EventLogger $logger,
+        Filesystem $filesystem,
+        FileCompression $fileCompression,
+        string $artifactsPath
+    ) {
         $this->logger = $logger;
         $this->filesystem = $filesystem;
         $this->fileCompression = $fileCompression;
+
+        $this->artifactStoragePath = rtrim($artifactsPath, '/');
     }
 
     /**
      * @param string $deploymentPath
      * @param string $artifactFile
-     * @param string $storedArtifactFile
+     * @param string $storedArtifact
      *
      * @return bool
      */
-    public function __invoke(string $deploymentPath, string $artifactFile, string $storedArtifactFile): bool
+    public function __invoke(string $deploymentPath, string $artifactFile, string $storedArtifact): bool
     {
-        if (!$this->downloadArtifactFromStorage($storedArtifactFile, $artifactFile)) {
+        $path = $this->artifactStoragePath;
+        $fullArtifactPath = "${path}/${storedArtifact}";
+
+        if (!$this->downloadArtifactFromStorage($fullArtifactPath, $artifactFile)) {
             return false;
         }
 

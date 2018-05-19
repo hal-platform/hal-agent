@@ -56,7 +56,7 @@ return function (ContainerConfigurator $container) {
         ->set(RemoveBuildCommand::class)
             ->arg('$em', ref(EntityManagerInterface::class))
             ->arg('$filesystem', ref(Filesystem::class))
-            ->call('setArchivePath', ['%path.archive%'])
+            ->arg('$artifactsPath', '%path.artifacts%')
             ->public()
     ;
 

@@ -5,9 +5,8 @@ services:
         arguments:
             - '@Doctrine\ORM\EntityManagerInterface'
             - '@Hal\Agent\Utility\EncryptedPropertyResolver'
-        calls:
-            - ['setLocalTempPath', ['%path.temp%']]
-            - ['setArchivePath', ['%path.archive%']]
+            - '@Symfony\Component\Filesystem\Filesystem'
+            - '%path.temp_workspace%'
 
     deploy.artifacter:
         class: 'Hal\Agent\Deploy\Artifacter'
@@ -15,6 +14,7 @@ services:
             - '@Hal\Agent\Logger\EventLogger'
             - '@Symfony\Component\Filesystem\Filesystem'
             - '@build.support.file_compression'
+            - '%path.artifacts%'
 
     deploy.build_runner:
         class: 'Hal\Agent\JobRunner'

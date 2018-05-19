@@ -5,9 +5,9 @@
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
-namespace Hal\Agent\Utility;
+namespace Hal\Agent\JobConfiguration;
 
-trait DefaultConfigHelperTrait
+trait DefaultConfigurationTrait
 {
     /**
      * @return array
