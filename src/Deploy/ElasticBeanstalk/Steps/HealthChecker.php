@@ -11,7 +11,7 @@ use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\ElasticBeanstalk\Exception\ElasticBeanstalkException;
 use Aws\ResultInterface;
 use DateTime;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 use QL\MCP\Common\Time\TimePoint;
 
 /**

@@ -11,7 +11,7 @@ use Aws\CodeDeploy\CodeDeployClient;
 use Aws\CodeDeploy\Exception\CodeDeployException;
 use Aws\ResultInterface;
 use DateTime;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 use QL\MCP\Common\Time\TimePoint;
 
 /**

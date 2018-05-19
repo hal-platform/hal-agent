@@ -9,11 +9,9 @@ namespace Hal\Agent\Deploy\ElasticBeanstalk\Steps;
 
 use Aws\ElasticBeanstalk\ElasticBeanstalkClient;
 use Aws\Result;
-use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-
-use DateTime;
-use QL\MCP\Common\Time\Clock;
+use Mockery;
+use QL\MCP\Common\Clock;
 use QL\MCP\Common\Time\TimePoint;
 
 class HealthCheckerTest extends MockeryTestCase

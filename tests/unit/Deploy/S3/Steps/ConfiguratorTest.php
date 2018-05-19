@@ -17,7 +17,7 @@ use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 
 class ConfiguratorTest extends MockeryTestCase
 {

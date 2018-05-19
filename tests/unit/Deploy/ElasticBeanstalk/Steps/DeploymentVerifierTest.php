@@ -21,7 +21,7 @@ use Hal\Agent\Waiter\Waiter;
 use Hal\Agent\Deploy\ElasticBeanstalk\Steps\DeploymentVerifier;
 use Hal\Agent\Testing\MockeryTestCase;
 use Mockery;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 
 class DeploymentVerifierTest extends MockeryTestCase
 {

@@ -18,7 +18,6 @@ use Hal\Core\Repository\BuildRepository;
 use Hal\Core\Repository\TargetRepository;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use QL\MCP\Common\Time\Clock;
 
 class StartReleaseCommandTest extends IOTestCase
 {

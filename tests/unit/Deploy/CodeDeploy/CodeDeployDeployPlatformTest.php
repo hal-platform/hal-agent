@@ -7,12 +7,12 @@
 
 namespace Hal\Agent\Deploy\CodeDeploy;
 
+use Hal\Agent\AWS\S3Uploader;
 use Aws\CodeDeploy\CodeDeployClient;
 use AWS\S3\S3Client;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Compressor;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Configurator;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Deployer;
-use Hal\Agent\Deploy\CodeDeploy\Steps\Uploader;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Verifier;
 use Hal\Agent\JobExecution;
 use Hal\Agent\Logger\EventLogger;
@@ -48,7 +48,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $this->compressor = Mockery::mock(Compressor::class);
         $this->configurator = Mockery::mock(Configurator::class);
         $this->deployer = Mockery::mock(Deployer::class);
-        $this->uploader = Mockery::mock(Uploader::class);
+        $this->uploader = Mockery::mock(S3Uploader::class);
         $this->verifier = Mockery::mock(Verifier::class);
     }
 

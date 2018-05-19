@@ -20,7 +20,7 @@ use Hal\Core\Entity\Target;
 use Hal\Core\Parameters;
 use Mockery;
 use Hal\Agent\Testing\MockeryTestCase;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 
 class ConfiguratorTest extends MockeryTestCase
 {

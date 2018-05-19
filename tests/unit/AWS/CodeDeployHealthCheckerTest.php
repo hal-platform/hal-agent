@@ -15,7 +15,7 @@ use DateTime;
 use Hal\Agent\Testing\LineCheckerTrait;
 use Hal\Agent\Testing\MockeryTestCase;
 use Mockery;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 use QL\MCP\Common\Time\TimePoint;
 
 class CodeDeployHealthCheckerTest extends MockeryTestCase
