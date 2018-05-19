@@ -2,7 +2,9 @@ services:
 
     'Symfony\Component\Console\Application':
         public: true
-        arguments: ['%application.title%', '%application.version%']
+        arguments:
+            - '%application.title%'
+            - '%application.version%'
         calls:
             - ['setDispatcher', ['@Symfony\Component\EventDispatcher\EventDispatcher']]
             - ['setCommandLoader', ['@Symfony\Component\Console\CommandLoader\ContainerCommandLoader']]
@@ -19,7 +21,6 @@ services:
             'management:build:remove':  'command.management.remove_build'
             'runner:build':             'command.job.run_build'
             'runner:deploy':            'command.job.run_deploy'
-
 
     ####################################################################################################################
     # utility / shared

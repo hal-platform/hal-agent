@@ -123,7 +123,8 @@ services:
 
     build.windows_aws.s3_downloader:
         class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Downloader'
-        arguments: ['@Hal\Agent\Logger\EventLogger']
+        arguments:
+            - '@Hal\Agent\Logger\EventLogger'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
 
@@ -132,7 +133,9 @@ services:
         arguments: ['@Hal\Agent\Logger\EventLogger', '@build.windows_aws.support_ssm_runner.waiter']
     build.windows_aws.support_ssm_runner.waiter:
         class: 'Hal\Agent\Waiter\Waiter'
-        arguments: ['%build.ssm.waiter.interval%', '%build.ssm.waiter.max%']
+        arguments:
+            - '%build.ssm.waiter.interval%'
+            - '%build.ssm.waiter.max%'
 
     build.windows_aws.support_powershellinator:
         class: 'Hal\Agent\Build\WindowsAWS\Utility\Powershellinator'

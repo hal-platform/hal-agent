@@ -2,14 +2,11 @@ parameters:
     ############################################################################
     # application
     ############################################################################
-    application.id: '201359'
+    application.id: 'halcli'
     application.title: 'Hal Agent'
     application.environment: '%env(string:ENVIRONMENT)%'
 
-    application.major.version: '%env(string:HAL_APPLICATION_VERSION_MAJOR)%'
-    application.minor.version: '%env(string:HAL_APPLICATION_VERSION_MINOR)%'
-    application.version: '%application.major.version%.%application.minor.version%'
-
+    application.version: '%env(string:HAL_VERSION)%'
     application.sha: '%env(string:HAL_APPLICATION_SHA)%'
 
     application.commands:
@@ -18,10 +15,6 @@ parameters:
         job:release: 'executor.deploy.start'
         runner:build: 'executor.runner.build'
         runner:deploy: 'executor.runner.deploy'
-        # 'worker.build': 'executor.worker.build'
-        # 'worker.deploy': 'executor.worker.deploy'
-
-    hal.pushfile.path: '%root%/.hal9000.push.yml'
 
     ############################################################################
     # general
@@ -30,8 +23,6 @@ parameters:
     hal.baseurl: '%env(string:HAL_BASEURL)%'
     hal.api_token: '%env(string:HAL_API_TOKEN)%'
 
-    unique.alphabet: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
-    unique.size: 4
     date.timezone: 'America/Detroit'
 
     ############################################################################
@@ -63,12 +54,10 @@ parameters:
     timeout.build: 1800
     timeout.push: 300
 
-    timeout.push.build: 300
-    timeout.deploy.serverCommand: 120
+    timeout.deploy.server_command: 120
 
     timeout.standard: 20
     timeout.filepacking: 120
-    timeout.filetransfer: 120
 
     deploy.cd.waiter.interval: 10
     deploy.cd.waiter.max: 60
@@ -164,9 +153,6 @@ parameters:
         linux: 'build_platform.linux'
         windows: 'build_platform.windows_aws_docker'
 
-    deployment_before.build.platforms: '%build.platforms%'
-    deployment_after.build.platforms: '%build.platforms%'
-
     deployment.platforms:
         elb: 'deploy_platform.elb'
         rsync: 'deploy_platform.rsync'
@@ -174,5 +160,3 @@ parameters:
         s3: 'deploy_platform.s3'
         cd: 'deploy_platform.cd'
         script: 'deploy_platform.script'
-
-    deployment_platform.script.platforms: '%build.platforms%'

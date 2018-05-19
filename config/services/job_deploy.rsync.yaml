@@ -41,7 +41,7 @@ services:
         arguments:
             - '@Hal\Agent\Logger\EventLogger'
             - '@Hal\Agent\Remoting\SSHSessionManager'
-            - '%timeout.deploy.serverCommand%'
+            - '%timeout.deploy.server_command%'
 
     deploy.rsync.verify_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
