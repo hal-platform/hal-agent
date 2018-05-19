@@ -131,7 +131,7 @@ class RemoveBuildCommand implements ExecutorInterface
             return '';
         }
 
-        $storedArtifact = sprintf('%s-%s'), $build->type(), $build->id());
+        $storedArtifact = sprintf('%s-%s', $build->type(), $build->id());
         $path = $this->artifactStoragePath;
         $fullArtifactPath = "${path}/${storedArtifact}";
 

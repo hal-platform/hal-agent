@@ -8,7 +8,6 @@
 namespace Hal\Agent\Build\Linux;
 
 use Hal\Agent\Build\Linux\Steps\Configurator;
-use Hal\Agent\Build\Linux\Steps\Cleaner;
 use Hal\Agent\Build\Linux\Steps\Exporter;
 use Hal\Agent\Build\Linux\Steps\Importer;
 use Hal\Agent\Build\Linux\Steps\Packer;
@@ -29,10 +28,9 @@ class LinuxBuildPlatform implements JobPlatformInterface
     use PlatformTrait;
 
     private const STEP_1_CONFIGURING = 'Linux Platform - Validating Linux configuration';
-    private const STEP_2_EXPORTING = 'Linux Platform - Exporting files to build server';
+    private const STEP_2_EXPORTING = 'Linux Platform - Exporting artifacts to stage';
     private const STEP_3_BUILDING = 'Linux Platform - Running build steps';
-    private const STEP_4_IMPORTING = 'Linux Platform - Importing artifacts from build server';
-    private const STEP_5_CLEANING = 'Cleaning up remote builder instance "%s"';
+    private const STEP_4_IMPORTING = 'Linux Platform - Importing artifacts from stage';
 
     private const ERR_CONFIGURATOR = 'Linux build platform is not configured correctly';
     private const ERR_EXPORT = 'Failed to export build to build system';
@@ -70,11 +68,6 @@ class LinuxBuildPlatform implements JobPlatformInterface
     private $importer;
 
     /**
-     * @var Cleaner
-     */
-    private $cleaner;
-
-    /**
      * @var string
      */
     private $defaultDockerImage;
@@ -87,7 +80,6 @@ class LinuxBuildPlatform implements JobPlatformInterface
      * @param Exporter $exporter
      * @param BuilderInterface $builder
      * @param Importer $importer
-     * @param Cleaner $cleaner
      *
      * @param string $defaultDockerImage
      */
@@ -98,7 +90,6 @@ class LinuxBuildPlatform implements JobPlatformInterface
         Exporter $exporter,
         BuilderInterface $builder,
         Importer $importer,
-        Cleaner $cleaner,
         $defaultDockerImage
     ) {
         $this->logger = $logger;
@@ -107,7 +98,6 @@ class LinuxBuildPlatform implements JobPlatformInterface
         $this->exporter = $exporter;
         $this->builder = $builder;
         $this->importer = $importer;
-        $this->cleaner = $cleaner;
 
         $this->decrypter = $decrypter;
 
@@ -122,29 +112,38 @@ class LinuxBuildPlatform implements JobPlatformInterface
         $image = $execution->parameter('image') ?? $this->defaultDockerImage;
         $steps = $execution->steps();
 
+        $basePath = $properties['workspace_path'];
+        $workspacePath = "${basePath}/workspace";
+
+        $encryptedEnv = $properties['encrypted'];
+
         if (!$platformConfig = $this->configurator($job)) {
             $this->sendFailureEvent(self::ERR_CONFIGURATOR);
             return $this->bombout(false);
         }
 
-        if (!$this->export($platformConfig, $properties['workspace_path'])) {
+        $platformEnv = $platformConfig['environment_variables'];
+        $stageID = $platformConfig['stage_id'];
+        $stagePath = "${basePath}/${stageID}";
+
+        if (!$this->export($workspacePath, $stagePath)) {
             $this->sendFailureEvent(self::ERR_EXPORT);
             return $this->bombout(false);
         }
 
         // decrypt
-        $env = $this->decrypt($properties['encrypted'], $platformConfig['environment_variables'], $execution->parameter('env'));
+        $env = $this->decrypt($encryptedEnv, $platformEnv, $execution->parameter('env'));
         if ($env === null) {
             $this->sendFailureEvent(self::ERR_BAD_DECRYPT);
             return $this->bombout(false);
         }
 
         // run build
-        if (!$this->build($job->id(), $image, $steps, $env, $platformConfig)) {
+        if (!$this->build($job->id(), $image, $stagePath, $steps, $env)) {
             return $this->bombout(false);
         }
 
-        if (!$this->import($platformConfig, $properties['workspace_path'])) {
+        if (!$this->import($workspacePath, $stagePath)) {
             $this->sendFailureEvent(self::ERR_IMPORT);
             return $this->bombout(false);
         }
@@ -174,37 +173,21 @@ class LinuxBuildPlatform implements JobPlatformInterface
     }
 
     /**
-     * @param array $platformConfig
      * @param string $workspacePath
+     * @param string $stagePath
      *
      * @return bool
      */
-    private function export(array $platformConfig, $workspacePath)
+    private function export($workspacePath, $stagePath)
     {
         $this->getIO()->section(self::STEP_2_EXPORTING);
 
-        $buildPath = $workspacePath . '/job';
-        $localFile = $workspacePath . '/build_export.tgz';
-
-        $connection = $platformConfig['builder_connection'];
-        $remoteFile = $platformConfig['remote_file'];
-
         $this->getIO()->listing([
-            sprintf('Workspace: <info>%s</info>', $buildPath),
-            sprintf('Local File: <info>%s</info>', $localFile),
-            sprintf('Remote File: <info>%s</info>', $remoteFile)
+            sprintf('Workspace: <info>%s</info>', $workspacePath),
+            sprintf('Stage Path: <info>%s</info>', $stagePath),
         ]);
 
-        $response = ($this->exporter)($buildPath, $localFile, $connection, $remoteFile);
-
-        if ($response) {
-            // Set emergency handler in case of super fatal
-            $this->enableEmergencyHandler(function () use ($connection, $remoteFile) {
-                $this->cleanupServer($connection, $remoteFile);
-            });
-        }
-
-        return $response;
+        return ($this->exporter)($workspacePath, $stagePath);
     }
 
     /**
@@ -230,60 +213,37 @@ class LinuxBuildPlatform implements JobPlatformInterface
      * @param string $jobID
      * @param string $image
      *
+     * @param string $stagePath
      * @param array $steps
      * @param array $env
-     * @param array $platformConfig
      *
      * @return bool
      */
-    private function build($jobID, $image, array $steps, array $env, array $platformConfig)
+    private function build($jobID, $image, $stagePath, array $steps, array $env)
     {
         $this->getIO()->section(self::STEP_3_BUILDING);
 
-        $connection = $platformConfig['builder_connection'];
-        $remoteFile = $platformConfig['remote_file'];
-
         $this->builder->setIO($this->getIO());
 
-        return ($this->builder)($jobID, $image, $connection, $remoteFile, $steps, $env);
+        return ($this->builder)($jobID, $image, $stagePath, $steps, $env);
     }
 
     /**
-     * @param array $platformConfig
      * @param string $workspacePath
+     * @param string $stagePath
      *
      * @return bool
      */
-    private function import(array $platformConfig, $workspacePath)
+    private function import($workspacePath, $stagePath)
     {
         $this->getIO()->section(self::STEP_4_IMPORTING);
 
-        $buildPath = $workspacePath . '/job';
-        $localFile = $workspacePath . '/build_import.tgz';
-
-        $connection = $platformConfig['builder_connection'];
-        $remoteFile = $platformConfig['remote_file'];
-
         $this->getIO()->listing([
-            sprintf('Workspace: <info>%s</info>', $buildPath),
-            sprintf('Remote File: <info>%s</info>', $remoteFile),
-            sprintf('Local File: <info>%s</info>', $localFile),
+            sprintf('Workspace: <info>%s</info>', $workspacePath),
+            sprintf('Stage Path: <info>%s</info>', $stagePath),
         ]);
 
-        return ($this->importer)($buildPath, $localFile, $connection, $remoteFile);
-    }
-
-    /**
-     * @param string $remoteConnection
-     * @param string $remoteFile
-     *
-     * @return void
-     */
-    private function cleanupServer($remoteConnection, $remoteFile)
-    {
-        $this->getIO()->note(sprintf(self::STEP_5_CLEANING, $remoteConnection));
-
-        ($this->cleaner)($remoteConnection, $remoteFile);
+        return ($this->importer)($workspacePath, $stagePath);
     }
 
     /**

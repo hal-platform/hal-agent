@@ -13,10 +13,6 @@ use Symfony\Component\Process\Process;
 
 class ProcessRunner
 {
-    private const DEFAULT_MESSAGE = 'System action completed';
-    private const DEFAULT_ERR_MESSAGE = 'System action failed';
-    private const DEFAULT_ERR_TIMEOUT = 'System action timed out';
-
     private const DEFAULT_TIMEOUT_SECONDS = 60.0;
 
     /**
@@ -85,14 +81,12 @@ class ProcessRunner
      */
     public function onSuccess(Process $process, string $args, ?string $successMessage = null): bool
     {
-        if ($successMessage === null) {
-            $successMessage = self::DEFAULT_MESSAGE;
+        if ($successMessage) {
+            $this->tryLogging('success', $successMessage, [
+                'command' => $args,
+                'output' => $process->getOutput()
+            ]);
         }
-
-        $this->tryLogging('success', $successMessage, [
-            'command' => $args,
-            'output' => $process->getOutput()
-        ]);
 
         return true;
     }
@@ -106,16 +100,14 @@ class ProcessRunner
      */
     public function onFailure(Process $process, string $args, ?string $failureMessage = null): bool
     {
-        if ($failureMessage === null) {
-            $failureMessage = self::DEFAULT_ERR_MESSAGE;
+        if ($failureMessage) {
+            $this->tryLogging('failure', $failureMessage, [
+                'command' => $args,
+                'output' => $process->getOutput(),
+                'errorOutput' => $process->getErrorOutput(),
+                'exitCode' => $process->getExitCode()
+            ]);
         }
-
-        $this->tryLogging('failure', $failureMessage, [
-            'command' => $args,
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput(),
-            'exitCode' => $process->getExitCode()
-        ]);
 
         return false;
     }
@@ -130,16 +122,14 @@ class ProcessRunner
      */
     public function onTimeout(Process $process, string $args, float $timedOutAt, ?string $timeoutMessage = null): bool
     {
-        if ($timeoutMessage === null) {
-            $timeoutMessage = self::DEFAULT_ERR_TIMEOUT;
+        if ($timeoutMessage) {
+            $this->tryLogging('failure', $timeoutMessage, [
+                'command' => $args,
+                'output' => $process->getOutput(),
+                'errorOutput' => $process->getErrorOutput(),
+                'maxTimeout' => $timedOutAt
+            ]);
         }
-
-        $this->tryLogging('failure', $timeoutMessage, [
-            'command' => $args,
-            'output' => $process->getOutput(),
-            'errorOutput' => $process->getErrorOutput(),
-            'maxTimeout' => $timedOutAt
-        ]);
 
         return false;
     }

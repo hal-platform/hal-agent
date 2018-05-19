@@ -71,41 +71,51 @@ class DockerBuilder implements BuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $jobID
+     * @param string $image
+     * @param string $stagePath
+     * @param array $steps
+     * @param array $env
+     *
+     * @return bool
      */
-    public function __invoke(string $jobID, string $image, string $remoteConnection, string $remoteFile, array $steps, array $env): bool
+    public function __invoke(string $jobID, string $image, string $stagePath, array $steps, array $env): bool
     {
+        // @todo - tar up the stagepath into a tgz
+        $stageBundleFile = '';
+
         if (!$dockerImage = $this->validator->validate($image)) {
             return $this->bombout(false);
         }
 
         // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
+        // @todo move this up a level into the build platform
         $containerName = strtolower($jobID);
-        $jobs = $this->steps->organizeCommandsIntoJobs($dockerImage, $steps);
+        $stages = $this->steps->organizeCommandsIntoJobs($dockerImage, $steps);
 
         $total = count($steps);
         $current = 0;
 
-        foreach ($jobs as $job) {
-            [$image, $steps] = $job;
+        foreach ($stages as $stage) {
+            [$image, $steps] = $stage;
 
             // 2. Create container
-            if (!$this->docker->createContainer($remoteConnection, $image, $containerName, $env)) {
+            if (!$this->docker->createContainer($image, $containerName, $env)) {
                 return $this->bombout(false);
             }
 
             $this->getIO()->note(self::EVENT_STARTING_CONTAINER);
 
             // 3. Enable cleanup failsafe
-            $cleanup = $this->enableDockerCleanup($remoteConnection, $containerName);
+            $cleanup = $this->enableDockerCleanup($containerName);
 
             // 4. Copy into container
-            if (!$this->docker->copyIntoContainer($remoteConnection, $jobID, $containerName, $remoteFile)) {
+            if (!$this->docker->copyIntoContainer($jobID, $containerName, $stageBundleFile)) {
                 return $this->bombout(false);
             }
 
             // 5. Start container
-            if (!$this->docker->startContainer($remoteConnection, $containerName)) {
+            if (!$this->docker->startContainer($containerName)) {
                 return $this->bombout(false);
             }
 
@@ -115,13 +125,13 @@ class DockerBuilder implements BuilderInterface
             foreach ($steps as $step) {
                 $current++;
 
-                if (!$result = $this->runStep($remoteConnection, $containerName, $step, $current, $total)) {
+                if (!$result = $this->runStep($containerName, $step, $current, $total)) {
                     return $this->bombout(false);
                 }
             }
 
             // 7. Copy out of container
-            if (!$this->docker->copyFromContainer($remoteConnection, $containerName, $remoteFile)) {
+            if (!$this->docker->copyFromContainer($containerName, $stageBundleFile)) {
                 return $this->bombout(false);
             }
 
@@ -133,7 +143,6 @@ class DockerBuilder implements BuilderInterface
     }
 
     /**
-     * @param string $remoteConnection
      * @param string $containerName
      * @param string $step
      * @param int $currentStep
@@ -141,12 +150,12 @@ class DockerBuilder implements BuilderInterface
      *
      * @return bool
      */
-    private function runStep($remoteConnection, $containerName, $step, $currentStep, $totalSteps)
+    private function runStep($containerName, $step, $currentStep, $totalSteps)
     {
         $remaining = $totalSteps - $currentStep;
 
         $msg = $this->getEventMessage($step, "[${currentStep}/${totalSteps}]");
-        if (!$result = $this->docker->runCommand($remoteConnection, $containerName, $step, $msg)) {
+        if (!$result = $this->docker->runCommand($containerName, $step, $msg)) {
             if ($remaining > 0) {
                 $this->logSkippedCommands($remaining);
             }
@@ -158,16 +167,15 @@ class DockerBuilder implements BuilderInterface
     }
 
     /**
-     * @param string $remoteConnection
      * @param string $containerName
      *
      * @return void
      */
-    private function cleanupContainer($remoteConnection, $containerName)
+    private function cleanupContainer($containerName)
     {
         $this->getIO()->note(sprintf(self::EVENT_DOCKER_CLEANUP, $containerName));
 
-        $this->docker->cleanupContainer($remoteConnection, $containerName);
+        $this->docker->cleanupContainer($containerName);
     }
 
     /**
@@ -206,15 +214,14 @@ class DockerBuilder implements BuilderInterface
     }
 
     /**
-     * @param string $remoteConnection
      * @param string $containerName
      *
      * @return callable
      */
-    private function enableDockerCleanup($remoteConnection, $containerName)
+    private function enableDockerCleanup($containerName)
     {
-        $cleanup = function () use ($remoteConnection, $containerName) {
-            $this->cleanupContainer($remoteConnection, $containerName);
+        $cleanup = function () use ($containerName) {
+            $this->cleanupContainer($containerName);
         };
 
         // Set emergency handler in case of super fatal

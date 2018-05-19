@@ -45,7 +45,7 @@ services:
             - '@Hal\Agent\JobConfiguration\StepParser'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+            - ['setInternalCommandTimeout', ['%timeout.internal_build_steps%']]
 
     build.windows_aws.native_builder:
         class: 'Hal\Agent\Build\WindowsAWS\NativeBuilder'
@@ -53,10 +53,10 @@ services:
             - '@Hal\Agent\Logger\EventLogger'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
-            - '%timeout.build%'
+            - '%timeout.build_steps%'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
+            - ['setInternalCommandTimeout', ['%timeout.internal_build_steps%']]
 
     ############################################################################
     # steps
@@ -157,8 +157,8 @@ services:
             - '%build.platforms.option.manual_dns%'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
-            - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
-            - ['setBuildCommandTimeout', ['%timeout.build%']]
+            - ['setInternalCommandTimeout', ['%timeout.internal_build_steps%']]
+            - ['setBuildCommandTimeout', ['%timeout.build_steps%']]
 
     build.windows_aws.support_docker_validator:
         class: 'Hal\Agent\Docker\DockerImageValidator'

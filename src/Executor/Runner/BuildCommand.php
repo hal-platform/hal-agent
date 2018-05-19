@@ -314,7 +314,7 @@ class BuildCommand implements ExecutorInterface
     {
         $io->section($this->step(3));
 
-        $buildPath = $workspacePath . '/job';
+        $buildPath = $workspacePath . '/workspace';
 
         $config = ($this->reader)($buildPath, $defaultConfiguration);
 
@@ -373,9 +373,9 @@ class BuildCommand implements ExecutorInterface
     {
         $io->section($this->step(5));
 
-        $storedArtifact = sprintf('%s-%s'), $job->type(), $job->id());
+        $storedArtifact = sprintf('%s-%s', $job->type(), $job->id());
 
-        $buildPath = $workspacePath . '/job';
+        $buildPath = $workspacePath . '/workspace';
         $artifactFile = $workspacePath . '/artifact.tgz';
 
         $io->listing([

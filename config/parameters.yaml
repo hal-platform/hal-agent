@@ -58,7 +58,9 @@ parameters:
     ############################################################################
     # timeouts
     ############################################################################
-    timeout.build: 1800
+    timeout.build_steps: 1800
+    timeout.internal_build_steps: 120
+
     timeout.push: 300
 
     timeout.deploy.server_command: 120
@@ -75,9 +77,6 @@ parameters:
 
     build.ssm.waiter.interval: 10
     build.ssm.waiter.max: 180
-
-    timeout.linux_builder_internal: 120
-    timeout.windows_builder_internal: 120
 
     ############################################################################
     # cache

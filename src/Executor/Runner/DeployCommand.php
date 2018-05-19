@@ -309,7 +309,7 @@ class DeployCommand implements ExecutorInterface
         $io->section($this->step(2));
 
         $build = $job->build();
-        $storedArtifact = sprintf('%s-%s'), $build->type(), $build->id());
+        $storedArtifact = sprintf('%s-%s', $build->type(), $build->id());
 
         $deploymentPath = $workspacePath . '/job';
         $artifactFile = $workspacePath . '/artifact.tgz';

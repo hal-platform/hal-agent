@@ -7,63 +7,53 @@
 
 namespace Hal\Agent\Build\Linux\Steps;
 
-use Hal\Agent\Job\FileCompression;
-use Hal\Agent\Remoting\SSHSessionManager;
-use phpseclib\Net\SCP;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
-/**
- * This uses SCP to transfer a single build archive (tar).
- */
 class Importer
 {
-    /**
-     * @var SSHSessionManager
-     */
-    private $sshManager;
-
-    /**
-     * @var FileCompression
-     */
-    private $fileCompression;
-
     /**
      * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @param SSHSessionManager $sshManager
-     * @param FileCompression $fileCompression
      * @param Filesystem $filesystem
      */
-    public function __construct(SSHSessionManager $sshManager, FileCompression $fileCompression, Filesystem $filesystem)
+    public function __construct(Filesystem $filesystem)
     {
-        $this->sshManager = $sshManager;
-        $this->fileCompression = $fileCompression;
         $this->filesystem = $filesystem;
     }
 
     /**
-     * @param string $buildPath
-     * @param string $buildFile
-     * @param string $remoteConnection
-     * @param string $remoteFile
+     * @param string $workspacePath
+     * @param string $stagePath
      *
-     * @return boolean
+     * @return bool
      */
-    public function __invoke(string $buildPath, string $buildFile, string $remoteConnection, string $remoteFile)
+    public function __invoke(string $workspacePath, string $stagePath): bool
     {
-        [$remoteUser, $remoteServer] = explode('@', $remoteConnection);
+        $this->removeLocalFiles($workspacePath);
 
-        if (!$this->transferFile($buildFile, $remoteUser, $remoteServer, $remoteFile)) {
-            return false;
-        }
+        $from = $stagePath;
+        $to = $workspacePath;
 
-        $this->removeLocalFiles($buildPath);
-        $this->fileCompression->createWorkspace($buildPath);
+        return $this->copyFiles($from, $to);
+    }
 
-        if (!$this->fileCompression->unpackTarArchive($buildPath, $buildFile)) {
+    /**
+     * @param string $path
+     *
+     * @return bool
+     */
+    private function removeLocalFiles($path)
+    {
+        try {
+            if ($this->filesystem->exists($path)) {
+                $this->filesystem->remove($path);
+            }
+
+        } catch (IOException $e) {
             return false;
         }
 
@@ -71,39 +61,18 @@ class Importer
     }
 
     /**
-     * @param string $localFile
-     * @param string $remoteUser
-     * @param string $remoteServer
-     * @param string $remoteFile
+     * @param string $from
+     * @param string $to
      *
      * @return bool
      */
-    private function transferFile($localFile, $remoteUser, $remoteServer, $remoteFile)
+    private function copyFiles($from, $to)
     {
-        // No session could be started/resumed
-        if (!$ssh = $this->sshManager->createSession($remoteUser, $remoteServer)) {
+        try {
+            $this->filesystem->copy($from, $to);
+
+        } catch (IOException $e) {
             return false;
-        }
-
-        $scp = new SCP($ssh);
-        $result = $scp->get($remoteFile, $localFile);
-
-        if ($result !== true) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param string $buildPath
-     *
-     * @return bool
-     */
-    private function removeLocalFiles($buildPath)
-    {
-        if ($this->filesystem->exists($buildPath)) {
-            $this->filesystem->remove($buildPath);
         }
 
         return true;

@@ -10,82 +10,44 @@ services:
         arguments:
             - '@Hal\Agent\Logger\EventLogger'
             - '@Hal\Agent\Utility\EncryptedPropertyResolver'
-            - '@build.linux.configurator'
-            - '@build.linux.exporter'
-            - '@build.linux.docker_builder'
-            - '@build.linux.importer'
-            - '@build.linux.cleaner'
+            - '@Hal\Agent\Build\Linux\Steps\Configurator'
+            - '@Hal\Agent\Build\Linux\Steps\Exporter'
+            - '@Hal\Agent\Build\Linux\DockerBuilder'
+            - '@Hal\Agent\Build\Linux\Steps\Importer'
             - '%build.platforms.option.linux.docker_default_image%'
 
     ############################################################################
     # builders
     ############################################################################
 
-    build.linux.docker_builder:
-        class: 'Hal\Agent\Build\Linux\DockerBuilder'
-        arguments:
-            - '@Hal\Agent\Logger\EventLogger'
-            - '@build.linux.support_dockerinator'
-            - '@build.linux.support_docker_validator'
-            - '@Hal\Agent\JobConfiguration\StepParser'
+    'Hal\Agent\Build\Linux\DockerBuilder':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Hal\Agent\Docker\LinuxDockerinator'
+        - '@build.linux.support_docker_validator'
+        - '@Hal\Agent\JobConfiguration\StepParser'
 
     ############################################################################
     # steps
     ############################################################################
 
-    build.linux.configurator:
-        class: 'Hal\Agent\Build\Linux\Steps\Configurator'
-        arguments:
-            - '%path.linux_builder%'
-            - '%build.linux.user%'
-            -
-                - '%build.linux.server%'
+    'Hal\Agent\Build\Linux\Steps\Configurator': []
 
-    build.linux.exporter:
-        class: 'Hal\Agent\Build\Linux\Steps\Exporter'
-        arguments:
-            - '@Hal\Agent\Remoting\SSHSessionManager'
-            - '@build.support.file_compression'
+    'Hal\Agent\Build\Linux\Steps\Exporter':
+        - '@Symfony\Component\Filesystem\Filesystem'
 
-    build.linux.importer:
-        class: 'Hal\Agent\Build\Linux\Steps\Importer'
-        arguments:
-            - '@Hal\Agent\Remoting\SSHSessionManager'
-            - '@build.support.file_compression'
-            - '@Symfony\Component\Filesystem\Filesystem'
-
-    build.linux.cleaner:
-        class: 'Hal\Agent\Build\Linux\Steps\Cleaner'
-        arguments: ['@build.linux.support_remoter']
-
-    ############################################################################
-    # support
-    ############################################################################
-
-    build.linux.support_remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@Hal\Agent\Logger\EventLogger'
-            - '@Hal\Agent\Remoting\SSHSessionManager'
-            - '%timeout.linux_builder_internal%'
-
-    build.linux.support_build_remoter:
-        class: 'Hal\Agent\Remoting\SSHProcess'
-        arguments:
-            - '@Hal\Agent\Logger\EventLogger'
-            - '@Hal\Agent\Remoting\SSHSessionManager'
-            - '%timeout.build%'
+    'Hal\Agent\Build\Linux\Steps\Importer':
+        - '@Symfony\Component\Filesystem\Filesystem'
 
     ############################################################################
     # support - docker
     ############################################################################
 
-    build.linux.support_dockerinator:
-        class: 'Hal\Agent\Docker\LinuxDockerinator'
+    'Hal\Agent\Docker\LinuxDockerinator':
         arguments:
             - '@Hal\Agent\Logger\EventLogger'
-            - '@build.linux.support_remoter'
-            - '@build.linux.support_build_remoter'
+            - '@Hal\Agent\Symfony\ProcessRunner'
+            - '%timeout.internal_build_steps%'
+            - '%timeout.build_steps%'
             - '%build.platforms.option.manual_dns%'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]

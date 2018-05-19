@@ -8,8 +8,7 @@
 namespace Hal\Agent\Docker;
 
 use Hal\Agent\Build\InternalDebugLoggingTrait;
-use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Remoting\SSHProcess;
+use Hal\Agent\Symfony\ProcessRunner;
 use function json_decode;
 
 class LinuxDockerinator
@@ -29,15 +28,9 @@ class LinuxDockerinator
     private const STEP_REMOVE_CONTAINER = 'Remove Docker container';
 
     /**
-     * @var EventLogger
+     * @var ProcessRunner
      */
-    private $logger;
-
-    /**
-     * @var SSHProcess
-     */
-    private $remoter;
-    private $buildRemoter;
+    private $runner;
 
     /**
      * Manually add hosts entries to the docker container. Provide a list like so:
@@ -52,20 +45,24 @@ class LinuxDockerinator
     private $manualDNS;
 
     /**
-     * @param EventLogger $logger
-     * @param SSHProcess $remoter
-     * @param SSHProcess $buildRemoter
+     * @var int
+     */
+    private $internalStepTimeout;
+    private $buildStepTimeout;
+
+    /**
+     * @param ProcessRunner $runner
      * @param string $manualDNS
      */
     public function __construct(
-        EventLogger $logger,
-        SSHProcess $remoter,
-        SSHProcess $buildRemoter,
+        ProcessRunner $runner,
+        int $internalStepTimeout,
+        int $buildStepTimeout,
         string $manualDNS = ''
     ) {
-        $this->logger = $logger;
-        $this->remoter = $remoter;
-        $this->buildRemoter = $buildRemoter;
+        $this->runner = $runner;
+        $this->internalStepTimeout = $internalStepTimeout;
+        $this->buildStepTimeout = $buildStepTimeout;
 
         $this->manualDNS = json_decode($manualDNS) ?? [];
     }
@@ -73,14 +70,13 @@ class LinuxDockerinator
     /**
      * We use bash so the container stays open, while we run other commands
      *
-     * @param string $remoteConnection
      * @param string $imageName
      * @param string $containerName
      * @param array $env
      *
      * @return bool
      */
-    public function createContainer(string $remoteConnection, string $imageName, string $containerName, array $env): bool
+    public function createContainer(string $imageName, string $containerName, array $env): bool
     {
         $command = [
             $this->docker('create'),
@@ -105,7 +101,7 @@ class LinuxDockerinator
         $command[] = $imageName;
         $command[] = 'bash -l';
 
-        if (!$response = $this->runInternalRemote($remoteConnection, $this->safetize($command), self::STEP_1_CREATE_CONTAINER, $env)) {
+        if (!$response = $this->runInternal($command, self::STEP_1_CREATE_CONTAINER, $env)) {
             return false;
         }
 
@@ -121,7 +117,6 @@ class LinuxDockerinator
      * Also note: Docker can understand both raw tars, and gzip'd tars for copying
      * files into containers. However, it only exports to tar, NOT gzip'd tar.
      *
-     * @param string $remoteConnection
      * @param string $jobID
      *
      * @param string $containerName
@@ -129,7 +124,7 @@ class LinuxDockerinator
      *
      * @return bool
      */
-    public function copyIntoContainer(string $remoteConnection, string $jobID, string $containerName, string $inputFile): bool
+    public function copyIntoContainer(string $jobID, string $containerName, string $inputFile): bool
     {
         $copyInto = [
             sprintf('cat %s', $inputFile),
@@ -146,7 +141,7 @@ class LinuxDockerinator
         //     sprintf('%s:%s', $containerName, self::CONTAINER_SCRIPTS_DIR)
         // ];
 
-        if (!$this->runInternalRemote($remoteConnection, $this->safetize($copyInto), self::STEP_2_DOCKER_COPY_IN)) {
+        if (!$this->runInternal($copyInto, self::STEP_2_DOCKER_COPY_IN)) {
             return false;
         }
 
@@ -156,19 +151,18 @@ class LinuxDockerinator
     /**
      * Start docker container
      *
-     * @param string $remoteConnection
      * @param string $containerName
      *
      * @return bool
      */
-    public function startContainer(string $remoteConnection, string $containerName): bool
+    public function startContainer(string $containerName): bool
     {
         $start = [
             $this->docker('start'),
             $containerName
         ];
 
-        if (!$this->runInternalRemote($remoteConnection, $this->safetize($start), self::STEP_3_START_CONTAINER)) {
+        if (!$this->runInternal($start, self::STEP_3_START_CONTAINER)) {
             return false;
         }
 
@@ -178,24 +172,20 @@ class LinuxDockerinator
     /**
      * Run command within a running docker container
      *
-     * @param string $remoteConnection
      * @param string $containerName
      * @param string $command
      * @param string $message
      *
      * @return bool
      */
-    public function runCommand(string $remoteConnection, string $containerName, string $command, string $message): bool
+    public function runCommand(string $containerName, string $command, string $message): bool
     {
         $prefix = [
             $this->docker('exec'),
             sprintf('"%s"', $containerName),
         ];
 
-        $prefix = $this->safetize($prefix);
-        $command = $this->safetize($command);
-
-        if (!$this->runBuildRemote($remoteConnection, $prefix, $command, $message)) {
+        if (!$this->runBuild($prefix, $command, $message)) {
             return false;
         }
 
@@ -212,14 +202,12 @@ class LinuxDockerinator
      *
      * It's a bit unnecessary but fine for now.
      *
-     * @param string $remoteConnection
-     *
      * @param string $containerName
      * @param string $outputFile
      *
      * @return bool
      */
-    public function copyFromContainer(string $remoteConnection, string $containerName, string $outputFile): bool
+    public function copyFromContainer(string $containerName, string $outputFile): bool
     {
         $copyFrom = [
             $this->docker('cp'),
@@ -229,7 +217,7 @@ class LinuxDockerinator
             '>', $outputFile
         ];
 
-        if (!$this->runInternalRemote($remoteConnection, $this->safetize($copyFrom), self::STEP_5_DOCKER_COPY_OUT)) {
+        if (!$this->runInternal($copyFrom, self::STEP_5_DOCKER_COPY_OUT)) {
             return false;
         }
 
@@ -239,12 +227,11 @@ class LinuxDockerinator
     /**
      * Kill and remove container
      *
-     * @param string $remoteConnection
      * @param string $containerName
      *
      * @return bool
      */
-    public function cleanupContainer(string $remoteConnection, string $containerName): bool
+    public function cleanupContainer(string $containerName): bool
     {
         $kill = [
             $this->docker('kill'),
@@ -257,68 +244,64 @@ class LinuxDockerinator
         ];
 
         // Do not care whether these fail
-        $this->runInternalRemote($remoteConnection, $this->safetize($kill), self::STEP_KILL_CONTAINER);
-        $this->runInternalRemote($remoteConnection, $this->safetize($rm), self::STEP_REMOVE_CONTAINER);
+        $this->runInternal($kill, self::STEP_KILL_CONTAINER);
+        $this->runInternal($rm, self::STEP_REMOVE_CONTAINER);
 
         return true;
     }
 
     /**
-     * @param string $remoteConnection
-     * @param string $command
+     * @param array $command
      * @param string $message
      * @param array $env
      *
      * @return bool
      */
-    private function runInternalRemote($remoteConnection, $command, $message, array $env = [])
+    private function runInternal(array $command, $message, array $env = [])
     {
-        [$remoteUser, $remoteServer] = explode('@', $remoteConnection);
+        $dispCommand = implode(' ', $command;
 
-        $command = $this->remoter->createCommand($remoteUser, $remoteServer, $command);
-        $options = [$this->isDebugLoggingEnabled(), $message];
+        $process = $this->runner->prepare($command, null, $this->internalStepTimeout);
 
-        return $this->remoter->runWithLoggingOnFailure($command, $env, $options);
+        if ($env) {
+            $process->setEnv($env);
+        }
+
+        if (!$this->runner->run($process, $dispCommand, $message)) {
+            return false;
+        }
+
+        if ($process->isSuccessful()) {
+            $message = $this->isDebugLoggingEnabled() ? $message : null;
+            return $this->runner->onSuccess($process, $dispCommand, $message);
+        }
+
+        return $this->runner->onFailure($process, $dispCommand, $message);
     }
 
     /**
-     * @param string $remoteConnection
-     * @param string $exec
+     * @param string|array $exec
      * @param string $userCommand
      * @param string $message
      *
      * @return bool
      */
-    private function runBuildRemote($remoteConnection, $exec, $userCommand, $message)
+    private function runBuild(array $exec, $userCommand, $message)
     {
-        [$remoteUser, $remoteServer] = explode('@', $remoteConnection);
+        $dispCommand = $userCommand;
+        $command = array_merge($exec, [$this->dockerEscaped($userCommand)]);
 
-        $actual = [
-            $exec,
-            $this->dockerEscaped($userCommand)
-        ];
+        $process = $this->runner->prepare($command, null, $this->buildStepTimeout);
 
-        $command = $this->buildRemoter
-            ->createCommand($remoteUser, $remoteServer, $actual)
-            ->withSanitized($userCommand);
-
-        $options = [true, $message];
-
-        return $this->remoter->runWithLoggingOnFailure($command, [], $options);
-    }
-
-    /**
-     * @param array|string $command
-     *
-     * @return string
-     */
-    private function safetize($command)
-    {
-        if (is_array($command)) {
-            $command = implode(" ", $command);
+        if (!$this->runner->run($process, $dispCommand, $message)) {
+            return false;
         }
 
-        return $command;
+        if ($process->isSuccessful()) {
+            return $this->runner->onSuccess($process, $dispCommand, $message);
+        }
+
+        return $this->runner->onFailure($process, $dispCommand, $message);
     }
 
     /**

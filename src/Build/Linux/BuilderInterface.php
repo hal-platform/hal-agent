@@ -14,14 +14,11 @@ interface BuilderInterface extends IOAwareInterface
     /**
      * @param string $jobID
      * @param string $image
-     *
-     * @param string $remoteConnection
-     * @param string $remoteFile
-     *
+     * @param string $stagePath
      * @param array $steps
      * @param array $env
      *
      * @return bool
      */
-    public function __invoke(string $jobID, string $image, string $remoteConnection, string $remoteFile, array $steps, array $env): bool;
+    public function __invoke(string $jobID, string $image, string $stagePath, array $steps, array $env): bool;
 }
