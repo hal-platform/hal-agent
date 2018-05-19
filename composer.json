@@ -3,8 +3,8 @@
     "description": "Hal Deployment Platform - Job Runner Agent",
     "license": "MIT",
     "authors": [
-        { "name": "Steve Kluck", "email": "steve@kluck.engineering" },
-        { "name": "Byron Nagi",  "email": "byro@fastmail.fm" },
+        { "name": "Steve Kluck",    "email": "steve@kluck.engineering" },
+        { "name": "Byron Nagi",     "email": "byro@fastmail.fm" },
         { "name": "James Thomason", "email": "james@jamesthomasonjr.com" }
     ],
     "support": {
@@ -22,30 +22,30 @@
     "require": {
         "php-64bit": "~7.1",
 
-        "ext-curl":           "*",
-        "ext-openssl":        "*",
-        "ext-pdo":            "*",
-        "ext-pdo_mysql":      "*",
-        "ext-pdo_sqlite":     "*",
-        "ext-sodium":         "~2.0 || ~7.2",
+        "ext-curl":        "*",
+        "ext-pdo":         "*",
+        "ext-pdo_mysql":   "*",
+        "ext-pdo_sqlite":  "*",
+        "ext-sodium":      "~2.0 || ~7.2",
+        "ext-zlib":        "*",
 
-        "aws/aws-sdk-php": "~3.20",
-        "doctrine/orm":    "~2.5",
+        "aws/aws-sdk-php": "~3.50",
+        "doctrine/orm":    "~2.6",
         "doctrine/cache":  "~1.6",
 
-        "guzzlehttp/guzzle":            "^6.0",
-        "knplabs/github-api":           "~2.5.0",
-        "phpseclib/phpseclib":          "2.0.4",
-        "php-http/guzzle6-adapter":     "^1.1.0",
+        "guzzlehttp/guzzle":            "~6.0",
+        "knplabs/github-api":           "~2.8",
+        "phpseclib/phpseclib":          "~2.0.11",
+        "php-http/guzzle6-adapter":     "~1.1",
         "predis/predis":                "~1.0",
         "psr/log":                      "*",
 
-        "hal/hal-core":                 "dev-master",
+        "hal/hal-core":                 "dev-deps",
 
-        "ql/mcp-cache":                 "~3.0.0",
-        "ql/mcp-common":                "~1.2",
-        "ql/mcp-logger":                "~3.1",
+        "ql/mcp-common":                "~2.0",
+        "ql/mcp-logger":                "~4.0",
 
+        "symfony/cache":                 "~4.0",
         "symfony/config":                "~4.0",
         "symfony/console":               "~4.0",
         "symfony/debug":                 "~4.0",
