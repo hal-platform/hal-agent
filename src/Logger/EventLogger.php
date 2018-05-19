@@ -14,7 +14,7 @@ use Hal\Core\Type\JobEventStageEnum;
 use Hal\Core\Type\JobEventStatusEnum;
 use Hal\Core\Type\JobStatusEnum;
 use JsonSerializable;
-use QL\MCP\Common\Time\Clock;
+use QL\MCP\Common\Clock;
 
 /**
  * Handles starting and finishing jobs - e.g. Changing the status of a build or release.

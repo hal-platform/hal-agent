@@ -7,12 +7,12 @@
 
 namespace Hal\Agent\Deploy\CodeDeploy;
 
+use Hal\Agent\AWS\S3Uploader;
 use Hal\Agent\Command\FormatterTrait;
 use Hal\Agent\Deploy\PlatformTrait;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Compressor;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Configurator;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Deployer;
-use Hal\Agent\Deploy\CodeDeploy\Steps\Uploader;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Verifier;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\JobExecution;
@@ -64,7 +64,7 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
     private $compressor;
 
     /**
-     * @var Uploader
+     * @var S3Uploader
      */
     private $uploader;
 
@@ -78,7 +78,7 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
      * @param Configurator $configurator
      * @param Verifier $verifier
      * @param Compressor $compressor
-     * @param Uploader $uploader
+     * @param S3Uploader $uploader
      * @param Deployer $deployer
      */
     public function __construct(
@@ -86,7 +86,7 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
         Configurator $configurator,
         Verifier $verifier,
         Compressor $compressor,
-        Uploader $uploader,
+        S3Uploader $uploader,
         Deployer $deployer
     ) {
         $this->logger = $logger;
