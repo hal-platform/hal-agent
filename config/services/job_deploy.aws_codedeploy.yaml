@@ -4,67 +4,61 @@ services:
         public: true
         class: 'Hal\Agent\Deploy\CodeDeploy\CodeDeployDeployPlatform'
         arguments:
-            - '@logger.event'
-            - '@deploy.cd.configurator'
-            - '@deploy.cd.verifier'
-            - '@deploy.cd.compressor'
-            - '@deploy.cd.uploader'
-            - '@deploy.cd.deployer'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Deploy\CodeDeploy\Steps\Configurator'
+            - '@Hal\Agent\Deploy\CodeDeploy\Steps\Verifier'
+            - '@Hal\Agent\Deploy\CodeDeploy\Steps\Compressor'
+            - '@deploy.cd.artifact_uploader'
+            - '@Hal\Agent\Deploy\CodeDeploy\Steps\Deployer'
 
     ############################################################################
     # steps
     ############################################################################
 
-    deploy.cd.configurator:
-        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Configurator'
-        arguments:
-            - '@logger.event'
-            - '@clock'
-            - '@deploy.support.aws_authenticator'
-            - '%hal.baseurl%'
+    'Hal\Agent\Deploy\CodeDeploy\Steps\Configurator':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@QL\MCP\Common\Clock'
+        - '@deploy.support.aws_authenticator'
+        - '%hal.baseurl%'
 
-    deploy.cd.verifier:
-        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Verifier'
-        arguments:
-            - '@logger.event'
-            - '@deploy.cd.healthchecker'
-            - '@deploy.cd.waiter'
-            - '@deploy.cd.deploywaiter'
+    'Hal\Agent\Deploy\CodeDeploy\Steps\Verifier':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Hal\Agent\AWS\CodeDeployHealthChecker'
+        - '@deploy.cd.support_waiter'
+        - '@Hal\Agent\Deploy\CodeDeploy\CodeDeployWaiter'
 
-    deploy.cd.compressor:
-        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Compressor'
-        arguments: ['@deploy.s3.compressor']
+    'Hal\Agent\Deploy\CodeDeploy\Steps\Compressor':
+        - '@deploy.cd.support_s3_compressor'
 
-    deploy.cd.uploader:
-        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Uploader'
+    deploy.cd.artifact_uploader:
+        class: 'Hal\Agent\AWS\S3Uploader'
         arguments:
-            - '@logger.event'
-            - '@deploy.s3.artifact_uploader'
+            - '@Hal\Agent\Logger\EventLogger'
 
-    deploy.cd.deployer:
-        class: 'Hal\Agent\Deploy\CodeDeploy\Steps\Deployer'
-        arguments:
-            - '@logger.event'
+    'Hal\Agent\Deploy\CodeDeploy\Steps\Deployer':
+        - '@Hal\Agent\Logger\EventLogger'
 
     ############################################################################
     # support
     ############################################################################
 
-    deploy.cd.deploywaiter:
-        class: 'Hal\Agent\Deploy\CodeDeploy\CodeDeployWaiter'
-        arguments:
-            - '@logger.event'
-            - '@deploy.cd.healthchecker'
+    'Hal\Agent\Deploy\CodeDeploy\CodeDeployWaiter':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Hal\Agent\AWS\CodeDeployHealthChecker'
 
-    deploy.cd.waiter:
+    'Hal\Agent\AWS\CodeDeployHealthChecker':
+        - '@QL\MCP\Common\Clock'
+        - '%date.timezone%'
+
+    deploy.cd.support_s3_compressor:
+        class: 'Hal\Agent\Deploy\S3\Steps\Compressor'
+        arguments:
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Symfony\Component\Filesystem\Filesystem'
+            - '@deploy.support.file_compression'
+
+    deploy.cd.support_waiter:
         class: 'Hal\Agent\Waiter\Waiter'
         arguments:
             - '%deploy.cd.waiter.interval%'
             - '%deploy.cd.waiter.max%'
-
-    deploy.cd.healthchecker:
-        class: 'Hal\Agent\AWS\CodeDeployHealthChecker'
-        arguments:
-            - '@clock'
-            - '%date.timezone%'
-

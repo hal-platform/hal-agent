@@ -1,45 +1,43 @@
 <?php
-/**
- * @copyright (c) 2018 Quicken Loans Inc.
- *
- * For full license information, please view the LICENSE distributed with this source code.
- */
 
-use QL\MCP\Cache\CacheInterface;
-use QL\MCP\Cache\MemoryCache;
-use QL\MCP\Cache\PredisCache;
-use Predis\Client as PredisClient;
-use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
+namespace Symfony\Component\DependencyInjection\Loader\Configurator;
+
+use Predis\Client;
+use Psr\SimpleCache\CacheInterface;
+use Symfony\Component\Cache\Simple\ArrayCache;
+use Symfony\Component\Cache\Simple\RedisCache;
 
 return function (ContainerConfigurator $container) {
-    $diAsFactory = [ref('service_container'), 'get'];
+    $s = $container->services();
+    $p = $container->parameters();
 
-    $container->services()
+    $p
+        ->set('cache.redis.namespace', 'halcache')
+        ->set('redis.options', ['prefix' => '%redis.prefix%'])
+    ;
+
+    $s
         ->set('cache', CacheInterface::class)
-        ->factory($diAsFactory)
-        ->args(['cache.%cache.type.main%'])
+            ->factory([ref('service_container'), 'get'])
+            ->arg('$id', 'cache.%cache.type.main%')
 
-        ->set('cache.github', CacheInterface::class)
-        ->factory($diAsFactory)
-        ->public()
-        ->args(['cache.%cache.type.github%'])
+        ->set('cache.memory', ArrayCache::class)
+            ->public()
 
-        ->set('cache.memory', MemoryCache::class)
-        ->public()
+        ->set('cache.redis', RedisCache::class)
+            ->arg('$redisClient', ref(Client::class))
+            ->arg('$namespace', '%cache.redis.namespace%')
+            ->public()
 
-        ->set('cache.redis', PredisCache::class)
-        ->public()
-        ->args([ref('redis')])
+        ->set(Client::class)
+            ->arg('$parameters', '%redis.server%')
+            ->arg('$options', '%redis.options%')
+    ;
 
-        ->set('cache.redis_github', PredisCache::class)
-        ->public()
-        ->parent(ref('cache.redis'))
-        ->call('setMaximumTtl', ['%cache.github.default.ttl%'])
-
-        ->set('redis', PredisClient::class)
-        ->args([
-            '%redis.server%',
-            [ 'prefix' => '%redis.prefix%' ]
-        ]);
+    // Database caching
+    $s
+        ->set('doctrine.cache.redis', RedisCache::class)
+            ->arg('$redisClient', ref(Client::class))
+            ->public()
+    ;
 };

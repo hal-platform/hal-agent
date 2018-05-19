@@ -4,14 +4,13 @@ services:
         public: true
         class: 'Hal\Agent\Deploy\Script\ScriptDeployPlatform'
         arguments:
-            - '@logger.event'
-            - '@deploy.script.configurator'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Deploy\Script\Steps\Configurator'
             - '@build.build_runner'
 
     ############################################################################
     # steps
     ############################################################################
 
-    deploy.script.configurator:
-        class: 'Hal\Agent\Deploy\Script\Steps\Configurator'
+    'Hal\Agent\Deploy\Script\Steps\Configurator': []
 

@@ -1,199 +1,48 @@
 services:
 
-    application:
+    'Symfony\Component\Console\Application':
         public: true
-        class: 'Symfony\Component\Console\Application'
         arguments: ['%application.title%', '%application.version%']
         calls:
-            - ['add', ['@command.management.build.remove']]
-            - ['add', ['@command.job.start_build']]
-            - ['add', ['@command.job.start_deploy']]
-            - ['add', ['@command.runner.build']]
-            - ['add', ['@command.runner.deploy']]
-            # - ['add', ['@command.worker.build']]
-            # - ['add', ['@command.worker.deploy']]
-            - ['setDispatcher', ['@dispatcher']]
-    dispatcher:
-        class: 'Symfony\Component\EventDispatcher\EventDispatcher'
+            - ['setDispatcher', ['@Symfony\Component\EventDispatcher\EventDispatcher']]
+            - ['setCommandLoader', ['@Symfony\Component\Console\CommandLoader\ContainerCommandLoader']]
+
+    'Symfony\Component\EventDispatcher\EventDispatcher':
         calls:
-            - ['addSubscriber', ['@logger.mcp.subscriber']]
-            - ['addSubscriber', ['@logger.exception_handler']]
+            - ['addSubscriber', ['@Hal\Agent\Symfony\ExceptionHandlerSubscriber']]
 
-    clock:
-        class: 'QL\MCP\Common\Time\Clock'
-        arguments: ['now', 'UTC']
+    'Symfony\Component\Console\CommandLoader\ContainerCommandLoader':
+        - '@service_container'
+        -
+            'job:build':                'command.job.start_build'
+            'job:release':              'command.job.start_deploy'
+            'management:build:remove':  'command.management.remove_build'
+            'runner:build':             'command.job.run_build'
+            'runner:deploy':            'command.job.run_deploy'
 
-    ssh.manager:
-        class: 'Hal\Agent\Remoting\SSHSessionManager'
-        arguments: ['@logger.event', '@ssh.wallet']
-
-    ssh.filemanager:
-        class: 'Hal\Agent\Remoting\FileSyncManager'
-        arguments: ['@ssh.wallet']
-
-    ssh.wallet:
-        class: 'Hal\Agent\Remoting\CredentialWallet'
-        calls:
-            - ['importCredentials', ['%ssh.credentials%']]
-
-    ####################################################################################################################
-    # CACHING
-    ####################################################################################################################
-
-    # cache.github:
-    #     class: 'QL\MCP\Cache\CacheInterface'
-    #     factory: ['@service_container', 'get']
-    #     arguments: ['cache.%cache.type.github%']
-    #
-    # cache.memory:
-    #     class: 'QL\MCP\Cache\MemoryCache'
-
-    # cache.redis:
-    #     class: 'QL\MCP\Cache\PredisCache'
-    #     arguments: ['@redis']
-    #
-    # cache.redis_github:
-    #     class: 'QL\MCP\Cache\PredisCache'
-    #     parent: 'cache.redis'
-    #     calls:
-    #         - ['setMaximumTtl', ['%cache.github.default.ttl%']]
-
-    redis:
-        class: 'Predis\Client'
-        arguments:
-            - '%redis.server%'
-            - { prefix: '%redis.prefix%:' }
-
-    ####################################################################################################################
-    # ERROR & EXCEPTION HANDLING
-    ####################################################################################################################
-
-    logger:
-        public: true
-        parent: 'mcp.logger'
-
-    logger.exception_handler:
-        class: 'Hal\Agent\Symfony\ExceptionHandlerSubscriber'
-        arguments: ['@logger']
-        calls:
-            - ['setStacktraceLogging', ['%error_handling.log_stacktrace%']]
-
-    logger.event:
-        class: 'Hal\Agent\Logger\EventLogger'
-        arguments:
-            - '@doctrine.em'
-            - '@logger.process_handler'
-            - '@logger.metadata_handler'
-            - '@clock'
-
-    logger.process_handler:
-        class: 'Hal\Agent\Logger\ProcessHandler'
-        arguments: ['@doctrine.em']
-
-    logger.metadata_handler:
-        class: 'Hal\Agent\Logger\MetadataHandler'
-        arguments: ['@logger.metadata_handler.http_client', '@logger']
-
-    logger.metadata_handler.http_client:
-        class: 'GuzzleHttp\Client'
-        arguments:
-            -
-                base_url: '%hal.baseurl%'
-                defaults:
-                    verify: true
-                    exceptions: false
-                    headers:
-                        'Authorization': 'token %hal.api_token%'
-
-
-    # subscriber to symfony/console event system to prepare mcp logger
-    logger.mcp.subscriber:
-        class: 'Hal\Agent\Logger\MCPLoggerSubscriber'
-        arguments: ['@mcp.logger.factory']
-
-    ####################################################################################################################
-    # DOCTRINE-SPECIFIC SERVICES
-    ####################################################################################################################
-
-    doctrine.cache.redis:
-        public: true
-        class: 'Hal\Core\Database\DoctrineUtility\DoctrinePredisCache'
-        arguments: ['@redis', '%doctrine.cache.ttl%']
-
-    doctrine.cache.memory:
-        public: true
-        class: 'Doctrine\Common\Cache\ArrayCache'
 
     ####################################################################################################################
     # utility / shared
     ####################################################################################################################
 
-    utility.finder:
-        class: 'Symfony\Component\Finder\Finder'
-    utility.filesystem:
-        class: 'Symfony\Component\Filesystem\Filesystem'
+    'QL\MCP\Common\Clock':
+        - 'now'
+        - 'UTC'
 
-    utility.forker:
-        class: 'Hal\Agent\Helper\ForkHelper'
+    'Symfony\Component\Yaml\Parser': []
 
-    yaml.parser:
-        class: 'Symfony\Component\Yaml\Parser'
+    'Hal\Agent\Symfony\ProcessRunner':
+        - '@Hal\Agent\Logger\EventLogger'
 
-    utility.environment.resolver:
-        class: 'Hal\Agent\Utility\BuildEnvironmentResolver'
-        arguments: ['@doctrine.em', '@process_runner']
-        calls:
-            - ['setWindowsAWSBuilder', ['%build.windows_aws.region%', '%build.windows_aws.credential_name%', '%build.windows_aws.bucket%', '%build.windows_aws.builder_filter%']]
-            - ['setUnixBuilder',       ['%build.linux.user%',         '%build.linux.server%',                '%path.linux_builder%']]
-
-    process_runner:
-        class: 'Hal\Agent\Symfony\ProcessRunner'
-        arguments: ['@logger.event']
-    filesystem:
-        class: 'Symfony\Component\Filesystem\Filesystem'
-
-    aws:
-        class: 'Aws\Sdk'
-        arguments:
-            - { version: 'latest' }
-
-    aws.host_sdk_credential_provider:
-        class: 'Aws\Credentials\CredentialProvider'
-        factory: ['Aws\Credentials\CredentialProvider', 'ini']
-        arguments:
-            - null
-            - '%aws.host_credentials_path%'
+    'Symfony\Component\Filesystem\Filesystem': []
 
     ####################################################################################################################
     # job configuration
     ####################################################################################################################
 
-    job_configuration.reader:
-        class: 'Hal\Agent\JobConfiguration\ConfigurationReader'
-        arguments:
-            - '@logger.event'
-            - '@utility.filesystem'
-            - '@yaml.parser'
+    'Hal\Agent\JobConfiguration\ConfigurationReader':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Symfony\Component\Filesystem\Filesystem'
+        - '@Symfony\Component\Yaml\Parser'
 
-    job_configuration.step_parser:
-        class: 'Hal\Agent\JobConfiguration\StepParser'
-
-    ####################################################################################################################
-    # encryption
-    ####################################################################################################################
-
-    encryption:
-        class: 'Hal\Core\Crypto\Encryption'
-        factory: ['@encryption.factory', 'getCrypto']
-        lazy: true
-
-    encryption.factory:
-        class: 'Hal\Core\Crypto\CryptoFilesystemFactory'
-        arguments: ['%encryption.secret_path%']
-
-    encrypted.resolver:
-        class: 'Hal\Agent\Utility\EncryptedPropertyResolver'
-        arguments:
-            - '@doctrine.em'
-            - '@encryption'
-            - '@logger.event'
+    'Hal\Agent\JobConfiguration\StepParser': []

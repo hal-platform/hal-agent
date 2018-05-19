@@ -75,7 +75,7 @@ parameters:
 
     deploy.eb.waiter.interval: 10
     deploy.eb.waiter.max: 60
-    deploy.eb.waiter.additionalWaitTimeSeconds: 50
+    deploy.eb.waiter.additional_wait_seconds: 50
 
     build.ssm.waiter.interval: 10
     build.ssm.waiter.max: 180
@@ -92,8 +92,7 @@ parameters:
     cache.type.main: '%env(string:HAL_CACHE_MAIN)%'
     cache.type.github: '%env(string:HAL_CACHE_GITHUB)%'
 
-    cache.github.default.ttl: 60
-    cache.github.short.ttl: 20
+    cache.github.default_ttl: 60
 
     ############################################################################
     # windows platform

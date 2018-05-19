@@ -8,8 +8,8 @@ services:
         public: true
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
         arguments:
-            - '@logger.event'
-            - '@encrypted.resolver'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Utility\EncryptedPropertyResolver'
             - '@build.windows_aws.configurator'
             - '@build.windows_aws.exporter'
             - '@build.windows_aws.native_builder'
@@ -21,8 +21,8 @@ services:
         public: true
         class: 'Hal\Agent\Build\WindowsAWS\WindowsAWSBuildPlatform'
         arguments:
-            - '@logger.event'
-            - '@encrypted.resolver'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Utility\EncryptedPropertyResolver'
             - '@build.windows_aws.configurator'
             - '@build.windows_aws.exporter'
             - '@build.windows_aws.docker_builder'
@@ -37,12 +37,12 @@ services:
     build.windows_aws.docker_builder:
         class: 'Hal\Agent\Build\WindowsAWS\DockerBuilder'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_dockerinator'
             - '@build.windows_aws.support_docker_validator'
             - '@build.windows_aws.support_powershellinator'
-            - '@job_configuration.step_parser'
+            - '@Hal\Agent\JobConfiguration\StepParser'
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
             - ['setInternalCommandTimeout', ['%timeout.windows_builder_internal%']]
@@ -50,7 +50,7 @@ services:
     build.windows_aws.native_builder:
         class: 'Hal\Agent\Build\WindowsAWS\NativeBuilder'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
             - '%timeout.build%'
@@ -65,7 +65,7 @@ services:
     build.windows_aws.configurator:
         class: 'Hal\Agent\Build\WindowsAWS\Steps\Configurator'
         arguments:
-            - '@doctrine.em'
+            - '@Doctrine\ORM\EntityManagerInterface'
             - '@build.support.aws_authenticator'
             - '@build.windows_aws.support_builder_finder'
             - '%build.windows_aws.region%'
@@ -76,7 +76,7 @@ services:
     build.windows_aws.exporter:
         class: 'Hal\Agent\Build\WindowsAWS\Steps\Exporter'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.support.file_compression'
             - '@build.windows_aws.support_s3_uploader'
             - '@build.windows_aws.support_ssm_runner'
@@ -87,9 +87,9 @@ services:
     build.windows_aws.importer:
         class: 'Hal\Agent\Build\WindowsAWS\Steps\Importer'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.support.file_compression'
-            - '@filesystem'
+            - '@Symfony\Component\Filesystem\Filesystem'
             - '@build.windows_aws.s3_downloader'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
@@ -99,7 +99,7 @@ services:
     build.windows_aws.cleaner:
         class: 'Hal\Agent\Build\WindowsAWS\Steps\Cleaner'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
         calls:
@@ -112,7 +112,7 @@ services:
     build.windows_aws.support_builder_finder:
         class: 'Hal\Agent\Build\WindowsAWS\AWS\BuilderFinder'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.windows_aws.support_ec2_finder'
 
     build.windows_aws.support_ec2_finder:
@@ -123,13 +123,13 @@ services:
 
     build.windows_aws.s3_downloader:
         class: 'Hal\Agent\Build\WindowsAWS\AWS\S3Downloader'
-        arguments: ['@logger.event']
+        arguments: ['@Hal\Agent\Logger\EventLogger']
         calls:
             - ['setBuilderDebugLogging', ['%error_handling.docker.debug%']]
 
     build.windows_aws.support_ssm_runner:
         class: 'Hal\Agent\Build\WindowsAWS\AWS\SSMCommandRunner'
-        arguments: ['@logger.event', '@build.windows_aws.support_ssm_runner.waiter']
+        arguments: ['@Hal\Agent\Logger\EventLogger', '@build.windows_aws.support_ssm_runner.waiter']
     build.windows_aws.support_ssm_runner.waiter:
         class: 'Hal\Agent\Waiter\Waiter'
         arguments: ['%build.ssm.waiter.interval%', '%build.ssm.waiter.max%']
@@ -148,7 +148,7 @@ services:
     build.windows_aws.support_dockerinator:
         class: 'Hal\Agent\Docker\WindowsSSMDockerinator'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.windows_aws.support_ssm_runner'
             - '@build.windows_aws.support_powershellinator'
             - '%build.platforms.option.manual_dns%'
@@ -160,7 +160,7 @@ services:
     build.windows_aws.support_docker_validator:
         class: 'Hal\Agent\Docker\DockerImageValidator'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '%build.platforms.option.windows.allowed_images%'
             - '%build.platforms.option.windows.docker_easy_repo%'
             - '%build.platforms.option.windows.docker_private_registry%'

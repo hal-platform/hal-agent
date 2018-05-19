@@ -4,50 +4,40 @@ services:
         public: true
         class: 'Hal\Agent\Deploy\ElasticBeanstalk\ELBDeployPlatform'
         arguments:
-            - '@logger.event'
-            - '@deploy.elb.configurator'
-            - '@deploy.elb.healthchecker'
-            - '@deploy.elb.ec2finder'
-            - '@deploy.elb.swapper'
-            - '@deploy.elb.manager'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Configurator'
+            - '@Hal\Agent\Deploy\ElasticLoadBalancer\Steps\HealthChecker'
+            - '@Hal\Agent\Deploy\ElasticLoadBalancer\Steps\EC2Finder'
+            - '@Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Swapper'
+            - '@Hal\Agent\Deploy\ElasticLoadBalancer\Steps\ELBManager'
 
     ############################################################################
     # steps
     ############################################################################
 
-    deploy.elb.configurator:
-        class: 'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Configurator'
-        arguments:
-            - '@deploy.support.aws_authenticator'
+    'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Configurator':
+        - '@deploy.support.aws_authenticator'
 
-    deploy.elb.healthchecker:
-        class: 'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\HealthChecker'
-        arguments:
-            - '@logger.event'
+    'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\HealthChecker':
+        - '@Hal\Agent\Logger\EventLogger'
 
-    deploy.elb.ec2finder:
-        class: 'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\EC2Finder'
-        arguments:
-            - '@logger.event'
+    'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\EC2Finder':
+        - '@Hal\Agent\Logger\EventLogger'
 
-    deploy.elb.swapper:
-        class: 'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Swapper'
-        arguments:
-            - '@logger.event'
-            - '@deploy.elb.waiter'
+    'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Swapper':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@deploy.elb.support_waiter'
 
-    deploy.elb.manager:
-        class: 'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\ELBManager'
-        arguments:
-            - '@logger.event'
+    'Hal\Agent\Deploy\ElasticLoadBalancer\Steps\ELBManager':
+        - '@Hal\Agent\Logger\EventLogger'
 
     ############################################################################
     # support
     ############################################################################
 
-    deploy.elb.waiter:
+    deploy.elb.support_waiter:
         class: 'Hal\Agent\Waiter\Waiter'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '%deploy.eb.waiter.interval%'
             - '%deploy.eb.waiter.max%'

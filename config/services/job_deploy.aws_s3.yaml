@@ -4,53 +4,47 @@ services:
         public: true
         class: 'Hal\Agent\Deploy\S3\S3DeployPlatform'
         arguments:
-            - '@logger.event'
-            - '@deploy.s3.configurator'
-            - '@deploy.s3.compressor'
-            - '@deploy.s3.artifact_uploader'
-            - '@deploy.s3.sync_uploader'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Deploy\S3\Steps\Configurator'
+            - '@Hal\Agent\Deploy\S3\Steps\Compressor'
+            - '@Hal\Agent\AWS\S3Uploader'
+            - '@Hal\Agent\Deploy\S3\Steps\SyncUploader'
 
     ############################################################################
     # steps
     ############################################################################
 
-    deploy.s3.configurator:
-        class: 'Hal\Agent\Deploy\S3\Steps\Configurator'
-        arguments:
-            - '@deploy.support.aws_authenticator'
-            - '@clock'
+    'Hal\Agent\Deploy\S3\Steps\Configurator':
+        - '@deploy.support.aws_authenticator'
+        - '@QL\MCP\Common\Clock'
 
-    deploy.s3.compressor:
-        class: 'Hal\Agent\Deploy\S3\Steps\Compressor'
-        arguments:
-            - '@logger.event'
-            - '@filesystem'
-            - '@deploy.support.file_compression'
+    'Hal\Agent\Deploy\S3\Steps\Compressor':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Symfony\Component\Filesystem\Filesystem'
+        - '@deploy.support.file_compression'
 
-    deploy.s3.artifact_uploader:
-        class: 'Hal\Agent\AWS\S3Uploader'
-        arguments: ['@logger.event']
+    'Hal\Agent\AWS\S3Uploader':
+        - '@Hal\Agent\Logger\EventLogger'
 
-    deploy.s3.sync_uploader:
-        class: 'Hal\Agent\Deploy\S3\Steps\SyncUploader'
-        arguments: ['@deploy.s3.support_sync_filesync']
+    'Hal\Agent\Deploy\S3\Steps\SyncUploader':
+        - '@Hal\Agent\Deploy\S3\FileSync'
 
     ############################################################################
     # support
     ############################################################################
 
-    deploy.s3.support_sync_filesync:
-        class: 'Hal\Agent\Deploy\S3\FileSync'
+    'Hal\Agent\Deploy\S3\FileSync':
         arguments:
-            - '@utility.finder'
-            - '@deploy.s3.support_sync_comparator'
-            - '@deploy.s3.support_sync_batcher'
+            - '@deploy.s3.support_finder'
+            - '@Hal\Agent\Deploy\S3\Comparator'
+            - '@Hal\Agent\AWS\S3Batcher'
         calls:
             - ['withFlag', ['COMPARE_FILES']]
             - ['withFlag', ['REMOVE_EXTRA_FILES']]
 
-    deploy.s3.support_sync_comparator:
-        class: 'Hal\Agent\Deploy\S3\Comparator'
+    'Hal\Agent\Deploy\S3\Comparator': []
 
-    deploy.s3.support_sync_batcher:
-        class: 'Hal\Agent\AWS\S3Batcher'
+    'Hal\Agent\AWS\S3Batcher': []
+
+    deploy.s3.support_finder:
+        class: 'Symfony\Component\Finder\Finder'

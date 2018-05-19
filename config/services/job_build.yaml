@@ -2,8 +2,8 @@ services:
     build.resolver:
         class: 'Hal\Agent\Build\Resolver'
         arguments:
-            - '@doctrine.em'
-            - '@encrypted.resolver'
+            - '@Doctrine\ORM\EntityManagerInterface'
+            - '@Hal\Agent\Utility\EncryptedPropertyResolver'
         calls:
             - ['setLocalTempPath', ['%path.temp%']]
             - ['setArchivePath', ['%path.archive%']]
@@ -11,27 +11,28 @@ services:
     build.downloader:
         class: 'Hal\Agent\Build\Downloader'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.support.file_compression'
-            - '@vcs'
+            - '@Hal\Core\VersionControl\VCS'
 
     build.build_runner:
         class: 'Hal\Agent\JobRunner'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@service_container'
             - '%build.platforms%'
 
     build.artifacter:
         class: 'Hal\Agent\Build\Artifacter'
         arguments:
-            - '@logger.event'
-            - '@filesystem'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Symfony\Component\Filesystem\Filesystem'
             - '@build.support.file_compression'
 
     build.cleaner:
         class: 'Hal\Agent\Job\LocalCleaner'
-        arguments: ['@filesystem']
+        arguments:
+            - '@Symfony\Component\Filesystem\Filesystem'
 
     ############################################################################
     # support for build platforms
@@ -40,20 +41,20 @@ services:
     build.support.file_compression:
         class: 'Hal\Agent\Job\FileCompression'
         arguments:
-            - '@process_runner'
+            - '@Hal\Agent\Symfony\ProcessRunner'
             - '%timeout.filepacking%'
 
     build.support.aws_authenticator:
         class: 'Hal\Core\AWS\AWSAuthenticator'
         arguments:
-            - '@logger'
+            - '@Psr\Log\LoggerInterface'
             - '@build.support.credential_provider'
-            - '@aws'
+            - '@Aws\Sdk'
 
     build.support.credential_provider:
         class: 'Hal\Core\AWS\CredentialProvider'
         arguments:
-            - '@logger'
-            - '@encryption'
-            - '@doctrine.em'
-            - '@aws'
+            - '@Psr\Log\LoggerInterface'
+            - '@Hal\Core\Crypto\Encryption'
+            - '@Doctrine\ORM\EntityManagerInterface'
+            - '@Aws\Sdk'

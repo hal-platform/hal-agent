@@ -4,59 +4,58 @@ services:
         public: true
         class: 'Hal\Agent\Deploy\ElasticBeanstalk\EBDeployPlatform'
         arguments:
-            - '@logger.event'
-            - '@deploy.eb.configurator'
-            - '@deploy.eb.compressor'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Deploy\ElasticBeanstalk\Steps\Configurator'
+            - '@Hal\Agent\Deploy\ElasticBeanstalk\Steps\Compressor'
             - '@deploy.eb.artifact_uploader'
-            - '@deploy.eb.healthchecker'
-            - '@deploy.eb.deployer'
-            - '@deploy.eb.verifier'
+            - '@Hal\Agent\Deploy\ElasticBeanstalk\Steps\HealthChecker'
+            - '@Hal\Agent\Deploy\ElasticBeanstalk\Steps\Deployer'
+            - '@Hal\Agent\Deploy\ElasticBeanstalk\Steps\DeploymentVerifier'
 
     ############################################################################
     # steps
     ############################################################################
 
-    deploy.eb.configurator:
-        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Configurator'
-        arguments:
-            - '@deploy.support.aws_authenticator'
-            - '@clock'
-            - '%hal.baseurl%'
+    'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Configurator':
+        - '@deploy.support.aws_authenticator'
+        - '@QL\MCP\Common\Clock'
+        - '%hal.baseurl%'
 
-    deploy.eb.compressor:
-        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Compressor'
-        arguments:
-            - '@deploy.s3.compressor'
+    'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Compressor':
+        - '@deploy.eb.support_s3_compressor'
 
     deploy.eb.artifact_uploader:
         class: 'Hal\Agent\AWS\S3Uploader'
-
-    deploy.eb.healthchecker:
-        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\HealthChecker'
         arguments:
-            - '@clock'
-            - '%date.timezone%'
+            - '@Hal\Agent\Logger\EventLogger'
 
-    deploy.eb.deployer:
-        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Deployer'
-        arguments:
-            - '@logger.event'
+    'Hal\Agent\Deploy\ElasticBeanstalk\Steps\HealthChecker':
+        - '@QL\MCP\Common\Clock'
+        - '%date.timezone%'
 
-    deploy.eb.verifier:
-        class: 'Hal\Agent\Deploy\ElasticBeanstalk\Steps\DeploymentVerifier'
-        arguments:
-            - '@logger.event'
-            - '@deploy.eb.healthchecker'
-            - '@deploy.eb.waiter'
-            - '%deploy.eb.waiter.additionalWaitTimeSeconds%'
+    'Hal\Agent\Deploy\ElasticBeanstalk\Steps\Deployer':
+        - '@Hal\Agent\Logger\EventLogger'
+
+    'Hal\Agent\Deploy\ElasticBeanstalk\Steps\DeploymentVerifier':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Hal\Agent\Deploy\ElasticBeanstalk\Steps\HealthChecker'
+        - '@deploy.eb.support_waiter'
+        - '%deploy.eb.waiter.additional_wait_seconds%'
 
     ############################################################################
     # support
     ############################################################################
 
-    deploy.eb.waiter:
+    deploy.eb.support_s3_compressor:
+        class: 'Hal\Agent\Deploy\S3\Steps\Compressor'
+        arguments:
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Symfony\Component\Filesystem\Filesystem'
+            - '@deploy.support.file_compression'
+
+    deploy.eb.support_waiter:
         class: 'Hal\Agent\Waiter\Waiter'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '%deploy.eb.waiter.interval%'
             - '%deploy.eb.waiter.max%'

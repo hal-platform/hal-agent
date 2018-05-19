@@ -3,8 +3,8 @@ services:
     deploy.resolver:
         class: 'Hal\Agent\Deploy\Resolver'
         arguments:
-            - '@doctrine.em'
-            - '@encrypted.resolver'
+            - '@Doctrine\ORM\EntityManagerInterface'
+            - '@Hal\Agent\Utility\EncryptedPropertyResolver'
         calls:
             - ['setLocalTempPath', ['%path.temp%']]
             - ['setArchivePath', ['%path.archive%']]
@@ -12,27 +12,28 @@ services:
     deploy.artifacter:
         class: 'Hal\Agent\Deploy\Artifacter'
         arguments:
-            - '@logger.event'
-            - '@filesystem'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Symfony\Component\Filesystem\Filesystem'
             - '@build.support.file_compression'
 
     deploy.build_runner:
         class: 'Hal\Agent\JobRunner'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@service_container'
             - '%build.platforms%'
 
     deploy.release_runner:
         class: 'Hal\Agent\JobRunner'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@service_container'
             - '%deployment.platforms%'
 
     deploy.cleaner:
         class: 'Hal\Agent\Job\LocalCleaner'
-        arguments: ['@filesystem']
+        arguments:
+            - '@Symfony\Component\Filesystem\Filesystem'
 
     ############################################################################
     # support for deploy platforms
@@ -41,23 +42,23 @@ services:
     deploy.support.file_compression:
         class: 'Hal\Agent\Job\FileCompression'
         arguments:
-            - '@process_runner'
+            - '@Hal\Agent\Symfony\ProcessRunner'
             - '%timeout.filepacking%'
 
     deploy.support.aws_authenticator:
         class: 'Hal\Core\AWS\AWSAuthenticator'
         arguments:
-            - '@logger'
+            - '@Psr\Log\LoggerInterface'
             - '@deploy.support.credential_provider'
-            - '@aws'
+            - '@Aws\Sdk'
 
     deploy.support.credential_provider:
         class: 'Hal\Core\AWS\CredentialProvider'
         arguments:
-            - '@logger'
-            - '@encryption'
-            - '@doctrine.em'
-            - '@aws'
+            - '@Psr\Log\LoggerInterface'
+            - '@Hal\Core\Crypto\Encryption'
+            - '@Doctrine\ORM\EntityManagerInterface'
+            - '@Aws\Sdk'
             - '%aws.use_host_credentials%'
         calls:
             - ['setHostCredentials', ['@aws.host_sdk_credential_provider']]

@@ -4,55 +4,48 @@ services:
         public: true
         class: 'Hal\Agent\Deploy\Rsync\RsyncDeployPlatform'
         arguments:
-            - '@logger.event'
-            - '@deploy.rsync.configurator'
-            - '@deploy.rsync.verifier'
-            - '@deploy.rsync.runner'
-            - '@deploy.rsync.deployer'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Deploy\Rsync\Steps\Configurator'
+            - '@Hal\Agent\Deploy\Rsync\Steps\Verifier'
+            - '@Hal\Agent\Deploy\Rsync\Steps\CommandRunner'
+            - '@Hal\Agent\Deploy\Rsync\Steps\Deployer'
 
     ############################################################################
     # steps
     ############################################################################
 
-    deploy.rsync.configurator:
-        class: 'Hal\Agent\Deploy\Rsync\Steps\Configurator'
-        arguments:
-            - '@logger.event'
-            - '%deploy.rsync.user%'
+    'Hal\Agent\Deploy\Rsync\Steps\Configurator':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '%deploy.rsync.user%'
 
-    deploy.rsync.verifier:
-        class: 'Hal\Agent\Deploy\Rsync\Steps\Verifier'
-        arguments:
-            - '@logger.event'
-            - '@ssh.manager'
-            - '@deploy.rsync.verify.remoter'
+    'Hal\Agent\Deploy\Rsync\Steps\Verifier':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Hal\Agent\Remoting\SSHSessionManager'
+        - '@deploy.rsync.verify_remoter'
 
-    deploy.rsync.runner:
-        class: 'Hal\Agent\Deploy\Rsync\Steps\CommandRunner'
-        arguments: ['@deploy.rsync.standard.remoter']
+    'Hal\Agent\Deploy\Rsync\Steps\CommandRunner':
+        - '@deploy.rsync.standard_remoter'
 
-    deploy.rsync.deployer:
-        class: 'Hal\Agent\Deploy\Rsync\Steps\Deployer'
-        arguments:
-            - '@logger.event'
-            - '@ssh.filemanager'
-            - '@process_runner'
-            - '%timeout.push%'
+    'Hal\Agent\Deploy\Rsync\Steps\Deployer':
+        - '@Hal\Agent\Logger\EventLogger'
+        - '@Hal\Agent\Remoting\FileSyncManager'
+        - '@Hal\Agent\Symfony\ProcessRunner'
+        - '%timeout.push%'
 
     ############################################################################
     # support
     ############################################################################
 
-    deploy.rsync.standard.remoter:
+    deploy.rsync.standard_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - '@logger.event'
-            - '@ssh.manager'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Remoting\SSHSessionManager'
             - '%timeout.deploy.serverCommand%'
 
-    deploy.rsync.verify.remoter:
+    deploy.rsync.verify_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - '@logger.event'
-            - '@ssh.manager'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Remoting\SSHSessionManager'
             - '%timeout.standard%'

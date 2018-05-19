@@ -8,8 +8,8 @@ services:
         public: true
         class: 'Hal\Agent\Build\Linux\LinuxBuildPlatform'
         arguments:
-            - '@logger.event'
-            - '@encrypted.resolver'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Utility\EncryptedPropertyResolver'
             - '@build.linux.configurator'
             - '@build.linux.exporter'
             - '@build.linux.docker_builder'
@@ -24,10 +24,10 @@ services:
     build.linux.docker_builder:
         class: 'Hal\Agent\Build\Linux\DockerBuilder'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.linux.support_dockerinator'
             - '@build.linux.support_docker_validator'
-            - '@job_configuration.step_parser'
+            - '@Hal\Agent\JobConfiguration\StepParser'
 
     ############################################################################
     # steps
@@ -44,15 +44,15 @@ services:
     build.linux.exporter:
         class: 'Hal\Agent\Build\Linux\Steps\Exporter'
         arguments:
-            - '@ssh.manager'
+            - '@Hal\Agent\Remoting\SSHSessionManager'
             - '@build.support.file_compression'
 
     build.linux.importer:
         class: 'Hal\Agent\Build\Linux\Steps\Importer'
         arguments:
-            - '@ssh.manager'
+            - '@Hal\Agent\Remoting\SSHSessionManager'
             - '@build.support.file_compression'
-            - '@filesystem'
+            - '@Symfony\Component\Filesystem\Filesystem'
 
     build.linux.cleaner:
         class: 'Hal\Agent\Build\Linux\Steps\Cleaner'
@@ -65,15 +65,15 @@ services:
     build.linux.support_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - '@logger.event'
-            - '@ssh.manager'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Remoting\SSHSessionManager'
             - '%timeout.linux_builder_internal%'
 
     build.linux.support_build_remoter:
         class: 'Hal\Agent\Remoting\SSHProcess'
         arguments:
-            - '@logger.event'
-            - '@ssh.manager'
+            - '@Hal\Agent\Logger\EventLogger'
+            - '@Hal\Agent\Remoting\SSHSessionManager'
             - '%timeout.build%'
 
     ############################################################################
@@ -83,7 +83,7 @@ services:
     build.linux.support_dockerinator:
         class: 'Hal\Agent\Docker\LinuxDockerinator'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '@build.linux.support_remoter'
             - '@build.linux.support_build_remoter'
             - '%build.platforms.option.manual_dns%'
@@ -93,7 +93,7 @@ services:
     build.linux.support_docker_validator:
         class: 'Hal\Agent\Docker\DockerImageValidator'
         arguments:
-            - '@logger.event'
+            - '@Hal\Agent\Logger\EventLogger'
             - '%build.platforms.option.linux.allowed_images%'
             - '%build.platforms.option.linux.docker_easy_repo%'
             - '%build.platforms.option.linux.docker_private_registry%'

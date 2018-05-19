@@ -1,6 +1,6 @@
 imports:
-    - resource: '../vendor/hal/hal-core/config/*.yaml'
-    - resource: 'vendor/*.yaml'
+    - resource: '../vendor/ql/mcp-logger/config/config.php'
+    - resource: '../vendor/hal/hal-core/config/config.php'
     - resource: 'services/*.yaml'
     - resource: 'services/*.php'
 

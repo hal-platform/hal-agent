@@ -3,7 +3,9 @@
 
 namespace Hal\Agent\Bootstrap;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Debug\ErrorHandler;
+use Symfony\Component\Console\Application;
 
 $root = __DIR__ . '/..';
 putenv("HAL_ROOT=${root}");
@@ -14,8 +16,8 @@ if (!$container = include "${root}/config/bootstrap.php") {
 };
 
 $err = ErrorHandler::register();
-$err->setDefaultLogger($container->get('logger'));
+$err->setDefaultLogger($container->get(LoggerInterface::class));
 
-$app = $container->get('application');
+$app = $container->get(Application::class);
 
 $app->run();
