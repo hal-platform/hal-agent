@@ -37,7 +37,6 @@ parameters:
     ############################################################################
     path.temp_workspace: '%env(string:HAL_PATH_TEMP)%'        # temporary scratch, local
     path.artifacts: '%env(string:HAL_PATH_ARTIFACTS)%'        # permanent filesystem artifact repository
-    path.linux_builder: '%env(string:HAL_PATH_RUNNING_JOBS)%' # temporary scratch, linux builder
 
     ############################################################################
     # builders
@@ -136,8 +135,6 @@ parameters:
             - '*'
         '%build.platforms.option.linux.docker_private_registry%/hal-build-environments':
             - '*'
-        'hal9000/base_centos7':
-            - 'latest'
 
     ############################################################################
     # credentials / encryption
