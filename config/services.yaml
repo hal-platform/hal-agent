@@ -45,5 +45,6 @@ services:
         - '@Hal\Agent\Logger\EventLogger'
         - '@Symfony\Component\Filesystem\Filesystem'
         - '@Symfony\Component\Yaml\Parser'
+        - '%configuration.files%'
 
     'Hal\Agent\JobConfiguration\StepParser': []

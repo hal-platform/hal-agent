@@ -1,7 +1,6 @@
 # temp spaces for dev
 /.workspace/
 /.artifacts/
-/.jobs/
 
 # testing
 /.error.log
@@ -16,7 +15,8 @@
 /config/.env
 /src/CachedContainer.php
 /.doctrine/
+/.phinx/
 
 # sensitive stuff
-/.keys/
-/bin/util/aws-scripts/
+/phinx.yml
+/phinx.secrets

@@ -72,7 +72,7 @@ return function (ContainerConfigurator $container) {
             ->arg('$cleaner', ref('build.cleaner'))
             ->arg('$sshManager', ref(SSHSessionManager::class))
             ->arg('$resolver', ref('build.resolver'))
-            ->arg('$downloader', ref('build.resolver'))
+            ->arg('$downloader', ref('build.downloader'))
             ->arg('$reader', ref(ConfigurationReader::class))
             ->arg('$builder', ref('build.build_runner'))
             ->arg('$artifacter', ref('build.artifacter'))

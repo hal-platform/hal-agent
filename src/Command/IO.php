@@ -48,4 +48,23 @@ class IO extends SymfonyStyle implements IOInterface
     {
         return $this->input->getOption($name);
     }
+
+    /**
+     * Wraps text output in a color
+     *
+     * @param string $text
+     * @param string $foreground
+     * @param string $background
+     *
+     * @return string
+     */
+    public function color(string $text, string $foreground, ?string $background = null): string
+    {
+        $pattern = "fg=${foreground}";
+        if ($background) {
+            $pattern .= ";bg=${background}";
+        }
+
+        return "<${pattern}>${text}</>";
+    }
 }

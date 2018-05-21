@@ -35,7 +35,7 @@ return function (ContainerConfigurator $container) {
             ->public()
 
         ->set(EventLogger::class)
-            ->arg('$em', ref('mcp_logger'))
+            ->arg('$em', ref(EntityManagerInterface::class))
             ->arg('$processHandler', ref(ProcessHandler::class))
             ->arg('$metaHandler', ref(MetadataHandler::class))
             ->arg('$clock', ref(Clock::class))

@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -14,11 +14,13 @@ interface BuilderInterface extends IOAwareInterface
     /**
      * @param string $jobID
      * @param string $image
+     *
+     * @param string $workspacePath
      * @param string $stagePath
      * @param array $steps
      * @param array $env
      *
      * @return bool
      */
-    public function __invoke(string $jobID, string $image, string $stagePath, array $steps, array $env): bool;
+    public function __invoke(string $jobID, string $image, string $workspacePath, string $stagePath, array $steps, array $env): bool;
 }

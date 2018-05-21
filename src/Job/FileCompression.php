@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -8,6 +8,8 @@
 namespace Hal\Agent\Job;
 
 use Hal\Agent\Symfony\ProcessRunner;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
 class FileCompression
 {
@@ -24,17 +26,24 @@ class FileCompression
     private $runner;
 
     /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
      * @var int
      */
     private $commandTimeout;
 
     /**
      * @param ProcessRunner $runner
+     * @param Filesystem $filesystem
      * @param int $commandTimeout
      */
-    public function __construct(ProcessRunner $runner, int $commandTimeout)
+    public function __construct(ProcessRunner $runner, Filesystem $filesystem, int $commandTimeout)
     {
         $this->runner = $runner;
+        $this->filesystem = $filesystem;
 
         $this->commandTimeout = $commandTimeout;
     }
@@ -46,19 +55,14 @@ class FileCompression
      */
     public function createWorkspace(string $workspacePath): bool
     {
-        $makeCommand = ['mkdir', $workspacePath];
-        $dispCommand = implode(' ', $makeCommand);
+        try {
+            $this->filesystem->mkdir($workspacePath);
 
-        $process = $this->runner->prepare($makeCommand, null, $this->commandTimeout);
-        if (!$this->runner->run($process, $dispCommand, self::ERR_TIMEOUT)) {
+        } catch(IOException $e) {
             return false;
         }
 
-        if ($process->isSuccessful()) {
-            return true;
-        }
-
-        return $this->runner->onFailure($process, $dispCommand, self::EVENT_MESSAGE);
+        return true;
     }
 
     /**

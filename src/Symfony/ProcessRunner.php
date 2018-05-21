@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -36,13 +36,13 @@ class ProcessRunner
     }
 
     /**
-     * @param array $args
+     * @param string|array $args
      * @param string|null $workingDirectory
      * @param float|null $timeout
      *
      * @return Process
      */
-    public function prepare(array $args, ?string $workingDirectory, ?float $timeout = null): Process
+    public function prepare($args, ?string $workingDirectory, ?float $timeout = null): Process
     {
         if ($timeout === null) {
             $timeout = $this->defaultTimeout;

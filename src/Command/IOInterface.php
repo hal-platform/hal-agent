@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -25,4 +25,13 @@ interface IOInterface extends StyleInterface
      * @see Symfony\Component\Console\Input\InputInterface
      */
     public function getOption($name);
+
+    /**
+     * Wraps text output in a color
+     *
+     * @param string $text
+     * @param string $foreground
+     * @param string $background
+     */
+    public function color(string $text, string $foreground, ?string $background = null);
 }

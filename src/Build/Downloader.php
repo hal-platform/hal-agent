@@ -47,24 +47,20 @@ class Downloader
 
     /**
      * @param Build $build
-     * @param string $workspace
+     * @param string $tempPath
+     * @param string $workspacePath
      *
      * @return bool
      */
-    public function __invoke(Build $build, string $workspace): bool
+    public function __invoke(Build $build, string $tempPath, string $workspacePath): bool
     {
-        $buildPath = $workspace . '/job';
-        $sourceCodeFile = $workspace . '/source_code.tgz';
+        $sourceCodeFile = $tempPath . '/source_code.tgz';
 
         if (!$downloader = $this->getVCSDownloader($build)) {
             return false;
         }
 
-        if (!$this->fileCompression->createWorkspace($workspace)) {
-            return false;
-        }
-
-        if (!$this->fileCompression->createWorkspace($buildPath)) {
+        if (!$this->fileCompression->createWorkspace($workspacePath)) {
             return false;
         }
 
@@ -73,7 +69,7 @@ class Downloader
                 return false;
             }
 
-            if (!$this->fileCompression->unpackTarArchive($buildPath, $sourceCodeFile, 1)) {
+            if (!$this->fileCompression->unpackTarArchive($workspacePath, $sourceCodeFile, 1)) {
                 return false;
             }
         }

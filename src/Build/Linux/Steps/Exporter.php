@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -69,7 +69,7 @@ class Exporter
     private function copyFiles($from, $to)
     {
         try {
-            $this->filesystem->copy($from, $to);
+            $this->filesystem->mirror($from, $to);
 
         } catch (IOException $e) {
             return false;

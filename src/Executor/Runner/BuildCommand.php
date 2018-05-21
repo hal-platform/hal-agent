@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -23,6 +23,7 @@ use Hal\Agent\JobRunner;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Core\Entity\JobType\Build;
+use Hal\Core\Entity\Job;
 use Hal\Core\Type\JobEventStageEnum;
 use Hal\Core\Type\VCSProviderEnum;
 use Symfony\Component\Console\Command\Command;
@@ -290,6 +291,8 @@ class BuildCommand implements ExecutorInterface
     {
         $io->section($this->step(2));
 
+        $buildPath = $workspacePath . '/workspace';
+
         $provider = $build->application()->provider();
         $providerName = $provider ? $provider->name() : 'None';
         $provideType = $provider ? VCSProviderEnum::format($provider->type()) : 'N/A';
@@ -300,7 +303,7 @@ class BuildCommand implements ExecutorInterface
             sprintf('VCS Reference: %s (Commit: %s)', $this->colorize($build->reference()), $build->commit())
         ]);
 
-        return ($this->downloader)($build, $workspacePath);
+        return ($this->downloader)($build, $workspacePath, $buildPath);
     }
 
     /**

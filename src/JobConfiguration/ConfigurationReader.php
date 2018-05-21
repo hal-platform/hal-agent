@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -49,34 +49,20 @@ class ConfigurationReader
      * @param EventLogger $logger
      * @param Filesystem $filesystem
      * @param Parser $parser
+     * @param array $fileLocations
      */
     public function __construct(
         EventLogger $logger,
         Filesystem $filesystem,
-        Parser $parser
+        Parser $parser,
+        array $fileLocations
     ) {
         $this->logger = $logger;
         $this->filesystem = $filesystem;
         $this->parser = $parser;
 
+        $this->fileLocations = $fileLocations;
         $this->fileLoader = $this->getDefaultFileLoader();
-        $this->fileLocations = [
-            '.hal.yml',
-            '.hal.yaml',
-            '.hal/config.yml',
-            '.hal/config.yaml',
-            '.hal9000.yml',
-        ];
-    }
-
-    /**
-     * @param array $files
-     *
-     * @return void
-     */
-    public function setValidConfigurationLocations(array $files)
-    {
-        $this->fileLocations = $files;
     }
 
     /**

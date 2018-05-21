@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2016 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -278,6 +278,9 @@ class EventLogger
         }
 
         // must be array or string at this point
+        if (is_string($data) && !preg_match('//u', $data)) {
+            return '';
+        }
 
         if (is_string($data) && strlen($data) === 0) {
             return '';

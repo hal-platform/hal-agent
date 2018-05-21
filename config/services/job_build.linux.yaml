@@ -24,6 +24,7 @@ services:
         - '@Hal\Agent\Logger\EventLogger'
         - '@Hal\Agent\Docker\LinuxDockerinator'
         - '@build.linux.support_docker_validator'
+        - '@build.support.file_compression'
         - '@Hal\Agent\JobConfiguration\StepParser'
 
     ############################################################################
@@ -44,7 +45,6 @@ services:
 
     'Hal\Agent\Docker\LinuxDockerinator':
         arguments:
-            - '@Hal\Agent\Logger\EventLogger'
             - '@Hal\Agent\Symfony\ProcessRunner'
             - '%timeout.internal_build_steps%'
             - '%timeout.build_steps%'

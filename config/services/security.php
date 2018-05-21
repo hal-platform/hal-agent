@@ -34,7 +34,7 @@ return function (ContainerConfigurator $container) {
             ->lazy()
 
         ->set(CryptoFilesystemFactory::class)
-            ->arg('$keyPath', ref(CredentialWallet::class))
+            ->arg('$keyPath', '%encryption.secret_path%')
 
         ->set(EncryptedPropertyResolver::class)
             ->arg('$em', ref(EntityManagerInterface::class))

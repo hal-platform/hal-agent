@@ -44,6 +44,7 @@ services:
         class: 'Hal\Agent\Job\FileCompression'
         arguments:
             - '@Hal\Agent\Symfony\ProcessRunner'
+            - '@Symfony\Component\Filesystem\Filesystem'
             - '%timeout.filepacking%'
 
     build.support.aws_authenticator:
