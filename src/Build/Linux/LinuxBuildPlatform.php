@@ -114,7 +114,6 @@ class LinuxBuildPlatform implements JobPlatformInterface
 
         $basePath = $properties['workspace_path'];
         $workspacePath = "${basePath}/workspace";
-
         $encryptedEnv = $properties['encrypted'];
 
         if (!$platformConfig = $this->configurator($job)) {

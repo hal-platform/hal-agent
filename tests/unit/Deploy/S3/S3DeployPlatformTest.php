@@ -48,7 +48,9 @@ class S3DeployPlatformTest extends IOTestCase
     {
         $job = new Job;
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->logger
             ->shouldReceive('event')
@@ -77,7 +79,9 @@ class S3DeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -111,7 +115,7 @@ class S3DeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $config =[
@@ -132,14 +136,14 @@ class S3DeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/source_file', '/workspace/build_export.compressed', 'target_file')
+            ->with('/tmp/1234/workspace/source_file', '/tmp/1234/build_export.compressed', 'target_file')
             ->andReturn(true);
 
         $this->s3Uploader
             ->shouldReceive('__invoke')
             ->with(
                 $this->s3,
-                '/workspace/build_export.compressed',
+                '/tmp/1234/build_export.compressed',
                 'target_bucket',
                 'target_file',
                 [
@@ -159,24 +163,25 @@ class S3DeployPlatformTest extends IOTestCase
         $platform->setIO($this->io());
 
         $actual = $platform($job, $execution, $properties);
-        $expected = [
-            'S3 Platform - Validating S3 configuration',
-            'Platform configuration:',
-            '  sdk             {',
-            '                      "s3": {}',
-            '                  }',
-            '  region          "us-test-1"',
-            '  bucket          "target_bucket"',
-            '  method          "artifact"',
-            '  local_path      "source_file"',
-            '  remote_path     "target_file"',
+        $expected = <<<'OUTPUT_TEXT'
+S3 Platform - Validating S3 configuration
 
-            'S3 Platform - Compressing source',
-            ' * Local Path: /workspace/job/source_file',
-            ' * Temp Artifact: /workspace/build_export.compressed',
+Platform configuration:
+  sdk             {
+                      "s3": {}
+                  }
+  region          "us-test-1"
+  bucket          "target_bucket"
+  method          "artifact"
+  local_path      "source_file"
+  remote_path     "target_file"
 
-            'S3 Platform - Uploading artifacts to S3 bucket',
-        ];
+S3 Platform - Compressing source
+ * Local Path: /tmp/1234/workspace/source_file
+ * Temp Artifact: /tmp/1234/build_export.compressed
+
+S3 Platform - Uploading artifacts to S3 bucket
+OUTPUT_TEXT;
 
         $this->assertContainsLines($expected, $this->output());
         $this->assertSame(true, $actual);
@@ -187,7 +192,7 @@ class S3DeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $config =[
@@ -208,14 +213,14 @@ class S3DeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/source_file', '/workspace/build_export.compressed', 'target_file')
+            ->with('/tmp/1234/workspace/source_file', '/tmp/1234/build_export.compressed', 'target_file')
             ->andReturn(true);
 
         $this->syncUploader
             ->shouldReceive('__invoke')
             ->with(
                 $this->s3,
-                '/workspace/job/source_path',
+                '/tmp/1234/workspace/source_path',
                 'target_bucket',
                 'target_path'
             )
@@ -231,23 +236,24 @@ class S3DeployPlatformTest extends IOTestCase
         $platform->setIO($this->io());
 
         $actual = $platform($job, $execution, $properties);
-        $expected = [
-            'S3 Platform - Validating S3 configuration',
-            'Platform configuration:',
-            '  sdk             {',
-            '                      "s3": {}',
-            '                  }',
-            '  region          "us-test-1"',
-            '  bucket          "target_bucket"',
-            '  method          "sync"',
-            '  local_path      "source_path"',
-            '  remote_path     "target_path"',
+        $expected = <<<'OUTPUT_TEXT'
+S3 Platform - Validating S3 configuration
 
-            'S3 Platform - Compressing source',
-            ' ! [NOTE] Skipping compression step in sync mode',
+Platform configuration:
+  sdk             {
+                      "s3": {}
+                  }
+  region          "us-test-1"
+  bucket          "target_bucket"
+  method          "sync"
+  local_path      "source_path"
+  remote_path     "target_path"
 
-            'S3 Platform - Uploading artifacts to S3 bucket',
-        ];
+S3 Platform - Compressing source
+ ! [NOTE] Skipping compression step in sync mode
+
+S3 Platform - Uploading artifacts to S3 bucket
+OUTPUT_TEXT;
 
         $this->assertContainsLines($expected, $this->output());
         $this->assertSame(true, $actual);

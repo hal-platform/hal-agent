@@ -21,7 +21,6 @@ use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\JobExecution;
 use Hal\Agent\JobRunner;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Entity\Job;
 use Hal\Core\Type\JobEventStageEnum;
@@ -66,11 +65,6 @@ class BuildCommand implements ExecutorInterface
     private $cleaner;
 
     /**
-     * @var SSHSessionManager
-     */
-    private $sshManager;
-
-    /**
      * @var Resolver
      */
     private $resolver;
@@ -108,7 +102,6 @@ class BuildCommand implements ExecutorInterface
     /**
      * @param EventLogger $logger
      * @param LocalCleaner $cleaner
-     * @param SSHSessionManager $sshManager
      *
      * @param Resolver $resolver
      * @param Downloader $downloader
@@ -119,7 +112,6 @@ class BuildCommand implements ExecutorInterface
     public function __construct(
         EventLogger $logger,
         LocalCleaner $cleaner,
-        SSHSessionManager $sshManager,
         Resolver $resolver,
         Downloader $downloader,
         ConfigurationReader $reader,
@@ -128,7 +120,6 @@ class BuildCommand implements ExecutorInterface
     ) {
         $this->logger = $logger;
         $this->cleaner = $cleaner;
-        $this->sshManager = $sshManager;
 
         $this->resolver = $resolver;
         $this->downloader = $downloader;
@@ -193,6 +184,8 @@ class BuildCommand implements ExecutorInterface
         }
 
         $job = $properties['job'];
+        $workspacePath = $properties['workspace_path'];
+        $jobPath = $workspacePath . '/workspace';
 
         // The build has officially started running.
         // Set the build to in progress
@@ -202,11 +195,11 @@ class BuildCommand implements ExecutorInterface
             'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
         ]);
 
-        if (!$this->downloadSourceCode($io, $job, $properties['workspace_path'])) {
+        if (!$this->downloadSourceCode($io, $job, $workspacePath, $jobPath)) {
             return $this->buildFailure($io, self::ERR_DOWNLOAD);
         }
 
-        if (!$config = $this->loadConfiguration($io, $properties['default_configuration'], $properties['workspace_path'])) {
+        if (!$config = $this->loadConfiguration($io, $properties['default_configuration'], $workspacePath, $jobPath)) {
             return $this->buildFailure($io, self::ERR_CONFIG);
         }
 
@@ -216,7 +209,7 @@ class BuildCommand implements ExecutorInterface
 
         $this->logger->setStage(JobEventStageEnum::TYPE_ENDING);
 
-        if (!$this->storeArtifact($io, $job, $config, $properties['workspace_path'])) {
+        if (!$this->storeArtifact($io, $job, $config, $workspacePath, $jobPath)) {
             return $this->buildFailure($io, self::ERR_STORE_ARTIFACT);
         }
 
@@ -284,14 +277,13 @@ class BuildCommand implements ExecutorInterface
      * @param IOInterface $io
      * @param Build $build
      * @param string $workspacePath
+     * @param string $jobPath
      *
      * @return bool
      */
-    private function downloadSourceCode(IOInterface $io, Build $build, string $workspacePath)
+    private function downloadSourceCode(IOInterface $io, Build $build, string $workspacePath, string $jobPath)
     {
         $io->section($this->step(2));
-
-        $buildPath = $workspacePath . '/workspace';
 
         $provider = $build->application()->provider();
         $providerName = $provider ? $provider->name() : 'None';
@@ -303,23 +295,22 @@ class BuildCommand implements ExecutorInterface
             sprintf('VCS Reference: %s (Commit: %s)', $this->colorize($build->reference()), $build->commit())
         ]);
 
-        return ($this->downloader)($build, $workspacePath, $buildPath);
+        return ($this->downloader)($build, $workspacePath, $jobPath);
     }
 
     /**
      * @param IOInterface $io
      * @param array $defaultConfiguration
      * @param string $workspacePath
+     * @param string $jobPath
      *
      * @return array|null
      */
-    private function loadConfiguration(IOInterface $io, array $defaultConfiguration, string $workspacePath): ?array
+    private function loadConfiguration(IOInterface $io, array $defaultConfiguration, string $workspacePath, string $jobPath): ?array
     {
         $io->section($this->step(3));
 
-        $buildPath = $workspacePath . '/workspace';
-
-        $config = ($this->reader)($buildPath, $defaultConfiguration);
+        $config = ($this->reader)($jobPath, $defaultConfiguration);
 
         if (!$config) {
             return null;
@@ -369,27 +360,27 @@ class BuildCommand implements ExecutorInterface
      * @param Job $job
      * @param array $config
      * @param string $workspacePath
+     * @param string $jobPath
      *
      * @return bool
      */
-    private function storeArtifact(IOInterface $io, Job $job, array $config, string $workspacePath)
+    private function storeArtifact(IOInterface $io, Job $job, array $config, string $workspacePath, string $jobPath)
     {
         $io->section($this->step(5));
 
         $storedArtifact = sprintf('%s-%s', $job->type(), $job->id());
 
-        $buildPath = $workspacePath . '/workspace';
         $artifactFile = $workspacePath . '/artifact.tgz';
 
         $io->listing([
-            sprintf('Artifact Path: %s', $this->colorize($buildPath . '/' . $config['dist'])),
+            sprintf('Artifact Path: %s', $this->colorize($jobPath . '/' . $config['dist'])),
             sprintf('Artifact File: %s', $this->colorize($artifactFile)),
 
             sprintf('Artifact Repository: %s', $this->colorize('Filesystem')),
-            sprintf('Repository Location: %s', $this->colorize($storedArtifact))
+            sprintf('Artifact: %s', $this->colorize($storedArtifact))
         ]);
 
-        return ($this->artifacter)($buildPath, $config['dist'], $artifactFile, $storedArtifact);
+        return ($this->artifacter)($jobPath, $config['dist'], $artifactFile, $storedArtifact);
     }
 
     /**
@@ -411,8 +402,6 @@ class BuildCommand implements ExecutorInterface
 
             $io->text('Disconnecting all open SSH connections.');
             $io->newLine();
-
-            $this->sshManager->disconnectAll();
 
             ($this->cleaner)($artifacts);
         };

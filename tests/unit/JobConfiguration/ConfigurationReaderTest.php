@@ -37,31 +37,11 @@ class ConfigurationReaderTest extends MockeryTestCase
 
         $this->filesystem
             ->shouldReceive('exists')
-            ->with("${path}/.hal.yml")
-            ->andReturn(false)
-            ->once();
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with("${path}/.hal.yaml")
-            ->andReturn(false)
-            ->once();
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with("${path}/.hal/config.yml")
-            ->andReturn(false)
-            ->once();
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with("${path}/.hal/config.yaml")
-            ->andReturn(false)
-            ->once();
-        $this->filesystem
-            ->shouldReceive('exists')
-            ->with("${path}/.hal9000.yml")
+            ->with("${path}/.config.yaml")
             ->andReturn(false)
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['.config.yaml']);
 
         $default = [];
         $result = $reader($path, $default);
@@ -76,8 +56,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml was invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['invalid.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['invalid.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -92,8 +71,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml configuration key "platform" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['bad_platform.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['bad_platform.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -108,8 +86,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml configuration key "dist" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['bad_dist.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['bad_dist.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -124,8 +101,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml configuration key "after_deploy" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['bad_list.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['bad_list.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -140,8 +116,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', 'Too many commands specified for "build". Must be less than 10.', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['too_many_steps.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['too_many_steps.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -156,8 +131,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml configuration key "env" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['env_invalid.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['env_invalid.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -172,8 +146,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml configuration key "env" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['env_type_invalid.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['env_type_invalid.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -188,8 +161,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml env var for "test" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['env_type_invalid_list.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['env_type_invalid_list.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -204,8 +176,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml env var for "test" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['env_vars_invalid.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['env_vars_invalid.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -223,8 +194,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('failure', '.hal.yaml env var for "test" is invalid', Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['env_vars_invalid_value.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['env_vars_invalid_value.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);
@@ -239,8 +209,7 @@ class ConfigurationReaderTest extends MockeryTestCase
             ->with('success', Mockery::any(), Mockery::any())
             ->once();
 
-        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser);
-        $reader->setValidConfigurationLocations(['valid.yaml']);
+        $reader = new ConfigurationReader($this->logger, $this->filesystem, $this->parser, ['valid.yaml']);
 
         $default = [];
         $result = $reader($this->fixturesPath, $default);

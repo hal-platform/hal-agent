@@ -58,7 +58,7 @@ class RsyncDeployPlatformTest extends IOTestCase
         ]);
 
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $platformConfig = [
@@ -87,7 +87,7 @@ class RsyncDeployPlatformTest extends IOTestCase
 
         $this->deployer
             ->shouldReceive('__invoke')
-            ->with('/workspace/job', 'root', 'localhost', '/', ['excludeme.jpg'])
+            ->with('/tmp/1234/workspace', 'root', 'localhost', '/', ['excludeme.jpg'])
             ->andReturn(true);
 
         $this->runner
@@ -111,7 +111,9 @@ class RsyncDeployPlatformTest extends IOTestCase
     {
         $job = new Release();
         $jobExecution = new JobExecution('rsync', 'deploy', []);
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/tmp/1234'
+        ];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -138,7 +140,9 @@ class RsyncDeployPlatformTest extends IOTestCase
     {
         $job = new Release();
         $jobExecution = new JobExecution('rsync', 'deploy', []);
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/tmp/1234'
+        ];
 
         $platformConfig = [
             'remoteUser' => 'root',
@@ -180,7 +184,10 @@ class RsyncDeployPlatformTest extends IOTestCase
                 'echo "Code will be deployed"'
             ]
         ]);
-        $properties = [];
+
+        $properties = [
+            'workspace_path' => '/tmp/1234'
+        ];
 
         $platformConfig = [
             'remoteUser' => 'root',
@@ -234,7 +241,7 @@ class RsyncDeployPlatformTest extends IOTestCase
         ]);
 
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $platformConfig = [
@@ -263,7 +270,7 @@ class RsyncDeployPlatformTest extends IOTestCase
 
         $this->deployer
             ->shouldReceive('__invoke')
-            ->with('/workspace/job', 'root', 'localhost', '/', [])
+            ->with('/tmp/1234/workspace', 'root', 'localhost', '/', [])
             ->andReturn(false);
 
         $this->logger
@@ -298,7 +305,7 @@ class RsyncDeployPlatformTest extends IOTestCase
         ]);
 
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $platformConfig = [
@@ -327,7 +334,7 @@ class RsyncDeployPlatformTest extends IOTestCase
 
         $this->deployer
             ->shouldReceive('__invoke')
-            ->with('/workspace/job', 'root', 'localhost', '/', [])
+            ->with('/tmp/1234/workspace', 'root', 'localhost', '/', [])
             ->andReturn(true);
 
         $this->runner

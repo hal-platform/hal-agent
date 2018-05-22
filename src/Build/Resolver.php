@@ -42,7 +42,7 @@ class Resolver
     /**
      * @var string
      */
-    private $tempDir;
+    private $localWorkspace;
 
     /**
      * @param EntityManagerInterface $em
@@ -154,7 +154,7 @@ class Resolver
 
             $this->filesystem->touch("${temp}/.hal-agent");
 
-        } catch(IOException $e) {
+        } catch (IOException $e) {
             throw new BuildException(sprintf(self::ERR_TEMP, $temp));
         }
     }

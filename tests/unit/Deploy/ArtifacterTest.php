@@ -30,12 +30,12 @@ class ArtifacterTest extends MockeryTestCase
     {
         $this->filesystem
             ->shouldReceive('exists')
-            ->with('/permanent/build.tgz')
+            ->with('/artifacts/build.tgz')
             ->andReturn(true);
 
         $this->filesystem
             ->shouldReceive('copy')
-            ->with('/permanent/build.tgz', '/workspace/deploy.tgz', true)
+            ->with('/artifacts/build.tgz', '/workspace/deploy.tgz', true)
             ->once();
 
         $this->fileCompression
@@ -52,12 +52,12 @@ class ArtifacterTest extends MockeryTestCase
             ->with('success', 'Download artifact from artifact repository')
             ->once();
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $actual = $artifacter(
             '/workspace/deploy',
             '/workspace/deploy.tgz',
-            '/permanent/build.tgz'
+            'build.tgz'
         );
 
         $this->assertSame(true, $actual);
@@ -67,7 +67,7 @@ class ArtifacterTest extends MockeryTestCase
     {
         $this->filesystem
             ->shouldReceive('exists')
-            ->with('/permanent/build.tgz')
+            ->with('/artifacts/build.tgz')
             ->andReturn(false);
 
         $this->logger
@@ -75,12 +75,12 @@ class ArtifacterTest extends MockeryTestCase
             ->with('failure', 'Download artifact from artifact repository')
             ->once();
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $actual = $artifacter(
             '/workspace/deploy',
             '/workspace/deploy.tgz',
-            '/permanent/build.tgz'
+            'build.tgz'
         );
 
         $this->assertSame(false, $actual);
@@ -90,12 +90,12 @@ class ArtifacterTest extends MockeryTestCase
     {
         $this->filesystem
             ->shouldReceive('exists')
-            ->with('/permanent/build.tgz')
+            ->with('/artifacts/build.tgz')
             ->andReturn(true);
 
         $this->filesystem
             ->shouldReceive('copy')
-            ->with('/permanent/build.tgz', '/workspace/deploy.tgz', true)
+            ->with('/artifacts/build.tgz', '/workspace/deploy.tgz', true)
             ->once();
 
         $this->fileCompression
@@ -107,12 +107,12 @@ class ArtifacterTest extends MockeryTestCase
             ->with('/workspace/deploy', '/workspace/deploy.tgz')
             ->andReturn(false);
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $actual = $artifacter(
             '/workspace/deploy',
             '/workspace/deploy.tgz',
-            '/permanent/build.tgz'
+            'build.tgz'
         );
 
         $this->assertSame(false, $actual);

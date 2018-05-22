@@ -8,7 +8,6 @@
 namespace Hal\Agent\Build\Linux;
 
 use Hal\Agent\Build\Linux\Steps\Configurator;
-use Hal\Agent\Build\Linux\Steps\Cleaner;
 use Hal\Agent\Build\Linux\Steps\Exporter;
 use Hal\Agent\Build\Linux\Steps\Importer;
 use Hal\Agent\Build\Linux\Steps\Packer;
@@ -35,7 +34,6 @@ class LinuxBuildPlatformTest extends IOTestCase
     public $exporter;
     public $builder;
     public $importer;
-    public $cleaner;
 
     public function setUp()
     {
@@ -50,9 +48,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             'setIO' => null
         ]);
         $this->importer = Mockery::mock(Importer::class);
-        $this->cleaner = Mockery::mock(Cleaner::class, [
-            '__invoke' => true
-        ]);
     }
 
     public function testSuccess()
@@ -73,15 +68,15 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $properties = [
             'build' => $build,
-            'workspace_path' => '/path/to/workspace',
+            'workspace_path' => '/path/to/5678',
             'encrypted' => [
                 'ENCRYPTED_VAR' => '1234'
             ]
         ];
 
         $platformConfig = [
-            'builder_connection' => 'user@builder.example.com',
-            'remote_file' => '/remote/build.tgz',
+
+            'stage_id' => '1234-5678',
             'environment_variables' => [
                 'PLATFORM_VAR' => 'linux'
             ],
@@ -101,13 +96,13 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $this->exporter
             ->shouldReceive('__invoke')
-            ->with('/path/to/workspace/job', '/path/to/workspace/build_export.tgz', 'user@builder.example.com', '/remote/build.tgz')
+            ->with('/path/to/5678/workspace', '/path/to/5678/1234-5678')
             ->once()
             ->andReturn(true);
 
         $this->builder
             ->shouldReceive('__invoke')
-            ->with('1234', 'my-project-image:latest', 'user@builder.example.com', '/remote/build.tgz', $execution->steps(), [
+            ->with('1234', 'my-project-image:latest', '/path/to/5678', '/path/to/5678/1234-5678', $execution->steps(), [
                 'PLATFORM_VAR' => 'linux',
                 'ENCRYPTED_ENCRYPTED_VAR' => '1234',
                 'CONFIG_VAR' => '5678'
@@ -120,13 +115,7 @@ class LinuxBuildPlatformTest extends IOTestCase
 
         $this->importer
             ->shouldReceive('__invoke')
-            ->with('/path/to/workspace/job', '/path/to/workspace/build_import.tgz', 'user@builder.example.com', '/remote/build.tgz')
-            ->once()
-            ->andReturn(true);
-
-        $this->cleaner
-            ->shouldReceive('__invoke')
-            ->with('user@builder.example.com', '/remote/build.tgz')
+            ->with('/path/to/5678/workspace', '/path/to/5678/1234-5678')
             ->once()
             ->andReturn(true);
 
@@ -138,7 +127,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );
@@ -149,22 +137,20 @@ class LinuxBuildPlatformTest extends IOTestCase
         $expected = [
             'Linux Platform - Validating Linux configuration',
             'Platform configuration:',
-            '  builder_connection      "user@builder.example.com"',
-            '  remote_file             "/remote/build.tgz"',
+            '  stage_id                "1234-5678"',
+            '  environment_variables   {',
+            '                              "PLATFORM_VAR": "linux"',
+            '                          }',
 
-            'Linux Platform - Exporting files to build server',
-            ' * Workspace: /path/to/workspace/job',
-            ' * Local File: /path/to/workspace/build_export.tgz',
-            ' * Remote File: /remote/build.tgz',
+            'Linux Platform - Exporting artifacts to stage',
+            ' * Workspace: /path/to/5678/workspace',
+            ' * Stage Path: /path/to/5678/1234-5678',
 
             'Linux Platform - Running build steps',
 
-            'Linux Platform - Importing artifacts from build server',
-            ' * Workspace: /path/to/workspace/job',
-            ' * Remote File: /remote/build.tgz',
-            ' * Local File: /path/to/workspace/build_import.tgz',
-
-            '! [NOTE] Cleaning up remote builder instance "user@builder.example.com"',
+            'Linux Platform - Importing artifacts from stage',
+            ' * Workspace: /path/to/5678/workspace',
+            ' * Stage Path: /path/to/5678/1234-5678',
         ];
 
         $this->assertContainsLines($expected, $this->output());
@@ -178,7 +164,10 @@ class LinuxBuildPlatformTest extends IOTestCase
             'build' => []
         ]);
 
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/path/to/5678',
+            'encrypted' => []
+        ];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -199,7 +188,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );
@@ -223,15 +211,16 @@ class LinuxBuildPlatformTest extends IOTestCase
         ]);
 
         $properties = [
-            'workspace_path' => ''
+            'workspace_path' => '',
+            'encrypted' => [],
         ];
 
         $this->configurator
             ->shouldReceive('__invoke')
             ->with($build)
             ->andReturn([
-                'builder_connection' => '',
-                'remote_file' => ''
+                'stage_id' => '',
+                'environment_variables' => []
             ]);
 
         $this->exporter
@@ -252,7 +241,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );
@@ -285,8 +273,7 @@ class LinuxBuildPlatformTest extends IOTestCase
             ->shouldReceive('__invoke')
             ->with($build)
             ->andReturn([
-                'builder_connection' => '',
-                'remote_file' => '',
+                'stage_id' => '',
                 'environment_variables' => []
             ]);
 
@@ -312,7 +299,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );
@@ -345,8 +331,7 @@ class LinuxBuildPlatformTest extends IOTestCase
             ->shouldReceive('__invoke')
             ->with($build)
             ->andReturn([
-                'builder_connection' => '',
-                'remote_file' => '',
+                'stage_id' => '',
                 'environment_variables' => []
             ]);
 
@@ -366,7 +351,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );
@@ -404,8 +388,7 @@ class LinuxBuildPlatformTest extends IOTestCase
             ->shouldReceive('__invoke')
             ->with($build)
             ->andReturn([
-                'builder_connection' => '',
-                'remote_file' => '',
+                'stage_id' => '',
                 'environment_variables' => [
                     'PLATFORM_1_VAR' => 'WXYZ'
                 ]
@@ -440,7 +423,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );
@@ -491,8 +473,7 @@ class LinuxBuildPlatformTest extends IOTestCase
             ->shouldReceive('__invoke')
             ->with($build)
             ->andReturn([
-                'builder_connection' => '',
-                'remote_file' => '',
+                'stage_id' => '',
                 'environment_variables' => [
                     'derp' => 'herp',
                     'HAL_ENVIRONMENT' => 'test'
@@ -529,7 +510,6 @@ class LinuxBuildPlatformTest extends IOTestCase
             $this->exporter,
             $this->builder,
             $this->importer,
-            $this->cleaner,
 
             'default-image'
         );

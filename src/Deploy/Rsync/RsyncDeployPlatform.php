@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -98,6 +98,9 @@ class RsyncDeployPlatform implements IOAwareInterface, JobPlatformInterface
             return false;
         }
 
+        $basePath = $properties['workspace_path'];
+        $workspacePath = "${basePath}/workspace";
+
         if (!$platformConfig = $this->configurator($job)) {
             $this->sendFailureEvent(self::ERR_CONFIGURATOR);
             return false;
@@ -113,7 +116,7 @@ class RsyncDeployPlatform implements IOAwareInterface, JobPlatformInterface
             return false;
         }
 
-        if (!$this->deployer($execution, $platformConfig, $properties)) {
+        if (!$this->deployer($execution, $platformConfig, $workspacePath)) {
             $this->sendFailureEvent(self::ERR_DEPLOYER);
             return false;
         }
@@ -191,19 +194,18 @@ class RsyncDeployPlatform implements IOAwareInterface, JobPlatformInterface
     /**
      * @param JobExecution $execution
      * @param array $config
-     * @param array $properties
+     * @param string $jobPath
      *
      * @return bool
      */
-    private function deployer(JobExecution $execution, array $config, array $properties)
+    private function deployer(JobExecution $execution, array $config, string $jobPath)
     {
         $this->getIO()->section(self::STEP_4_DEPLOYING);
 
-        $buildPath = $properties['workspace_path'] . '/job';
         $excludes = $execution->parameter('rsync_exclude') ?? [];
 
         return ($this->deployer)(
-            $buildPath,
+            $jobPath,
             $config['remoteUser'],
             $config['remoteServer'],
             $config['remotePath'],

@@ -1,6 +1,6 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
@@ -108,6 +108,9 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
             return false;
         }
 
+        $basePath = $properties['workspace_path'];
+        $workspacePath = "${basePath}/workspace";
+
         if (!$platformConfig = $this->configurator($job)) {
             $this->sendFailureEvent(self::ERR_CONFIGURATOR);
             return false;
@@ -118,12 +121,12 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
             return false;
         }
 
-        if (!$this->compressor($properties['workspace_path'], $platformConfig)) {
+        if (!$this->compressor($platformConfig, $basePath, $workspacePath)) {
             $this->sendFailureEvent(self::ERR_COMPRESSOR);
             return false;
         }
 
-        if (!$this->uploader($job, $properties['workspace_path'], $platformConfig)) {
+        if (!$this->uploader($job, $platformConfig, $basePath)) {
             $this->sendFailureEvent(self::ERR_UPLOADER);
             return false;
         }
@@ -180,14 +183,15 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
     /**
      * @param string $workspacePath
      * @param array $platformConfig
+     * @param string $jobPath
      *
      * @return bool
      */
-    private function compressor($workspacePath, array $platformConfig)
+    private function compressor(array $platformConfig, string $workspacePath, string $jobPath)
     {
         $this->getIO()->section(self::STEP_3_COMPRESSING);
 
-        $wholeSourcePath = $workspacePath . '/job/' . $platformConfig['local_path'];
+        $wholeSourcePath = $jobPath . '/' . $platformConfig['local_path'];
         $tempArtifactFile = $workspacePath . '/build_export.compressed';
         $remotePath = $platformConfig['remote_path'];
 
@@ -201,12 +205,12 @@ class CodeDeployDeployPlatform implements IOAwareInterface, JobPlatformInterface
 
     /**
      * @param Release $job
-     * @param string $workspacePath
      * @param array $platformConfig
+     * @param string $workspacePath
      *
      * @return bool
      */
-    private function uploader(Release $job, $workspacePath, array $platformConfig)
+    private function uploader(Release $job, array $platformConfig, string $workspacePath)
     {
         $this->getIO()->section(self::STEP_4_UPLOADING);
 

@@ -1,15 +1,15 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
+ * @copyright (c) 2018 Steve Kluck
  *
  * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Deploy\CodeDeploy;
 
-use Hal\Agent\AWS\S3Uploader;
 use Aws\CodeDeploy\CodeDeployClient;
 use AWS\S3\S3Client;
+use Hal\Agent\AWS\S3Uploader;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Compressor;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Configurator;
 use Hal\Agent\Deploy\CodeDeploy\Steps\Deployer;
@@ -56,7 +56,9 @@ class CodeDeployDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -141,7 +143,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $this->configurator
@@ -168,7 +170,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'remote.tar')
+            ->with('/tmp/1234/workspace/.', '/tmp/1234/build_export.compressed', 'remote.tar')
             ->andReturn(false);
 
         $this->logger
@@ -196,7 +198,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $this->configurator
@@ -223,12 +225,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'remote.tar')
+            ->with('/tmp/1234/workspace/.', '/tmp/1234/build_export.compressed', 'remote.tar')
             ->andReturn(true);
 
         $this->uploader
             ->shouldReceive('__invoke')
-            ->with($this->s3, '/workspace/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
+            ->with($this->s3, '/tmp/1234/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
             ->andReturn(false);
 
         $this->logger
@@ -256,7 +258,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $this->configurator
@@ -283,12 +285,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'remote.tar')
+            ->with('/tmp/1234/workspace/.', '/tmp/1234/build_export.compressed', 'remote.tar')
             ->andReturn(true);
 
         $this->uploader
             ->shouldReceive('__invoke')
-            ->with($this->s3, '/workspace/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
+            ->with($this->s3, '/tmp/1234/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
             ->andReturn(true);
 
         $this->deployer
@@ -321,7 +323,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $this->configurator
@@ -348,12 +350,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'remote.tar')
+            ->with('/tmp/1234/workspace/.', '/tmp/1234/build_export.compressed', 'remote.tar')
             ->andReturn(true);
 
         $this->uploader
             ->shouldReceive('__invoke')
-            ->with($this->s3, '/workspace/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
+            ->with($this->s3, '/tmp/1234/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
             ->andReturn(true);
 
         $this->deployer
@@ -391,7 +393,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $this->configurator
@@ -418,12 +420,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'remote.tar')
+            ->with('/tmp/1234/workspace/.', '/tmp/1234/build_export.compressed', 'remote.tar')
             ->andReturn(true);
 
         $this->uploader
             ->shouldReceive('__invoke')
-            ->with($this->s3, '/workspace/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
+            ->with($this->s3, '/tmp/1234/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
             ->andReturn(true);
 
         $this->deployer
@@ -466,7 +468,7 @@ class CodeDeployDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp/1234'
         ];
 
         $this->configurator
@@ -493,12 +495,12 @@ class CodeDeployDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'remote.tar')
+            ->with('/tmp/1234/workspace/.', '/tmp/1234/build_export.compressed', 'remote.tar')
             ->andReturn(true);
 
         $this->uploader
             ->shouldReceive('__invoke')
-            ->with($this->s3, '/workspace/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
+            ->with($this->s3, '/tmp/1234/build_export.compressed', 'bucket', 'remote.tar', ['Job' => '1234', 'Environment' => 'UnitTestEnv'])
             ->andReturn(true);
 
         $this->deployer

@@ -19,8 +19,8 @@ class ConfiguratorTest extends TestCase
         $build = $this->createMockBuild();
 
         $expected = [
-            'builder_connection' => 'build_user@builder.example.com',
-            'remote_file' => '/tmp/builds/hal-job-1234.tgz',
+            'stage_id' => '/tmp/builds/hal-job-1234.tgz',
+
             'environment_variables' => [
                 'HAL_JOB_ID' => '1234',
                 'HAL_JOB_TYPE' => 'build',
@@ -35,17 +35,13 @@ class ConfiguratorTest extends TestCase
             ]
         ];
 
-        $configurator = new Configurator(
-            '/tmp/builds',
-            'build_user',
-            [
-                'builder.example.com'
-            ]
-        );
+        $configurator = new Configurator;
 
         $actual = $configurator($build);
 
-        $this->assertSame($expected, $actual);
+        $this->assertSame(['stage_id', 'environment_variables'], array_keys($actual));
+        $this->assertSame($expected['environment_variables'], $actual['environment_variables']);
+        $this->assertRegExp('#^stage-([a-z0-9\-]{36})$#', $actual['stage_id']);
     }
 
     private function createMockBuild()

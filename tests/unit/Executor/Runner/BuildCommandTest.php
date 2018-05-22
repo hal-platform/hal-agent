@@ -10,12 +10,11 @@ namespace Hal\Agent\Executor\Runner;
 use Hal\Agent\Build\Artifacter;
 use Hal\Agent\Build\Downloader;
 use Hal\Agent\Build\Resolver;
-use Hal\Agent\JobExecution;
-use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
+use Hal\Agent\JobExecution;
+use Hal\Agent\JobRunner;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Remoting\SSHSessionManager;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Environment;
@@ -29,7 +28,6 @@ class BuildCommandTest extends IOTestCase
 
     public $logger;
     public $cleaner;
-    public $ssh;
 
     public $resolver;
     public $downloader;
@@ -41,10 +39,6 @@ class BuildCommandTest extends IOTestCase
     {
         $this->logger = Mockery::mock(EventLogger::class);
         $this->cleaner = Mockery::mock(LocalCleaner::class);
-        $this->ssh = Mockery::mock(SSHSessionManager::class, [
-            'disconnectAll' => null
-        ]);
-
         $this->resolver = Mockery::mock(Resolver::class);
         $this->downloader = Mockery::mock(Downloader::class);
         $this->reader = Mockery::mock(ConfigurationReader::class);
@@ -89,12 +83,12 @@ class BuildCommandTest extends IOTestCase
 
         $this->downloader
             ->shouldReceive('__invoke')
-            ->with($build, '/path/to/job-1234')
+            ->with($build, '/path/to/job-1234', '/path/to/job-1234/workspace')
             ->andReturn(true);
 
         $this->reader
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/job', [
+            ->with('/path/to/job-1234/workspace', [
                 'platform' => 'linux',
                 'image' => 'default',
                 'build' => [],
@@ -114,16 +108,13 @@ class BuildCommandTest extends IOTestCase
 
         $this->artifacter
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/job', '.', '/path/to/job-1234/artifact.tgz', '/artifacts/job-1234.tgz')
+            ->with('/path/to/job-1234/workspace', '.', '/path/to/job-1234/artifact.tgz', 'build-1234')
             ->andReturn(true);
 
         $this->cleaner
             ->shouldReceive('__invoke')
             ->with(['/path/to/job-1234'])
             ->andReturn(true);
-        $this->ssh
-            ->shouldReceive('disconnectAll')
-            ->once();
 
         $this->logger
             ->shouldReceive('start')
@@ -146,7 +137,6 @@ class BuildCommandTest extends IOTestCase
         $command = new BuildCommand(
             $this->logger,
             $this->cleaner,
-            $this->ssh,
             $this->resolver,
             $this->downloader,
             $this->reader,
@@ -159,43 +149,47 @@ class BuildCommandTest extends IOTestCase
         ]);
         $exit = $command->execute($io);
 
-        $expected = [
-            '[1/5] Resolving configuration',
-            ' * Build: 1234',
-            ' * Application: derp (ID: a-1234)',
-            ' * Environment: staging (ID: e-1234)',
+        $expected = <<<'OUTPUT_TEXT'
+[1/5] Resolving configuration
+ * Build: 1234
+ * Application: derp (ID: a-1234)
+ * Environment: staging (ID: e-1234)
 
-            '[2/5] Downloading source code',
-            ' * Build Workspace: /path/to/job-1234',
-            ' * VCS Provider: None (Type: N/A)',
-            ' * VCS Reference: master (Commit: 7de49f3)',
+[2/5] Downloading source code
+ * Build Workspace: /path/to/job-1234
+ * VCS Provider: None (Type: N/A)
+ * VCS Reference: master (Commit: 7de49f3)
 
-            '[3/5] Reading .hal.yml configuration',
-            'Application configuration:',
-            '  platform        "windows"',
-            '  image           "my-project-image:latest"',
-            '  dist            "."',
+[3/5] Reading .hal.yml configuration
+Application configuration:
+  platform        "windows"
+  image           "my-project-image:latest"
+  dist            "."
+  build           [
+                      "command1 --flag",
+                      "path/to/command2 arg1"
+                  ]
 
-            '[4/5] Running build stage',
-            ' * Platform: windows',
-            ' * Docker Image: my-project-image:latest',
+[4/5] Running build stage
+ * Platform: windows
+ * Docker Image: my-project-image:latest
 
-            'Running steps:',
-            ' * command1 --flag',
-            ' * path/to/command2 arg1',
+Running steps:
+ * command1 --flag
+ * path/to/command2 arg1
 
-            '[5/5] Storing build artifact',
-            ' * Artifact Path: /path/to/job-1234/job/.',
-            ' * Artifact File: /path/to/job-1234/artifact.tgz',
-            ' * Artifact Repository: Filesystem',
-            ' * Repository Location: /artifacts/job-1234.tgz',
+[5/5] Storing build artifact
+ * Artifact Path: /path/to/job-1234/workspace/.
+ * Artifact File: /path/to/job-1234/artifact.tgz
+ * Artifact Repository: Filesystem
+ * Artifact: build-1234
 
-            'Build clean-up',
-            'Build artifacts to remove:',
-            ' * /path/to/job-1234',
+Build clean-up
+Build artifacts to remove:
+ * /path/to/job-1234
 
-            '[OK] Build was run successfully.'
-        ];
+[OK] Build was run successfully.
+OUTPUT_TEXT;
 
         $this->assertSame($execution->platform(), 'windows');
         $this->assertSame($execution->stage(), 'build');
@@ -219,15 +213,9 @@ class BuildCommandTest extends IOTestCase
             ->shouldReceive('failure')
             ->once();
 
-        // No cleanup occurs until the build is started.
-        $this->ssh
-            ->shouldReceive('disconnectAll')
-            ->never();
-
         $command = new BuildCommand(
             $this->logger,
             $this->cleaner,
-            $this->ssh,
             $this->resolver,
             $this->downloader,
             $this->reader,
@@ -240,11 +228,12 @@ class BuildCommandTest extends IOTestCase
         ]);
         $exit = $command->execute($io);
 
-        $expected = [
-            'Runner - Run build',
-            '[1/5] Resolving configuration',
-            '[ERROR] Build cannot be run.'
-        ];
+        $expected = <<<'OUTPUT_TEXT'
+Runner - Run build
+[1/5] Resolving configuration
+
+[ERROR] Build cannot be run.
+OUTPUT_TEXT;
 
         $this->assertContainsLines($expected, $this->output());
         $this->assertSame(1, $exit);

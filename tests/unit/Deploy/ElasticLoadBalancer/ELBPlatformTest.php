@@ -56,7 +56,9 @@ class ELBDeployPlatformTest extends IOTestCase
     {
         $job = new Job;
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->logger
             ->shouldReceive('event')
@@ -86,7 +88,9 @@ class ELBDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -120,7 +124,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testEmptyTaggedInstances() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator
@@ -159,7 +166,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testEmptyActiveELBInstances() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator
@@ -208,7 +218,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testEmptyPassiveELBInstances() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator
@@ -282,7 +295,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testFalsePassiveSwapELBInstances() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator
@@ -377,7 +393,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testFalseActiveSwapELBInstances() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator
@@ -477,7 +496,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testFalseCheckActiveELBHealth() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator
@@ -582,7 +604,10 @@ class ELBDeployPlatformTest extends IOTestCase
     public function testFalseCheckPassiveELBHealth() {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $config = $this->configuration();
 
         $this->configurator

@@ -45,11 +45,6 @@ class DownloaderTest extends MockeryTestCase
             ->with('/workspace')
             ->once()
             ->andReturn(true);
-        $this->compression
-            ->shouldReceive('createWorkspace')
-            ->with('/workspace/job')
-            ->once()
-            ->andReturn(true);
 
         $this->vcs
             ->shouldReceive('downloader')
@@ -57,7 +52,7 @@ class DownloaderTest extends MockeryTestCase
 
         $downloader = new Downloader($this->logger, $this->compression, $this->vcs);
 
-        $success = $downloader($build, '/workspace');
+        $success = $downloader($build, '/tmp/artifact.tgz', '/workspace');
         $this->assertSame(true, $success);
     }
 
@@ -70,17 +65,13 @@ class DownloaderTest extends MockeryTestCase
 
         $this->compression
             ->shouldReceive('createWorkspace')
-            ->with(__DIR__ . '/.fixtures')
+            ->with(__DIR__ . '/.fixtures/workspace')
             ->once()
             ->andReturn(true);
-        $this->compression
-            ->shouldReceive('createWorkspace')
-            ->with(__DIR__ . '/.fixtures/job')
-            ->once()
-            ->andReturn(true);
+
         $this->compression
             ->shouldReceive('unpackTarArchive')
-            ->with(__DIR__ . '/.fixtures/job', __DIR__ . '/.fixtures/source_code.tgz', 1)
+            ->with(__DIR__ . '/.fixtures/workspace', __DIR__ . '/.fixtures/source_code.tgz', 1)
             ->once()
             ->andReturn(true);
 
@@ -102,7 +93,7 @@ class DownloaderTest extends MockeryTestCase
 
         $downloader = new Downloader($this->logger, $this->compression, $this->vcs);
 
-        $success = $downloader($build, __DIR__ . '/.fixtures');
+        $success = $downloader($build, __DIR__ . '/.fixtures', __DIR__ . '/.fixtures/workspace');
         $this->assertSame(true, $success);
     }
 
@@ -130,7 +121,7 @@ class DownloaderTest extends MockeryTestCase
 
         $downloader = new Downloader($this->logger, $this->compression, $this->vcs);
 
-        $success = $downloader($build, '/workspace');
+        $success = $downloader($build, '/tmp/artifact.tgz', '/workspace');
         $this->assertSame(false, $success);
     }
 
@@ -143,14 +134,10 @@ class DownloaderTest extends MockeryTestCase
 
         $this->compression
             ->shouldReceive('createWorkspace')
-            ->with(__DIR__ . '/.fixtures')
+            ->with(__DIR__ . '/.fixtures/workspace')
             ->once()
             ->andReturn(true);
-        $this->compression
-            ->shouldReceive('createWorkspace')
-            ->with(__DIR__ . '/.fixtures/job')
-            ->once()
-            ->andReturn(true);
+
         $this->compression
             ->shouldReceive('unpackTarArchive')
             ->never();
@@ -173,7 +160,7 @@ class DownloaderTest extends MockeryTestCase
 
         $downloader = new Downloader($this->logger, $this->compression, $this->vcs);
 
-        $success = $downloader($build, __DIR__ . '/.fixtures');
+        $success = $downloader($build, '/tmp/artifact.tgz', __DIR__ . '/.fixtures/workspace');
         $this->assertSame(false, $success);
     }
 

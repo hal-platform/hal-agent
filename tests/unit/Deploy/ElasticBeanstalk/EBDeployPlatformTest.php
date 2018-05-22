@@ -60,7 +60,9 @@ class EBDeployPlatformTest extends IOTestCase
     {
         $job = new Job;
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->logger
             ->shouldReceive('event')
@@ -81,7 +83,8 @@ class EBDeployPlatformTest extends IOTestCase
         $actual = $platform($job, $execution, $properties);
         $expected = [
             '[ERROR] The provided job is an invalid type for this job platform'
-        ]; 
+        ];
+
         $this->assertContainsLines($expected, $this->output());
         $this->assertSame(false, $actual);
     }
@@ -90,7 +93,9 @@ class EBDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $this->configurator
             ->shouldReceive('__invoke')
@@ -125,7 +130,9 @@ class EBDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
 
         $config = $this->configuration();
 
@@ -332,7 +339,7 @@ class EBDeployPlatformTest extends IOTestCase
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
         $properties = [
-            'workspace_path' => '/workspace'
+            'workspace_path' => '/tmp'
         ];
 
         $config = $this->configuration();
@@ -343,7 +350,7 @@ class EBDeployPlatformTest extends IOTestCase
 
         $this->compressor
             ->shouldReceive('__invoke')
-            ->with('/workspace/job/.', '/workspace/build_export.compressed', 'file.zip')
+            ->with('/tmp/workspace/.', '/tmp/build_export.compressed', 'file.zip')
             ->andReturn(true);
 
         $this->health
@@ -359,7 +366,7 @@ class EBDeployPlatformTest extends IOTestCase
             ->shouldReceive('__invoke')
             ->with(
                 $this->s3,
-                '/workspace/build_export.compressed',
+                '/tmp/build_export.compressed',
                 'bucket',
                 'file.zip',
                 [
@@ -389,29 +396,32 @@ class EBDeployPlatformTest extends IOTestCase
         $platform->setIO($this->io());
 
         $actual = $platform($job, $execution, $properties);
-        $expected = [
-            'EB Platform - Validating EB configuration',
-            'Platform configuration:',
-            '  sdk                      {',
-            '                               "s3": {}',
-            '                               "eb": {}',
-            '                           }',
-            '  region                   "us-test-1"',
-            '  application              "application"',
-            '  environment              "environment"',
-            '  bucket                   "bucket"',
-            '  method                   "artifact"',
-            '  local_path               "."',
-            '  remote_path              "file.zip"',
-            '  deployment_description   "description"',
-            'EB Platform - Checking EB Environment health',
-            'EB Platform - Compressing source',
-            '* Local Path: /workspace/job/.',
-            '* Temp Artifact: /workspace/build_export.compressed',
-            'EB Platform - Uploading artifacts to S3 bucket',
-            'EB Platform - Deploying artifact to ElasticBeanstalk',
-            'EB Platform - Checking EB Environment health after deployment'
-        ];
+        $expected = <<<'OUTPUT_TEXT'
+EB Platform - Validating EB configuration
+
+Platform configuration:
+  sdk                      {
+                               "s3": {}
+                               "eb": {}
+                           }
+  region                   "us-test-1"
+  application              "application"
+  environment              "environment"
+  bucket                   "bucket"
+  method                   "artifact"
+  local_path               "."
+  remote_path              "file.zip"
+  deployment_description   "description"
+
+EB Platform - Checking EB Environment health
+EB Platform - Compressing source
+* Local Path: /tmp/workspace/.
+* Temp Artifact: /tmp/build_export.compressed
+
+EB Platform - Uploading artifacts to S3 bucket
+EB Platform - Deploying artifact to ElasticBeanstalk
+EB Platform - Checking EB Environment health after deployment
+OUTPUT_TEXT;
 
         $this->assertContainsLines($expected, $this->output());
         $this->assertSame(true, $actual);

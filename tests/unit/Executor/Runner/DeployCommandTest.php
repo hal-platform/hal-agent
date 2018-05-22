@@ -7,12 +7,12 @@
 
 namespace Hal\Agent\Executor\Runner;
 
-use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Deploy\Artifacter;
 use Hal\Agent\Deploy\Resolver;
-use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
+use Hal\Agent\JobRunner;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\IOTestCase;
 use Hal\Core\Entity\Application;
 use Hal\Core\Entity\Environment;
@@ -94,12 +94,12 @@ class DeployCommandTest extends IOTestCase
 
         $this->artifacter
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/job', '/path/to/job-1234/artifact.tgz', '/artifacts/job-1234.tgz')
+            ->with('/path/to/job-1234/workspace', '/path/to/job-1234/artifact.tgz', 'build-1234')
             ->andReturn(true);
 
         $this->reader
             ->shouldReceive('__invoke')
-            ->with('/path/to/job-1234/job', [
+            ->with('/path/to/job-1234/workspace', [
                 'platform' => 'linux',
                 'image' => 'default',
                 'build' => [],
@@ -162,49 +162,49 @@ class DeployCommandTest extends IOTestCase
         ]);
         $exit = $command->execute($io);
 
-        $expected = [
-            'Runner - Deploy release',
+        $expected = <<<'OUTPUT_TEXT'
+Runner - Deploy release
 
-            '[1/7] Resolving configuration',
-            ' * Release: 5678',
-            ' * Build: 1234',
-            ' * Application: derp (ID: a-1234)',
-            ' * Environment: staging (ID: e-1234)',
+[1/7] Resolving configuration
+ * Release: 5678
+ * Build: 1234
+ * Application: derp (ID: a-1234)
+ * Environment: staging (ID: e-1234)
 
-            '[2/7] Downloading build artifact',
-            ' * Release Workspace: /path/to/job-1234',
-            ' * Artifact Repository: Filesystem',
-            ' * Repository Location: /artifacts/job-1234.tgz',
+[2/7] Downloading build artifact
+ * Release Workspace: /path/to/job-1234
+ * Artifact Repository: Filesystem
+ * Artifact: build-1234
 
-            '[3/7] Reading .hal.yml configuration',
-            'Application configuration:',
-            '  platform          "linux"',
-            '  image             "my-project-image:latest"',
+[3/7] Reading .hal.yml configuration
+Application configuration:
+  platform          "linux"
+  image             "my-project-image:latest"
 
-            '[4/7] Running build transform stage',
-            'Running steps:',
-            ' * transform_step1 --flag',
-            ' * path/to/step2 arg1',
+[4/7] Running build transform stage
+Running steps:
+ * transform_step1 --flag
+ * path/to/step2 arg1
 
-            '[5/7] Running before deployment stage',
-            'Running steps:',
-            ' * before_step1 --flag',
-            ' * path/to/step2 arg1',
+[5/7] Running before deployment stage
+Running steps:
+ * before_step1 --flag
+ * path/to/step2 arg1
 
-            '[6/7] Running deployment stage',
-            ' * Platform: script',
+[6/7] Running deployment stage
+ * Platform: script
 
-            '[7/7] Running after deployment stage',
-            'Running steps:',
-            ' * after_step1 --flag',
-            ' * path/to/step2 arg1',
+[7/7] Running after deployment stage
+Running steps:
+ * after_step1 --flag
+ * path/to/step2 arg1
 
-            'Release clean-up',
-            'Release artifacts to remove:',
-            ' * /path/to/job-1234',
+Release clean-up
+Release artifacts to remove:
+ * /path/to/job-1234
 
-            '[OK] Release was deployed successfully.'
-        ];
+[OK] Release was deployed successfully
+OUTPUT_TEXT;
 
         $this->assertCount(4, $executions);
 
@@ -259,12 +259,12 @@ class DeployCommandTest extends IOTestCase
         ]);
         $exit = $command->execute($io);
 
-        $expected = [
-            'Runner - Deploy release',
+        $expected = <<<'OUTPUT_TEXT'
+Runner - Deploy release
 
-            '[1/7] Resolving configuration',
-            '[ERROR] Release cannot be run.'
-        ];
+[1/7] Resolving configuration
+[ERROR] Release cannot be run.
+OUTPUT_TEXT;
 
         $this->assertContainsLines($expected, $this->output());
     }
@@ -356,24 +356,24 @@ class DeployCommandTest extends IOTestCase
         ]);
         $exit = $command->execute($io);
 
-        $expected = [
-            'Runner - Deploy release',
+        $expected = <<<'OUTPUT_TEXT'
+Runner - Deploy release
 
-            '[5/7] Running before deployment stage',
-            'Running steps:',
-            ' * before_step1 --flag',
-            ' * path/to/step2 arg1',
+[5/7] Running before deployment stage
+Running steps:
+ * before_step1 --flag
+ * path/to/step2 arg1
 
-            '[6/7] Running deployment stage',
-            ' * Platform: script',
+[6/7] Running deployment stage
+ * Platform: script
 
-            '[7/7] Running after deployment stage',
-            'Running steps:',
-            ' * after_step1 --flag',
-            ' * path/to/step2 arg1',
+[7/7] Running after deployment stage
+Running steps:
+ * after_step1 --flag
+ * path/to/step2 arg1
 
-            '[ERROR] Deployment stage failed.'
-        ];
+[ERROR] Deployment stage failed
+OUTPUT_TEXT;
 
         $this->assertCount(4, $executions);
 

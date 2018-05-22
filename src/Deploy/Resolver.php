@@ -42,7 +42,7 @@ class Resolver
     /**
      * @var string
      */
-    private $tempDir;
+    private $localWorkspace;
 
     /**
      * @param EntityManagerInterface $em
@@ -58,6 +58,7 @@ class Resolver
     ) {
         $this->releaseRepo = $em->getRepository(Release::class);
         $this->encryptedResolver = $encryptedResolver;
+        $this->filesystem = $filesystem;
 
         $this->localWorkspace = rtrim($tempDir, '/');
     }
@@ -79,6 +80,12 @@ class Resolver
         $platform = $release->target()->type();
         $environment = $release->target()->environment();
 
+        // Get encrypted properties for use in deploy, with sources as well (for logging)
+        [
+            'encrypted' => $encrypted,
+            'sources' => $sources
+        ] = $this->encryptedResolver->getEncryptedPropertiesWithSources($application, $environment);
+
         $properties = [
             'job' => $release,
             'platform' => $platform,
@@ -86,12 +93,11 @@ class Resolver
             // default, overwritten by .hal.yaml
             'default_configuration' => $this->buildDefaultConfiguration(),
 
-            'workspace_path' => $this->getLocalWorkspace($release->id(), 'release')
-        ];
+            'workspace_path' => $this->getLocalWorkspace($release->id(), 'release'),
 
-        // Get encrypted properties for use in build, with sources as well (for logging)
-        $encryptedProperties = $this->encryptedResolver->getEncryptedPropertiesWithSources($application, $environment);
-        $properties = array_merge($properties, $encryptedProperties);
+            'encrypted' => $encrypted,
+            'encrypted_sources' => $sources
+        ];
 
         $this->ensureTempExistsAndIsWritable();
 
@@ -117,7 +123,7 @@ class Resolver
         }
 
         $lastJob = $release->target()->lastJob();
-        if ($lastJob && $lastJob->inProgress()) {
+        if ($lastJob && $release !== $lastJob && $lastJob->inProgress()) {
             throw new DeployException(sprintf(self::ERR_CLOBBERING_TIME, $releaseID));
         }
 
@@ -159,7 +165,7 @@ class Resolver
 
             $this->filesystem->touch("${temp}/.hal-agent");
 
-        } catch(IOException $e) {
+        } catch (IOException $e) {
             throw new DeployException(sprintf(self::ERR_TEMP, $temp));
         }
     }

@@ -15,12 +15,14 @@ use Hal\Core\Entity\Environment;
 use Hal\Core\Entity\JobType\Build;
 use Hal\Core\Repository\BuildRepository;
 use Mockery;
+use Symfony\Component\Filesystem\Filesystem;
 
 class ResolverTest extends MockeryTestCase
 {
     public $em;
     public $buildRepo;
     public $encryptedResolver;
+    public $filesystem;
 
     public function setUp()
     {
@@ -30,6 +32,7 @@ class ResolverTest extends MockeryTestCase
         ]);
 
         $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
+        $this->filesystem = Mockery::mock(Filesystem::class);
     }
 
     public function tearDown()
@@ -50,7 +53,7 @@ class ResolverTest extends MockeryTestCase
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $action = new Resolver($this->em, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->encryptedResolver, $this->filesystem, '/tmp/1234');
 
         $action('1234');
     }
@@ -67,7 +70,7 @@ class ResolverTest extends MockeryTestCase
             ->shouldReceive('find')
             ->andReturn($build);
 
-        $action = new Resolver($this->em, $this->encryptedResolver);
+        $action = new Resolver($this->em, $this->encryptedResolver, $this->filesystem, '/tmp/1234');
 
         $action('1234');
     }
@@ -100,14 +103,22 @@ class ResolverTest extends MockeryTestCase
                 'rsync_after' =>[],
             ],
 
-            'workspace_path' => __DIR__ . '/.temp/hal-build-1234',
-            'artifact_stored_file' => '/ARCHIVE_PATH/hal-1234.tar.gz',
+            'workspace_path' => '/tmp/1234/hal-build-1234',
 
             'encrypted' => [
                 'encrypted_1' => '1234',
                 'encrypted_2' => '5678'
             ]
         ];
+
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->with('/tmp/1234')
+            ->andReturn(true);
+        $this->filesystem
+            ->shouldReceive('touch')
+            ->with('/tmp/1234/.hal-agent')
+            ->once();
 
         $this->buildRepo
             ->shouldReceive('find')
@@ -116,19 +127,17 @@ class ResolverTest extends MockeryTestCase
         $this->encryptedResolver
             ->shouldReceive('getEncryptedPropertiesWithSources')
             ->andReturn([
-                'encrypted' => ['encrypted_1' => '1234', 'encrypted_2' => '5678']
+                'encrypted' => ['encrypted_1' => '1234', 'encrypted_2' => '5678'],
+                'sources' => ['encrypted_1' => 'from test']
             ]);
 
-        $action = new Resolver($this->em, $this->encryptedResolver);
-        $action->setLocalTempPath(__DIR__ . '/.temp');
-        $action->setArchivePath('/ARCHIVE_PATH');
+        $action = new Resolver($this->em, $this->encryptedResolver, $this->filesystem, '/tmp/1234');
 
         $properties = $action('1234');
 
         $this->assertSame($expected['job'], $properties['job']);
         $this->assertSame($expected['default_configuration'], $properties['default_configuration']);
         $this->assertSame($expected['workspace_path'], $properties['workspace_path']);
-        $this->assertSame($expected['artifact_stored_file'], $properties['artifact_stored_file']);
 
         $this->assertSame($expected['encrypted'], $properties['encrypted']);
     }

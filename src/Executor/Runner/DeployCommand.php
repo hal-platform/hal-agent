@@ -20,6 +20,7 @@ use Hal\Agent\JobRunner;
 use Hal\Agent\Job\LocalCleaner;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Logger\EventLogger;
+use Hal\Core\Entity\Job;
 use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Type\JobEventStageEnum;
 use Symfony\Component\Console\Command\Command;
@@ -193,6 +194,8 @@ class DeployCommand implements ExecutorInterface
         }
 
         $job = $properties['job'];
+        $workspacePath = $properties['workspace_path'];
+        $jobPath = $workspacePath . '/workspace';
 
         // The release has officially started running.
         // Set the release to in progress
@@ -202,11 +205,11 @@ class DeployCommand implements ExecutorInterface
             'encryptedConfiguration' => $properties['encrypted_sources'] ?? [],
         ]);
 
-        if (!$this->downloadArtifacts($io, $job, $properties['workspace_path'])) {
+        if (!$this->downloadArtifacts($io, $job, $workspacePath, $jobPath)) {
             return $this->deploymentFailure($io, self::ERR_DOWNLOAD);
         }
 
-        if (!$config = $this->loadConfiguration($io, $properties['default_configuration'], $properties['workspace_path'])) {
+        if (!$config = $this->loadConfiguration($io, $properties['default_configuration'], $workspacePath, $jobPath)) {
             return $this->deploymentFailure($io, self::ERR_CONFIG);
         }
 
@@ -299,45 +302,44 @@ class DeployCommand implements ExecutorInterface
 
     /**
      * @param IOInterface $io
-     * @param Job $job
+     * @param Release $job
      * @param string $workspacePath
+     * @param string $jobPath
      *
      * @return bool
      */
-    private function downloadArtifacts(IOInterface $io, Job $job, string $workspacePath)
+    private function downloadArtifacts(IOInterface $io, Release $job, string $workspacePath, string $jobPath)
     {
         $io->section($this->step(2));
 
         $build = $job->build();
         $storedArtifact = sprintf('%s-%s', $build->type(), $build->id());
 
-        $deploymentPath = $workspacePath . '/job';
         $artifactFile = $workspacePath . '/artifact.tgz';
 
         $io->listing([
             sprintf('Release Workspace: %s', $this->colorize($workspacePath)),
 
             sprintf('Artifact Repository: %s', $this->colorize('Filesystem')),
-            sprintf('Repository Location: %s', $this->colorize($storedArtifact))
+            sprintf('Artifact: %s', $this->colorize($storedArtifact))
         ]);
 
-        return ($this->artifacter)($deploymentPath, $artifactFile, $storedArtifact);
+        return ($this->artifacter)($jobPath, $artifactFile, $storedArtifact);
     }
 
     /**
      * @param IOInterface $io
      * @param array $defaultConfiguration
      * @param string $workspacePath
+     * @param string $jobPath
      *
      * @return array|null
      */
-    private function loadConfiguration(IOInterface $io, array $defaultConfiguration, string $workspacePath): ?array
+    private function loadConfiguration(IOInterface $io, array $defaultConfiguration, string $workspacePath, string $jobPath): ?array
     {
         $io->section($this->step(3));
 
-        $deploymentPath = $workspacePath . '/job';
-
-        $config = ($this->reader)($deploymentPath, $defaultConfiguration);
+        $config = ($this->reader)($jobPath, $defaultConfiguration);
 
         if (!$config) {
             return null;

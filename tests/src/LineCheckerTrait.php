@@ -9,10 +9,17 @@ namespace Hal\Agent\Testing;
 
 trait LineCheckerTrait
 {
-    public function assertContainsLines(array $expected, $actual)
+    public function assertContainsLines($expected, $actual)
     {
+        if (!is_array($expected)) {
+            $expected = explode("\n", $expected);
+        }
         foreach ($expected as $line) {
-            $this->assertContains($line, $actual);
+            if (strlen($line) === 0) {
+                continue;
+            }
+
+            $this->assertContains(trim($line), $actual);
         }
     }
 }

@@ -9,6 +9,7 @@ namespace Hal\Agent\Build\Linux;
 
 use Hal\Agent\Docker\DockerImageValidator;
 use Hal\Agent\Docker\LinuxDockerinator;
+use Hal\Agent\Job\FileCompression;
 use Hal\Agent\JobConfiguration\StepParser;
 use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Testing\IOTestCase;
@@ -22,6 +23,7 @@ class DockerBuilderTest extends IOTestCase
     public $logger;
     public $docker;
     public $validator;
+    public $compression;
     public $steps;
 
     public function setUp()
@@ -31,11 +33,17 @@ class DockerBuilderTest extends IOTestCase
             'cleanupContainer' => true
         ]);
         $this->validator = Mockery::mock(DockerImageValidator::class);
+        $this->compression = Mockery::mock(FileCompression::class);
         $this->steps = Mockery::mock(StepParser::class);
     }
 
     public function testSuccess()
     {
+        $this->compression
+            ->shouldReceive('packTarArchive')
+            ->with('/jobs/1234', Mockery::pattern('#^/workspace/1234/([a-z0-9\-]{36}).tgz$#'))
+            ->andReturn(true);
+
         $this->validator
             ->shouldReceive('validate')
             ->with('my-image:latest')
@@ -49,52 +57,79 @@ class DockerBuilderTest extends IOTestCase
             ]);
 
         $this->docker
+            ->shouldReceive('createVolume')
+            ->with('j-1234-stage')
+            ->once()
+            ->andReturn(true);
+
+        $this->docker
             ->shouldReceive('createContainer')
-            ->with('user@localhost', 'my-image:latest', 'j-1234', ['TEST_VAR' => '1234'])
+            ->with('my-image:latest', 'j-1234', 'j-1234-stage')
+            ->times(2)
+            ->andReturn(true);
+        $this->docker
+            ->shouldReceive('createContainer')
+            ->with('my-image:latest', 'j-1234', 'j-1234-stage', ['TEST_VAR' => '1234'], 'step1')
+            ->once()
+            ->andReturn(true);
+        $this->docker
+            ->shouldReceive('createContainer')
+            ->with('my-image:latest', 'j-1234', 'j-1234-stage', ['TEST_VAR' => '1234'], 'step2 --flag')
             ->once()
             ->andReturn(true);
 
         $this->docker
             ->shouldReceive('copyIntoContainer')
-            ->with('user@localhost', 'j-1234', 'j-1234', '/tmp/buildfile.tar.gz')
+            ->with('j-1234', Mockery::pattern('#^/workspace/1234/([a-z0-9\-]{36}).tgz$#'))
             ->once()
             ->andReturn(true);
 
         $this->docker
-            ->shouldReceive('startContainer')
-            ->with('user@localhost', 'j-1234')
-            ->once()
-            ->andReturn(true);
-
-        $this->docker
-            ->shouldReceive('runCommand')
-            ->with('user@localhost', 'j-1234', 'step1', 'Build step [1/2] "step1"')
+            ->shouldReceive('startUserContainer')
+            ->with('j-1234', 'step1', 'Build step [1/2] "step1"')
             ->once()
             ->andReturn(true);
         $this->docker
-            ->shouldReceive('runCommand')
-            ->with('user@localhost', 'j-1234', 'step2 --flag', 'Build step [2/2] "step2 --flag"')
+            ->shouldReceive('startUserContainer')
+            ->with('j-1234', 'step2 --flag', 'Build step [2/2] "step2 --flag"')
             ->once()
             ->andReturn(true);
 
         $this->docker
             ->shouldReceive('copyFromContainer')
-            ->with('user@localhost', 'j-1234', '/tmp/buildfile.tar.gz')
+            ->with('j-1234', Mockery::pattern('#^/workspace/1234/([a-z0-9\-]{36}).tgz$#'))
             ->once()
             ->andReturn(true);
 
         $this->docker
             ->shouldReceive('cleanupContainer')
-            ->with('user@localhost', 'j-1234')
+            ->with('j-1234')
+            ->times(4);
+        $this->docker
+            ->shouldReceive('cleanupVolume')
+            ->with('j-1234-stage')
             ->once();
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $this->compression
+            ->shouldReceive('remove')
+            ->with('/jobs/1234')
+            ->andReturn(true);
+        $this->compression
+            ->shouldReceive('createWorkspace')
+            ->with('/jobs/1234')
+            ->andReturn(true);
+        $this->compression
+            ->shouldReceive('unpackTarArchive')
+            ->with('/jobs/1234', Mockery::pattern('#^/workspace/1234/([a-z0-9\-]{36}).tgz$#'))
+            ->andReturn(true);
+
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
+            '/workspace/1234',
+            '/jobs/1234',
             ['step1', 'step2 --flag'],
             ['TEST_VAR' => '1234']
         );
@@ -123,13 +158,13 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('organizeCommandsIntoJobs')
             ->never();
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
+            '/workspace/1234',
+            '/jobs/1234',
             ['step1', 'step2 --flag'],
             ['TEST_VAR' => '1234']
         );
@@ -143,11 +178,20 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('validate')
             ->andReturn('my-image:latest');
 
+        $this->compression
+            ->shouldReceive('packTarArchive')
+            ->with('/jobs/1234', Mockery::pattern('#^/workspace/1234/([a-z0-9\-]{36}).tgz$#'))
+            ->andReturn(true);
+
         $this->steps
             ->shouldReceive('organizeCommandsIntoJobs')
             ->andReturn([
                 ['my-image:latest', ['step1', 'step2 --flag']]
             ]);
+
+        $this->docker
+            ->shouldReceive('createVolume')
+            ->andReturn(true);
 
         $this->docker
             ->shouldReceive('createContainer')
@@ -158,13 +202,13 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('copyIntoContainer')
             ->never();
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
+            '/workspace/1234',
+            '/jobs/1234',
             ['step1', 'step2 --flag'],
             ['TEST_VAR' => '1234']
         );
@@ -178,11 +222,19 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('validate')
             ->andReturn('my-image:latest');
 
+        $this->compression
+            ->shouldReceive('packTarArchive')
+            ->andReturn(true);
+
         $this->steps
             ->shouldReceive('organizeCommandsIntoJobs')
             ->andReturn([
                 ['my-image:latest', ['step1', 'step2 --flag']]
             ]);
+
+        $this->docker
+            ->shouldReceive('createVolume')
+            ->andReturn(true);
 
         $this->docker
             ->shouldReceive('createContainer')
@@ -194,16 +246,21 @@ class DockerBuilderTest extends IOTestCase
             ->andReturn(false);
 
         $this->docker
-            ->shouldReceive('runCommand')
+            ->shouldReceive('startUserContainer')
             ->never();
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $this->docker
+            ->shouldReceive('cleanupVolume')
+            ->with('j-1234-stage')
+            ->once();
+
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
+            '/workspace/1234',
+            '/jobs/1234',
             ['step1', 'step2 --flag'],
             ['TEST_VAR' => '1234']
         );
@@ -217,6 +274,10 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('validate')
             ->andReturn('my-image:latest');
 
+        $this->compression
+            ->shouldReceive('packTarArchive')
+            ->andReturn(true);
+
         $this->steps
             ->shouldReceive('organizeCommandsIntoJobs')
             ->andReturn([
@@ -224,30 +285,35 @@ class DockerBuilderTest extends IOTestCase
             ]);
 
         $this->docker
+            ->shouldReceive('createVolume')
+            ->andReturn(true);
+        $this->docker
             ->shouldReceive('createContainer')
-            ->once()
             ->andReturn(true);
         $this->docker
             ->shouldReceive('copyIntoContainer')
-            ->once()
             ->andReturn(true);
         $this->docker
-            ->shouldReceive('startContainer')
+            ->shouldReceive('startUserContainer')
             ->once()
             ->andReturn(false);
-
         $this->docker
-            ->shouldReceive('runCommand')
-            ->never();
+            ->shouldReceive('cleanupVolume')
+            ->once();
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $this->logger
+            ->shouldReceive('event')
+            ->with('info', 'Skipping 1 remaining build steps')
+            ->once();
+
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
-            ['step1', 'step2 --flag'],
+            '/workspace/1234',
+            '/jobs/1234',
+            ['step1'],
             ['TEST_VAR' => '1234']
         );
 
@@ -260,6 +326,10 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('validate')
             ->andReturn('my-image:latest');
 
+        $this->compression
+            ->shouldReceive('packTarArchive')
+            ->andReturn(true);
+
         $this->steps
             ->shouldReceive('organizeCommandsIntoJobs')
             ->andReturn([
@@ -271,19 +341,16 @@ class DockerBuilderTest extends IOTestCase
             ->once();
 
         $this->docker
+            ->shouldReceive('createVolume')
+            ->andReturn(true);
+        $this->docker
             ->shouldReceive('createContainer')
-            ->once()
             ->andReturn(true);
         $this->docker
             ->shouldReceive('copyIntoContainer')
-            ->once()
             ->andReturn(true);
         $this->docker
-            ->shouldReceive('startContainer')
-            ->once()
-            ->andReturn(true);
-        $this->docker
-            ->shouldReceive('runCommand')
+            ->shouldReceive('startUserContainer')
             ->once()
             ->andReturn(false);
 
@@ -291,13 +358,17 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('copyFromContainer')
             ->never();
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $this->docker
+            ->shouldReceive('cleanupVolume')
+            ->once();
+
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
+            '/workspace/1234',
+            '/jobs/1234',
             ['step1', 'step2 --flag'],
             ['TEST_VAR' => '1234']
         );
@@ -311,6 +382,10 @@ class DockerBuilderTest extends IOTestCase
             ->shouldReceive('validate')
             ->andReturn('my-image:latest');
 
+        $this->compression
+            ->shouldReceive('packTarArchive')
+            ->andReturn(true);
+
         $this->steps
             ->shouldReceive('organizeCommandsIntoJobs')
             ->andReturn([
@@ -318,20 +393,16 @@ class DockerBuilderTest extends IOTestCase
             ]);
 
         $this->docker
+            ->shouldReceive('createVolume')
+            ->andReturn(true);
+        $this->docker
             ->shouldReceive('createContainer')
-            ->once()
             ->andReturn(true);
         $this->docker
             ->shouldReceive('copyIntoContainer')
-            ->once()
             ->andReturn(true);
         $this->docker
-            ->shouldReceive('startContainer')
-            ->once()
-            ->andReturn(true);
-        $this->docker
-            ->shouldReceive('runCommand')
-            ->twice()
+            ->shouldReceive('startUserContainer')
             ->andReturn(true);
 
         $this->docker
@@ -339,13 +410,17 @@ class DockerBuilderTest extends IOTestCase
             ->once()
             ->andReturn(false);
 
-        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->steps);
+        $this->docker
+            ->shouldReceive('cleanupVolume')
+            ->once();
+
+        $builder = new DockerBuilder($this->logger, $this->docker, $this->validator, $this->compression, $this->steps);
         $builder->setIO($this->io());
         $success = $builder(
             'j-1234',
             'my-image:latest',
-            'user@localhost',
-            '/tmp/buildfile.tar.gz',
+            '/workspace/1234',
+            '/jobs/1234',
             ['step1', 'step2 --flag'],
             ['TEST_VAR' => '1234']
         );

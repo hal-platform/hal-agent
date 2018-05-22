@@ -58,7 +58,7 @@ class FileCompression
         try {
             $this->filesystem->mkdir($workspacePath);
 
-        } catch(IOException $e) {
+        } catch (IOException $e) {
             return false;
         }
 
@@ -137,6 +137,24 @@ class FileCompression
         ];
 
         return $this->executePackCommand($packCommand, $workspacePath);
+    }
+
+
+    /**
+     * @param string $path
+     *
+     * @return bool
+     */
+    public function remove(string $path): bool
+    {
+        try {
+            $this->filesystem->remove($path);
+
+        } catch (IOException $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

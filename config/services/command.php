@@ -12,7 +12,6 @@ use Hal\Agent\Executor\Runner\BuildCommand;
 use Hal\Agent\Executor\Runner\DeployCommand;
 use Hal\Agent\JobConfiguration\ConfigurationReader;
 use Hal\Agent\Logger\EventLogger;
-use Hal\Agent\Remoting\SSHSessionManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -70,7 +69,6 @@ return function (ContainerConfigurator $container) {
         ->set(BuildCommand::class)
             ->arg('$logger', ref(EventLogger::class))
             ->arg('$cleaner', ref('build.cleaner'))
-            ->arg('$sshManager', ref(SSHSessionManager::class))
             ->arg('$resolver', ref('build.resolver'))
             ->arg('$downloader', ref('build.downloader'))
             ->arg('$reader', ref(ConfigurationReader::class))

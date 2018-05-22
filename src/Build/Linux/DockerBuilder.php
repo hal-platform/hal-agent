@@ -94,12 +94,12 @@ class DockerBuilder implements BuilderInterface
      */
     public function __invoke(string $jobID, string $image, string $workspacePath, string $stagePath, array $steps, array $env): bool
     {
-        if (!$stageBundleFile = $this->bundleStagePath($workspacePath, $stagePath)) {
-            return $this->bombout(false);
+        if (!$dockerImage = $this->validator->validate($image)) {
+            return false;
         }
 
-        if (!$dockerImage = $this->validator->validate($image)) {
-            return $this->bombout(false);
+        if (!$stageBundleFile = $this->bundleStagePath($workspacePath, $stagePath)) {
+            return false;
         }
 
         // 1. Parse jobs from steps (a job in this case is a single container which can run multiple steps)
@@ -112,6 +112,10 @@ class DockerBuilder implements BuilderInterface
             if (!$this->runStage($image, $steps, $jobID, $stageBundleFile, $env)) {
                 return false;
             }
+        }
+
+        if (!$this->unbundleDockerArtifacts($stageBundleFile, $stagePath)) {
+            return false;
         }
 
         return true;
@@ -135,7 +139,7 @@ class DockerBuilder implements BuilderInterface
         array $env
     ) {
         $containerName = strtolower($stageID);
-        $volumeName = "${containerName}-workspace";
+        $volumeName = "${containerName}-stage";
 
         $total = count($steps);
         $current = 0;
@@ -212,6 +216,29 @@ class DockerBuilder implements BuilderInterface
         }
 
         return $stageBundleFile;
+    }
+
+    /**
+     * @param string $stageBundleFile
+     * @param string $stagePath
+     *
+     * @return bool
+     */
+    private function unbundleDockerArtifacts($stageBundleFile, $stagePath)
+    {
+        if (!$this->compression->remove($stagePath)) {
+            return false;
+        }
+
+        if (!$this->compression->createWorkspace($stagePath)) {
+            return false;
+        }
+
+        if (!$this->compression->unpackTarArchive($stagePath, $stageBundleFile)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

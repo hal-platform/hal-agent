@@ -17,12 +17,14 @@ use Hal\Core\Entity\JobType\Release;
 use Hal\Core\Entity\Target;
 use Hal\Core\Repository\ReleaseRepository;
 use Mockery;
+use Symfony\Component\Filesystem\Filesystem;
 
 class ResolverTest extends MockeryTestCase
 {
     public $em;
     public $releaseRepo;
     public $encryptedResolver;
+    public $filesystem;
 
     public function setUp()
     {
@@ -32,15 +34,7 @@ class ResolverTest extends MockeryTestCase
         ]);
 
         $this->encryptedResolver = Mockery::mock(EncryptedPropertyResolver::class);
-    }
-
-    public function tearDown()
-    {
-        $tempBuildDir = __DIR__ . '/.temp';
-
-        if (is_dir($tempBuildDir)) {
-            rmdir($tempBuildDir);
-        }
+        $this->filesystem = Mockery::mock(Filesystem::class);
     }
 
     public function testReleaseNotFound()
@@ -52,7 +46,7 @@ class ResolverTest extends MockeryTestCase
             ->shouldReceive('find')
             ->andReturnNull();
 
-        $resolver = new Resolver($this->em, $this->encryptedResolver);
+        $resolver = new Resolver($this->em, $this->encryptedResolver, $this->filesystem, '/artifacts');
 
         $resolver('5678');
     }
@@ -69,7 +63,7 @@ class ResolverTest extends MockeryTestCase
             ->shouldReceive('find')
             ->andReturn($release);
 
-        $resolver = new Resolver($this->em, $this->encryptedResolver);
+        $resolver = new Resolver($this->em, $this->encryptedResolver, $this->filesystem, '/artifacts');
 
         $resolver('5678');
     }
@@ -80,7 +74,7 @@ class ResolverTest extends MockeryTestCase
 
         $expected = [
             'job' => $release,
-            'platform' => '',
+            'platform' => 'rsync',
 
             'default_configuration' => [
                 'platform' => 'linux',
@@ -103,14 +97,22 @@ class ResolverTest extends MockeryTestCase
                 'rsync_after' =>[],
             ],
 
-            'workspace_path' => __DIR__ . '/.temp/hal-release-5678',
-            'artifact_stored_file' => '/ARCHIVE_PATH/hal-1234.tar.gz',
+            'workspace_path' => '/artifacts/hal-release-5678',
 
             'encrypted' => [
                 'encrypted_1' => '1234',
                 'encrypted_2' => '5678'
             ]
         ];
+
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->with('/artifacts')
+            ->andReturn(true);
+        $this->filesystem
+            ->shouldReceive('touch')
+            ->with('/artifacts/.hal-agent')
+            ->once();
 
         $this->releaseRepo
             ->shouldReceive('find')
@@ -119,19 +121,19 @@ class ResolverTest extends MockeryTestCase
         $this->encryptedResolver
             ->shouldReceive('getEncryptedPropertiesWithSources')
             ->andReturn([
-                'encrypted' => ['encrypted_1' => '1234', 'encrypted_2' => '5678']
+                'encrypted' => ['encrypted_1' => '1234', 'encrypted_2' => '5678'],
+                'sources' => ['encrypted_1' => 'from prod']
             ]);
 
-        $resolver = new Resolver($this->em, $this->encryptedResolver);
-        $resolver->setLocalTempPath(__DIR__ . '/.temp');
-        $resolver->setArchivePath('/ARCHIVE_PATH');
+        $resolver = new Resolver($this->em, $this->encryptedResolver, $this->filesystem, '/artifacts');
 
         $properties = $resolver('1234');
 
         $this->assertSame($expected['job'], $properties['job']);
+        $this->assertSame($expected['platform'], $properties['platform']);
         $this->assertSame($expected['default_configuration'], $properties['default_configuration']);
         $this->assertSame($expected['workspace_path'], $properties['workspace_path']);
-        $this->assertSame($expected['artifact_stored_file'], $properties['artifact_stored_file']);
+
 
         $this->assertSame($expected['encrypted'], $properties['encrypted']);
     }

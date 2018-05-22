@@ -36,7 +36,10 @@ class ScriptDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $io = $this->io();
 
         $this->configurator
@@ -69,7 +72,10 @@ class ScriptDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $io = $this->io();
 
         $this->configurator
@@ -115,7 +121,10 @@ class ScriptDeployPlatformTest extends IOTestCase
     {
         $job = $this->generateMockRelease();
         $execution = $this->generateMockExecution();
-        $properties = [];
+        $properties = [
+            'workspace_path' => '/workspace'
+        ];
+
         $io = $this->io();
 
         $this->configurator

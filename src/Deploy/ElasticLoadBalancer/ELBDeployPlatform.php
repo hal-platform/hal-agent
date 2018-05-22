@@ -1,7 +1,8 @@
 <?php
 /**
- * @copyright (c) 2018 Quicken Loans Inc.
- * * For full license information, please view the LICENSE distributed with this source code.
+ * @copyright (c) 2018 Steve Kluck
+ *
+ * For full license information, please view the LICENSE distributed with this source code.
  */
 
 namespace Hal\Agent\Deploy\ElasticLoadBalancer;
@@ -13,9 +14,9 @@ use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\ELBManager;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\HealthChecker;
 use Hal\Agent\Deploy\ElasticLoadBalancer\Steps\Swapper;
 use Hal\Agent\Deploy\PlatformTrait;
-use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\JobExecution;
 use Hal\Agent\JobPlatformInterface;
+use Hal\Agent\Logger\EventLogger;
 use Hal\Agent\Symfony\IOAwareInterface;
 use Hal\Agent\Symfony\IOAwareTrait;
 use Hal\Core\Entity\Job;

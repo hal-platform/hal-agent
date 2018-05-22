@@ -10,28 +10,30 @@ namespace Hal\Agent\Job;
 use Hal\Agent\Symfony\ProcessRunner;
 use Hal\Agent\Testing\MockeryTestCase;
 use Mockery;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
 class FileCompressionTest extends MockeryTestCase
 {
     public $runner;
+    public $filesystem;
 
     public function setUp()
     {
-        $this->runner = Mockery::mock(ProcessRunner::class)->makePartial();
+        $this->runner = Mockery::mock(ProcessRunner::class);
+        $this->filesystem = Mockery::mock(Filesystem::class);
     }
 
     public function testCreateWorkspace()
     {
         $process = Mockery::mock(Process::class, ['run' => 0, 'isSuccessful' => true, 'getOutput' => 'output here']);
 
-        $this->runner
-            ->shouldReceive('prepare')
-            ->with(['mkdir', '/path/workspace'], null, 10)
-            ->once()
-            ->andReturn($process);
+        $this->filesystem
+            ->shouldReceive('mkdir')
+            ->with('/path/workspace')
+            ->once();
 
-        $compression = new FileCompression($this->runner, 10);
+        $compression = new FileCompression($this->runner, $this->filesystem, 10);
 
         $actual = $compression->createWorkspace('/path/workspace');
 
@@ -47,8 +49,13 @@ class FileCompressionTest extends MockeryTestCase
             ->with(['tar', '-vxz', '--strip-components=2', '--file=/path/artifact.tgz', '--directory=/path/workspace'], null, 10)
             ->once()
             ->andReturn($process);
+        $this->runner
+            ->shouldReceive('run')
+            ->with($process, 'tar -vxz --strip-components=2 --file=/path/artifact.tgz --directory=/path/workspace', 'Filesystem action timed out')
+            ->once()
+            ->andReturn(true);
 
-        $compression = new FileCompression($this->runner, 10);
+        $compression = new FileCompression($this->runner, $this->filesystem, 10);
 
         $actual = $compression->unpackTarArchive('/path/workspace', '/path/artifact.tgz', 2);
 
@@ -66,8 +73,13 @@ class FileCompressionTest extends MockeryTestCase
             ->with(['tar', '-vcz', '--file=/path/artifact.tgz', '.'], $sourcePath, 10)
             ->once()
             ->andReturn($process);
+        $this->runner
+            ->shouldReceive('run')
+            ->with($process, 'tar -vcz --file=/path/artifact.tgz .', 'Filesystem action timed out')
+            ->once()
+            ->andReturn(true);
 
-        $compression = new FileCompression($this->runner, 10);
+        $compression = new FileCompression($this->runner, $this->filesystem, 10);
 
         $actual = $compression->packTarArchive($sourcePath, '/path/artifact.tgz');
 

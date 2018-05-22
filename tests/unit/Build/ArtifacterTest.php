@@ -58,7 +58,7 @@ class ArtifacterTest extends MockeryTestCase
             ->andReturn(true);
         $this->filesystem
             ->shouldReceive('copy')
-            ->with('/workspace/build.tgz', '/permanent/build.tgz', true)
+            ->with('/workspace/build.tgz', '/artifacts/build.tgz', true)
             ->andReturn(false);
 
         $this->logger
@@ -66,13 +66,13 @@ class ArtifacterTest extends MockeryTestCase
             ->with('success', 'Store artifact in artifact repository')
             ->once();
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $actual = $artifacter(
             '/workspace/build',
             '.',
             '/workspace/build.tgz',
-            '/permanent/build.tgz'
+            'build.tgz'
         );
 
         $this->assertSame(true, $actual);
@@ -85,7 +85,7 @@ class ArtifacterTest extends MockeryTestCase
             ->with('failure', 'Invalid distribution directory specified', ['path' => '../..'])
             ->once();
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $invalidDist = '../../';
         $actual = $artifacter('/workspace/build', $invalidDist, '', '');
@@ -100,7 +100,7 @@ class ArtifacterTest extends MockeryTestCase
             ->with('failure', 'Invalid distribution directory specified', ['path' => '..'])
             ->once();
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $invalidDist = '..';
         $actual = $artifacter('/workspace/build', $invalidDist, '', '');
@@ -120,7 +120,7 @@ class ArtifacterTest extends MockeryTestCase
             ->with('/workspace/build/subdir')
             ->andReturn(false);
 
-        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression);
+        $artifacter = new Artifacter($this->logger, $this->filesystem, $this->fileCompression, '/artifacts');
 
         $actual = $artifacter('/workspace/build', '/subdir', '', '');
 

@@ -94,7 +94,7 @@ class LinuxDockerinator
      * @param string $containerName
      * @param string $volumeName
      * @param array $env
-     * @param string $command
+     * @param string $userCommand
      *
      * @return bool
      */
@@ -366,7 +366,7 @@ class LinuxDockerinator
      * @param string $system
      * @param string $command
      *
-     * @return string
+     * @return array
      */
     private function docker($system, $command)
     {
