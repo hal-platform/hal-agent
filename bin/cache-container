@@ -45,5 +45,6 @@ file_put_contents($file, $cached);
 // Verify class was created
 require $file;
 if (!class_exists($class)) {
+    echo "An error occured while attempting to cache the DI Container.\n";
     exit(1);
 }
