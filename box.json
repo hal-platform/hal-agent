@@ -2,7 +2,6 @@
     "alias": "hal.phar",
     "chmod": "0755",
 
-    "compression": "GZ",
     "compactors": [
         "Herrera\\Box\\Compactor\\Json",
         "Herrera\\Box\\Compactor\\Php"
@@ -28,6 +27,10 @@
                 "tests"
             ],
             "in": "vendor"
+        },
+        {
+            "name": "*",
+            "in": "vendor/composer"
         }
     ],
     "finder-bin": [
@@ -42,7 +45,7 @@
             "ignoreDotFiles": false
         }
     ],
-
+    "exclude-composer-files": false,
     "main": "bin/hal",
     "output": "hal.phar",
     "stub": true

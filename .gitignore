@@ -8,15 +8,10 @@
 /.phpunit/
 
 # package installation
-/bin/composer
 /vendor/
 
 # compiled configuration
 /config/.env
 /src/CachedContainer.php
 /.doctrine/
-/.phinx/
-
-# sensitive stuff
-/phinx.yml
-/phinx.secrets
+/hal.phar
